@@ -1,3 +1,6 @@
+import { useMemo } from 'react'
+import { useAgreements } from '@/features/billing/hooks'
+import { useExpenseSchedules } from '@/features/expenses/hooks'
 import {
   useGetApiV1OrganizationsOrgIdReportsCashflow,
   useGetApiV1OrganizationsOrgIdReportsExpensesByCategory,
@@ -70,4 +73,24 @@ export function useIncomeByConcept(orgId: string | undefined, period: Period) {
 export function useExpensesByCategory(orgId: string | undefined, period: Period) {
   const query = useGetApiV1OrganizationsOrgIdReportsExpensesByCategory(orgId ?? '', { from: period.from, to: period.to }, enabled(orgId))
   return { ...query, items: (query.data?.data ?? []) as NamedAmount[] }
+}
+
+/**
+ * Compromiso recurrente mensual configurado: suma de `agreedAmount` de los
+ * acuerdos y gastos recurrentes ACTIVOS. Reutilizado por el Panel e Informes.
+ */
+export function useRecurringCommitment(orgId: string | undefined) {
+  const { items: agreements } = useAgreements(orgId, { page: 1, pageSize: 100 })
+  const { items: schedules } = useExpenseSchedules(orgId, { page: 1, pageSize: 100 })
+  const activeAgreements = useMemo(() => agreements.filter((a) => a.status === 'ACTIVE'), [agreements])
+  const activeSchedules = useMemo(() => schedules.filter((s) => s.status === 'ACTIVE'), [schedules])
+  const monthlyIncome = activeAgreements.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
+  const monthlyExpense = activeSchedules.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
+  return {
+    activeAgreements,
+    activeSchedules,
+    monthlyIncome,
+    monthlyExpense,
+    netMonthly: monthlyIncome - monthlyExpense,
+  }
 }

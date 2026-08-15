@@ -1,34 +1,25 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { PageHeader } from '@/components/page-header'
+import { Panel } from '@/components/panel'
 import { KpiTile } from '@/components/kpi-tile'
 import { BarList } from '@/components/bar-list'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useContacts } from '@/features/contacts/hooks'
 import { useReceivables } from '@/features/receivables/hooks'
-import { useExpenses, useExpenseSchedules } from '@/features/expenses/hooks'
-import { useAgreements } from '@/features/billing/hooks'
+import { useExpenses } from '@/features/expenses/hooks'
 import { RECEIVABLE_STATUS_LABELS, receivableStatusTone } from '@/features/receivables/labels'
 import { EXPENSE_STATUS_LABELS, expenseStatusTone } from '@/features/expenses/labels'
 import { formatAmount } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { PendingDuesPanel, type DueRow } from './pending-dues-panel'
-import { usePayablesSummary, useReceivablesSummary } from './hooks'
+import { useRecurringCommitment, usePayablesSummary, useReceivablesSummary } from './hooks'
 
 const OPEN = new Set(['PENDING', 'PARTIAL', 'OVERDUE'])
 const TOP_N = 6
 
-function Panel({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-lg border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b px-4 py-2.5">
-        <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</h2>
-        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  )
-}
+/** Etiqueta compacta "cada mes" para la cabecera de los paneles de recurrentes. */
+const monthlyHint = <span className="text-xs text-muted-foreground">cada mes</span>
 
 /** BarList de recurrentes con "Ver N más / Ver menos" que expande la lista de verdad. */
 function RecurringBars({
@@ -73,15 +64,10 @@ export function ReportsPortfolioPage() {
 
   const { items: receivables } = useReceivables(orgId, { page: 1, pageSize: 100, order: 'asc' })
   const { items: expenses } = useExpenses(orgId, { page: 1, pageSize: 100, order: 'asc' })
-  const { items: agreements } = useAgreements(orgId, { page: 1, pageSize: 100 })
-  const { items: schedules } = useExpenseSchedules(orgId, { page: 1, pageSize: 100 })
 
   // ── Compromiso recurrente configurado (acuerdos y recurrentes ACTIVOS) ──
-  const activeAgreements = useMemo(() => agreements.filter((a) => a.status === 'ACTIVE'), [agreements])
-  const activeSchedules = useMemo(() => schedules.filter((s) => s.status === 'ACTIVE'), [schedules])
-  const monthlyIncome = activeAgreements.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
-  const monthlyExpense = activeSchedules.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
-  const netMonthly = monthlyIncome - monthlyExpense
+  const { activeAgreements, activeSchedules, monthlyIncome, monthlyExpense, netMonthly } =
+    useRecurringCommitment(orgId)
 
   const incomeBars = useMemo(
     () =>
@@ -178,7 +164,7 @@ export function ReportsPortfolioPage() {
               sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
             />
           </div>
-          <Panel title="Ingresos recurrentes por acuerdo" hint="cada mes">
+          <Panel title="Ingresos recurrentes por acuerdo" action={monthlyHint}>
             <RecurringBars items={incomeBars} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
           </Panel>
           <PendingDuesPanel
@@ -205,7 +191,7 @@ export function ReportsPortfolioPage() {
               sub={`${activeSchedules.length} recurrente(s) activo(s)`}
             />
           </div>
-          <Panel title="Egresos recurrentes" hint="cada mes">
+          <Panel title="Egresos recurrentes" action={monthlyHint}>
             <RecurringBars items={expenseBars} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
           </Panel>
           <PendingDuesPanel
