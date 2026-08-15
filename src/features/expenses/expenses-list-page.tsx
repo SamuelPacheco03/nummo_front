@@ -1,27 +1,43 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router'
-import { ChevronRight, Loader2, Plus, RefreshCw } from 'lucide-react'
+import { Loader2, Plus, RefreshCw } from 'lucide-react'
+import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataTable, type Column } from '@/components/ui/data-table'
+import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
-import type { GenerateExpensesResult, GetApiV1OrganizationsOrgIdExpensesParams } from '@/api/generated/model'
+import type {
+  ExpenseBalance,
+  GenerateExpensesResult,
+  GetApiV1OrganizationsOrgIdExpensesParams,
+  GetApiV1OrganizationsOrgIdExpensesSort,
+} from '@/api/generated/model'
 import { EXPENSE_STATUS_LABELS, TONE_DOT, expenseStatusTone } from './labels'
 import { CreateExpenseDialog } from './create-expense-dialog'
 import { useExpenses, useGenerateExpenses } from './hooks'
 
 type StatusFilter = '' | 'PENDING' | 'PARTIAL' | 'OVERDUE' | 'PAID' | 'CANCELLED' | 'WRITTEN_OFF'
 const PAGE_SIZE = 20
+
+/** Columnas ordenables que acepta el endpoint (contrato: ListExpensesQuery). */
+const SORT_OPTIONS = [
+  { field: 'dueDate', label: 'Vencimiento' },
+  { field: 'balance', label: 'Saldo' },
+  { field: 'originalAmount', label: 'Valor original' },
+]
+
+const column = listColumns<ExpenseBalance>()
 
 export function ExpenseStatusPill({ status }: { status: string }) {
   const tone = expenseStatusTone(status)
@@ -39,21 +55,28 @@ export function ExpensesListPage() {
   const canCreate = canEditContacts(role)
   const navigate = useNavigate()
 
+  const [search, setSearch] = useState('')
+  const q = useDebouncedValue(search.trim(), 300)
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'dueDate', desc: false }])
   const [status, setStatus] = useState<StatusFilter>('')
   const [supplierId, setSupplierId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
 
+  // Cualquier cambio de criterio devuelve a la primera página.
   useEffect(() => {
     setPage(1)
-  }, [status, supplierId])
+  }, [q, status, supplierId, sorting])
 
+  const active = sorting[0]
   const params: GetApiV1OrganizationsOrgIdExpensesParams = {
     page,
     pageSize: PAGE_SIZE,
+    q: q || undefined,
+    sort: active?.id as GetApiV1OrganizationsOrgIdExpensesSort | undefined,
+    order: active?.desc ? 'desc' : 'asc',
     displayStatus: status || undefined,
     supplierContactId: supplierId || undefined,
-    order: 'asc',
   }
   const { items, total, totalPages, isPending, isError, error, isFetching } = useExpenses(orgId, params)
 
@@ -62,34 +85,54 @@ export function ExpensesListPage() {
   const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
 
-  type Row = (typeof items)[number]
-  const columns: Column<Row>[] = [
-    { header: 'Proveedor', cell: (e) => contactMap.get(e.supplierContactId) ?? '—', className: 'font-medium' },
-    { header: 'Categoría', cell: (e) => categoryMap.get(e.expenseCategoryId) ?? '—', className: 'text-muted-foreground' },
-    { header: 'Vence', cell: (e) => formatDateHuman(e.dueDate), className: 'nums text-muted-foreground' },
-    {
-      header: 'Saldo',
-      cell: (e) => formatAmount(e.balance, e.currency),
-      className: 'nums text-right font-medium',
-      headClassName: 'text-right',
-    },
-    { header: 'Estado', cell: (e) => <ExpenseStatusPill status={e.displayStatus} /> },
-    { header: '', cell: () => <ChevronRight className="size-4 text-muted-foreground" />, className: 'w-8', cardHidden: true },
-  ]
-  const renderCard = (e: Row) => (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium">{contactMap.get(e.supplierContactId) ?? '—'}</span>
-        <span className="nums shrink-0 font-medium">{formatAmount(e.balance, e.currency)}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span>{categoryMap.get(e.expenseCategoryId) ?? '—'}</span>
-        <span aria-hidden>·</span>
-        <span className="nums">Vence {formatDateHuman(e.dueDate)}</span>
-        <span aria-hidden>·</span>
-        <ExpenseStatusPill status={e.displayStatus} />
-      </div>
-    </div>
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.display({
+          id: 'supplier',
+          header: 'Proveedor',
+          meta: { grow: 2 },
+          cell: ({ row }) => (
+            <div className="min-w-0">
+              <p className="truncate font-medium">
+                {contactMap.get(row.original.supplierContactId) ?? '—'}
+              </p>
+              <p className="text-muted-foreground truncate text-xs">
+                {categoryMap.get(row.original.expenseCategoryId) ?? '—'}
+              </p>
+            </div>
+          ),
+        }),
+        column.display({
+          id: 'dueDate',
+          header: 'Vence',
+          meta: { grow: 1 },
+          cell: ({ row }) => (
+            <span className="nums text-muted-foreground">
+              {formatDateHuman(row.original.dueDate)}
+            </span>
+          ),
+        }),
+        column.display({
+          id: 'status',
+          header: 'Estado',
+          meta: { grow: 1 },
+          cell: ({ row }) => <ExpenseStatusPill status={row.original.displayStatus} />,
+        }),
+        column.display({
+          id: 'balance',
+          header: 'Saldo',
+          meta: { grow: 1, align: 'right' },
+          cell: ({ row }) => formatAmount(row.original.balance, row.original.currency),
+        }),
+        column.display({
+          id: 'chevron',
+          header: '',
+          meta: { width: 'auto', hideOnStack: true },
+          cell: () => <RowChevron />,
+        }),
+      ]),
+    [contactMap, categoryMap],
   )
 
   const generate = useGenerateExpenses(orgId ?? '')
@@ -120,36 +163,48 @@ export function ExpensesListPage() {
         )}
       </PageHeader>
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="sm:w-64">
-          <ContactPicker orgId={orgId ?? ''} value={supplierId} onChange={setSupplierId} allowClear placeholder="Filtrar por proveedor…" />
-        </div>
-        <NativeSelect className="w-44 sm:ml-auto" value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} aria-label="Estado">
-          <option value="">Todos los estados</option>
-          <option value="PENDING">Pendiente</option>
-          <option value="PARTIAL">Parcial</option>
-          <option value="OVERDUE">Vencido</option>
-          <option value="PAID">Pagado</option>
-          <option value="CANCELLED">Cancelado</option>
-          <option value="WRITTEN_OFF">Castigado</option>
-        </NativeSelect>
-      </div>
-
       {isError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {getErrorMessage(error, 'No se pudieron cargar los gastos.')}
         </div>
       ) : (
         <>
-          <DataTable
+          <DataList
             columns={columns}
             rows={items}
-            getKey={(e) => e.expenseId}
+            getRowId={(e) => e.expenseId}
             onRowClick={(e) => navigate(`/gastos/cxp/${e.expenseId}`)}
             isLoading={isPending}
-            skeletonRows={8}
             emptyText="No hay gastos con estos filtros."
-            renderCard={renderCard}
+            search={{ value: search, onChange: setSearch, placeholder: 'Buscar por proveedor…' }}
+            sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
+            filters={
+              <>
+                <div className="w-full sm:w-56">
+                  <ContactPicker
+                    orgId={orgId ?? ''}
+                    value={supplierId}
+                    onChange={setSupplierId}
+                    allowClear
+                    placeholder="Proveedor…"
+                  />
+                </div>
+                <NativeSelect
+                  className="w-44"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as StatusFilter)}
+                  aria-label="Estado"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="PENDING">Pendiente</option>
+                  <option value="PARTIAL">Parcial</option>
+                  <option value="OVERDUE">Vencido</option>
+                  <option value="PAID">Pagado</option>
+                  <option value="CANCELLED">Cancelado</option>
+                  <option value="WRITTEN_OFF">Castigado</option>
+                </NativeSelect>
+              </>
+            }
           />
 
           {!isPending && total > 0 && (
