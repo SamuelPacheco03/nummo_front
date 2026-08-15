@@ -55,6 +55,32 @@ export function formatDateHuman(value: string | null | undefined, today: Date = 
   return target.getFullYear() === base.getFullYear() ? label : `${label} ${target.getFullYear()}`
 }
 
+/** 'YYYY-MM' → "ago" (año actual) o "ago 27" (otro año). Para ejes de gráficos. */
+export function formatMonthLabel(ym: string, today: Date = new Date()): string {
+  const [y, m] = ym.slice(0, 7).split('-').map(Number)
+  if (!y || !m || m < 1 || m > 12) return ym
+  const abbr = MONTH_ABBR[m - 1]
+  return y === today.getFullYear() ? abbr : `${abbr} ${String(y).slice(2)}`
+}
+
+/**
+ * Monto compacto para etiquetas de gráficos (es-CO): "1,5 M" · "900 k" · "850".
+ * Redondea a 1 decimal en miles/millones. Puramente visual.
+ */
+export function formatCompactAmount(value: string | number | null | undefined, currency?: string): string {
+  if (value == null || value === '') return '—'
+  const n = typeof value === 'number' ? value : Number(value)
+  if (Number.isNaN(n)) return String(value)
+  const abs = Math.abs(n)
+  const sign = n < 0 ? '-' : ''
+  let body: string
+  if (abs >= 1_000_000) body = `${(abs / 1_000_000).toLocaleString('es-CO', { maximumFractionDigits: 1 })} M`
+  else if (abs >= 1_000) body = `${(abs / 1_000).toLocaleString('es-CO', { maximumFractionDigits: 1 })} k`
+  else body = abs.toLocaleString('es-CO', { maximumFractionDigits: 0 })
+  const out = `${sign}${body}`
+  return currency ? `${currency} ${out}` : out
+}
+
 /** Iniciales de un nombre (para avatares). */
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)

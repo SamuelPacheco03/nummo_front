@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
 import { KpiTile } from '@/components/kpi-tile'
 import { BarList } from '@/components/bar-list'
+import { AgingChart } from '@/components/aging-chart'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useContacts } from '@/features/contacts/hooks'
@@ -13,7 +14,13 @@ import { EXPENSE_STATUS_LABELS, expenseStatusTone } from '@/features/expenses/la
 import { formatAmount } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { PendingDuesPanel, type DueRow } from './pending-dues-panel'
-import { useRecurringCommitment, usePayablesSummary, useReceivablesSummary } from './hooks'
+import {
+  usePayablesAging,
+  usePayablesSummary,
+  useReceivablesAging,
+  useReceivablesSummary,
+  useRecurringCommitment,
+} from './hooks'
 
 const OPEN = new Set(['PENDING', 'PARTIAL', 'OVERDUE'])
 const TOP_N = 6
@@ -58,6 +65,8 @@ export function ReportsPortfolioPage() {
 
   const { summary: cxc } = useReceivablesSummary(orgId)
   const { summary: cxp } = usePayablesSummary(orgId)
+  const { buckets: cxcAging } = useReceivablesAging(orgId)
+  const { buckets: cxpAging } = usePayablesAging(orgId)
 
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
   const nameOf = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
@@ -164,6 +173,9 @@ export function ReportsPortfolioPage() {
               sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
             />
           </div>
+          <Panel title="Antigüedad de la cartera">
+            <AgingChart buckets={cxcAging} currency={currency} emptyLabel="No hay cartera abierta. 🎉" />
+          </Panel>
           <Panel title="Ingresos recurrentes por acuerdo" action={monthlyHint}>
             <RecurringBars items={incomeBars} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
           </Panel>
@@ -191,6 +203,9 @@ export function ReportsPortfolioPage() {
               sub={`${activeSchedules.length} recurrente(s) activo(s)`}
             />
           </div>
+          <Panel title="Antigüedad de lo que debes">
+            <AgingChart buckets={cxpAging} currency={currency} emptyLabel="No tienes cuentas por pagar. 🎉" />
+          </Panel>
           <Panel title="Egresos recurrentes" action={monthlyHint}>
             <RecurringBars items={expenseBars} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
           </Panel>

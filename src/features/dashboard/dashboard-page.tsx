@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
 import { BarList } from '@/components/bar-list'
+import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { KpiTile } from '@/components/kpi-tile'
 import { Input } from '@/components/ui/input'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -13,6 +14,7 @@ import { formatAmount, formatDateHuman, todayISODate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   useCashflow,
+  useCashflowMonthly,
   useExpensesByCategory,
   useIncomeByConcept,
   usePayablesSummary,
@@ -51,6 +53,7 @@ export function DashboardPage() {
   const [period, setPeriod] = useState<Period>(() => ({ from: monthStart(), to: todayISODate() }))
 
   const { report: cashflow } = useCashflow(orgId, period)
+  const { items: monthly } = useCashflowMonthly(orgId, 6)
   const { summary: cxc } = useReceivablesSummary(orgId)
   const { summary: cxp } = usePayablesSummary(orgId)
   const { monthlyIncome, monthlyExpense, netMonthly, activeAgreements, activeSchedules } =
@@ -145,6 +148,11 @@ export function DashboardPage() {
           sub="según lo configurado"
         />
       </KpiGroup>
+
+      {/* Flujo mensual — tendencia de ingresos/egresos */}
+      <Panel title="Flujo · últimos 6 meses">
+        <MonthlyFlowChart items={monthly} currency={currency} />
+      </Panel>
 
       {/* Gráficas */}
       <div className="grid gap-4 lg:grid-cols-2">

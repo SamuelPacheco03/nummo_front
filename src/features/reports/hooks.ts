@@ -3,17 +3,22 @@ import { useAgreements } from '@/features/billing/hooks'
 import { useExpenseSchedules } from '@/features/expenses/hooks'
 import {
   useGetApiV1OrganizationsOrgIdReportsCashflow,
+  useGetApiV1OrganizationsOrgIdReportsCashflowMonthly,
   useGetApiV1OrganizationsOrgIdReportsExpensesByCategory,
   useGetApiV1OrganizationsOrgIdReportsIncomeByConcept,
+  useGetApiV1OrganizationsOrgIdReportsPayablesAging,
   useGetApiV1OrganizationsOrgIdReportsPayablesSummary,
+  useGetApiV1OrganizationsOrgIdReportsReceivablesAging,
   useGetApiV1OrganizationsOrgIdReportsReceivablesSummary,
   useGetApiV1OrganizationsOrgIdReportsTopDebtors,
   useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables,
 } from '@/api/generated/endpoints/reports/reports'
 import type {
+  AgingBucket,
   CashflowReport,
   Debtor,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
+  MonthlyCashflow,
   NamedAmount,
   PayablesSummary,
   ReceivablesSummary,
@@ -45,9 +50,27 @@ export function useCashflow(orgId: string | undefined, period: Period) {
   return { ...query, report: query.data?.data as CashflowReport | undefined }
 }
 
+/** Flujo mensual (ingresos/egresos/neto) de los últimos N meses, más antiguo primero. */
+export function useCashflowMonthly(orgId: string | undefined, months = 6) {
+  const query = useGetApiV1OrganizationsOrgIdReportsCashflowMonthly(orgId ?? '', { months }, enabled(orgId))
+  return { ...query, items: (query.data?.data ?? []) as MonthlyCashflow[] }
+}
+
 export function useReceivablesSummary(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdReportsReceivablesSummary(orgId ?? '', enabled(orgId))
   return { ...query, summary: query.data?.data as ReceivablesSummary | undefined }
+}
+
+/** Aging de cartera por cobrar (por vencer / 1–30 / 31–60 / +60 días). */
+export function useReceivablesAging(orgId: string | undefined) {
+  const query = useGetApiV1OrganizationsOrgIdReportsReceivablesAging(orgId ?? '', enabled(orgId))
+  return { ...query, buckets: (query.data?.data ?? []) as AgingBucket[] }
+}
+
+/** Aging de cuentas por pagar (por vencer / 1–30 / 31–60 / +60 días). */
+export function usePayablesAging(orgId: string | undefined) {
+  const query = useGetApiV1OrganizationsOrgIdReportsPayablesAging(orgId ?? '', enabled(orgId))
+  return { ...query, buckets: (query.data?.data ?? []) as AgingBucket[] }
 }
 
 export function usePayablesSummary(orgId: string | undefined) {

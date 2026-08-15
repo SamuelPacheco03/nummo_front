@@ -21,13 +21,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AgingBucket,
   CashflowReport,
   Debtor,
+  GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
   GetApiV1OrganizationsOrgIdReportsExpensesByCategoryParams,
   GetApiV1OrganizationsOrgIdReportsIncomeByConceptParams,
   GetApiV1OrganizationsOrgIdReportsTopDebtorsParams,
   GetApiV1OrganizationsOrgIdReportsUpcomingReceivablesParams,
+  MonthlyCashflow,
   NamedAmount,
   PayablesSummary,
   ReceivablesSummary,
@@ -183,6 +186,133 @@ export function useGetApiV1OrganizationsOrgIdReportsCashflow<TData = Awaited<Ret
 
 
 
+export type getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponse200 = {
+  data: MonthlyCashflow[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponseSuccess = (getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponse = (getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponseSuccess)
+
+export const getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyUrl = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/organizations/${orgId}/reports/cashflow-monthly?${stringifiedParams}` : `/api/v1/organizations/${orgId}/reports/cashflow-monthly`
+}
+
+/**
+ * @summary Monthly cashflow series (income/expense/net) for the last N months
+ */
+export const getApiV1OrganizationsOrgIdReportsCashflowMonthly = async (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdReportsCashflowMonthlyResponse>(getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyUrl(orgId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryKey = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams,) => {
+    return [
+    `/api/v1/organizations/${orgId}/reports/cashflow-monthly`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError = unknown>(orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryKey(orgId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>> = ({ signal }) => getApiV1OrganizationsOrgIdReportsCashflowMonthly(orgId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>>
+export type GetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryError = unknown
+
+
+export function useGetApiV1OrganizationsOrgIdReportsCashflowMonthly<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError = unknown>(
+ orgId: string,
+    params: undefined |  GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsCashflowMonthly<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsCashflowMonthly<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Monthly cashflow series (income/expense/net) for the last N months
+ */
+
+export function useGetApiV1OrganizationsOrgIdReportsCashflowMonthly<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsCashflowMonthly>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryOptions(orgId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 export type getApiV1OrganizationsOrgIdReportsReceivablesSummaryResponse200 = {
   data: ReceivablesSummary
   status: 200
@@ -284,6 +414,230 @@ export function useGetApiV1OrganizationsOrgIdReportsReceivablesSummary<TData = A
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiV1OrganizationsOrgIdReportsReceivablesSummaryQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdReportsReceivablesAgingResponse200 = {
+  data: AgingBucket[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdReportsReceivablesAgingResponseSuccess = (getApiV1OrganizationsOrgIdReportsReceivablesAgingResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiV1OrganizationsOrgIdReportsReceivablesAgingResponse = (getApiV1OrganizationsOrgIdReportsReceivablesAgingResponseSuccess)
+
+export const getGetApiV1OrganizationsOrgIdReportsReceivablesAgingUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/reports/receivables-aging`
+}
+
+/**
+ * @summary Receivables outstanding balance bucketed by age (not due, 1–30, 31–60, 60+)
+ */
+export const getApiV1OrganizationsOrgIdReportsReceivablesAging = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdReportsReceivablesAgingResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdReportsReceivablesAgingResponse>(getGetApiV1OrganizationsOrgIdReportsReceivablesAgingUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdReportsReceivablesAgingQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/reports/receivables-aging`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdReportsReceivablesAgingQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError = unknown>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdReportsReceivablesAgingQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>> = ({ signal }) => getApiV1OrganizationsOrgIdReportsReceivablesAging(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdReportsReceivablesAgingQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>>
+export type GetApiV1OrganizationsOrgIdReportsReceivablesAgingQueryError = unknown
+
+
+export function useGetApiV1OrganizationsOrgIdReportsReceivablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError = unknown>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsReceivablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError = unknown>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsReceivablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError = unknown>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Receivables outstanding balance bucketed by age (not due, 1–30, 31–60, 60+)
+ */
+
+export function useGetApiV1OrganizationsOrgIdReportsReceivablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError = unknown>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsReceivablesAging>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdReportsReceivablesAgingQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdReportsPayablesAgingResponse200 = {
+  data: AgingBucket[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdReportsPayablesAgingResponseSuccess = (getApiV1OrganizationsOrgIdReportsPayablesAgingResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiV1OrganizationsOrgIdReportsPayablesAgingResponse = (getApiV1OrganizationsOrgIdReportsPayablesAgingResponseSuccess)
+
+export const getGetApiV1OrganizationsOrgIdReportsPayablesAgingUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/reports/payables-aging`
+}
+
+/**
+ * @summary Payables outstanding balance bucketed by age (not due, 1–30, 31–60, 60+)
+ */
+export const getApiV1OrganizationsOrgIdReportsPayablesAging = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdReportsPayablesAgingResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdReportsPayablesAgingResponse>(getGetApiV1OrganizationsOrgIdReportsPayablesAgingUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdReportsPayablesAgingQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/reports/payables-aging`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdReportsPayablesAgingQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError = unknown>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdReportsPayablesAgingQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>> = ({ signal }) => getApiV1OrganizationsOrgIdReportsPayablesAging(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdReportsPayablesAgingQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>>
+export type GetApiV1OrganizationsOrgIdReportsPayablesAgingQueryError = unknown
+
+
+export function useGetApiV1OrganizationsOrgIdReportsPayablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError = unknown>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsPayablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError = unknown>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsPayablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError = unknown>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Payables outstanding balance bucketed by age (not due, 1–30, 31–60, 60+)
+ */
+
+export function useGetApiV1OrganizationsOrgIdReportsPayablesAging<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError = unknown>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsPayablesAging>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdReportsPayablesAgingQueryOptions(orgId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

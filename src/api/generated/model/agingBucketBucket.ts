@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type InterestPolicyCalculationMethod = typeof InterestPolicyCalculationMethod[keyof typeof InterestPolicyCalculationMethod];
+export type AgingBucketBucket = typeof AgingBucketBucket[keyof typeof AgingBucketBucket];
 
 
-export const InterestPolicyCalculationMethod = {
-  DAILY_SIMPLE_PERCENT: 'DAILY_SIMPLE_PERCENT',
-  MONTHLY_SIMPLE_PRORATED: 'MONTHLY_SIMPLE_PRORATED',
-  FIXED_ONCE: 'FIXED_ONCE',
-  FIXED_AMOUNT: 'FIXED_AMOUNT',
+export const AgingBucketBucket = {
+  not_due: 'not_due',
+  d1_30: 'd1_30',
+  d31_60: 'd31_60',
+  d60_plus: 'd60_plus',
 } as const;

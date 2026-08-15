@@ -12,10 +12,16 @@ export const RECURRENCE_LABELS: Record<string, string> = {
 export const CALC_METHOD_LABELS: Record<string, string> = {
   DAILY_SIMPLE_PERCENT: 'Interés simple diario (%)',
   MONTHLY_SIMPLE_PRORATED: 'Mensual simple prorrateado',
-  FIXED_ONCE: 'Cargo fijo único',
+  FIXED_ONCE: 'Cargo fijo único (%)',
+  FIXED_AMOUNT: 'Monto fijo (en dinero)',
 }
 
-export const CALC_METHODS = ['DAILY_SIMPLE_PERCENT', 'MONTHLY_SIMPLE_PRORATED', 'FIXED_ONCE'] as const
+export const CALC_METHODS = [
+  'DAILY_SIMPLE_PERCENT',
+  'MONTHLY_SIMPLE_PRORATED',
+  'FIXED_ONCE',
+  'FIXED_AMOUNT',
+] as const
 
 export const BASE_TYPE_LABELS: Record<string, string> = {
   ORIGINAL_AMOUNT: 'Monto original',

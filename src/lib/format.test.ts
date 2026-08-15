@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateHuman, groupAmountDisplay, parseAmountInput } from './format'
+import {
+  formatCompactAmount,
+  formatDateHuman,
+  formatMonthLabel,
+  groupAmountDisplay,
+  parseAmountInput,
+} from './format'
 
 describe('formatDateHuman', () => {
   const today = new Date(2026, 7, 14) // viernes 14 ago 2026
@@ -27,6 +33,41 @@ describe('formatDateHuman', () => {
   it('vacío → guion', () => {
     expect(formatDateHuman('', today)).toBe('—')
     expect(formatDateHuman(null, today)).toBe('—')
+  })
+})
+
+describe('formatMonthLabel', () => {
+  const today = new Date(2026, 7, 14) // ago 2026
+
+  it('abrevia el mes, con año (2 dígitos) solo si difiere del actual', () => {
+    expect(formatMonthLabel('2026-08', today)).toBe('ago')
+    expect(formatMonthLabel('2026-03', today)).toBe('mar')
+    expect(formatMonthLabel('2027-01', today)).toBe('ene 27')
+    expect(formatMonthLabel('2025-12', today)).toBe('dic 25')
+  })
+
+  it('acepta YYYY-MM-DD y devuelve el crudo si es inválido', () => {
+    expect(formatMonthLabel('2026-08-01', today)).toBe('ago')
+    expect(formatMonthLabel('2026-13', today)).toBe('2026-13')
+  })
+})
+
+describe('formatCompactAmount', () => {
+  it('compacta miles (k) y millones (M) con coma decimal es-CO', () => {
+    expect(formatCompactAmount('900000')).toBe('900 k')
+    expect(formatCompactAmount('1465775')).toBe('1,5 M')
+    expect(formatCompactAmount('12500')).toBe('12,5 k')
+    expect(formatCompactAmount('850')).toBe('850')
+  })
+
+  it('conserva el signo y admite prefijo de moneda', () => {
+    expect(formatCompactAmount('-1465775')).toBe('-1,5 M')
+    expect(formatCompactAmount('900000', 'COP')).toBe('COP 900 k')
+  })
+
+  it('vacío → guion', () => {
+    expect(formatCompactAmount('')).toBe('—')
+    expect(formatCompactAmount(null)).toBe('—')
   })
 })
 

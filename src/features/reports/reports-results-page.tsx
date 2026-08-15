@@ -1,12 +1,21 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/page-header'
 import { KpiTile } from '@/components/kpi-tile'
+import { Panel } from '@/components/panel'
+import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatAmount, todayISODate } from '@/lib/format'
 import { ReportBreakdown } from './report-breakdown'
-import { defaultPeriod, useCashflow, useExpensesByCategory, useIncomeByConcept, type Period } from './hooks'
+import {
+  defaultPeriod,
+  useCashflow,
+  useCashflowMonthly,
+  useExpensesByCategory,
+  useIncomeByConcept,
+  type Period,
+} from './hooks'
 
 function pctChange(current: string | undefined, previous: string | undefined): number | null {
   const c = Number(current)
@@ -21,6 +30,7 @@ export function ReportsResultsPage() {
   const [period, setPeriod] = useState<Period>(() => defaultPeriod())
 
   const { report: cashflow, isPending } = useCashflow(orgId, period)
+  const { items: monthly } = useCashflowMonthly(orgId, 6)
   const { items: income } = useIncomeByConcept(orgId, period)
   const { items: expenses } = useExpensesByCategory(orgId, period)
 
@@ -76,6 +86,10 @@ export function ReportsResultsPage() {
           />
         </div>
       )}
+
+      <Panel title="Flujo mensual · últimos 6 meses">
+        <MonthlyFlowChart items={monthly} currency={currency} />
+      </Panel>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ReportBreakdown

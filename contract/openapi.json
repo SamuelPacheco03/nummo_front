@@ -6573,6 +6573,56 @@
         }
       }
     },
+    "/api/v1/organizations/{orgId}/reports/cashflow-monthly": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Monthly cashflow series (income/expense/net) for the last N months",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "months",
+            "schema": {
+              "default": 6,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 24
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly cashflow series (oldest first).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MonthlyCashflow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{orgId}/reports/receivables-summary": {
       "get": {
         "tags": [
@@ -6603,6 +6653,86 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReceivablesSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/reports/receivables-aging": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Receivables outstanding balance bucketed by age (not due, 1–30, 31–60, 60+)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receivables aging buckets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgingBucket"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/reports/payables-aging": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Payables outstanding balance bucketed by age (not due, 1–30, 31–60, 60+)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payables aging buckets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgingBucket"
+                  }
                 }
               }
             }
@@ -11415,6 +11545,30 @@
         ],
         "additionalProperties": false
       },
+      "MonthlyCashflow": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "income": {
+            "type": "string"
+          },
+          "expense": {
+            "type": "string"
+          },
+          "net": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "income",
+          "expense",
+          "net"
+        ],
+        "additionalProperties": false
+      },
       "ReceivablesSummary": {
         "type": "object",
         "properties": {
@@ -11446,6 +11600,34 @@
           "overdueCount",
           "pendingCount",
           "partialCount"
+        ],
+        "additionalProperties": false
+      },
+      "AgingBucket": {
+        "type": "object",
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "enum": [
+              "not_due",
+              "d1_30",
+              "d31_60",
+              "d60_plus"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "bucket",
+          "amount",
+          "count"
         ],
         "additionalProperties": false
       },

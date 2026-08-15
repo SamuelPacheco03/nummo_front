@@ -34,7 +34,7 @@ const AMOUNT_RE = /^\d+(\.\d{1,2})?$/
 
 const schema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
-  calculationMethod: z.enum(['DAILY_SIMPLE_PERCENT', 'MONTHLY_SIMPLE_PRORATED', 'FIXED_ONCE']),
+  calculationMethod: z.enum(['DAILY_SIMPLE_PERCENT', 'MONTHLY_SIMPLE_PRORATED', 'FIXED_ONCE', 'FIXED_AMOUNT']),
   rateValue: z
     .string()
     .trim()
@@ -156,7 +156,7 @@ function PolicyDialog({
               htmlFor="ip-rate"
               required
               hint="% o valor"
-              info="El valor del interés según el método. Ej.: en 'Diario simple', 0,05 = 0,05% por día de retraso."
+              info="El valor del interés según el método. Ej.: en 'Diario simple', 0,05 = 0,05% por día de retraso. En 'Monto fijo', es un valor en dinero (ej. 10000 = recargo de $10.000)."
               error={errors.rateValue?.message}
             >
               <Input id="ip-rate" className="nums" inputMode="decimal" {...register('rateValue')} />
