@@ -1,17 +1,23 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { SortingState } from '@tanstack/react-table'
 import { Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
-import { SearchInput } from '@/components/search-input'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataTable, type Column as DTColumn } from '@/components/ui/data-table'
+import { DataList, listColumns } from '@/components/ui/data-list'
 import { StatusDot } from '@/components/ui/status-dot'
 import { getErrorMessage } from '@/lib/errors'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type { MasterParams } from './hooks'
 
 const PAGE_SIZE = 20
+
+/** Los maestros solo ordenan por estas dos, según el contrato (NamedListQuery). */
+const SORT_OPTIONS = [
+  { field: 'name', label: 'Nombre' },
+  { field: 'createdAt', label: 'Creación' },
+]
 
 export interface Column<T> {
   header: string
@@ -31,6 +37,8 @@ export interface ListResult<T> {
 }
 
 export interface MasterListState {
+  sorting: SortingState
+  setSorting: (value: SortingState) => void
   search: string
   setSearch: (value: string) => void
   active: '' | 'true' | 'false'
@@ -44,26 +52,27 @@ export interface MasterListState {
 export function useMasterListState(): MasterListState {
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }])
   const [active, setActive] = useState<'' | 'true' | 'false'>('true')
   const [page, setPage] = useState(1)
 
   useEffect(() => {
     setPage(1)
-  }, [q, active])
+  }, [q, active, sorting])
 
   const params: MasterParams = {
     page,
     pageSize: PAGE_SIZE,
     q: q || undefined,
     isActive: active || undefined,
-    sort: 'name',
-    order: 'asc',
+    sort: (sorting[0]?.id ?? 'name') as MasterParams['sort'],
+    order: sorting[0]?.desc ? 'desc' : 'asc',
   }
 
-  return { search, setSearch, active, setActive, page, setPage, params }
+  return { sorting, setSorting, search, setSearch, active, setActive, page, setPage, params }
 }
 
-/** Listado CRUD genérico de maestros (presentacional): filtros + tabla densa + paginación. */
+/** Listado CRUD genérico de maestros (presentacional): filtros + filas-tarjeta + paginación. */
 export function MasterCrud<T extends { id: string; isActive: boolean }>({
   title,
   description,
@@ -94,27 +103,39 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
       <Pencil className="size-4" />
     </Button>
   )
-  const allColumns: DTColumn<T>[] = [
-    ...columns,
-    { header: 'Estado', cell: (row) => <StatusDot active={row.isActive} /> },
-    ...(canManage
-      ? [{ header: '', cell: editButton, className: 'w-16 text-right', cardHidden: true } satisfies DTColumn<T>]
-      : []),
-  ]
-  const renderCard = (row: T) => (
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0 space-y-0.5">
-        {columns.map((c, i) => (
-          <div key={i} className={i === 0 ? 'font-medium' : 'text-sm text-muted-foreground'}>
-            {c.cell(row)}
-          </div>
-        ))}
-      </div>
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
-        <StatusDot active={row.isActive} activeLabel="" inactiveLabel="" />
-        {canManage && editButton(row)}
-      </div>
-    </div>
+  const column = listColumns<T>()
+  const allColumns = useMemo(
+    () =>
+      column.columns([
+        ...columns.map((c, i) =>
+          column.display({
+            id: `col-${i}`,
+            header: c.header,
+            meta: { grow: i === 0 ? 2 : 1 },
+            cell: ({ row }) =>
+              i === 0 ? <span className="font-medium">{c.cell(row.original)}</span> : c.cell(row.original),
+          }),
+        ),
+        column.display({
+          id: 'status',
+          header: 'Estado',
+          meta: { grow: 1 },
+          cell: ({ row }) => <StatusDot active={row.original.isActive} />,
+        }),
+        ...(canManage
+          ? [
+              column.display({
+                id: 'edit',
+                header: '',
+                meta: { width: 'auto', hideOnStack: true },
+                cell: ({ row }) => editButton(row.original),
+              }),
+            ]
+          : []),
+      ]),
+    // Las props columns y editButton se recrean en cada render del padre; lo
+    // que de verdad cambia el modelo es cuántas columnas hay y si se edita.
+    [columns.length, canManage],
   )
 
   return (
@@ -128,39 +149,33 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
         )}
       </PageHeader>
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <SearchInput
-          value={state.search}
-          onChange={state.setSearch}
-          placeholder={searchPlaceholder}
-          className="sm:max-w-xs"
-        />
-        <NativeSelect
-          className="w-32 sm:ml-auto"
-          value={state.active}
-          onChange={(e) => state.setActive(e.target.value as '' | 'true' | 'false')}
-          aria-label="Estado"
-        >
-          <option value="true">Activos</option>
-          <option value="false">Inactivos</option>
-          <option value="">Todos</option>
-        </NativeSelect>
-      </div>
-
       {isError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {getErrorMessage(error, 'No se pudo cargar la información.')}
         </div>
       ) : (
         <>
-          <DataTable
+          <DataList
             columns={allColumns}
             rows={items}
-            getKey={(row) => row.id}
+            getRowId={(row) => row.id}
             isLoading={isPending}
             skeletonRows={6}
             emptyText="No hay registros con estos filtros."
-            renderCard={renderCard}
+            search={{ value: state.search, onChange: state.setSearch, placeholder: searchPlaceholder }}
+            sort={{ value: state.sorting, onChange: state.setSorting, options: SORT_OPTIONS }}
+            filters={
+              <NativeSelect
+                className="w-32"
+                value={state.active}
+                onChange={(e) => state.setActive(e.target.value as '' | 'true' | 'false')}
+                aria-label="Estado"
+              >
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+                <option value="">Todos</option>
+              </NativeSelect>
+            }
           />
 
           {!isPending && total > 0 && (
