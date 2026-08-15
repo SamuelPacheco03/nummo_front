@@ -245,6 +245,12 @@ export const router = createBrowserRouter([
               Component: (await import('@/features/config/appearance-page')).AppearancePage,
             }),
           },
+          {
+            path: 'config/asistente',
+            lazy: async () => ({
+              Component: (await import('@/features/config/assistant-page')).AssistantPage,
+            }),
+          },
         ],
       },
     ],

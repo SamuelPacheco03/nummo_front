@@ -5,6 +5,7 @@ import {
   ArrowLeftRight,
   Banknote,
   BarChart3,
+  Bot,
   Building2,
   Coins,
   CreditCard,
@@ -97,6 +98,7 @@ const SECTIONS: NavSection[] = [
       { to: '/config/sedes', label: 'Sedes', Icon: MapPin },
       { to: '/config/miembros', label: 'Miembros', Icon: UserCog },
       { to: '/config/apariencia', label: 'Apariencia', Icon: Palette },
+      { to: '/config/asistente', label: 'Asistente', Icon: Bot },
     ],
   },
 ]

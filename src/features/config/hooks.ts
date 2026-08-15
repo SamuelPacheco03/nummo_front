@@ -18,7 +18,20 @@ import {
   usePostApiV1OrganizationsOrgIdMembers,
   usePutApiV1OrganizationsOrgIdSettings,
 } from '@/api/generated/endpoints/organizations/organizations'
-import type { Branch, Member, Organization, OrganizationSettings } from '@/api/generated/model'
+import {
+  getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey,
+  useDeleteApiV1OrganizationsOrgIdAssistantProvidersProvider,
+  useGetApiV1OrganizationsOrgIdAssistantSettings,
+  usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate,
+  usePutApiV1OrganizationsOrgIdAssistantProvidersProvider,
+} from '@/api/generated/endpoints/assistant/assistant'
+import type {
+  AssistantSettings,
+  Branch,
+  Member,
+  Organization,
+  OrganizationSettings,
+} from '@/api/generated/model'
 
 /* ---------- Queries ---------- */
 
@@ -126,6 +139,49 @@ export function useUpdateSettings(orgId: string) {
     mutation: {
       onSuccess: () =>
         void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/* ---------- Asistente IA (BYOK) — solo OWNER/ADMIN ---------- */
+
+/** Config del asistente: proveedores configurados (enmascarados), activo y catálogo. */
+export function useAssistantSettings(orgId: string | undefined) {
+  const query = useGetApiV1OrganizationsOrgIdAssistantSettings(orgId ?? '', {
+    query: { enabled: !!orgId, retry: false },
+  })
+  return { ...query, settings: query.data?.data as AssistantSettings | undefined }
+}
+
+/** Crea/reemplaza la credencial (modelo + API key) de un proveedor. */
+export function useUpsertAiProvider(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdAssistantProvidersProvider({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/** Marca un proveedor configurado como el activo. */
+export function useActivateAiProvider(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/** Elimina la credencial de un proveedor. */
+export function useRemoveAiProvider(orgId: string) {
+  const qc = useQueryClient()
+  return useDeleteApiV1OrganizationsOrgIdAssistantProvidersProvider({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
     },
   })
 }
