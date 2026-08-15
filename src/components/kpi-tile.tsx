@@ -29,7 +29,7 @@ export function KpiTile({
       <div className="mt-1 font-display text-2xl font-semibold nums">{value}</div>
       <div className="mt-1 flex items-center gap-2 text-xs">
         {showDelta && (
-          <span className={cn('inline-flex items-center gap-0.5', good ? 'text-success' : 'text-destructive')}>
+          <span className={cn('inline-flex items-center gap-0.5', good ? 'text-success-strong' : 'text-destructive')}>
             <Icon className="size-3.5" />
             {Math.abs(delta.pct as number).toFixed(1)}%
           </span>

@@ -10,44 +10,58 @@
 
 /*
   Design tokens SEMÁNTICOS de Nummo (nada de "blue-500" como significado).
-  Paleta de marca:
-    primary navy #1E293B · primary-action #2563EB · success/accent #10B981
-    chart-alt #8B5CF6 · background #F8FAFC · border #E2E8F0
-  Los valores viven en variables; los componentes usan roles (bg-primary, text-muted-foreground…).
+  La paleta sale del isotipo y su gradiente teal → cian → azul → índigo:
+    primary #2563EB · índigo #4F46E5 · teal #14B8A6 · cian #22C7D6
+    texto #0F172A · secundario #475569 · borde #E2E8F0 · fondo #F8FAFC
+  Los valores viven en variables; los componentes usan roles (bg-primary,
+  text-muted-foreground…) y nunca el hex.
 */
 :root {
   /* Consola densa: esquinas nítidas, superficies planas. */
   --radius: 0.5rem;
 
   --background: #f8fafc;
-  --foreground: #1e293b;
+  --foreground: #0f172a;
 
   --card: #ffffff;
-  --card-foreground: #1e293b;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1e293b;
+  --popover-foreground: #0f172a;
 
-  /* Acción principal de marca (CTAs, botones): navy */
-  --primary: #1e293b;
-  --primary-foreground: #f8fafc;
-  /* Azul de marca para enlaces / estados activos / foco */
+  /* Acción principal de marca (CTAs, botones): el azul del logo */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  /* Hover explícito: `bg-primary/90` sobre fondo claro ACLARA el botón, y la
+     marca pide lo contrario — un azul más profundo. */
+  --primary-hover: #1d4ed8;
+
+  /* Enlaces, estados activos y foco */
   --brand: #2563eb;
   --brand-foreground: #ffffff;
+  /* Los cuatro colores del isotipo. NO se re-tematizan: son la marca, y las
+     superficies que los usan llevan texto blanco fijo en ambos modos. */
+  --logo-teal: #14b8a6;
+  --logo-cyan: #22c7d6;
+  --logo-blue: #2563eb;
+  --logo-indigo: #4f46e5;
 
   --secondary: #f1f5f9;
-  --secondary-foreground: #1e293b;
+  --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
 
-  /* accent = hover sutil de UI (rol shadcn), NO el verde de marca */
+  /* accent = hover sutil de UI (rol shadcn), NO el teal de marca */
   --accent: #f1f5f9;
-  --accent-foreground: #1e293b;
+  --accent-foreground: #0f172a;
 
-  /* Semánticos de estado */
-  --success: #10b981;
-  --success-foreground: #ffffff;
+  /* Semánticos de estado. `success` es el teal del logo y vale como RELLENO
+     (puntos, barras, badges), pero como TEXTO sobre fondo claro da 2.4:1; las
+     cifras en positivo usan `success-strong` (5.2:1, AA). */
+  --success: #14b8a6;
+  --success-foreground: #0f172a;
+  --success-strong: #0f766e;
   --warning: #f59e0b;
-  --warning-foreground: #1e293b;
+  --warning-foreground: #0f172a;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
@@ -55,70 +69,76 @@
   --input: #e2e8f0;
   --ring: #2563eb;
 
-  /* Series de gráficos */
+  /* Series de gráficos: el gradiente del logo, con el ámbar reservado a la 4ª
+     porque es la de egresos y necesita separarse del teal de ingresos. */
   --chart-1: #2563eb;
-  --chart-2: #10b981;
-  --chart-3: #8b5cf6;
+  --chart-2: #14b8a6;
+  --chart-3: #4f46e5;
   --chart-4: #f59e0b;
-  --chart-5: #1e293b;
+  --chart-5: #22c7d6;
 
-  /* Sidebar (shell de Configuración) */
+  /* Sidebar (shell de la consola) */
   --sidebar: #ffffff;
-  --sidebar-foreground: #1e293b;
-  --sidebar-primary: #1e293b;
-  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #1e293b;
+  --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #2563eb;
 }
 
 .dark {
-  --background: #020617;
+  --background: #0b1220;
   --foreground: #f8fafc;
 
-  --card: #0f172a;
+  --card: #111827;
   --card-foreground: #f8fafc;
-  --popover: #0f172a;
+  --popover: #111827;
   --popover-foreground: #f8fafc;
 
+  /* El azul se mantiene en el relleno del botón (blanco encima = 5.2:1); el
+     #3b82f6 más claro se reserva a enlaces, foco y estados activos. */
   --primary: #2563eb;
-  --primary-foreground: #f8fafc;
+  --primary-foreground: #ffffff;
+  --primary-hover: #1d4ed8;
+
   --brand: #3b82f6;
   --brand-foreground: #ffffff;
 
-  --secondary: #1e293b;
+  --secondary: #1f2937;
   --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
+  --muted: #1f2937;
   --muted-foreground: #94a3b8;
 
-  --accent: #1e293b;
+  --accent: #1f2937;
   --accent-foreground: #f8fafc;
 
-  --success: #10b981;
-  --success-foreground: #04160f;
+  --success: #14b8a6;
+  --success-foreground: #0b1220;
+  --success-strong: #2dd4bf;
   --warning: #f59e0b;
-  --warning-foreground: #1e293b;
+  --warning-foreground: #0f172a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  --border: #1e293b;
-  --input: #263449;
+  --border: #1f2937;
+  --input: #273244;
   --ring: #3b82f6;
 
   --chart-1: #3b82f6;
-  --chart-2: #10b981;
-  --chart-3: #a78bfa;
+  --chart-2: #2dd4bf;
+  --chart-3: #818cf8;
   --chart-4: #fbbf24;
-  --chart-5: #e2e8f0;
+  --chart-5: #22d3ee;
 
-  --sidebar: #0f172a;
+  --sidebar: #111827;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #f8fafc;
-  --sidebar-accent: #1e293b;
+  --sidebar-accent: #1f2937;
   --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #1e293b;
+  --sidebar-border: #1f2937;
   --sidebar-ring: #3b82f6;
 }
 
@@ -132,8 +152,13 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-logo-teal: var(--logo-teal);
+  --color-logo-cyan: var(--logo-cyan);
+  --color-logo-blue: var(--logo-blue);
+  --color-logo-indigo: var(--logo-indigo);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -142,6 +167,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-destructive: var(--destructive);
@@ -191,6 +217,23 @@
 }
 
 @layer utilities {
+  /*
+    Superficie de marca. La base va azul → índigo porque encima hay texto
+    blanco (5.2:1 y 6.3:1); el teal y el cian del isotipo entran como resplandor
+    en la esquina inferior derecha, donde no cae ningún texto.
+  */
+  .bg-brand-gradient {
+    background-color: var(--logo-blue);
+    background-image:
+      radial-gradient(
+        75% 60% at 100% 100%,
+        color-mix(in oklab, var(--logo-teal) 75%, transparent) 0%,
+        color-mix(in oklab, var(--logo-cyan) 35%, transparent) 35%,
+        transparent 70%
+      ),
+      linear-gradient(150deg, var(--logo-blue) 0%, var(--logo-indigo) 100%);
+  }
+
   /* Cifras alineadas para columnas numéricas (montos, saldos). */
   .nums {
     font-variant-numeric: tabular-nums;

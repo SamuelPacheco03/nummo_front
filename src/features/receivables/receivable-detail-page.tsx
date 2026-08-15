@@ -255,7 +255,7 @@ export function ReceivableDetailPage() {
                       className={cn(
                         'nums shrink-0',
                         reversed && 'text-muted-foreground line-through',
-                        !reversed && isReduction && 'text-success',
+                        !reversed && isReduction && 'text-success-strong',
                       )}
                     >
                       {formatAmount(adj.amount)}

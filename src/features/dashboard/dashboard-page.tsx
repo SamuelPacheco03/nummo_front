@@ -277,7 +277,7 @@ export function DashboardPage() {
                   <span
                     className={cn(
                       'grid size-6 shrink-0 place-items-center rounded-full',
-                      isIn ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive',
+                      isIn ? 'bg-success/10 text-success-strong' : 'bg-destructive/10 text-destructive',
                     )}
                   >
                     {isIn ? <ArrowDownRight className="size-3.5" /> : <ArrowUpRight className="size-3.5" />}
@@ -288,7 +288,7 @@ export function DashboardPage() {
                       {accountName.get(m.financialAccountId) ?? '—'} · {formatDateHuman(m.occurredAt)}
                     </div>
                   </div>
-                  <span className={cn('nums shrink-0 font-medium', isIn ? 'text-success' : 'text-destructive')}>
+                  <span className={cn('nums shrink-0 font-medium', isIn ? 'text-success-strong' : 'text-destructive')}>
                     {isIn ? '+' : '−'} {formatAmount(m.amount)}
                   </span>
                 </li>

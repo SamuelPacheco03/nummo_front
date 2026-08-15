@@ -45,7 +45,7 @@ export function MovementsPage() {
 
   type Row = (typeof items)[number]
   const amountCell = (m: Row) => (
-    <span className={m.direction === 'IN' ? 'text-success' : 'text-destructive'}>
+    <span className={m.direction === 'IN' ? 'text-success-strong' : 'text-destructive'}>
       {m.direction === 'IN' ? '+' : '−'} {formatAmount(m.amount)}
     </span>
   )
@@ -59,7 +59,7 @@ export function MovementsPage() {
     <div className="space-y-1">
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 truncate font-medium">{accountName.get(m.financialAccountId) ?? '—'}</span>
-        <span className={cn('nums shrink-0 font-medium', m.direction === 'IN' ? 'text-success' : 'text-destructive')}>
+        <span className={cn('nums shrink-0 font-medium', m.direction === 'IN' ? 'text-success-strong' : 'text-destructive')}>
           {m.direction === 'IN' ? '+' : '−'} {formatAmount(m.amount)}
         </span>
       </div>

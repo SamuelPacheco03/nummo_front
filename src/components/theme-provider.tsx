@@ -7,7 +7,7 @@ function isDark(mode: ThemeMode, systemDark: boolean): boolean {
 }
 
 /** Color de la barra de estado / título en la app instalada (= --background). */
-const THEME_COLOR = { light: '#f8fafc', dark: '#020617' } as const
+const THEME_COLOR = { light: '#f8fafc', dark: '#0b1220' } as const
 
 /**
  * `index.html` trae dos <meta name="theme-color"> con media queries, pero eso

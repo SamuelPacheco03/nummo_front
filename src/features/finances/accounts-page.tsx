@@ -29,7 +29,7 @@ export function AccountsPage() {
     {
       header: 'Entradas',
       cell: (b) => formatAmount(b.totalIn, b.currency),
-      className: 'nums text-right text-success',
+      className: 'nums text-right text-success-strong',
       headClassName: 'text-right',
     },
     {
@@ -62,7 +62,7 @@ export function AccountsPage() {
         </div>
         <div>
           <dt className="text-muted-foreground">Entradas</dt>
-          <dd className="nums text-success">{formatAmount(b.totalIn, b.currency)}</dd>
+          <dd className="nums text-success-strong">{formatAmount(b.totalIn, b.currency)}</dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Salidas</dt>

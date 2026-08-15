@@ -18,10 +18,10 @@ export function AuthLayout({
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       {/* Panel de marca (desktop) */}
-      <div className="relative hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
+      <div className="bg-brand-gradient relative hidden flex-col justify-between p-10 text-white lg:flex">
         <div className="flex items-center gap-2.5">
-          {/* Sobre el navy del panel, el isotipo va en una pastilla clara. */}
-          <span className="grid size-9 place-items-center rounded-md bg-primary-foreground/95 p-1">
+          {/* Sobre el gradiente, el isotipo va en una pastilla clara. */}
+          <span className="grid size-9 place-items-center rounded-md bg-white/95 p-1">
             <BrandMark className="size-full" />
           </span>
           <span className="font-display text-lg font-semibold">Nummo</span>
@@ -30,11 +30,11 @@ export function AuthLayout({
           <p className="font-display text-2xl font-semibold leading-snug">
             Administración financiera y cartera, en un solo lugar.
           </p>
-          <p className="text-sm text-primary-foreground/70">
+          <p className="text-sm text-white/70">
             Multiempresa y multisede. Contactos, cobros, gastos y cuentas con control por roles.
           </p>
         </div>
-        <p className="text-xs text-primary-foreground/50">© Nummo</p>
+        <p className="text-xs text-white/50">© Nummo</p>
       </div>
 
       {/* Formulario */}
