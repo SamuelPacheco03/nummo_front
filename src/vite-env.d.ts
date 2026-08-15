@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   /** Solo DEV: destino del proxy de Vite para /api, /health, /openapi.json, /docs. */
   readonly VITE_API_PROXY_TARGET?: string
+  /** 'true' muestra el botón de credenciales demo en el login. En producción no se define → oculto. */
+  readonly VITE_DEMO_LOGIN?: string
 }
 
 interface ImportMeta {

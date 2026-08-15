@@ -24,6 +24,13 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>
 
+/**
+ * El botón de "credenciales demo" solo aparece si VITE_DEMO_LOGIN==='true'
+ * (se activa en dev vía .env.development). En producción no se define → oculto,
+ * y el build elimina el botón por dead-code.
+ */
+const DEMO_LOGIN = import.meta.env.VITE_DEMO_LOGIN === 'true'
+
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -141,13 +148,15 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <button
-            type="button"
-            onClick={fillDemo}
-            className="block text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Usar credenciales demo (demo@nummo.app)
-          </button>
+          {DEMO_LOGIN && (
+            <button
+              type="button"
+              onClick={fillDemo}
+              className="block text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Usar credenciales demo (demo@nummo.app)
+            </button>
+          )}
         </div>
       </div>
     </div>
