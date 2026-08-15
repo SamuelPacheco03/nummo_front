@@ -78,7 +78,10 @@ function AddMemberDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Agregar miembro</DialogTitle>
-          <DialogDescription>El usuario debe tener una cuenta en Nummo.</DialogDescription>
+          <DialogDescription>
+            El usuario debe tener una cuenta en Nummo. Si aún no la tiene, pídele que se registre en{' '}
+            <span className="font-medium text-foreground">/register</span> con su email.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field label="Email" htmlFor="m-email" required error={errors.email?.message}>

@@ -9,6 +9,10 @@ export const router = createBrowserRouter([
     lazy: async () => ({ Component: (await import('@/features/auth/login-page')).LoginPage }),
   },
   {
+    path: '/register',
+    lazy: async () => ({ Component: (await import('@/features/auth/register-page')).RegisterPage }),
+  },
+  {
     element: <ProtectedRoute />,
     children: [
       {

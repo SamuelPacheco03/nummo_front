@@ -4,6 +4,7 @@ import {
   useGetApiV1AuthMe,
   usePostApiV1AuthLogin,
   usePostApiV1AuthLogout,
+  usePostApiV1AuthRegister,
 } from '@/api/generated/endpoints/auth/auth'
 import type { User } from '@/api/generated/model'
 import { clearCsrfToken, refreshCsrfToken } from '@/lib/csrf'
@@ -44,6 +45,14 @@ export function useLogin() {
       },
     },
   })
+}
+
+/**
+ * Registro público de una cuenta. NO inicia sesión (spec): tras el 201 el usuario
+ * va a login. CSRF lo adjunta customFetch automáticamente en el POST.
+ */
+export function useRegister() {
+  return usePostApiV1AuthRegister()
 }
 
 /** Logout: limpia el token CSRF y todo el cache de queries. */
