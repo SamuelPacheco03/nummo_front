@@ -544,6 +544,64 @@
         }
       }
     },
+    "/api/v1/organizations/{orgId}/apply-template": {
+      "post": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Apply the default master-data template for a vertical (OWNER/ADMIN, idempotent)",
+        "description": "Seeds sensible billing concepts, expense categories, payment methods and accounts for the organization vertical. Skips items that already exist, so it is safe to call more than once. Body `type` overrides the stored organization type.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyTemplateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Counts of master-data rows created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProvisionSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{orgId}/settings": {
       "get": {
         "tags": [
@@ -7082,6 +7140,16 @@
               }
             ]
           },
+          "type": {
+            "default": "GENERIC",
+            "type": "string",
+            "enum": [
+              "SCHOOL",
+              "SHOP",
+              "PERSONAL",
+              "GENERIC"
+            ]
+          },
           "defaultCurrency": {
             "default": "COP",
             "type": "string",
@@ -7141,12 +7209,35 @@
             "type": "string",
             "maxLength": 20
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SCHOOL",
+              "SHOP",
+              "PERSONAL",
+              "GENERIC"
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
               "ACTIVE",
               "SUSPENDED",
               "ARCHIVED"
+            ]
+          }
+        }
+      },
+      "ApplyTemplateInput": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SCHOOL",
+              "SHOP",
+              "PERSONAL",
+              "GENERIC"
             ]
           }
         }
@@ -8344,6 +8435,14 @@
                 "type": "null"
               }
             ]
+          },
+          "scope": {
+            "default": "BUSINESS",
+            "type": "string",
+            "enum": [
+              "BUSINESS",
+              "PERSONAL"
+            ]
           }
         },
         "required": [
@@ -8378,6 +8477,13 @@
               {
                 "type": "null"
               }
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "BUSINESS",
+              "PERSONAL"
             ]
           },
           "isActive": {
@@ -9223,6 +9329,15 @@
               "ARCHIVED"
             ]
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SCHOOL",
+              "SHOP",
+              "PERSONAL",
+              "GENERIC"
+            ]
+          },
           "defaultCurrency": {
             "type": "string"
           },
@@ -9249,11 +9364,44 @@
           "legalName",
           "taxId",
           "status",
+          "type",
           "defaultCurrency",
           "timezone",
           "locale",
           "createdAt",
           "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "ProvisionSummary": {
+        "type": "object",
+        "properties": {
+          "billingConcepts": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "expenseCategories": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "paymentMethods": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "financialAccounts": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "billingConcepts",
+          "expenseCategories",
+          "paymentMethods",
+          "financialAccounts"
         ],
         "additionalProperties": false
       },
@@ -10612,6 +10760,13 @@
               }
             ]
           },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "BUSINESS",
+              "PERSONAL"
+            ]
+          },
           "isActive": {
             "type": "boolean"
           },
@@ -10626,6 +10781,7 @@
           "code",
           "name",
           "description",
+          "scope",
           "isActive",
           "createdAt"
         ],
