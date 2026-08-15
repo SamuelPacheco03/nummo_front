@@ -1,4 +1,6 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
+/// <reference types="vite-plugin-pwa/react" />
 
 interface ImportMetaEnv {
   /**
@@ -10,6 +12,8 @@ interface ImportMetaEnv {
   readonly VITE_API_PROXY_TARGET?: string
   /** 'true' muestra el botón de credenciales demo en el login. En producción no se define → oculto. */
   readonly VITE_DEMO_LOGIN?: string
+  /** Solo DEV: 'true' registra el service worker en `pnpm dev` (por defecto está apagado). */
+  readonly VITE_PWA_DEV?: string
 }
 
 interface ImportMeta {

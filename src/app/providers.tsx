@@ -6,6 +6,7 @@ import { setUnauthorizedHandler } from '@/api/http-client'
 import { clearCsrfToken } from '@/lib/csrf'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
+import { PwaUpdater } from '@/pwa/pwa-updater'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   // Un QueryClient estable por montaje de la app.
@@ -29,6 +30,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>{children}</ThemeProvider>
       <Toaster />
+      <PwaUpdater />
     </QueryClientProvider>
   )
 }

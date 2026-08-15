@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -72,8 +73,9 @@ export function LoginPage() {
       {/* Panel de marca (desktop) */}
       <div className="relative hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-md bg-primary-foreground font-display text-base font-bold text-primary">
-            N
+          {/* Sobre el navy del panel, el isotipo va en una pastilla clara. */}
+          <span className="grid size-9 place-items-center rounded-md bg-primary-foreground/95 p-1">
+            <BrandMark className="size-full" />
           </span>
           <span className="font-display text-lg font-semibold">Nummo</span>
         </div>
@@ -93,9 +95,7 @@ export function LoginPage() {
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-2">
             <div className="flex items-center gap-2 lg:hidden">
-              <span className="grid size-8 place-items-center rounded-md bg-primary font-display text-base font-bold text-primary-foreground">
-                N
-              </span>
+              <BrandMark className="size-9" />
               <span className="font-display text-lg font-semibold">Nummo</span>
             </div>
             <h1 className="font-display text-2xl font-semibold tracking-tight">Iniciar sesión</h1>

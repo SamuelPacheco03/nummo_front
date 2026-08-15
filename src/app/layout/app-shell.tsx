@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { AppLoader } from '@/components/app-loader'
+import { BrandLockup, BrandMark } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -34,6 +35,8 @@ import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
+import { InstallAppButton } from '@/pwa/install-app-button'
+import { OfflineIndicator } from '@/pwa/offline-indicator'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -100,11 +103,8 @@ const SECTIONS: NavSection[] = [
 
 function Brand() {
   return (
-    <Link to="/" className="flex items-center gap-2">
-      <span className="grid size-7 place-items-center rounded-md bg-primary font-display text-sm font-bold text-primary-foreground">
-        N
-      </span>
-      <span className="font-display text-base font-semibold tracking-tight">Nummo</span>
+    <Link to="/" className="flex items-center" aria-label="Nummo — ir al panel">
+      <BrandLockup />
     </Link>
   )
 }
@@ -185,6 +185,8 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           <Activity className="size-3.5" />
           Estado del sistema
         </NavLink>
+        <InstallAppButton />
+        <OfflineIndicator />
         <div className="flex items-center justify-between gap-2">
           <ThemeToggle />
           <UserMenu />
@@ -211,9 +213,7 @@ function NoOrgOnboarding() {
   return (
     <div className="grid min-h-dvh place-items-center bg-background p-6">
       <div className="w-full max-w-md space-y-5 text-center">
-        <span className="mx-auto grid size-11 place-items-center rounded-md bg-primary font-display text-lg font-bold text-primary-foreground">
-          N
-        </span>
+        <BrandMark className="mx-auto size-12" />
         <div className="space-y-1">
           <h1 className="font-display text-xl font-semibold">Crea tu organización</h1>
           <p className="text-sm text-muted-foreground">
