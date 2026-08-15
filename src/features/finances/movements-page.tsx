@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataTable, type Column } from '@/components/ui/data-table'
+import { DataList, listColumns } from '@/components/ui/data-list'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
 import type {
   GetApiV1OrganizationsOrgIdFinancialMovementsMovementType,
   GetApiV1OrganizationsOrgIdFinancialMovementsParams,
+  GetApiV1OrganizationsOrgIdFinancialMovementsSort,
+  LedgerMovement,
 } from '@/api/generated/model'
 import { MOVEMENT_TYPES, MOVEMENT_TYPE_LABELS } from './labels'
 import { useAccountBalances, useMovements } from './hooks'
@@ -17,20 +21,33 @@ import { useAccountBalances, useMovements } from './hooks'
 type DirFilter = '' | 'IN' | 'OUT'
 const PAGE_SIZE = 20
 
+/** Columnas ordenables que acepta el endpoint (contrato: ListMovementsQuery). */
+const SORT_OPTIONS = [
+  { field: 'occurredAt', label: 'Fecha' },
+  { field: 'amount', label: 'Monto' },
+]
+
+const column = listColumns<LedgerMovement>()
+
 export function MovementsPage() {
   const { orgId } = useCurrentOrg()
   const { balances } = useAccountBalances(orgId)
   const accountName = useMemo(() => new Map(balances.map((b) => [b.accountId, b.name])), [balances])
 
+  const [search, setSearch] = useState('')
+  const q = useDebouncedValue(search.trim(), 300)
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'occurredAt', desc: true }])
   const [accountId, setAccountId] = useState('')
   const [direction, setDirection] = useState<DirFilter>('')
   const [movementType, setMovementType] = useState('')
   const [page, setPage] = useState(1)
 
+  // Cualquier cambio de criterio devuelve a la primera página.
   useEffect(() => {
     setPage(1)
-  }, [accountId, direction, movementType])
+  }, [q, accountId, direction, movementType, sorting])
 
+  const active = sorting[0]
   const params: GetApiV1OrganizationsOrgIdFinancialMovementsParams = {
     page,
     pageSize: PAGE_SIZE,
@@ -39,67 +56,61 @@ export function MovementsPage() {
     movementType: (movementType || undefined) as
       | GetApiV1OrganizationsOrgIdFinancialMovementsMovementType
       | undefined,
-    order: 'desc',
+    q: q || undefined,
+    sort: active?.id as GetApiV1OrganizationsOrgIdFinancialMovementsSort | undefined,
+    order: active?.desc ? 'desc' : 'asc',
   }
   const { items, total, totalPages, isPending, isError, error, isFetching } = useMovements(orgId, params)
 
-  type Row = (typeof items)[number]
-  const amountCell = (m: Row) => (
-    <span className={m.direction === 'IN' ? 'text-success-strong' : 'text-destructive'}>
-      {m.direction === 'IN' ? '+' : '−'} {formatAmount(m.amount)}
-    </span>
-  )
-  const columns: Column<Row>[] = [
-    { header: 'Fecha', cell: (m) => formatDateHuman(m.occurredAt), className: 'nums text-muted-foreground' },
-    { header: 'Cuenta', cell: (m) => accountName.get(m.financialAccountId) ?? '—' },
-    { header: 'Tipo', cell: (m) => MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType, className: 'text-muted-foreground' },
-    { header: 'Monto', cell: amountCell, className: 'nums text-right font-medium', headClassName: 'text-right' },
-  ]
-  const renderCard = (m: Row) => (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium">{accountName.get(m.financialAccountId) ?? '—'}</span>
-        <span className={cn('nums shrink-0 font-medium', m.direction === 'IN' ? 'text-success-strong' : 'text-destructive')}>
-          {m.direction === 'IN' ? '+' : '−'} {formatAmount(m.amount)}
-        </span>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span className="nums">{formatDateHuman(m.occurredAt)}</span>
-        <span aria-hidden>·</span>
-        <span>{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</span>
-      </div>
-    </div>
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.display({
+          id: 'account',
+          header: 'Cuenta',
+          meta: { grow: 2 },
+          cell: ({ row }) => (
+            <div className="min-w-0">
+              <p className="truncate font-medium">
+                {accountName.get(row.original.financialAccountId) ?? '—'}
+              </p>
+              <p className="text-muted-foreground truncate text-xs">
+                {MOVEMENT_TYPE_LABELS[row.original.movementType] ?? row.original.movementType}
+              </p>
+            </div>
+          ),
+        }),
+        column.display({
+          id: 'occurredAt',
+          header: 'Fecha',
+          meta: { grow: 1 },
+          cell: ({ row }) => (
+            <span className="nums text-muted-foreground">
+              {formatDateHuman(row.original.occurredAt)}
+            </span>
+          ),
+        }),
+        column.display({
+          id: 'amount',
+          header: 'Monto',
+          meta: { grow: 1, align: 'right' },
+          cell: ({ row }) => (
+            <span
+              className={cn(
+                row.original.direction === 'IN' ? 'text-success-strong' : 'text-destructive',
+              )}
+            >
+              {row.original.direction === 'IN' ? '+' : '−'} {formatAmount(row.original.amount)}
+            </span>
+          ),
+        }),
+      ]),
+    [accountName],
   )
 
   return (
     <div>
       <PageHeader title="Movimientos" description="Libro de todos los movimientos de caja." />
-
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <NativeSelect className="sm:w-56" value={accountId} onChange={(e) => setAccountId(e.target.value)} aria-label="Cuenta">
-          <option value="">Todas las cuentas</option>
-          {balances.map((b) => (
-            <option key={b.accountId} value={b.accountId}>
-              {b.name}
-            </option>
-          ))}
-        </NativeSelect>
-        <div className="flex gap-2 sm:ml-auto">
-          <NativeSelect className="w-40" value={movementType} onChange={(e) => setMovementType(e.target.value)} aria-label="Tipo">
-            <option value="">Todos los tipos</option>
-            {MOVEMENT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {MOVEMENT_TYPE_LABELS[t]}
-              </option>
-            ))}
-          </NativeSelect>
-          <NativeSelect className="w-32" value={direction} onChange={(e) => setDirection(e.target.value as DirFilter)} aria-label="Dirección">
-            <option value="">Ambas</option>
-            <option value="IN">Entradas</option>
-            <option value="OUT">Salidas</option>
-          </NativeSelect>
-        </div>
-      </div>
 
       {isError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
@@ -107,14 +118,58 @@ export function MovementsPage() {
         </div>
       ) : (
         <>
-          <DataTable
+          <DataList
             columns={columns}
             rows={items}
-            getKey={(m) => m.id}
+            getRowId={(m) => m.id}
             isLoading={isPending}
-            skeletonRows={8}
             emptyText="No hay movimientos con estos filtros."
-            renderCard={renderCard}
+            search={{
+              value: search,
+              onChange: setSearch,
+              placeholder: 'Buscar por descripción o referencia…',
+            }}
+            sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
+            filters={
+              <>
+                <NativeSelect
+                  className="w-full sm:w-52"
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  aria-label="Cuenta"
+                >
+                  <option value="">Todas las cuentas</option>
+                  {balances.map((b) => (
+                    <option key={b.accountId} value={b.accountId}>
+                      {b.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <NativeSelect
+                  className="w-40"
+                  value={movementType}
+                  onChange={(e) => setMovementType(e.target.value)}
+                  aria-label="Tipo"
+                >
+                  <option value="">Todos los tipos</option>
+                  {MOVEMENT_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {MOVEMENT_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <NativeSelect
+                  className="w-32"
+                  value={direction}
+                  onChange={(e) => setDirection(e.target.value as DirFilter)}
+                  aria-label="Dirección"
+                >
+                  <option value="">Ambas</option>
+                  <option value="IN">Entradas</option>
+                  <option value="OUT">Salidas</option>
+                </NativeSelect>
+              </>
+            }
           />
 
           {!isPending && total > 0 && (
