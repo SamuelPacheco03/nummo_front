@@ -56,8 +56,15 @@ export function DashboardPage() {
   const { items: monthly } = useCashflowMonthly(orgId, 6)
   const { summary: cxc } = useReceivablesSummary(orgId)
   const { summary: cxp } = usePayablesSummary(orgId)
-  const { monthlyIncome, monthlyExpense, netMonthly, activeAgreements, activeSchedules } =
-    useRecurringCommitment(orgId)
+  const {
+    monthlyIncome,
+    monthlyExpense,
+    netMonthly,
+    activeAgreements,
+    activeSchedules,
+    incomeItems,
+    expenseItems,
+  } = useRecurringCommitment(orgId)
   const { items: income } = useIncomeByConcept(orgId, period)
   const { items: expenses } = useExpensesByCategory(orgId, period)
   const { balances } = useAccountBalances(orgId)
@@ -223,6 +230,30 @@ export function DashboardPage() {
               ))}
             </ul>
           )}
+        </Panel>
+      </div>
+
+      {/* Recurrentes — resumen rápido; el detalle vive en Cobros y pagos */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel
+          title="Ingresos recurrentes"
+          action={
+            <Link to="/informes/cartera" className="text-xs text-brand hover:underline">
+              Ver todos
+            </Link>
+          }
+        >
+          <BarList items={incomeItems.slice(0, 5)} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
+        </Panel>
+        <Panel
+          title="Egresos recurrentes"
+          action={
+            <Link to="/informes/cartera" className="text-xs text-brand hover:underline">
+              Ver todos
+            </Link>
+          }
+        >
+          <BarList items={expenseItems.slice(0, 5)} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
         </Panel>
       </div>
 

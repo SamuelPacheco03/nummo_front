@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useAgreements } from '@/features/billing/hooks'
+import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseSchedules } from '@/features/expenses/hooks'
 import {
   useGetApiV1OrganizationsOrgIdReportsCashflow,
@@ -99,19 +100,42 @@ export function useExpensesByCategory(orgId: string | undefined, period: Period)
 }
 
 /**
- * Compromiso recurrente mensual configurado: suma de `agreedAmount` de los
- * acuerdos y gastos recurrentes ACTIVOS. Reutilizado por el Panel e Informes.
+ * Compromiso recurrente mensual configurado: acuerdos y gastos recurrentes
+ * ACTIVOS. Expone los totales/mes y las listas ya resueltas con nombre de
+ * contacto (`incomeItems`/`expenseItems`, orden desc). Reutilizado por el Panel
+ * y por Cobros y pagos para no duplicar el armado.
  */
 export function useRecurringCommitment(orgId: string | undefined) {
   const { items: agreements } = useAgreements(orgId, { page: 1, pageSize: 100 })
   const { items: schedules } = useExpenseSchedules(orgId, { page: 1, pageSize: 100 })
+  const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const nameOf = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
+
   const activeAgreements = useMemo(() => agreements.filter((a) => a.status === 'ACTIVE'), [agreements])
   const activeSchedules = useMemo(() => schedules.filter((s) => s.status === 'ACTIVE'), [schedules])
+
+  const incomeItems = useMemo(
+    () =>
+      activeAgreements
+        .map((a) => ({ id: a.id, name: nameOf.get(a.payerContactId) ?? a.name ?? '—', amount: a.agreedAmount }))
+        .sort((x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0)),
+    [activeAgreements, nameOf],
+  )
+  const expenseItems = useMemo(
+    () =>
+      activeSchedules
+        .map((s) => ({ id: s.id, name: nameOf.get(s.supplierContactId) ?? s.name ?? '—', amount: s.agreedAmount }))
+        .sort((x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0)),
+    [activeSchedules, nameOf],
+  )
+
   const monthlyIncome = activeAgreements.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
   const monthlyExpense = activeSchedules.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
   return {
     activeAgreements,
     activeSchedules,
+    incomeItems,
+    expenseItems,
     monthlyIncome,
     monthlyExpense,
     netMonthly: monthlyIncome - monthlyExpense,

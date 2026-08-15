@@ -75,23 +75,8 @@ export function ReportsPortfolioPage() {
   const { items: expenses } = useExpenses(orgId, { page: 1, pageSize: 100, order: 'asc' })
 
   // ── Compromiso recurrente configurado (acuerdos y recurrentes ACTIVOS) ──
-  const { activeAgreements, activeSchedules, monthlyIncome, monthlyExpense, netMonthly } =
+  const { activeAgreements, activeSchedules, incomeItems, expenseItems, monthlyIncome, monthlyExpense, netMonthly } =
     useRecurringCommitment(orgId)
-
-  const incomeBars = useMemo(
-    () =>
-      activeAgreements
-        .map((a) => ({ id: a.id, name: nameOf.get(a.payerContactId) ?? a.name ?? '—', amount: a.agreedAmount }))
-        .sort((x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0)),
-    [activeAgreements, nameOf],
-  )
-  const expenseBars = useMemo(
-    () =>
-      activeSchedules
-        .map((s) => ({ id: s.id, name: nameOf.get(s.supplierContactId) ?? s.name ?? '—', amount: s.agreedAmount }))
-        .sort((x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0)),
-    [activeSchedules, nameOf],
-  )
 
   // ── Pendiente ahora (cuentas abiertas por cobrar / por pagar) ──
   const receivableRows: DueRow[] = useMemo(
@@ -177,7 +162,7 @@ export function ReportsPortfolioPage() {
             <AgingChart buckets={cxcAging} currency={currency} emptyLabel="No hay cartera abierta. 🎉" />
           </Panel>
           <Panel title="Ingresos recurrentes por acuerdo" action={monthlyHint}>
-            <RecurringBars items={incomeBars} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
+            <RecurringBars items={incomeItems} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
           </Panel>
           <PendingDuesPanel
             title="Cobros pendientes"
@@ -207,7 +192,7 @@ export function ReportsPortfolioPage() {
             <AgingChart buckets={cxpAging} currency={currency} emptyLabel="No tienes cuentas por pagar. 🎉" />
           </Panel>
           <Panel title="Egresos recurrentes" action={monthlyHint}>
-            <RecurringBars items={expenseBars} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
+            <RecurringBars items={expenseItems} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
           </Panel>
           <PendingDuesPanel
             title="Pagos pendientes"
