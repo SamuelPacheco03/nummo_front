@@ -7,6 +7,7 @@
  */
 import type { GetApiV1OrganizationsOrgIdPaymentsOrder } from './getApiV1OrganizationsOrgIdPaymentsOrder';
 import type { GetApiV1OrganizationsOrgIdPaymentsPurpose } from './getApiV1OrganizationsOrgIdPaymentsPurpose';
+import type { GetApiV1OrganizationsOrgIdPaymentsSort } from './getApiV1OrganizationsOrgIdPaymentsSort';
 import type { GetApiV1OrganizationsOrgIdPaymentsStatus } from './getApiV1OrganizationsOrgIdPaymentsStatus';
 
 export type GetApiV1OrganizationsOrgIdPaymentsParams = {
@@ -21,10 +22,15 @@ page?: number;
  */
 pageSize?: number;
 /**
+ * @maxLength 200
+ */
+q?: string;
+sort?: GetApiV1OrganizationsOrgIdPaymentsSort;
+order?: GetApiV1OrganizationsOrgIdPaymentsOrder;
+/**
  * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
  */
 payerContactId?: string;
 status?: GetApiV1OrganizationsOrgIdPaymentsStatus;
 purpose?: GetApiV1OrganizationsOrgIdPaymentsPurpose;
-order?: GetApiV1OrganizationsOrgIdPaymentsOrder;
 };

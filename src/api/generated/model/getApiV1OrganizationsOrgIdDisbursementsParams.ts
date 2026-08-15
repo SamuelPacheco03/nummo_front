@@ -7,6 +7,7 @@
  */
 import type { GetApiV1OrganizationsOrgIdDisbursementsOrder } from './getApiV1OrganizationsOrgIdDisbursementsOrder';
 import type { GetApiV1OrganizationsOrgIdDisbursementsPurpose } from './getApiV1OrganizationsOrgIdDisbursementsPurpose';
+import type { GetApiV1OrganizationsOrgIdDisbursementsSort } from './getApiV1OrganizationsOrgIdDisbursementsSort';
 import type { GetApiV1OrganizationsOrgIdDisbursementsStatus } from './getApiV1OrganizationsOrgIdDisbursementsStatus';
 
 export type GetApiV1OrganizationsOrgIdDisbursementsParams = {
@@ -21,10 +22,15 @@ page?: number;
  */
 pageSize?: number;
 /**
+ * @maxLength 200
+ */
+q?: string;
+sort?: GetApiV1OrganizationsOrgIdDisbursementsSort;
+order?: GetApiV1OrganizationsOrgIdDisbursementsOrder;
+/**
  * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
  */
 supplierContactId?: string;
 status?: GetApiV1OrganizationsOrgIdDisbursementsStatus;
 purpose?: GetApiV1OrganizationsOrgIdDisbursementsPurpose;
-order?: GetApiV1OrganizationsOrgIdDisbursementsOrder;
 };

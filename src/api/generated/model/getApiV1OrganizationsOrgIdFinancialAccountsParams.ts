@@ -25,8 +25,8 @@ pageSize?: number;
  * @maxLength 200
  */
 q?: string;
-isActive?: GetApiV1OrganizationsOrgIdFinancialAccountsIsActive;
 sort?: GetApiV1OrganizationsOrgIdFinancialAccountsSort;
 order?: GetApiV1OrganizationsOrgIdFinancialAccountsOrder;
+isActive?: GetApiV1OrganizationsOrgIdFinancialAccountsIsActive;
 accountType?: GetApiV1OrganizationsOrgIdFinancialAccountsAccountType;
 };

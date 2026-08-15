@@ -26,6 +26,8 @@ import type {
 
 import type {
   AiProviderCredential,
+  AssistantChatInput,
+  AssistantChatResponse,
   AssistantSettings,
   ErrorResponse,
   UpsertAiProviderCredential
@@ -453,4 +455,95 @@ export const usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate = 
         TContext
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantProvidersProviderActivateMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantChatResponse200 = {
+  data: AssistantChatResponse
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatResponseSuccess = (postApiV1OrganizationsOrgIdAssistantChatResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantChatResponseError = (postApiV1OrganizationsOrgIdAssistantChatResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantChatResponse = (postApiV1OrganizationsOrgIdAssistantChatResponseSuccess | postApiV1OrganizationsOrgIdAssistantChatResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/chat`
+}
+
+/**
+ * Envía un mensaje a Numi y recibe su respuesta. Devuelve `sessionId` para continuar la conversación (reenvíalo en las siguientes llamadas). Requiere que un administrador haya configurado un proveedor de IA activo.
+ * @summary Enviar un mensaje al asistente Numi (cualquier miembro)
+ */
+export const postApiV1OrganizationsOrgIdAssistantChat = async (orgId: string,
+    assistantChatInput: AssistantChatInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantChatResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantChatResponse>(getPostApiV1OrganizationsOrgIdAssistantChatUrl(orgId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(assistantChatInput)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChat>>, TError,{orgId: string;data: AssistantChatInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChat>>, TError,{orgId: string;data: AssistantChatInput}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantChat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChat>>, {orgId: string;data: AssistantChatInput}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantChat(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantChatMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChat>>>
+    export type PostApiV1OrganizationsOrgIdAssistantChatMutationBody = AssistantChatInput
+    export type PostApiV1OrganizationsOrgIdAssistantChatMutationError = ErrorResponse
+
+    /**
+ * @summary Enviar un mensaje al asistente Numi (cualquier miembro)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantChat = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChat>>, TError,{orgId: string;data: AssistantChatInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChat>>,
+        TError,
+        {orgId: string;data: AssistantChatInput},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatMutationOptions(options), queryClient);
     }

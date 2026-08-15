@@ -25,8 +25,8 @@ pageSize?: number;
  * @maxLength 200
  */
 q?: string;
-isActive?: GetApiV1OrganizationsOrgIdPaymentMethodsIsActive;
 sort?: GetApiV1OrganizationsOrgIdPaymentMethodsSort;
 order?: GetApiV1OrganizationsOrgIdPaymentMethodsOrder;
+isActive?: GetApiV1OrganizationsOrgIdPaymentMethodsIsActive;
 methodType?: GetApiV1OrganizationsOrgIdPaymentMethodsMethodType;
 };

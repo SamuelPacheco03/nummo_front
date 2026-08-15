@@ -1741,17 +1741,6 @@
           },
           {
             "in": "query",
-            "name": "isActive",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          },
-          {
-            "in": "query",
             "name": "sort",
             "schema": {
               "default": "name",
@@ -1771,6 +1760,17 @@
               "enum": [
                 "asc",
                 "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
               ]
             }
           }
@@ -2054,17 +2054,6 @@
           },
           {
             "in": "query",
-            "name": "isActive",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          },
-          {
-            "in": "query",
             "name": "sort",
             "schema": {
               "default": "name",
@@ -2084,6 +2073,17 @@
               "enum": [
                 "asc",
                 "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
               ]
             }
           }
@@ -2854,6 +2854,39 @@
           },
           {
             "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "dueDate",
+              "type": "string",
+              "enum": [
+                "dueDate",
+                "balance",
+                "originalAmount"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "default": "asc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
             "name": "displayStatus",
             "schema": {
               "type": "string",
@@ -2901,18 +2934,6 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-            }
-          },
-          {
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "default": "asc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
             }
           }
         ],
@@ -3583,6 +3604,38 @@
           },
           {
             "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "receivedAt",
+              "type": "string",
+              "enum": [
+                "receivedAt",
+                "amount"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
             "name": "payerContactId",
             "schema": {
               "type": "string",
@@ -3610,18 +3663,6 @@
                 "RECEIVABLE",
                 "ADVANCE",
                 "DIRECT_INCOME"
-              ]
-            }
-          },
-          {
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "default": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
               ]
             }
           }
@@ -3982,17 +4023,6 @@
           },
           {
             "in": "query",
-            "name": "isActive",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          },
-          {
-            "in": "query",
             "name": "sort",
             "schema": {
               "default": "name",
@@ -4012,6 +4042,17 @@
               "enum": [
                 "asc",
                 "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
               ]
             }
           }
@@ -4295,28 +4336,6 @@
           },
           {
             "in": "query",
-            "name": "status",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "ACTIVE",
-                "PAUSED",
-                "ENDED",
-                "CANCELLED"
-              ]
-            }
-          },
-          {
-            "in": "query",
-            "name": "supplierContactId",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            }
-          },
-          {
-            "in": "query",
             "name": "sort",
             "schema": {
               "default": "createdAt",
@@ -4337,6 +4356,28 @@
                 "asc",
                 "desc"
               ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "PAUSED",
+                "ENDED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "supplierContactId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           }
         ],
@@ -4782,6 +4823,39 @@
           },
           {
             "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "dueDate",
+              "type": "string",
+              "enum": [
+                "dueDate",
+                "balance",
+                "originalAmount"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "default": "asc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
             "name": "displayStatus",
             "schema": {
               "type": "string",
@@ -4829,18 +4903,6 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-            }
-          },
-          {
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "default": "asc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
             }
           }
         ],
@@ -5221,6 +5283,38 @@
           },
           {
             "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "disbursedAt",
+              "type": "string",
+              "enum": [
+                "disbursedAt",
+                "amount"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
             "name": "supplierContactId",
             "schema": {
               "type": "string",
@@ -5248,18 +5342,6 @@
                 "EXPENSE",
                 "ADVANCE",
                 "DIRECT_EXPENSE"
-              ]
-            }
-          },
-          {
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "default": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
               ]
             }
           }
@@ -5813,6 +5895,38 @@
           },
           {
             "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "occurredAt",
+              "type": "string",
+              "enum": [
+                "occurredAt",
+                "amount"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
             "name": "financialAccountId",
             "schema": {
               "type": "string",
@@ -5862,18 +5976,6 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-            }
-          },
-          {
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "default": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
             }
           }
         ],
@@ -5979,17 +6081,6 @@
           },
           {
             "in": "query",
-            "name": "isActive",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          },
-          {
-            "in": "query",
             "name": "sort",
             "schema": {
               "default": "name",
@@ -6009,6 +6100,17 @@
               "enum": [
                 "asc",
                 "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
               ]
             }
           },
@@ -6306,17 +6408,6 @@
           },
           {
             "in": "query",
-            "name": "isActive",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          },
-          {
-            "in": "query",
             "name": "sort",
             "schema": {
               "default": "name",
@@ -6336,6 +6427,17 @@
               "enum": [
                 "asc",
                 "desc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
               ]
             }
           },
@@ -7286,6 +7388,64 @@
           },
           "404": {
             "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/chat": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Enviar un mensaje al asistente Numi (cualquier miembro)",
+        "description": "Envía un mensaje a Numi y recibe su respuesta. Devuelve `sessionId` para continuar la conversación (reenvíalo en las siguientes llamadas). Requiere que un administrador haya configurado un proveedor de IA activo.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del asistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9346,6 +9506,24 @@
         "required": [
           "model",
           "apiKey"
+        ]
+      },
+      "AssistantChatInput": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "message"
         ]
       },
       "HealthResponse": {
@@ -12260,6 +12438,24 @@
           "provider",
           "label",
           "suggestedModels"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantChatResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "reply": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionId",
+          "reply"
         ],
         "additionalProperties": false
       }

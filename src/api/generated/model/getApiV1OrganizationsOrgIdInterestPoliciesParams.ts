@@ -24,7 +24,7 @@ pageSize?: number;
  * @maxLength 200
  */
 q?: string;
-isActive?: GetApiV1OrganizationsOrgIdInterestPoliciesIsActive;
 sort?: GetApiV1OrganizationsOrgIdInterestPoliciesSort;
 order?: GetApiV1OrganizationsOrgIdInterestPoliciesOrder;
+isActive?: GetApiV1OrganizationsOrgIdInterestPoliciesIsActive;
 };

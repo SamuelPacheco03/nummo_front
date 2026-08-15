@@ -7,6 +7,7 @@
  */
 import type { GetApiV1OrganizationsOrgIdReceivablesDisplayStatus } from './getApiV1OrganizationsOrgIdReceivablesDisplayStatus';
 import type { GetApiV1OrganizationsOrgIdReceivablesOrder } from './getApiV1OrganizationsOrgIdReceivablesOrder';
+import type { GetApiV1OrganizationsOrgIdReceivablesSort } from './getApiV1OrganizationsOrgIdReceivablesSort';
 
 export type GetApiV1OrganizationsOrgIdReceivablesParams = {
 /**
@@ -19,6 +20,12 @@ page?: number;
  * @maximum 100
  */
 pageSize?: number;
+/**
+ * @maxLength 200
+ */
+q?: string;
+sort?: GetApiV1OrganizationsOrgIdReceivablesSort;
+order?: GetApiV1OrganizationsOrgIdReceivablesOrder;
 displayStatus?: GetApiV1OrganizationsOrgIdReceivablesDisplayStatus;
 /**
  * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
@@ -36,5 +43,4 @@ dueBefore?: string;
  * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
  */
 dueAfter?: string;
-order?: GetApiV1OrganizationsOrgIdReceivablesOrder;
 };

@@ -24,7 +24,7 @@ pageSize?: number;
  * @maxLength 200
  */
 q?: string;
-isActive?: GetApiV1OrganizationsOrgIdBillingConceptsIsActive;
 sort?: GetApiV1OrganizationsOrgIdBillingConceptsSort;
 order?: GetApiV1OrganizationsOrgIdBillingConceptsOrder;
+isActive?: GetApiV1OrganizationsOrgIdBillingConceptsIsActive;
 };
