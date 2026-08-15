@@ -5,6 +5,7 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { CreateOrganizationInputType } from './createOrganizationInputType';
 
 export interface CreateOrganizationInput {
   /**
@@ -14,6 +15,7 @@ export interface CreateOrganizationInput {
   name: string;
   legalName?: string | null;
   taxId?: string | null;
+  type?: CreateOrganizationInputType;
   /**
      * @minLength 3
      * @maxLength 3

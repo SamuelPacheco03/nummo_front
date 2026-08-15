@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { UpdateOrganizationInputStatus } from './updateOrganizationInputStatus';
+import type { UpdateOrganizationInputType } from './updateOrganizationInputType';
 
 export interface UpdateOrganizationInput {
   /**
@@ -19,5 +20,6 @@ export interface UpdateOrganizationInput {
   timezone?: string;
   /** @maxLength 20 */
   locale?: string;
+  type?: UpdateOrganizationInputType;
   status?: UpdateOrganizationInputStatus;
 }

@@ -26,6 +26,7 @@ import type {
 
 import type {
   AddMemberInput,
+  ApplyTemplateInput,
   Branch,
   CreateBranchInput,
   CreateOrganizationInput,
@@ -34,6 +35,7 @@ import type {
   Organization,
   OrganizationSettings,
   OrganizationSummary,
+  ProvisionSummary,
   UpdateBranchInput,
   UpdateMemberRoleInput,
   UpdateOrganizationInput,
@@ -478,6 +480,97 @@ export const usePatchApiV1OrganizationsOrgId = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getPatchApiV1OrganizationsOrgIdMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdApplyTemplateResponse200 = {
+  data: ProvisionSummary
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdApplyTemplateResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdApplyTemplateResponseSuccess = (postApiV1OrganizationsOrgIdApplyTemplateResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdApplyTemplateResponseError = (postApiV1OrganizationsOrgIdApplyTemplateResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdApplyTemplateResponse = (postApiV1OrganizationsOrgIdApplyTemplateResponseSuccess | postApiV1OrganizationsOrgIdApplyTemplateResponseError)
+
+export const getPostApiV1OrganizationsOrgIdApplyTemplateUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/apply-template`
+}
+
+/**
+ * Seeds sensible billing concepts, expense categories, payment methods and accounts for the organization vertical. Skips items that already exist, so it is safe to call more than once. Body `type` overrides the stored organization type.
+ * @summary Apply the default master-data template for a vertical (OWNER/ADMIN, idempotent)
+ */
+export const postApiV1OrganizationsOrgIdApplyTemplate = async (orgId: string,
+    applyTemplateInput: ApplyTemplateInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdApplyTemplateResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdApplyTemplateResponse>(getPostApiV1OrganizationsOrgIdApplyTemplateUrl(orgId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(applyTemplateInput)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdApplyTemplateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>, TError,{orgId: string;data: ApplyTemplateInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>, TError,{orgId: string;data: ApplyTemplateInput}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdApplyTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>, {orgId: string;data: ApplyTemplateInput}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdApplyTemplate(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdApplyTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>>
+    export type PostApiV1OrganizationsOrgIdApplyTemplateMutationBody = ApplyTemplateInput
+    export type PostApiV1OrganizationsOrgIdApplyTemplateMutationError = ErrorResponse
+
+    /**
+ * @summary Apply the default master-data template for a vertical (OWNER/ADMIN, idempotent)
+ */
+export const usePostApiV1OrganizationsOrgIdApplyTemplate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>, TError,{orgId: string;data: ApplyTemplateInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>,
+        TError,
+        {orgId: string;data: ApplyTemplateInput},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdApplyTemplateMutationOptions(options), queryClient);
     }
     export type getApiV1OrganizationsOrgIdSettingsResponse200 = {
   data: OrganizationSettings

@@ -5,15 +5,8 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateExpenseCategoryScope } from './createExpenseCategoryScope';
+import type { ApplyTemplateInputType } from './applyTemplateInputType';
 
-export interface CreateExpenseCategory {
-  code?: string | null;
-  /**
-     * @minLength 1
-     * @maxLength 160
-     */
-  name: string;
-  description?: string | null;
-  scope?: CreateExpenseCategoryScope;
+export interface ApplyTemplateInput {
+  type?: ApplyTemplateInputType;
 }
