@@ -1,6 +1,19 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-15 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA.**
+**Fecha:** 2026-08-15 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–B).**
+
+## 💬 Chat de Numi (asistente) — ya consultable
+
+Numi (el asistente) ya responde y **consulta datos** por chat (regenera con `pnpm api:gen`):
+
+- `POST /api/v1/organizations/:orgId/assistant/chat` — body `{ message, sessionId? }` → `{ sessionId, reply }`. **Cualquier miembro**; requiere `x-csrf-token`. Guarda el `sessionId` y reenvíalo para continuar la conversación (memoria de ~3 turnos, server-side en Redis).
+- Requiere que un admin haya configurado un **proveedor de IA activo** (ver sección BYOK abajo). Si no hay, responde con un mensaje claro pidiendo configurarlo.
+- Hoy Numi puede: **buscar contactos**, **listar** cuentas/métodos/conceptos/categorías/sedes y **consultar reportes** (flujo de caja, cartera, próximos a vencer, top deudores, etc.). **Registrar/crear** (pagos, egresos, contratos, transferencias) llega en la siguiente fase.
+- UX sugerida: panel de chat que muestra `reply` y persiste `sessionId` por conversación.
+
+## 🔁 Paginación de listas (unificada)
+
+Las listas del backend aceptan de forma consistente `q` (búsqueda), `sort` y `order`. Los valores válidos de `sort` dependen de cada lista (p. ej. receivables: `dueDate | balance | originalAmount`; los maestros: `name | createdAt`). Regenera el cliente para tomar los enums nuevos: `pnpm api:gen`.
 
 ## 🤖 Configuración del asistente IA (BYOK) — para construir la pantalla de ajustes
 
