@@ -1,3 +1,8 @@
+# App única (no monorepo): el paquete raíz es el único del "workspace".
+# Sin este `packages`, pnpm 9 falla con "packages field missing or empty".
+packages:
+  - '.'
+# Aprobar el build script de esbuild (pnpm 10+ lo lee aquí; pnpm 9, en package.json).
 allowBuilds:
   esbuild: true
 onlyBuiltDependencies:
