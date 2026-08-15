@@ -105,6 +105,7 @@ export function ScheduleDetailPage() {
       >
         <DetailSection title="Detalle">
           <DetailRows>
+            <DetailRow label="Referencia">{s.name}</DetailRow>
             <DetailRow label="Proveedor">{supplier?.displayName ?? '—'}</DetailRow>
             <DetailRow label="Categoría">{categoryName ?? '—'}</DetailRow>
             <DetailRow label="Recurrencia">

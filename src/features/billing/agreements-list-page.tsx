@@ -97,6 +97,7 @@ export function AgreementsListPage() {
         <span className="min-w-0 truncate font-medium">{contactMap.get(a.payerContactId) ?? '—'}</span>
         <span className="nums shrink-0 font-medium">{formatAmount(a.agreedAmount, a.currency)}</span>
       </div>
+      {a.name && <div className="truncate text-xs text-muted-foreground">{a.name}</div>}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{conceptMap.get(a.billingConceptId) ?? '—'}</span>
         <span aria-hidden>·</span>

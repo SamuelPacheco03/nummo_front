@@ -79,6 +79,7 @@ export function SchedulesListPage() {
         <span className="min-w-0 truncate font-medium">{contactMap.get(s.supplierContactId) ?? '—'}</span>
         <span className="nums shrink-0 font-medium">{formatAmount(s.agreedAmount, s.currency)}</span>
       </div>
+      {s.name && <div className="truncate text-xs text-muted-foreground">{s.name}</div>}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{categoryMap.get(s.expenseCategoryId) ?? '—'}</span>
         <span aria-hidden>·</span>

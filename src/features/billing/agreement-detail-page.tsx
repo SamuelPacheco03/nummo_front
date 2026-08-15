@@ -164,6 +164,7 @@ export function AgreementDetailPage() {
         <h2 className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">Detalle</h2>
         <Card className="gap-0 py-0">
           <dl className="divide-y">
+            <InfoRow label="Referencia">{agreement.name}</InfoRow>
             <InfoRow label="Pagador">
               {payer ? (
                 <Link to={`/contactos/${payer.id}`} className="font-medium hover:underline">
