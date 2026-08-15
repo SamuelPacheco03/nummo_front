@@ -13,6 +13,7 @@ import {
   usePatchApiV1OrganizationsOrgId,
   usePatchApiV1OrganizationsOrgIdBranchesBranchId,
   usePatchApiV1OrganizationsOrgIdMembersMembershipId,
+  usePostApiV1OrganizationsOrgIdApplyTemplate,
   usePostApiV1OrganizationsOrgIdBranches,
   usePostApiV1OrganizationsOrgIdMembers,
   usePutApiV1OrganizationsOrgIdSettings,
@@ -51,6 +52,20 @@ export function useUpdateOrg(orgId: string) {
         void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdQueryKey(orgId) })
         void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsQueryKey() })
       },
+    },
+  })
+}
+
+/**
+ * Aprovisiona la organización con una plantilla según su tipo (crea conceptos,
+ * categorías, métodos y cuentas de ejemplo). Invalida todo el cache porque
+ * siembra datos en varios maestros a la vez.
+ */
+export function useApplyTemplate() {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdApplyTemplate({
+    mutation: {
+      onSuccess: () => void qc.invalidateQueries(),
     },
   })
 }

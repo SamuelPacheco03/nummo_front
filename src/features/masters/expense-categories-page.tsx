@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
@@ -26,15 +27,23 @@ const schema = z.object({
   code: z.string().trim().max(40).optional(),
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
   description: z.string().trim().max(500).optional(),
+  scope: z.enum(['BUSINESS', 'PERSONAL']),
   isActive: z.boolean().optional(),
 })
 type Values = z.infer<typeof schema>
+
+const SCOPES = ['BUSINESS', 'PERSONAL'] as const
+const SCOPE_LABELS: Record<Values['scope'], string> = {
+  BUSINESS: 'Negocio',
+  PERSONAL: 'Personal',
+}
 
 const nn = (v?: string) => (v ? v : null)
 
 const COLUMNS: Column<ExpenseCategory>[] = [
   { header: 'Código', cell: (r) => r.code ?? '—', className: 'nums text-muted-foreground' },
   { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
+  { header: 'Ámbito', cell: (r) => SCOPE_LABELS[r.scope] ?? r.scope, className: 'text-muted-foreground' },
   {
     header: 'Descripción',
     cell: (r) => r.description ?? '—',
@@ -70,12 +79,13 @@ function CategoryDialog({
         code: editing?.code ?? '',
         name: editing?.name ?? '',
         description: editing?.description ?? '',
+        scope: editing?.scope ?? 'BUSINESS',
         isActive: editing?.isActive ?? true,
       })
   }, [open, editing, reset])
 
   const onSubmit = handleSubmit(async (v) => {
-    const data = { code: nn(v.code), name: v.name, description: nn(v.description) }
+    const data = { code: nn(v.code), name: v.name, description: nn(v.description), scope: v.scope }
     try {
       if (isEdit && editing) {
         await update.mutateAsync({ orgId, id: editing.id, data: { ...data, isActive: v.isActive } })
@@ -105,6 +115,20 @@ function CategoryDialog({
               <Input id="ec-name" placeholder="Servicios públicos" {...register('name')} />
             </Field>
           </div>
+          <Field
+            label="Ámbito"
+            htmlFor="ec-scope"
+            info="Negocio: gastos de la operación. Personal: gastos personales del titular (para separarlos en informes)."
+            error={errors.scope?.message}
+          >
+            <NativeSelect id="ec-scope" {...register('scope')}>
+              {SCOPES.map((s) => (
+                <option key={s} value={s}>
+                  {SCOPE_LABELS[s]}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
           <Field label="Descripción" htmlFor="ec-desc" error={errors.description?.message}>
             <Textarea id="ec-desc" rows={2} {...register('description')} />
           </Field>
