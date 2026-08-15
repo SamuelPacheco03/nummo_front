@@ -1,0 +1,32 @@
+export const AGREEMENT_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Activo',
+  PAUSED: 'Pausado',
+  ENDED: 'Finalizado',
+  CANCELLED: 'Cancelado',
+}
+
+export const RECURRENCE_LABELS: Record<string, string> = {
+  MONTHLY: 'Mensual',
+}
+
+export const CALC_METHOD_LABELS: Record<string, string> = {
+  DAILY_SIMPLE_PERCENT: 'Interés simple diario (%)',
+  MONTHLY_SIMPLE_PRORATED: 'Mensual simple prorrateado',
+  FIXED_ONCE: 'Cargo fijo único',
+}
+
+export const CALC_METHODS = ['DAILY_SIMPLE_PERCENT', 'MONTHLY_SIMPLE_PRORATED', 'FIXED_ONCE'] as const
+
+export const BASE_TYPE_LABELS: Record<string, string> = {
+  ORIGINAL_AMOUNT: 'Monto original',
+  OUTSTANDING_NON_INTEREST: 'Saldo sin interés',
+}
+
+export const BASE_TYPES = ['ORIGINAL_AMOUNT', 'OUTSTANDING_NON_INTEREST'] as const
+
+/** Color de estado del acuerdo (para el punto de estado). */
+export function agreementStatusTone(status: string): 'success' | 'warning' | 'muted' {
+  if (status === 'ACTIVE') return 'success'
+  if (status === 'PAUSED') return 'warning'
+  return 'muted'
+}
