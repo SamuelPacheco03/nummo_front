@@ -2,6 +2,16 @@
 
 **Fecha:** 2026-08-13 · **Estado del backend: V1 COMPLETO (Fases 0–8).**
 
+## ✅ Completado: página de registro (`/register`)
+El alta de cuentas es **registro público** (decidido). **Implementado en el front** (commit `4de5437`): pantalla `/register`, `AuthLayout` compartido con login, enlaces de ida y vuelta login↔registro, pista en el modal "Agregar miembro" y tests. Lo pedido, ya cubierto:
+
+- ✅ `POST /api/v1/auth/register` — body `{ email, password, fullName }` (password **mín. 8**), con `x-csrf-token` automático. Devuelve **201** con el `User`.
+- ✅ **No** inicia sesión automáticamente: tras el 201 redirige a **login** con el email precargado + toast.
+- ✅ Recién registrado el usuario **no tiene organización** → no ve datos hasta que un **owner lo agregue** en "Agregar miembro" por su email (nota visible en la propia pantalla).
+- ✅ Flujo completo: persona se registra en `/register` → le pasa su email al owner → el owner la agrega y le asigna rol.
+- ✅ Enlace **"¿No tienes cuenta? Regístrate"** en el login y pista de registro en el modal "Agregar miembro".
+- ✅ **Rate-limit** (429) manejado con mensaje amable (vía `getErrorMessage`).
+
 ## Aviso
 El backend terminó todas sus fases. El contrato `openapi.json` está **congelado como v1.0.0** con **73 endpoints**. Regenera tu cliente:
 
