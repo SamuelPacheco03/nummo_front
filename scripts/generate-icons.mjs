@@ -85,6 +85,37 @@ async function square(mark, size, { ratio = 1, background = null } = {}) {
     .toBuffer()
 }
 
+/**
+ * Empaqueta varios PNG en un .ico. El formato admite PNG embebido desde Vista,
+ * así que no hace falta bitmap crudo. Lo servimos porque el navegador pide
+ * `/favicon.ico` por su cuenta cuando el <link> falla o está cacheado a un
+ * icono viejo, y ahí un 404 se ve como el globo genérico.
+ */
+function buildIco(frames) {
+  const header = Buffer.alloc(6)
+  header.writeUInt16LE(0, 0) // reservado
+  header.writeUInt16LE(1, 2) // 1 = icono
+  header.writeUInt16LE(frames.length, 4)
+
+  const directory = Buffer.alloc(16 * frames.length)
+  let offset = header.length + directory.length
+
+  frames.forEach(({ size, png }, i) => {
+    const at = i * 16
+    directory[at] = size >= 256 ? 0 : size // 0 significa 256
+    directory[at + 1] = size >= 256 ? 0 : size
+    directory[at + 2] = 0 // colores de la paleta (0 = sin paleta)
+    directory[at + 3] = 0 // reservado
+    directory.writeUInt16LE(1, at + 4) // planos
+    directory.writeUInt16LE(32, at + 6) // bits por píxel
+    directory.writeUInt32LE(png.length, at + 8)
+    directory.writeUInt32LE(offset, at + 12)
+    offset += png.length
+  })
+
+  return Buffer.concat([header, directory, ...frames.map((f) => f.png)])
+}
+
 async function main() {
   await mkdir(ICONS, { recursive: true })
   const mark = await buildTransparentMark()
@@ -119,9 +150,15 @@ async function main() {
     await square(mark, 180, { ratio: 0.8, background: BG }),
   )
 
-  // Favicons (PNG: soportado por todos los navegadores modernos).
+  // Favicons PNG para el <link>, e .ico para la petición implícita del navegador.
   await writeFile(path.join(PUBLIC, 'favicon-32.png'), await square(mark, 32, { ratio: 1 }))
   await writeFile(path.join(PUBLIC, 'favicon-96.png'), await square(mark, 96, { ratio: 1 }))
+
+  const icoSizes = [16, 32, 48]
+  const frames = await Promise.all(
+    icoSizes.map(async (size) => ({ size, png: await square(mark, size, { ratio: 1 }) })),
+  )
+  await writeFile(path.join(PUBLIC, 'favicon.ico'), buildIco(frames))
 
   console.log('Iconos generados en public/ y public/icons/')
 }

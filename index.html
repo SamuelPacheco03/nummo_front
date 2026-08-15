@@ -10,7 +10,10 @@
       content="Nummo: administración financiera y de cartera multiempresa. Contactos, cobros, gastos y cuentas con control por roles."
     />
 
-    <!-- Favicons e icono de inicio (iOS ignora el manifest para esto) -->
+    <!-- Favicons e icono de inicio (iOS ignora el manifest para esto).
+         El .ico va primero y lleva 16/32/48 dentro: es lo que pide el navegador
+         por su cuenta cuando el <link> falla o tiene cacheado un icono anterior. -->
+    <link rel="icon" sizes="48x48" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
         // no queremos recargar bajo los pies de alguien a medio formulario.
         registerType: 'prompt',
         injectRegister: null, // el registro lo hace src/pwa/register.ts
-        includeAssets: ['favicon-32.png', 'favicon-96.png', 'apple-touch-icon.png'],
+        includeAssets: ['favicon.ico', 'favicon-32.png', 'favicon-96.png', 'apple-touch-icon.png'],
         manifest: {
           id: '/',
           name: 'Nummo · Administración financiera',
@@ -81,7 +81,7 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           // Shell de la app precacheado (app-shell + assets con hash).
-          globPatterns: ['**/*.{js,css,html,png,svg,webmanifest,woff2}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
           // El chunk principal supera los 2 MiB por defecto solo en algunos builds;
           // 4 MiB deja margen sin volverse un cajón de sastre.
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
