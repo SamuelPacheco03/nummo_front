@@ -30,6 +30,36 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
   )
 }
 
+/** BarList de recurrentes con "Ver N más / Ver menos" que expande la lista de verdad. */
+function RecurringBars({
+  items,
+  tone,
+  currency,
+  emptyLabel,
+}: {
+  items: { id: string; name: string; amount: string }[]
+  tone: string
+  currency?: string
+  emptyLabel: string
+}) {
+  const [showAll, setShowAll] = useState(false)
+  const shown = showAll ? items : items.slice(0, TOP_N)
+  return (
+    <div className="space-y-3">
+      <BarList items={shown} tone={tone} currency={currency} emptyLabel={emptyLabel} />
+      {items.length > TOP_N && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="text-xs font-medium text-brand hover:underline"
+        >
+          {showAll ? 'Ver menos' : `Ver ${items.length - TOP_N} más`}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function ReportsPortfolioPage() {
   const { orgId, organization } = useCurrentOrg()
   const currency = organization?.defaultCurrency
@@ -149,10 +179,7 @@ export function ReportsPortfolioPage() {
             />
           </div>
           <Panel title="Ingresos recurrentes por acuerdo" hint="cada mes">
-            <BarList items={incomeBars.slice(0, TOP_N)} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
-            {incomeBars.length > TOP_N && (
-              <p className="pt-2 text-xs text-muted-foreground">y {incomeBars.length - TOP_N} más…</p>
-            )}
+            <RecurringBars items={incomeBars} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
           </Panel>
           <PendingDuesPanel
             title="Cobros pendientes"
@@ -179,10 +206,7 @@ export function ReportsPortfolioPage() {
             />
           </div>
           <Panel title="Egresos recurrentes" hint="cada mes">
-            <BarList items={expenseBars.slice(0, TOP_N)} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
-            {expenseBars.length > TOP_N && (
-              <p className="pt-2 text-xs text-muted-foreground">y {expenseBars.length - TOP_N} más…</p>
-            )}
+            <RecurringBars items={expenseBars} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
           </Panel>
           <PendingDuesPanel
             title="Pagos pendientes"
