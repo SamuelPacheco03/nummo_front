@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Download } from 'lucide-react'
+import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { DataTable, type Column } from '@/components/ui/data-table'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -29,6 +30,8 @@ export type DueRow = {
 }
 
 type Filter = 'all' | 'overdue' | 'upcoming'
+
+const PAGE_SIZE = 8
 
 function StatusChip({ row }: { row: DueRow }) {
   return (
@@ -69,6 +72,12 @@ export function PendingDuesPanel({
 
   const total = filtered.reduce((s, r) => s + (Number(r.balance) || 0), 0)
   const overdueCount = rows.filter((r) => r.isOverdue).length
+
+  const [page, setPage] = useState(1)
+  useEffect(() => setPage(1), [filter])
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const onExport = () =>
     downloadCsv(
@@ -135,7 +144,7 @@ export function PendingDuesPanel({
 
       <DataTable
         columns={columns}
-        rows={filtered}
+        rows={paged}
         getKey={(r) => r.id}
         renderCard={renderCard}
         emptyText={rows.length === 0 ? emptyLabel : 'Nada en este filtro.'}
@@ -149,6 +158,16 @@ export function PendingDuesPanel({
           </span>
           <span className="nums font-medium">Total: {formatAmount(total.toFixed(2), currency)}</span>
         </div>
+      )}
+
+      {filtered.length > PAGE_SIZE && (
+        <Pagination
+          page={safePage}
+          pageSize={PAGE_SIZE}
+          total={filtered.length}
+          totalPages={totalPages}
+          onPage={setPage}
+        />
       )}
     </section>
   )

@@ -1,7 +1,8 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { PageHeader } from '@/components/page-header'
 import { KpiTile } from '@/components/kpi-tile'
 import { BarList } from '@/components/bar-list'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useContacts } from '@/features/contacts/hooks'
 import { useReceivables } from '@/features/receivables/hooks'
@@ -10,10 +11,12 @@ import { useAgreements } from '@/features/billing/hooks'
 import { RECEIVABLE_STATUS_LABELS, receivableStatusTone } from '@/features/receivables/labels'
 import { EXPENSE_STATUS_LABELS, expenseStatusTone } from '@/features/expenses/labels'
 import { formatAmount } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { PendingDuesPanel, type DueRow } from './pending-dues-panel'
 import { usePayablesSummary, useReceivablesSummary } from './hooks'
 
 const OPEN = new Set(['PENDING', 'PARTIAL', 'OVERDUE'])
+const TOP_N = 6
 
 function Panel({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
@@ -30,6 +33,7 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
 export function ReportsPortfolioPage() {
   const { orgId, organization } = useCurrentOrg()
   const currency = organization?.defaultCurrency
+  const [tab, setTab] = useState<'cobros' | 'pagos'>('cobros')
 
   const { summary: cxc } = useReceivablesSummary(orgId)
   const { summary: cxp } = usePayablesSummary(orgId)
@@ -47,6 +51,7 @@ export function ReportsPortfolioPage() {
   const activeSchedules = useMemo(() => schedules.filter((s) => s.status === 'ACTIVE'), [schedules])
   const monthlyIncome = activeAgreements.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
   const monthlyExpense = activeSchedules.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
+  const netMonthly = monthlyIncome - monthlyExpense
 
   const incomeBars = useMemo(
     () =>
@@ -100,78 +105,95 @@ export function ReportsPortfolioPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Cobros y pagos"
         description="Lo que hay que cobrar y pagar, y lo que esperas cada mes según lo configurado."
       />
 
-      {/* Estado actual */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiTile
-          label="Por cobrar"
-          value={formatAmount(cxc?.totalOutstanding ?? '0', currency)}
-          sub={`${cxc?.pendingCount ?? 0} pend. · ${cxc?.partialCount ?? 0} parc.`}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl
+          aria-label="Ver cobros o pagos"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'cobros', label: 'Cobros' },
+            { value: 'pagos', label: 'Pagos' },
+          ]}
         />
-        <KpiTile
-          label="Cartera vencida"
-          value={formatAmount(cxc?.overdueAmount ?? '0', currency)}
-          sub={`${cxc?.overdueCount ?? 0} vencidas`}
-        />
-        <KpiTile label="Por pagar" value={formatAmount(cxp?.totalOutstanding ?? '0', currency)} />
-        <KpiTile
-          label="Por pagar vencido"
-          value={formatAmount(cxp?.overdueAmount ?? '0', currency)}
-          sub={`${cxp?.overdueCount ?? 0} vencidas`}
-        />
+        <span className="text-sm text-muted-foreground">
+          Neto recurrente:{' '}
+          <span className={cn('nums font-medium', netMonthly < 0 ? 'text-destructive' : 'text-foreground')}>
+            {formatAmount(netMonthly.toFixed(2), currency)}/mes
+          </span>
+        </span>
       </div>
 
-      {/* Compromiso recurrente (proyección de lo configurado) */}
-      <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <KpiTile
-            label="Ingresos/mes esperados"
-            value={formatAmount(monthlyIncome.toFixed(2), currency)}
-            sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
-          />
-          <KpiTile
-            label="Egresos/mes esperados"
-            value={formatAmount(monthlyExpense.toFixed(2), currency)}
-            sub={`${activeSchedules.length} recurrente(s) activo(s)`}
-          />
-          <KpiTile
-            label="Neto/mes esperado"
-            value={formatAmount((monthlyIncome - monthlyExpense).toFixed(2), currency)}
-            sub="según lo configurado"
-          />
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
+      {tab === 'cobros' ? (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <KpiTile
+              label="Por cobrar"
+              value={formatAmount(cxc?.totalOutstanding ?? '0', currency)}
+              sub={`${cxc?.pendingCount ?? 0} pend. · ${cxc?.partialCount ?? 0} parc.`}
+            />
+            <KpiTile
+              label="Cartera vencida"
+              value={formatAmount(cxc?.overdueAmount ?? '0', currency)}
+              sub={`${cxc?.overdueCount ?? 0} vencidas`}
+            />
+            <KpiTile
+              label="Ingresos/mes esperados"
+              value={formatAmount(monthlyIncome.toFixed(2), currency)}
+              sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
+            />
+          </div>
           <Panel title="Ingresos recurrentes por acuerdo" hint="cada mes">
-            <BarList items={incomeBars} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
+            <BarList items={incomeBars.slice(0, TOP_N)} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
+            {incomeBars.length > TOP_N && (
+              <p className="pt-2 text-xs text-muted-foreground">y {incomeBars.length - TOP_N} más…</p>
+            )}
           </Panel>
-          <Panel title="Egresos recurrentes" hint="cada mes">
-            <BarList items={expenseBars} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
-          </Panel>
+          <PendingDuesPanel
+            title="Cobros pendientes"
+            nameHeader="Pagador"
+            rows={receivableRows}
+            csvFile="cobros-pendientes.csv"
+            currency={currency}
+            emptyLabel="No hay cuentas por cobrar abiertas. 🎉"
+          />
         </div>
-      </div>
-
-      {/* Pendiente ahora (accionable) */}
-      <PendingDuesPanel
-        title="Cobros pendientes"
-        nameHeader="Pagador"
-        rows={receivableRows}
-        csvFile="cobros-pendientes.csv"
-        currency={currency}
-        emptyLabel="No hay cuentas por cobrar abiertas. 🎉"
-      />
-      <PendingDuesPanel
-        title="Pagos pendientes"
-        nameHeader="Proveedor"
-        rows={expenseRows}
-        csvFile="pagos-pendientes.csv"
-        currency={currency}
-        emptyLabel="No hay cuentas por pagar abiertas. 🎉"
-      />
+      ) : (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <KpiTile label="Por pagar" value={formatAmount(cxp?.totalOutstanding ?? '0', currency)} />
+            <KpiTile
+              label="Por pagar vencido"
+              value={formatAmount(cxp?.overdueAmount ?? '0', currency)}
+              sub={`${cxp?.overdueCount ?? 0} vencidas`}
+            />
+            <KpiTile
+              label="Egresos/mes esperados"
+              value={formatAmount(monthlyExpense.toFixed(2), currency)}
+              sub={`${activeSchedules.length} recurrente(s) activo(s)`}
+            />
+          </div>
+          <Panel title="Egresos recurrentes" hint="cada mes">
+            <BarList items={expenseBars.slice(0, TOP_N)} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
+            {expenseBars.length > TOP_N && (
+              <p className="pt-2 text-xs text-muted-foreground">y {expenseBars.length - TOP_N} más…</p>
+            )}
+          </Panel>
+          <PendingDuesPanel
+            title="Pagos pendientes"
+            nameHeader="Proveedor"
+            rows={expenseRows}
+            csvFile="pagos-pendientes.csv"
+            currency={currency}
+            emptyLabel="No hay cuentas por pagar abiertas. 🎉"
+          />
+        </div>
+      )}
     </div>
   )
 }
