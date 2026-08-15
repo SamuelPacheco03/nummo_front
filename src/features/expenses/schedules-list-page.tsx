@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, Outlet, useNavigate } from 'react-router'
 import { ChevronRight, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
@@ -128,6 +128,9 @@ export function SchedulesListPage() {
           )}
         </>
       )}
+
+      {/* Detalle en cajón: ruta hija, la lista se queda montada detrás. */}
+      <Outlet />
     </div>
   )
 }

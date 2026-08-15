@@ -1,35 +1,23 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Ban, Coins, XCircle } from 'lucide-react'
+import { Ban, Coins, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
 import { useContact } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import type { ReactNode } from 'react'
 import { ExpenseStatusPill } from './expenses-list-page'
 import { useCancelExpense, useExpense, useWriteOffExpense } from './hooks'
 
-function Row({ label, children, strong }: { label: string; children: ReactNode; strong?: boolean }) {
-  if (children == null || children === '') return null
-  return (
-    <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn('nums text-right', strong && 'font-semibold')}>{children}</span>
-    </div>
-  )
-}
-
+const LIST = '/gastos/cxp'
 const CLOSED = new Set(['CANCELLED', 'WRITTEN_OFF'])
 
+/** Ficha de una cuenta por pagar. Abre como cajón sobre la lista. */
 export function ExpenseDetailPage() {
   const { expenseId } = useParams()
   const { orgId, role } = useCurrentOrg()
@@ -44,31 +32,25 @@ export function ExpenseDetailPage() {
 
   const e = detail?.expense
   const { contact: supplier } = useContact(orgId, e?.supplierContactId)
-  const { items: categories } = useExpenseCategories(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const { items: categories } = useExpenseCategories(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
   const categoryName = useMemo(
     () => categories.find((c) => c.id === e?.expenseCategoryId)?.name,
     [categories, e],
   )
 
-  if (isPending) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-9 w-56" />
-        <Skeleton className="h-56 w-full" />
-      </div>
-    )
-  }
+  if (isPending) return <DetailDrawer closeTo={LIST} loading />
   if (isError || !detail || !e) {
     return (
-      <div className="space-y-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/gastos/cxp">
-            <ArrowLeft className="size-4" />
-            Cuentas por pagar
-          </Link>
-        </Button>
-        <p className="text-sm text-destructive">{getErrorMessage(error, 'No se encontró el gasto.')}</p>
-      </div>
+      <DetailDrawer
+        closeTo={LIST}
+        title="Cuenta por pagar"
+        error={getErrorMessage(error, 'No se encontró el gasto.')}
+      />
     )
   }
 
@@ -87,69 +69,67 @@ export function ExpenseDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-          <Link to="/gastos/cxp">
-            <ArrowLeft className="size-4" />
-            Cuentas por pagar
-          </Link>
-        </Button>
-        <PageHeader
-          title={supplier?.displayName ?? 'Gasto'}
-          description={
-            <span className="flex items-center gap-2">
-              {categoryName ?? '—'}
-              <span className="text-border">·</span>
-              <ExpenseStatusPill status={status} />
-            </span>
-          }
-        >
-          {canPay && !isClosed && (
-            <Button asChild size="sm">
-              <Link to={`/gastos/egresos/nuevo?supplier=${e.supplierContactId}`}>
-                <Coins className="size-4" />
-                Registrar egreso
-              </Link>
-            </Button>
-          )}
-          {canManage && !isClosed && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setCancelOpen(true)}>
-                <XCircle className="size-4" />
-                Cancelar
+    <>
+      <DetailDrawer
+        closeTo={LIST}
+        title={supplier?.displayName ?? 'Gasto'}
+        meta={
+          <span className="flex items-center gap-2">
+            {categoryName ?? '—'}
+            <span className="text-border">·</span>
+            <ExpenseStatusPill status={status} />
+          </span>
+        }
+        // La cifra que se viene a consultar es el saldo, no el valor original.
+        amount={formatAmount(b?.balance ?? e.originalAmount, e.currency)}
+        actions={
+          <>
+            {canPay && !isClosed && (
+              <Button asChild size="sm">
+                <Link to={`/gastos/egresos/nuevo?supplier=${e.supplierContactId}`}>
+                  <Coins className="size-4" />
+                  Registrar egreso
+                </Link>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setWriteOffOpen(true)}>
-                <Ban className="size-4" />
-                Castigar
-              </Button>
-            </>
-          )}
-        </PageHeader>
-      </div>
+            )}
+            {canManage && !isClosed && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setCancelOpen(true)}>
+                  <XCircle className="size-4" />
+                  Cancelar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setWriteOffOpen(true)}>
+                  <Ban className="size-4" />
+                  Castigar
+                </Button>
+              </>
+            )}
+          </>
+        }
+      >
+        <DetailSection title="Saldo">
+          <DetailRows>
+            <DetailRow label="Valor original">
+              {formatAmount(b?.originalAmount ?? e.originalAmount, e.currency)}
+            </DetailRow>
+            {b && Number(b.paidTotal) !== 0 && (
+              <DetailRow label="Pagado">− {formatAmount(b.paidTotal, e.currency)}</DetailRow>
+            )}
+            <DetailRow label="Saldo" strong>
+              {formatAmount(b?.balance ?? e.originalAmount, e.currency)}
+            </DetailRow>
+          </DetailRows>
+        </DetailSection>
 
-      <section>
-        <h2 className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">Saldo</h2>
-        <Card className="gap-0 py-0">
-          <div className="divide-y">
-            <Row label="Valor original">{formatAmount(b?.originalAmount ?? e.originalAmount, e.currency)}</Row>
-            {b && Number(b.paidTotal) !== 0 && <Row label="Pagado">− {formatAmount(b.paidTotal, e.currency)}</Row>}
-            <Row label="Saldo" strong>{formatAmount(b?.balance ?? e.originalAmount, e.currency)}</Row>
-          </div>
-        </Card>
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">Detalle</h2>
-        <Card className="gap-0 py-0">
-          <div className="divide-y">
-            <Row label="Vence">{formatDateHuman(e.dueDate)}</Row>
-            <Row label="Emitido">{e.issueDate}</Row>
-            {e.notes && <Row label="Notas">{e.notes}</Row>}
-            {e.cancellationReason && <Row label="Motivo cierre">{e.cancellationReason}</Row>}
-          </div>
-        </Card>
-      </section>
+        <DetailSection title="Detalle">
+          <DetailRows>
+            <DetailRow label="Vence">{formatDateHuman(e.dueDate)}</DetailRow>
+            <DetailRow label="Emitido">{e.issueDate}</DetailRow>
+            <DetailRow label="Notas">{e.notes}</DetailRow>
+            <DetailRow label="Motivo cierre">{e.cancellationReason}</DetailRow>
+          </DetailRows>
+        </DetailSection>
+      </DetailDrawer>
 
       <ConfirmDialog
         open={cancelOpen}
@@ -171,6 +151,6 @@ export function ExpenseDetailPage() {
         loading={writeOff.isPending}
         onConfirm={() => runClose(writeOff, 'Gasto castigado', () => setWriteOffOpen(false))}
       />
-    </div>
+    </>
   )
 }

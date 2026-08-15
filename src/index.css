@@ -239,4 +239,54 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
   }
+
+  /*
+    Cajón de detalle (DetailDrawer): entra desde abajo en móvil y desde la
+    derecha en ≥sm. Va aquí y no en utilidades de Tailwind porque cambia de eje
+    con el breakpoint, y mezclar `slide-in-from-bottom` con `sm:slide-in-from-right`
+    deja las dos traslaciones activas y el panel entra en diagonal.
+  */
+  .animate-drawer {
+    animation: drawer-in-y 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .animate-drawer[data-state='closed'] {
+    animation: drawer-out-y 0.2s ease-in;
+  }
+  @media (min-width: 40rem) {
+    .animate-drawer {
+      animation-name: drawer-in-x;
+    }
+    .animate-drawer[data-state='closed'] {
+      animation-name: drawer-out-x;
+    }
+  }
+  /* Radix desmonta al terminar la animación: se acorta, nunca se quita. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-drawer,
+    .animate-drawer[data-state='closed'] {
+      animation-duration: 1ms;
+    }
+  }
 }
+
+@keyframes drawer-in-y {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes drawer-out-y {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes drawer-in-x {
+  from {
+    transform: translateX(calc(100% + 1rem));
+  }
+}
+@keyframes drawer-out-x {
+  to {
+    transform: translateX(calc(100% + 1rem));
+  }
+}
+

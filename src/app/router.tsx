@@ -97,17 +97,20 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/payments/payments-list-page')).PaymentsListPage,
             }),
+            // El detalle es hijo: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':paymentId',
+                lazy: async () => ({
+                  Component: (await import('@/features/payments/payment-detail-page')).PaymentDetailPage,
+                }),
+              },
+            ],
           },
           {
             path: 'cartera/pagos/nuevo',
             lazy: async () => ({
               Component: (await import('@/features/payments/register-payment-page')).RegisterPaymentPage,
-            }),
-          },
-          {
-            path: 'cartera/pagos/:paymentId',
-            lazy: async () => ({
-              Component: (await import('@/features/payments/payment-detail-page')).PaymentDetailPage,
             }),
           },
           {
@@ -147,18 +150,30 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/expenses/expenses-list-page')).ExpensesListPage,
             }),
-          },
-          {
-            path: 'gastos/cxp/:expenseId',
-            lazy: async () => ({
-              Component: (await import('@/features/expenses/expense-detail-page')).ExpenseDetailPage,
-            }),
+            // El detalle es hijo: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':expenseId',
+                lazy: async () => ({
+                  Component: (await import('@/features/expenses/expense-detail-page')).ExpenseDetailPage,
+                }),
+              },
+            ],
           },
           {
             path: 'gastos/egresos',
             lazy: async () => ({
               Component: (await import('@/features/expenses/disbursements-list-page')).DisbursementsListPage,
             }),
+            // El detalle es hijo: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':disbursementId',
+                lazy: async () => ({
+                  Component: (await import('@/features/expenses/disbursement-detail-page')).DisbursementDetailPage,
+                }),
+              },
+            ],
           },
           {
             path: 'gastos/egresos/nuevo',
@@ -167,27 +182,24 @@ export const router = createBrowserRouter([
             }),
           },
           {
-            path: 'gastos/egresos/:disbursementId',
-            lazy: async () => ({
-              Component: (await import('@/features/expenses/disbursement-detail-page')).DisbursementDetailPage,
-            }),
-          },
-          {
             path: 'gastos/recurrentes',
             lazy: async () => ({
               Component: (await import('@/features/expenses/schedules-list-page')).SchedulesListPage,
             }),
+            // El detalle es hijo: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':scheduleId',
+                lazy: async () => ({
+                  Component: (await import('@/features/expenses/schedule-detail-page')).ScheduleDetailPage,
+                }),
+              },
+            ],
           },
           {
             path: 'gastos/recurrentes/nuevo',
             lazy: async () => ({
               Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
-            }),
-          },
-          {
-            path: 'gastos/recurrentes/:scheduleId',
-            lazy: async () => ({
-              Component: (await import('@/features/expenses/schedule-detail-page')).ScheduleDetailPage,
             }),
           },
           {
