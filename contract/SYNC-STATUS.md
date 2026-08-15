@@ -1,6 +1,21 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-15 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización.**
+**Fecha:** 2026-08-15 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA.**
+
+## 🤖 Configuración del asistente IA (BYOK) — para construir la pantalla de ajustes
+
+El dueño/administrador elige **proveedor + modelo + su API key** (BYOK). Endpoints nuevos, solo **OWNER/ADMIN** (regenera con `pnpm api:gen`). La API key **se guarda cifrada y NUNCA se devuelve** — solo `apiKeyLast4` (últimos 4 caracteres).
+
+- `GET /api/v1/organizations/:orgId/assistant/settings` → `{ activeProvider, providers[], catalog[] }`
+  - `catalog`: `[{ provider, label, suggestedModels[] }]` — los 4 proveedores (`anthropic`, `openai`, `google`, `deepseek`) con etiqueta y modelos sugeridos. **`model` es texto libre**; los sugeridos son solo para el dropdown.
+  - `providers`: los configurados, enmascarados: `{ provider, model, apiKeyLast4, isActive, createdAt, updatedAt }`.
+  - `activeProvider`: proveedor activo o `null`.
+- `PUT /api/v1/organizations/:orgId/assistant/providers/:provider` — body `{ model, apiKey, activate? }`. Crea/actualiza la credencial. El **primer** proveedor configurado queda activo automáticamente; usa `activate: true` para cambiar el activo. Devuelve la credencial enmascarada.
+- `POST /api/v1/organizations/:orgId/assistant/providers/:provider/activate` — marca ese proveedor como activo.
+- `DELETE /api/v1/organizations/:orgId/assistant/providers/:provider` — elimina la credencial (204).
+- `:provider` ∈ `anthropic | openai | google | deepseek`. Las mutaciones requieren `x-csrf-token`.
+
+**UX sugerida:** pantalla "Asistente / IA" en Configuración → una tarjeta por proveedor (desde `catalog`) con su estado (configurado/activo), campo de modelo (con sugerencias) y campo de API key **write-only** (mostrar `•••• {last4}` si ya existe), más botones "Activar" y "Eliminar". Nota: el **chat aún no existe**; esto es solo la configuración para cuando se construya.
 
 ## 🆕 Verticalización: tiendas, finanzas personales y montos únicos
 

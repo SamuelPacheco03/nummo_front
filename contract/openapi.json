@@ -58,6 +58,10 @@
     {
       "name": "Reports",
       "description": "Dashboard aggregations: cashflow, cartera, payables, movements"
+    },
+    {
+      "name": "Assistant",
+      "description": "AI assistant configuration: providers, models and BYOK API keys"
     }
   ],
   "paths": {
@@ -7060,6 +7064,238 @@
           }
         }
       }
+    },
+    "/api/v1/organizations/{orgId}/assistant/settings": {
+      "get": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "AI assistant settings: configured providers (masked), active provider and model catalog (OWNER/ADMIN)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assistant settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantSettings"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an OWNER/ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/providers/{provider}": {
+      "put": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Set/replace the API key + model for a provider (OWNER/ADMIN)",
+        "description": "Stores the provider API key encrypted at rest (never returned). `provider` is one of anthropic|openai|google|deepseek. The first provider configured becomes active automatically; pass `activate:true` to switch to another.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "anthropic",
+                "openai",
+                "google",
+                "deepseek"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAiProviderCredential"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved provider credential (masked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Remove a provider credential (OWNER/ADMIN)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "anthropic",
+                "openai",
+                "google",
+                "deepseek"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/providers/{provider}/activate": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Make a configured provider the active one (OWNER/ADMIN)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "anthropic",
+                "openai",
+                "google",
+                "deepseek"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activated provider credential (masked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderCredential"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -9089,6 +9325,28 @@
             "type": "boolean"
           }
         }
+      },
+      "UpsertAiProviderCredential": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "apiKey": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 400
+          },
+          "activate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "apiKey"
+        ]
       },
       "HealthResponse": {
         "type": "object",
@@ -11892,6 +12150,116 @@
           "id",
           "name",
           "amount"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantSettings": {
+        "type": "object",
+        "properties": {
+          "activeProvider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "anthropic",
+                  "openai",
+                  "google",
+                  "deepseek"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiProviderCredential"
+            }
+          },
+          "catalog": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiProviderCatalogEntry"
+            }
+          }
+        },
+        "required": [
+          "activeProvider",
+          "providers",
+          "catalog"
+        ],
+        "additionalProperties": false
+      },
+      "AiProviderCredential": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "openai",
+              "google",
+              "deepseek"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "apiKeyLast4": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "apiKeyLast4",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AiProviderCatalogEntry": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "openai",
+              "google",
+              "deepseek"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "suggestedModels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "provider",
+          "label",
+          "suggestedModels"
         ],
         "additionalProperties": false
       }
