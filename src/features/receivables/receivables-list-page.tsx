@@ -1,24 +1,28 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronRight, Loader2, Percent, Plus, RefreshCw } from 'lucide-react'
+import { Loader2, Percent, Plus, RefreshCw } from 'lucide-react'
+import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataTable, type Column } from '@/components/ui/data-table'
+import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { useContacts } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
 import type {
   AccrueInterestResult,
   GenerateReceivablesResult,
   GetApiV1OrganizationsOrgIdReceivablesParams,
+  GetApiV1OrganizationsOrgIdReceivablesSort,
+  ReceivableBalance,
 } from '@/api/generated/model'
 import { RECEIVABLE_STATUS_LABELS, TONE_DOT, receivableStatusTone } from './labels'
 import { CreateReceivableDialog } from './create-receivable-dialog'
@@ -26,6 +30,15 @@ import { useAccrueInterest, useGenerateReceivables, useReceivables } from './hoo
 
 type StatusFilter = '' | 'PENDING' | 'PARTIAL' | 'OVERDUE' | 'PAID' | 'CANCELLED' | 'WRITTEN_OFF'
 const PAGE_SIZE = 20
+
+/** Columnas ordenables que acepta el endpoint (contrato: ListReceivablesQuery). */
+const SORT_OPTIONS = [
+  { field: 'dueDate', label: 'Vencimiento' },
+  { field: 'balance', label: 'Saldo' },
+  { field: 'originalAmount', label: 'Valor original' },
+]
+
+const column = listColumns<ReceivableBalance>()
 
 export function StatusPill({ status }: { status: string }) {
   const tone = receivableStatusTone(status)
@@ -43,21 +56,28 @@ export function ReceivablesListPage() {
   const canCreate = canEditContacts(role)
   const navigate = useNavigate()
 
+  const [search, setSearch] = useState('')
+  const q = useDebouncedValue(search.trim(), 300)
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'dueDate', desc: false }])
   const [status, setStatus] = useState<StatusFilter>('')
   const [payerId, setPayerId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
 
+  // Cualquier cambio de criterio devuelve a la primera página.
   useEffect(() => {
     setPage(1)
-  }, [status, payerId])
+  }, [q, status, payerId, sorting])
 
+  const active = sorting[0]
   const params: GetApiV1OrganizationsOrgIdReceivablesParams = {
     page,
     pageSize: PAGE_SIZE,
+    q: q || undefined,
+    sort: active?.id as GetApiV1OrganizationsOrgIdReceivablesSort | undefined,
+    order: active?.desc ? 'desc' : 'asc',
     displayStatus: status || undefined,
     payerContactId: payerId || undefined,
-    order: 'asc',
   }
   const { items, total, totalPages, isPending, isError, error, isFetching } = useReceivables(orgId, params)
 
@@ -66,34 +86,54 @@ export function ReceivablesListPage() {
   const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
   const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])
 
-  type Row = (typeof items)[number]
-  const columns: Column<Row>[] = [
-    { header: 'Pagador', cell: (r) => contactMap.get(r.payerContactId) ?? '—', className: 'font-medium' },
-    { header: 'Concepto', cell: (r) => conceptMap.get(r.billingConceptId) ?? '—', className: 'text-muted-foreground' },
-    { header: 'Vence', cell: (r) => formatDateHuman(r.dueDate), className: 'nums text-muted-foreground' },
-    {
-      header: 'Saldo',
-      cell: (r) => formatAmount(r.balance, r.currency),
-      className: 'nums text-right font-medium',
-      headClassName: 'text-right',
-    },
-    { header: 'Estado', cell: (r) => <StatusPill status={r.displayStatus} /> },
-    { header: '', cell: () => <ChevronRight className="size-4 text-muted-foreground" />, className: 'w-8', cardHidden: true },
-  ]
-  const renderCard = (r: Row) => (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium">{contactMap.get(r.payerContactId) ?? '—'}</span>
-        <span className="nums shrink-0 font-medium">{formatAmount(r.balance, r.currency)}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span>{conceptMap.get(r.billingConceptId) ?? '—'}</span>
-        <span aria-hidden>·</span>
-        <span className="nums">Vence {formatDateHuman(r.dueDate)}</span>
-        <span aria-hidden>·</span>
-        <StatusPill status={r.displayStatus} />
-      </div>
-    </div>
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.display({
+          id: 'payer',
+          header: 'Pagador',
+          meta: { grow: 2 },
+          cell: ({ row }) => (
+            <div className="min-w-0">
+              <p className="truncate font-medium">
+                {contactMap.get(row.original.payerContactId) ?? '—'}
+              </p>
+              <p className="text-muted-foreground truncate text-xs">
+                {conceptMap.get(row.original.billingConceptId) ?? '—'}
+              </p>
+            </div>
+          ),
+        }),
+        column.display({
+          id: 'dueDate',
+          header: 'Vence',
+          meta: { grow: 1 },
+          cell: ({ row }) => (
+            <span className="nums text-muted-foreground">
+              {formatDateHuman(row.original.dueDate)}
+            </span>
+          ),
+        }),
+        column.display({
+          id: 'status',
+          header: 'Estado',
+          meta: { grow: 1 },
+          cell: ({ row }) => <StatusPill status={row.original.displayStatus} />,
+        }),
+        column.display({
+          id: 'balance',
+          header: 'Saldo',
+          meta: { grow: 1, align: 'right' },
+          cell: ({ row }) => formatAmount(row.original.balance, row.original.currency),
+        }),
+        column.display({
+          id: 'chevron',
+          header: '',
+          meta: { width: 'auto', hideOnStack: true },
+          cell: () => <RowChevron />,
+        }),
+      ]),
+    [contactMap, conceptMap],
   )
 
   const generate = useGenerateReceivables(orgId ?? '')
@@ -141,47 +181,48 @@ export function ReceivablesListPage() {
         )}
       </PageHeader>
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="sm:w-64">
-          <ContactPicker
-            orgId={orgId ?? ''}
-            value={payerId}
-            onChange={setPayerId}
-            allowClear
-            placeholder="Filtrar por pagador…"
-          />
-        </div>
-        <NativeSelect
-          className="w-44 sm:ml-auto"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as StatusFilter)}
-          aria-label="Estado"
-        >
-          <option value="">Todos los estados</option>
-          <option value="PENDING">Pendiente</option>
-          <option value="PARTIAL">Parcial</option>
-          <option value="OVERDUE">Vencida</option>
-          <option value="PAID">Pagada</option>
-          <option value="CANCELLED">Cancelada</option>
-          <option value="WRITTEN_OFF">Castigada</option>
-        </NativeSelect>
-      </div>
-
       {isError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {getErrorMessage(error, 'No se pudieron cargar las cuentas por cobrar.')}
         </div>
       ) : (
         <>
-          <DataTable
+          <DataList
             columns={columns}
             rows={items}
-            getKey={(r) => r.receivableId}
+            getRowId={(r) => r.receivableId}
             onRowClick={(r) => navigate(`/cartera/cxc/${r.receivableId}`)}
             isLoading={isPending}
-            skeletonRows={8}
             emptyText="No hay cuentas por cobrar con estos filtros."
-            renderCard={renderCard}
+            search={{ value: search, onChange: setSearch, placeholder: 'Buscar por pagador…' }}
+            sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
+            filters={
+              <>
+                <div className="w-full sm:w-56">
+                  <ContactPicker
+                    orgId={orgId ?? ''}
+                    value={payerId}
+                    onChange={setPayerId}
+                    allowClear
+                    placeholder="Pagador…"
+                  />
+                </div>
+                <NativeSelect
+                  className="w-44"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as StatusFilter)}
+                  aria-label="Estado"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="PENDING">Pendiente</option>
+                  <option value="PARTIAL">Parcial</option>
+                  <option value="OVERDUE">Vencida</option>
+                  <option value="PAID">Pagada</option>
+                  <option value="CANCELLED">Cancelada</option>
+                  <option value="WRITTEN_OFF">Castigada</option>
+                </NativeSelect>
+              </>
+            }
           />
 
           {!isPending && total > 0 && (
