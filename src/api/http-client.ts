@@ -64,7 +64,14 @@ export const customFetch = async <T>(url: string, options: RequestInit = {}): Pr
     const token = await ensureCsrfToken()
     if (token) headers.set('x-csrf-token', token)
   }
-  if (options.body != null && !headers.has('Content-Type')) {
+  // Solo JSON para cuerpos JSON. Un FormData (notas de voz) debe llevar el
+  // `multipart/form-data; boundary=…` que pone el navegador: si lo etiquetamos como
+  // JSON, el backend intenta parsear el boundary y responde "is not valid JSON".
+  const bodyIsSelfDescribing =
+    options.body instanceof FormData ||
+    options.body instanceof Blob ||
+    options.body instanceof URLSearchParams
+  if (options.body != null && !bodyIsSelfDescribing && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
