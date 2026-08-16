@@ -33,6 +33,10 @@ interface NumiState {
   open: () => void
   close: () => void
   appendMessage: (role: ChatRole, content: string) => void
+  /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
+  appendAudio: (audioUrl: string) => void
+  /** Rellena la transcripción de una nota de voz cuando el backend responde. */
+  setTranscript: (id: string, transcript: string) => void
   /** Guarda la respuesta y el `sessionId` con el que continuar. */
   appendReply: (sessionId: string, reply: string) => void
   setError: (error: NumiError | null) => void
@@ -57,6 +61,14 @@ export const useNumiStore = create<NumiState>()((set) => ({
 
   appendMessage: (role, content) =>
     set((s) => ({ messages: [...s.messages, message(role, content)] })),
+
+  appendAudio: (audioUrl) =>
+    set((s) => ({
+      messages: [...s.messages, { id: nextId(), role: 'user', content: '', at: new Date().toISOString(), audioUrl }],
+    })),
+
+  setTranscript: (id, transcript) =>
+    set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, content: transcript } : m)) })),
 
   appendReply: (sessionId, reply) =>
     set((s) => ({

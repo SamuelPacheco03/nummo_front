@@ -7,6 +7,11 @@ export interface ChatMessage {
   content: string
   /** ISO-8601; la burbuja muestra la hora local. */
   at: string
+  /**
+   * Nota de voz: URL local (blob) para reproducirla. Solo existe para audios
+   * grabados en esta sesión; al recargar solo queda la transcripción (`content`).
+   */
+  audioUrl?: string
 }
 
 /**

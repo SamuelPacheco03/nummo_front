@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight, RotateCcw, Sparkles, X } from 'lucide-react'
+import { ChevronRight, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
 import { canManageOrg } from '@/features/organizations/roles'
 import { cn } from '@/lib/utils'
 import { SUGGESTIONS } from './constants'
@@ -84,7 +84,8 @@ function QuickStart({ onPick }: { onPick: (text: string) => void }) {
  * se puede seguir leyendo la pantalla mientras se conversa).
  */
 export function NumiPanel({ onClose }: { onClose: () => void }) {
-  const { messages, error, isTyping, role, orgName, send, retry, newConversation } = useNumiChat()
+  const { messages, error, isTyping, isHydrating, role, orgName, send, sendAudio, retry, newConversation } =
+    useNumiChat()
   const listRef = useRef<HTMLDivElement>(null)
 
   // El hilo siempre pegado abajo: hay que escribir el scroll del DOM.
@@ -124,7 +125,11 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         aria-label="Conversación con Numi"
         className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
       >
-        {messages.length === 0 ? (
+        {isHydrating ? (
+          <div className="flex h-full items-center justify-center">
+            <Loader2 className="text-muted-foreground size-6 animate-spin" />
+          </div>
+        ) : messages.length === 0 ? (
           <>
             <Greeting />
             <QuickStart onPick={(text) => void send(text)} />
@@ -165,7 +170,12 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <ChatComposer onSend={(text) => void send(text)} disabled={isTyping} autoFocus />
+      <ChatComposer
+        onSend={(text) => void send(text)}
+        onSendAudio={(blob) => void sendAudio(blob)}
+        disabled={isTyping}
+        autoFocus
+      />
     </div>
   )
 }

@@ -1,7 +1,10 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { usePostApiV1OrganizationsOrgIdAssistantChat } from '@/api/generated/endpoints/assistant/assistant'
-import type { AssistantChatResponse } from '@/api/generated/model'
+import {
+  usePostApiV1OrganizationsOrgIdAssistantChat,
+  usePostApiV1OrganizationsOrgIdAssistantChatAudio,
+} from '@/api/generated/endpoints/assistant/assistant'
+import type { AssistantAudioChatResponse, AssistantChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage, isApiStatus } from '@/lib/errors'
 import { MAX_MESSAGE_LENGTH } from './constants'
@@ -46,6 +49,8 @@ export function useNumiChat() {
   const switchOrg = useNumiStore((s) => s.switchOrg)
   const newConversation = useNumiStore((s) => s.newConversation)
   const { mutateAsync, isPending } = usePostApiV1OrganizationsOrgIdAssistantChat()
+  const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
+  const hydrated = useNumiStore((s) => s.hydrated)
 
   // El hilo pertenece a una organización: si el usuario cambia de empresa, la
   // conversación anterior habla de datos que ya no son los de esta pantalla.
@@ -92,23 +97,52 @@ export function useNumiChat() {
     [ask, isPending],
   )
 
-  /** Reintenta el último mensaje del usuario (ya está en el hilo). */
+  /** Envía una nota de voz: se muestra la burbuja de audio y Numi transcribe y responde. */
+  const sendAudio = useCallback(
+    async (blob: Blob) => {
+      if (!orgId || audioChat.isPending || isPending) return
+      const store = useNumiStore.getState()
+      store.appendAudio(URL.createObjectURL(blob))
+      const id = useNumiStore.getState().messages.at(-1)?.id
+      store.setError(null)
+      try {
+        const { sessionId } = useNumiStore.getState()
+        const res = await audioChat.mutateAsync({ orgId, data: { audio: blob, sessionId } })
+        const { sessionId: nextSessionId, transcript, reply } = res.data as AssistantAudioChatResponse
+        const s = useNumiStore.getState()
+        if (id) s.setTranscript(id, transcript)
+        s.appendReply(nextSessionId, reply)
+        if (shouldRefreshData(transcript, reply)) void queryClient.invalidateQueries()
+      } catch (err) {
+        useNumiStore.getState().setError({
+          message: getErrorMessage(err, 'No se pudo enviar el audio. Inténtalo de nuevo.'),
+          needsSetup: isApiStatus(err, 422),
+        })
+      }
+    },
+    [audioChat, isPending, orgId, queryClient],
+  )
+
+  /** Reintenta el último mensaje de TEXTO del usuario (los audios no se reintentan). */
   const retry = useCallback(async () => {
     if (isPending) return
-    const last = useNumiStore.getState().messages.findLast((m) => m.role === 'user')
+    const last = useNumiStore.getState().messages.findLast((m) => m.role === 'user' && !!m.content)
     if (last) await ask(last.content)
   }, [ask, isPending])
 
   return {
     messages,
     error,
-    /** Mientras el backend responde: el hilo muestra "Numi está escribiendo…". */
-    isTyping: isPending,
+    /** Mientras el backend responde (texto o audio): el hilo muestra "escribiendo…". */
+    isTyping: isPending || audioChat.isPending,
+    /** Cargando el historial persistido al abrir: se muestra un loader, no el saludo. */
+    isHydrating: !hydrated && !!orgId,
     canChat: !!orgId,
     role,
     /** Nombre de la organización: el hilo habla de SUS datos, y eso se ve en la cabecera. */
     orgName: organization?.name,
     send,
+    sendAudio,
     retry,
     newConversation,
   }

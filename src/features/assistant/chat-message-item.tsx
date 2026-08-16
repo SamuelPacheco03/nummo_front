@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
 import { formatTime } from './utils'
@@ -63,7 +64,19 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
   const bubble = (
     <ChatBubble role={message.role} className="animate-in fade-in-0 slide-in-from-bottom-1">
       <span className="sr-only">{isUser ? 'Tú' : 'Numi'}: </span>
-      {isUser ? (
+      {message.audioUrl ? (
+        <div className="min-w-[11.5rem]">
+          <AudioPlayer src={message.audioUrl} />
+          {message.content ? (
+            <p className="mt-1 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
+              {message.content}
+              {spacer}
+            </p>
+          ) : (
+            <span className={TIME_SLOT} aria-hidden />
+          )}
+        </div>
+      ) : isUser ? (
         <p className="whitespace-pre-wrap">
           {message.content}
           {spacer}
