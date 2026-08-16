@@ -181,7 +181,7 @@ export function AssistantPage() {
     <div className="max-w-2xl space-y-6">
       <PageHeader
         title="Asistente / IA"
-        description="Conecta tu propio proveedor de IA (BYOK): elige modelo y pega tu API key. El chat llegará más adelante."
+        description="Conecta tu propio proveedor de IA (BYOK): elige modelo y pega tu API key. Con un proveedor activo, Numi queda disponible en el botón flotante de todas las pantallas."
       />
 
       {!canManage ? (

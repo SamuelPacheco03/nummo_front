@@ -1,0 +1,83 @@
+import { useCallback, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { usePostApiV1OrganizationsOrgIdAssistantChat } from '@/api/generated/endpoints/assistant/assistant'
+import type { AssistantChatResponse } from '@/api/generated/model'
+import { useCurrentOrg } from '@/features/organizations/hooks'
+import { getErrorMessage, isApiStatus } from '@/lib/errors'
+import { MAX_MESSAGE_LENGTH } from './constants'
+import { useNumiStore } from './numi-store'
+import { shouldRefreshData } from './utils'
+
+/**
+ * Conversación con Numi: envío, estado "escribiendo", errores y refresco de
+ * datos. Es el único punto que conoce el endpoint; la UI solo consume esto.
+ */
+export function useNumiChat() {
+  const { orgId, role } = useCurrentOrg()
+  const queryClient = useQueryClient()
+  const messages = useNumiStore((s) => s.messages)
+  const error = useNumiStore((s) => s.error)
+  const switchOrg = useNumiStore((s) => s.switchOrg)
+  const newConversation = useNumiStore((s) => s.newConversation)
+  const { mutateAsync, isPending } = usePostApiV1OrganizationsOrgIdAssistantChat()
+
+  // El hilo pertenece a una organización: si el usuario cambia de empresa, la
+  // conversación anterior habla de datos que ya no son los de esta pantalla.
+  useEffect(() => {
+    if (orgId) switchOrg(orgId)
+  }, [orgId, switchOrg])
+
+  /** Envía al backend y consume la respuesta. No toca el hilo del usuario. */
+  const ask = useCallback(
+    async (message: string) => {
+      if (!orgId) return
+      // Se lee del store (no del render) para no mandar un sessionId obsoleto.
+      const { sessionId, appendReply, setError } = useNumiStore.getState()
+      setError(null)
+      try {
+        const res = await mutateAsync({ orgId, data: { message, sessionId } })
+        const { sessionId: nextSessionId, reply } = res.data as AssistantChatResponse
+        appendReply(nextSessionId, reply)
+        // Numi también registra operaciones: si el turno pudo escribir, se
+        // refresca lo que esté montado (ver `shouldRefreshData`).
+        if (shouldRefreshData(message, reply)) void queryClient.invalidateQueries()
+      } catch (err) {
+        setError({
+          message: getErrorMessage(err, 'No se pudo contactar a Numi. Inténtalo de nuevo.'),
+          // 422 en este endpoint = no hay proveedor de IA activo.
+          needsSetup: isApiStatus(err, 422),
+        })
+      }
+    },
+    [mutateAsync, orgId, queryClient],
+  )
+
+  const send = useCallback(
+    async (raw: string) => {
+      const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
+      if (!message || isPending) return
+      useNumiStore.getState().appendMessage('user', message)
+      await ask(message)
+    },
+    [ask, isPending],
+  )
+
+  /** Reintenta el último mensaje del usuario (ya está en el hilo). */
+  const retry = useCallback(async () => {
+    if (isPending) return
+    const last = useNumiStore.getState().messages.findLast((m) => m.role === 'user')
+    if (last) await ask(last.content)
+  }, [ask, isPending])
+
+  return {
+    messages,
+    error,
+    /** Mientras el backend responde: el hilo muestra "Numi está escribiendo…". */
+    isTyping: isPending,
+    canChat: !!orgId,
+    role,
+    send,
+    retry,
+    newConversation,
+  }
+}

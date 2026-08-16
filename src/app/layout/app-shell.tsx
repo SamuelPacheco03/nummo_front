@@ -30,6 +30,7 @@ import { BrandLockup, BrandMark } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { NumiWidget } from '@/features/assistant/numi-widget'
 import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
@@ -281,6 +282,9 @@ export function AppShell() {
           </div>
         </main>
       </div>
+
+      {/* Asistente Numi: flotante, disponible en cualquier pantalla del shell. */}
+      <NumiWidget />
     </div>
   )
 }
