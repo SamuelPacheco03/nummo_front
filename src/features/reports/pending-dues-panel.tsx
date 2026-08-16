@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { useNavigate } from 'react-router'
 import { Download } from 'lucide-react'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
-import { DataTable, type Column } from '@/components/ui/data-table'
+import { DataList, listColumns } from '@/components/ui/data-list'
 import { NativeSelect } from '@/components/ui/native-select'
 import { downloadCsv } from '@/lib/csv'
 import { formatAmount, formatDateHuman } from '@/lib/format'
@@ -62,6 +62,7 @@ export function PendingDuesPanel({
   currency?: string
   emptyLabel: string
 }) {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<Filter>('all')
 
   const filtered = useMemo(() => {
@@ -86,38 +87,40 @@ export function PendingDuesPanel({
       filtered.map((r) => [r.name, r.dueDate, r.statusLabel, r.balance]),
     )
 
-  const columns: Column<DueRow>[] = [
-    {
-      header: 'Vence',
-      cell: (r) => (
-        <Link to={r.href} className="hover:underline">
-          {formatDateHuman(r.dueDate)}
-        </Link>
-      ),
-      className: 'nums whitespace-nowrap',
-    },
-    { header: nameHeader, cell: (r) => r.name, className: 'max-w-[12rem] truncate' },
-    { header: 'Estado', cell: (r) => <StatusChip row={r} /> },
-    {
-      header: 'Saldo',
-      cell: (r) => formatAmount(r.balance, r.currency ?? currency),
-      className: 'nums text-right font-medium',
-      headClassName: 'text-right',
-    },
-  ]
-
-  const renderCard = (r: DueRow) => (
-    <Link to={r.href} className="block space-y-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium">{r.name}</span>
-        <span className="nums shrink-0 font-medium">{formatAmount(r.balance, r.currency ?? currency)}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span className="nums">Vence {formatDateHuman(r.dueDate)}</span>
-        <span aria-hidden>·</span>
-        <StatusChip row={r} />
-      </div>
-    </Link>
+  const column = listColumns<DueRow>()
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.display({
+          id: 'name',
+          header: nameHeader,
+          meta: { grow: 2 },
+          cell: ({ row }) => <span className="truncate font-medium">{row.original.name}</span>,
+        }),
+        column.display({
+          id: 'dueDate',
+          header: 'Vence',
+          meta: { grow: 1 },
+          cell: ({ row }) => (
+            <span className="nums text-muted-foreground whitespace-nowrap">
+              {formatDateHuman(row.original.dueDate)}
+            </span>
+          ),
+        }),
+        column.display({
+          id: 'status',
+          header: 'Estado',
+          meta: { grow: 1 },
+          cell: ({ row }) => <StatusChip row={row.original} />,
+        }),
+        column.display({
+          id: 'balance',
+          header: 'Saldo',
+          meta: { grow: 1, align: 'right' },
+          cell: ({ row }) => formatAmount(row.original.balance, row.original.currency ?? currency),
+        }),
+      ]),
+    [nameHeader, currency],
   )
 
   return (
@@ -142,11 +145,11 @@ export function PendingDuesPanel({
         </div>
       </div>
 
-      <DataTable
+      <DataList
         columns={columns}
         rows={paged}
-        getKey={(r) => r.id}
-        renderCard={renderCard}
+        getRowId={(r) => r.id}
+        onRowClick={(r) => navigate(r.href)}
         emptyText={rows.length === 0 ? emptyLabel : 'Nada en este filtro.'}
       />
 
