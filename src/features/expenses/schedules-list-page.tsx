@@ -60,7 +60,6 @@ export function SchedulesListPage() {
         column.display({
           id: 'supplier',
           header: 'Proveedor',
-          meta: { grow: 2 },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
@@ -75,7 +74,6 @@ export function SchedulesListPage() {
         column.display({
           id: 'recurrence',
           header: 'Recurrencia',
-          meta: { grow: 1 },
           cell: ({ row }) => (
             <span className="text-muted-foreground">
               {RECURRENCE_LABELS[row.original.recurrenceType] ?? row.original.recurrenceType} · día{' '}
@@ -86,19 +84,18 @@ export function SchedulesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          meta: { grow: 1 },
           cell: ({ row }) => <ScheduleStatusPill status={row.original.status} />,
         }),
         column.display({
           id: 'amount',
           header: 'Monto',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => formatAmount(row.original.agreedAmount, row.original.currency),
         }),
         column.display({
           id: 'chevron',
           header: '',
-          meta: { width: 'auto', hideOnStack: true },
+          meta: { hideOnStack: true },
           cell: () => <RowChevron />,
         }),
       ]),

@@ -92,7 +92,6 @@ export function ReceivablesListPage() {
         column.display({
           id: 'payer',
           header: 'Pagador',
-          meta: { grow: 2 },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
@@ -107,7 +106,6 @@ export function ReceivablesListPage() {
         column.display({
           id: 'dueDate',
           header: 'Vence',
-          meta: { grow: 1 },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
               {formatDateHuman(row.original.dueDate)}
@@ -117,19 +115,18 @@ export function ReceivablesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          meta: { grow: 1 },
           cell: ({ row }) => <StatusPill status={row.original.displayStatus} />,
         }),
         column.display({
           id: 'balance',
           header: 'Saldo',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => formatAmount(row.original.balance, row.original.currency),
         }),
         column.display({
           id: 'chevron',
           header: '',
-          meta: { width: 'auto', hideOnStack: true },
+          meta: { hideOnStack: true },
           cell: () => <RowChevron />,
         }),
       ]),

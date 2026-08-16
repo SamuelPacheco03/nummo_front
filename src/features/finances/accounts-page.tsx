@@ -24,13 +24,12 @@ export function AccountsPage() {
         column.display({
           id: 'name',
           header: 'Cuenta',
-          meta: { grow: 2 },
           cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
         }),
         column.display({
           id: 'opening',
           header: 'Apertura',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => (
             <span className="text-muted-foreground">
               {formatAmount(row.original.openingBalance, row.original.currency)}
@@ -40,7 +39,7 @@ export function AccountsPage() {
         column.display({
           id: 'in',
           header: 'Entradas',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => (
             <span className="text-success-strong">
               {formatAmount(row.original.totalIn, row.original.currency)}
@@ -50,7 +49,7 @@ export function AccountsPage() {
         column.display({
           id: 'out',
           header: 'Salidas',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => (
             <span className="text-muted-foreground">
               {formatAmount(row.original.totalOut, row.original.currency)}
@@ -60,7 +59,7 @@ export function AccountsPage() {
         column.display({
           id: 'balance',
           header: 'Saldo',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => (
             <span className={cn('font-semibold', Number(row.original.balance) < 0 && 'text-destructive')}>
               {formatAmount(row.original.balance, row.original.currency)}

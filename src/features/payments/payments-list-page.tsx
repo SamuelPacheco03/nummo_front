@@ -91,7 +91,6 @@ export function PaymentsListPage() {
         column.display({
           id: 'payer',
           header: 'Pagador',
-          meta: { grow: 2 },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">{payerName(row.original.payerContactId)}</p>
@@ -104,7 +103,6 @@ export function PaymentsListPage() {
         column.display({
           id: 'receivedAt',
           header: 'Fecha',
-          meta: { grow: 1 },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
               {formatDateHuman(row.original.receivedAt)}
@@ -114,13 +112,12 @@ export function PaymentsListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          meta: { grow: 1 },
           cell: ({ row }) => <StatusChip status={row.original.status} />,
         }),
         column.display({
           id: 'amount',
           header: 'Monto',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => (
             <span
               className={cn(row.original.status === 'REVERSED' && 'text-muted-foreground line-through')}
@@ -132,7 +129,7 @@ export function PaymentsListPage() {
         column.display({
           id: 'chevron',
           header: '',
-          meta: { width: 'auto', hideOnStack: true },
+          meta: { hideOnStack: true },
           cell: () => <RowChevron />,
         }),
       ]),

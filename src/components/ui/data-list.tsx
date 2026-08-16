@@ -13,6 +13,14 @@ import {
 import { NativeSelect } from '@/components/ui/native-select'
 import { SearchInput } from '@/components/search-input'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 
 /**
@@ -39,14 +47,8 @@ export interface ListColumnMeta {
   label?: string
   /** Alineación del valor. Los importes van a la derecha. */
   align?: 'right'
-  /** Peso de la columna en la rejilla de escritorio. Por defecto 1. */
-  grow?: number
-  /** Ancho fijo en la rejilla (p. ej. `'auto'` para el chevron). */
-  width?: string
   /** Fuera del apilado de móvil: chevrons y adornos que ahí no aportan. */
   hideOnStack?: boolean
-  /** Se pinta como línea secundaria de la primera columna, no como columna. */
-  secondary?: boolean
 }
 
 declare module '@tanstack/react-table' {
@@ -78,9 +80,8 @@ export interface DataListProps<TData extends RowData> {
 }
 
 /**
- * Lista de registros en filas-tarjeta: sin cabecera de tabla ni rayas, pero con
- * las columnas alineadas por dentro para no perder la comparación de cifras.
- * En pantallas pequeñas cada fila se apila como etiqueta → valor.
+ * Listado de registros: tabla densa en escritorio y tarjetas apiladas en móvil
+ * y tablet, a partir de un único modelo de columnas.
  *
  * El motor es TanStack Table en **modo manual**: la búsqueda y el orden los
  * resuelve el API, y la tabla solo guarda el estado. Conectarla en modo cliente
@@ -119,10 +120,6 @@ export function DataList<TData extends RowData>({
   })
 
   const visible = table.getAllLeafColumns()
-  const gridColumns = visible
-    .filter((column) => !column.columnDef.meta?.secondary)
-    .map((column) => column.columnDef.meta?.width ?? `${column.columnDef.meta?.grow ?? 1}fr`)
-    .join(' ')
 
   const isEmpty = !isLoading && rows.length === 0
   const activeSort = sort?.value[0]
@@ -153,83 +150,117 @@ export function DataList<TData extends RowData>({
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
+      {/* Escritorio: tabla densa */}
+      <div className="bg-card hidden overflow-hidden rounded-lg border lg:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {visible.map((col) => (
+                <TableHead
+                  key={col.id}
+                  className={cn(col.columnDef.meta?.align === 'right' && 'text-right')}
+                >
+                  {flexRender(col.columnDef.header, {
+                    column: col,
+                    header: undefined as never,
+                    table,
+                  })}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: skeletonRows }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell colSpan={visible.length}>
+                    <Skeleton className="h-5 w-full" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : isEmpty ? (
+              <TableRow>
+                <TableCell
+                  colSpan={visible.length}
+                  className="text-muted-foreground py-10 text-center"
+                >
+                  {emptyText}
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={onRowClick ? 'cursor-pointer' : undefined}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        cell.column.columnDef.meta?.align === 'right' && 'nums text-right font-medium',
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Móvil y tablet: cada fila es una tarjeta apilada. */}
+      <div className="space-y-2 lg:hidden">
         {isLoading ? (
-          Array.from({ length: skeletonRows }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-xl" />
+          Array.from({ length: Math.min(skeletonRows, 5) }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
           ))
         ) : isEmpty ? (
-          <p className="bg-card text-muted-foreground rounded-xl border p-8 text-center text-sm">
+          <p className="bg-card text-muted-foreground rounded-lg border p-6 text-center text-sm">
             {emptyText}
           </p>
         ) : (
           table.getRowModel().rows.map((row) => {
-            const cells = row.getAllCells()
-            const body = (
-              <>
-                {/* Escritorio: rejilla con las columnas alineadas entre filas. */}
-                <div
-                  className="hidden items-center gap-4 lg:grid"
-                  style={{ gridTemplateColumns: gridColumns }}
-                >
-                  {cells
-                    .filter((cell) => !cell.column.columnDef.meta?.secondary)
-                    .map((cell) => (
-                      <div
-                        key={cell.id}
-                        className={cn(
-                          'min-w-0 truncate text-sm',
-                          cell.column.columnDef.meta?.align === 'right' &&
-                            'nums text-right font-medium',
-                        )}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            const stack = (
+              <dl className="space-y-1.5">
+                {row
+                  .getAllCells()
+                  .filter((cell) => !cell.column.columnDef.meta?.hideOnStack)
+                  .map((cell) => {
+                    const meta = cell.column.columnDef.meta
+                    const header = cell.column.columnDef.header
+                    return (
+                      <div key={cell.id} className="flex items-baseline justify-between gap-3">
+                        <dt className="text-muted-foreground shrink-0 text-xs">
+                          {meta?.label ?? (typeof header === 'string' ? header : '')}
+                        </dt>
+                        <dd
+                          className={cn(
+                            'min-w-0 text-right text-sm',
+                            meta?.align === 'right' && 'nums font-medium',
+                          )}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </dd>
                       </div>
-                    ))}
-                </div>
-
-                {/* Móvil y tablet: la fila se apila como etiqueta → valor. */}
-                <dl className="space-y-1.5 lg:hidden">
-                  {cells
-                    .filter((cell) => !cell.column.columnDef.meta?.hideOnStack)
-                    .map((cell) => {
-                      const meta = cell.column.columnDef.meta
-                      const header = cell.column.columnDef.header
-                      return (
-                        <div key={cell.id} className="flex items-baseline justify-between gap-3">
-                          <dt className="text-muted-foreground shrink-0 text-xs">
-                            {meta?.label ?? (typeof header === 'string' ? header : '')}
-                          </dt>
-                          <dd
-                            className={cn(
-                              'min-w-0 text-right text-sm',
-                              meta?.align === 'right' && 'nums font-medium',
-                            )}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </dd>
-                        </div>
-                      )
-                    })}
-                </dl>
-              </>
+                    )
+                  })}
+              </dl>
             )
-
-            const shell =
-              'bg-card rounded-xl border px-4 py-3 transition-colors hover:border-brand/40 hover:bg-secondary/40'
-
             return onRowClick ? (
               <button
                 key={row.id}
                 type="button"
                 onClick={() => onRowClick(row.original)}
-                className={cn(shell, 'focus-visible:ring-ring/50 w-full text-left focus-visible:ring-[3px] focus-visible:outline-none')}
+                className="bg-card hover:bg-muted/50 focus-visible:ring-ring/50 block w-full rounded-lg border p-3 text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
               >
-                {body}
+                {stack}
               </button>
             ) : (
-              <div key={row.id} className={shell}>
-                {body}
+              <div key={row.id} className="bg-card rounded-lg border p-3">
+                {stack}
               </div>
             )
           })

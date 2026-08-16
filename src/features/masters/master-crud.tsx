@@ -111,7 +111,6 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
           column.display({
             id: `col-${i}`,
             header: c.header,
-            meta: { grow: i === 0 ? 2 : 1 },
             cell: ({ row }) =>
               i === 0 ? <span className="font-medium">{c.cell(row.original)}</span> : c.cell(row.original),
           }),
@@ -119,7 +118,6 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
         column.display({
           id: 'status',
           header: 'Estado',
-          meta: { grow: 1 },
           cell: ({ row }) => <StatusDot active={row.original.isActive} />,
         }),
         ...(canManage
@@ -127,7 +125,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
               column.display({
                 id: 'edit',
                 header: '',
-                meta: { width: 'auto', hideOnStack: true },
+                meta: { hideOnStack: true },
                 cell: ({ row }) => editButton(row.original),
               }),
             ]

@@ -68,7 +68,6 @@ export function MovementsPage() {
         column.display({
           id: 'account',
           header: 'Cuenta',
-          meta: { grow: 2 },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
@@ -83,7 +82,6 @@ export function MovementsPage() {
         column.display({
           id: 'occurredAt',
           header: 'Fecha',
-          meta: { grow: 1 },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
               {formatDateHuman(row.original.occurredAt)}
@@ -93,7 +91,7 @@ export function MovementsPage() {
         column.display({
           id: 'amount',
           header: 'Monto',
-          meta: { grow: 1, align: 'right' },
+          meta: { align: 'right' },
           cell: ({ row }) => (
             <span
               className={cn(

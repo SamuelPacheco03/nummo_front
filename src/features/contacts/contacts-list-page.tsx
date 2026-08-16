@@ -75,7 +75,6 @@ export function ContactsListPage() {
         column.display({
           id: 'name',
           header: 'Nombre',
-          meta: { grow: 2 },
           cell: ({ row }) => (
             <div className="flex min-w-0 items-center gap-2">
               <ContactIcon contact={row.original} />
@@ -86,7 +85,6 @@ export function ContactsListPage() {
         column.display({
           id: 'document',
           header: 'Documento',
-          meta: { grow: 1 },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">{documentText(row.original)}</span>
           ),
@@ -94,7 +92,6 @@ export function ContactsListPage() {
         column.display({
           id: 'contact',
           header: 'Contacto',
-          meta: { grow: 1 },
           cell: ({ row }) => (
             <span className="text-muted-foreground">{contactText(row.original)}</span>
           ),
@@ -102,13 +99,12 @@ export function ContactsListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          meta: { grow: 1 },
           cell: ({ row }) => <StatusDot active={row.original.isActive} inactiveLabel="Archivado" />,
         }),
         column.display({
           id: 'chevron',
           header: '',
-          meta: { width: 'auto', hideOnStack: true },
+          meta: { hideOnStack: true },
           cell: () => <RowChevron />,
         }),
       ]),

@@ -93,7 +93,6 @@ export function DisbursementsListPage() {
       column.display({
         id: 'supplier',
         header: 'Proveedor',
-        meta: { grow: 2 },
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="truncate font-medium">{supplierName(row.original.supplierContactId)}</p>
@@ -106,7 +105,6 @@ export function DisbursementsListPage() {
       column.display({
         id: 'disbursedAt',
         header: 'Fecha',
-        meta: { grow: 1 },
         cell: ({ row }) => (
           <span className="nums text-muted-foreground">
             {formatDateHuman(row.original.disbursedAt)}
@@ -116,13 +114,12 @@ export function DisbursementsListPage() {
       column.display({
         id: 'status',
         header: 'Estado',
-        meta: { grow: 1 },
         cell: ({ row }) => <StatusChip status={row.original.status} />,
       }),
       column.display({
         id: 'amount',
         header: 'Monto',
-        meta: { grow: 1, align: 'right' },
+        meta: { align: 'right' },
         cell: ({ row }) => (
           <span
             className={cn(
@@ -136,7 +133,7 @@ export function DisbursementsListPage() {
       column.display({
         id: 'chevron',
         header: '',
-        meta: { width: 'auto', hideOnStack: true },
+        meta: { hideOnStack: true },
         cell: () => <RowChevron />,
       }),
     ])
