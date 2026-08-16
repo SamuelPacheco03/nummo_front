@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, ChevronRight } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from 'lucide-react'
 import {
   createColumnHelper,
   flexRender,
@@ -155,18 +155,53 @@ export function DataList<TData extends RowData>({
         <Table>
           <TableHeader>
             <TableRow>
-              {visible.map((col) => (
-                <TableHead
-                  key={col.id}
-                  className={cn(col.columnDef.meta?.align === 'right' && 'text-right')}
-                >
-                  {flexRender(col.columnDef.header, {
-                    column: col,
-                    header: undefined as never,
-                    table,
-                  })}
-                </TableHead>
-              ))}
+              {visible.map((col) => {
+                const alignRight = col.columnDef.meta?.align === 'right'
+                const label = flexRender(col.columnDef.header, {
+                  column: col,
+                  header: undefined as never,
+                  table,
+                })
+                // Ordenable = la columna está entre las que acepta el endpoint.
+                const option = sort?.options.find((o) => o.field === col.id)
+                const isActive = activeSort?.id === col.id
+                return (
+                  <TableHead
+                    key={col.id}
+                    className={cn(alignRight && 'text-right')}
+                    aria-sort={
+                      isActive ? (activeSort?.desc ? 'descending' : 'ascending') : undefined
+                    }
+                  >
+                    {option && sort ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          sort.onChange([{ id: col.id, desc: isActive ? !activeSort?.desc : false }])
+                        }
+                        className={cn(
+                          'hover:text-foreground inline-flex items-center gap-1 uppercase transition-colors',
+                          alignRight && 'flex-row-reverse',
+                          isActive && 'text-foreground',
+                        )}
+                      >
+                        {label}
+                        {isActive ? (
+                          activeSort?.desc ? (
+                            <ArrowDown className="size-3" />
+                          ) : (
+                            <ArrowUp className="size-3" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="size-3 opacity-40" />
+                        )}
+                      </button>
+                    ) : (
+                      label
+                    )}
+                  </TableHead>
+                )
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
