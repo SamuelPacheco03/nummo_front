@@ -253,7 +253,7 @@ export function AgreementFormPage() {
                 <Input id="ag-end" type="date" {...register('endDate')} />
               </Field>
               <Field
-                label="Día de vencimiento"
+                label="Vencimiento"
                 htmlFor="ag-dueday"
                 required
                 info="Día del mes (1–31) en que vence cada mensualidad."
