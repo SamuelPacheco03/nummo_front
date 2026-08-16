@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import {
   Dialog,
   DialogContent,
@@ -110,7 +110,7 @@ export function WaiveInterestDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={waive.isPending}>
-              {waive.isPending && <Loader2 className="size-4 animate-spin" />}
+              {waive.isPending && <Loader size="sm" />}
               Condonar
             </Button>
           </DialogFooter>

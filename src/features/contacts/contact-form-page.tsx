@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -153,7 +153,7 @@ export function ContactFormPage() {
           </Button>
           {/* Fuera del <form>, así que se ata por id para poder enviarlo igual. */}
           <Button type="submit" form={FORM_ID} disabled={busy}>
-            {busy && <Loader2 className="size-4 animate-spin" />}
+            {busy && <Loader size="sm" />}
             {isEdit ? 'Guardar cambios' : 'Crear contacto'}
           </Button>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
+import { ChevronRight, RotateCcw, Sparkles, X } from 'lucide-react'
 import { canManageOrg } from '@/features/organizations/roles'
 import { cn } from '@/lib/utils'
 import { SUGGESTIONS } from './constants'
@@ -9,6 +9,7 @@ import { ChatComposer } from './chat-composer'
 import { NumiAvatar } from './numi-avatar'
 import { TypingIndicator } from './typing-indicator'
 import { useNumiChat } from './hooks'
+import { NumiLoader } from '@/components/ui/loader'
 
 /** Botón de la cabecera: icono suelto, sin peso visual. */
 function HeaderAction({
@@ -127,7 +128,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
       >
         {isHydrating ? (
           <div className="flex h-full items-center justify-center">
-            <Loader2 className="text-muted-foreground size-6 animate-spin" />
+            <NumiLoader label="Abriendo la conversación…" compact />
           </div>
         ) : messages.length === 0 ? (
           <>

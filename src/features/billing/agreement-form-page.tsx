@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
@@ -183,7 +183,7 @@ export function AgreementFormPage() {
           </Button>
           {/* Fuera del <form>, así que se ata por id para poder enviarlo igual. */}
           <Button type="submit" form={FORM_ID} disabled={busy}>
-            {busy && <Loader2 className="size-4 animate-spin" />}
+            {busy && <Loader size="sm" />}
             {isEdit ? 'Guardar cambios' : 'Crear acuerdo'}
           </Button>
         </div>

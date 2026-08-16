@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Loader2, Trash2 } from 'lucide-react'
+import { Check, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Field } from '@/components/ui/field'
@@ -153,12 +154,12 @@ function ProviderCardView({
 
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving && <Loader2 className="size-4 animate-spin" />}
+            {saving && <Loader size="sm" />}
             Guardar
           </Button>
           {configured && !isActive && (
             <Button type="button" variant="outline" onClick={handleActivate} disabled={activating}>
-              {activating && <Loader2 className="size-4 animate-spin" />}
+              {activating && <Loader size="sm" />}
               Activar
             </Button>
           )}

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -108,7 +108,7 @@ export function SessionsPage() {
                     disabled={revoke.isPending}
                     onClick={() => onRevoke(s.id)}
                   >
-                    {revoke.isPending && <Loader2 className="size-4 animate-spin" />}
+                    {revoke.isPending && <Loader size="sm" />}
                     Cerrar
                   </Button>
                 )}

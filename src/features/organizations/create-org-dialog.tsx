@@ -2,8 +2,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import {
   Dialog,
   DialogContent,
@@ -100,7 +100,7 @@ export function CreateOrgDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={create.isPending}>
-              {create.isPending && <Loader2 className="size-4 animate-spin" />}
+              {create.isPending && <Loader size="sm" />}
               Crear
             </Button>
           </DialogFooter>

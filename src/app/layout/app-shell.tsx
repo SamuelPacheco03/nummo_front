@@ -26,7 +26,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { AppLoader } from '@/components/app-loader'
+import { PageLoader } from '@/components/ui/loader'
 import { BrandLockup, BrandMark } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -250,7 +250,7 @@ export function AppShell() {
     setMobileOpen(false)
   }, [location.pathname])
 
-  if (isLoading) return <AppLoader />
+  if (isLoading) return <PageLoader />
   if (hasNoOrgs) return <NoOrgOnboarding />
 
   return (

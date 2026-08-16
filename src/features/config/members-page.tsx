@@ -3,10 +3,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Users } from 'lucide-react'
+import { Plus, Trash2, Users } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
@@ -101,7 +102,7 @@ function AddMemberDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={add.isPending}>
-              {add.isPending && <Loader2 className="size-4 animate-spin" />}
+              {add.isPending && <Loader size="sm" />}
               Agregar
             </Button>
           </DialogFooter>

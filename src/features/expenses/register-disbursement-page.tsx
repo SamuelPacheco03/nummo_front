@@ -4,9 +4,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2, Wand2 } from 'lucide-react'
+import { Wand2 } from 'lucide-react'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
@@ -173,7 +174,7 @@ export function RegisterDisbursementPage() {
           </Button>
           {/* Fuera del <form>, así que se ata por id para poder enviarlo igual. */}
           <Button type="submit" form={FORM_ID} disabled={register.isPending}>
-            {register.isPending && <Loader2 className="size-4 animate-spin" />}
+            {register.isPending && <Loader size="sm" />}
             Registrar egreso
           </Button>
         </div>

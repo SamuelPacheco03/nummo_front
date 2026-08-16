@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Building2, Check, Loader2, User } from 'lucide-react'
+import { Building2, Check, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import {
   Dialog,
   DialogContent,
@@ -144,7 +145,7 @@ export function AddRelationshipDialog({
             onClick={submit}
             disabled={!targetId || !relationshipType.trim() || add.isPending}
           >
-            {add.isPending && <Loader2 className="size-4 animate-spin" />}
+            {add.isPending && <Loader size="sm" />}
             Agregar
           </Button>
         </DialogFooter>

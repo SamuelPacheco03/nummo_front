@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Loader2, Percent, Plus, RefreshCw } from 'lucide-react'
+import { Percent, Plus, RefreshCw } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { useContacts } from '@/features/contacts/hooks'
@@ -160,13 +161,13 @@ export function ReceivablesListPage() {
       <PageHeader title="Cuentas por cobrar" description="Obligaciones de los pagadores.">
         {canGenerate && (
           <Button variant="outline" size="sm" onClick={onGenerate} disabled={generate.isPending}>
-            {generate.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            {generate.isPending ? <Loader size="sm" /> : <RefreshCw className="size-4" />}
             Generar mensualidades
           </Button>
         )}
         {canGenerate && (
           <Button variant="outline" size="sm" onClick={onAccrue} disabled={accrue.isPending}>
-            {accrue.isPending ? <Loader2 className="size-4 animate-spin" /> : <Percent className="size-4" />}
+            {accrue.isPending ? <Loader size="sm" /> : <Percent className="size-4" />}
             Causar mora
           </Button>
         )}

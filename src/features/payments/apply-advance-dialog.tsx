@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Wand2 } from 'lucide-react'
+import { Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import {
   Dialog,
   DialogContent,
@@ -143,7 +144,7 @@ export function ApplyAdvanceDialog({
             Cancelar
           </Button>
           <Button type="button" onClick={submit} disabled={apply.isPending}>
-            {apply.isPending && <Loader2 className="size-4 animate-spin" />}
+            {apply.isPending && <Loader size="sm" />}
             Aplicar
           </Button>
         </DialogFooter>

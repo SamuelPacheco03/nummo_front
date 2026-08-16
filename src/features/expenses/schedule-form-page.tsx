@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
@@ -228,7 +229,7 @@ export function ScheduleFormPage() {
               Cancelar
             </Button>
             <Button type="submit" disabled={busy}>
-              {busy && <Loader2 className="size-4 animate-spin" />}
+              {busy && <Loader size="sm" />}
               {isEdit ? 'Guardar cambios' : 'Crear'}
             </Button>
           </CardFooter>

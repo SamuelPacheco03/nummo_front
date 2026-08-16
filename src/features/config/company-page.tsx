@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Field } from '@/components/ui/field'
@@ -102,7 +102,7 @@ function ProvisionCard({ orgId, initialType }: { orgId: string; initialType: Val
             </NativeSelect>
           </div>
           <Button type="button" variant="outline" onClick={() => setConfirmOpen(true)} disabled={apply.isPending}>
-            {apply.isPending && <Loader2 className="size-4 animate-spin" />}
+            {apply.isPending && <Loader size="sm" />}
             Provisionar
           </Button>
         </div>
@@ -232,7 +232,7 @@ export function CompanyPage() {
         {canManage && (
           <CardFooter className="justify-end border-t pt-6">
             <Button type="submit" disabled={update.isPending || !isDirty}>
-              {update.isPending && <Loader2 className="size-4 animate-spin" />}
+              {update.isPending && <Loader size="sm" />}
               Guardar cambios
             </Button>
           </CardFooter>

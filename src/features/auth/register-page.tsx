@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { getErrorMessage } from '@/lib/errors'
@@ -110,7 +111,7 @@ export function RegisterPage() {
         )}
 
         <Button type="submit" className="w-full" disabled={busy}>
-          {busy && <Loader2 className="size-4 animate-spin" />}
+          {busy && <Loader size="sm" />}
           Crear cuenta
         </Button>
       </form>
