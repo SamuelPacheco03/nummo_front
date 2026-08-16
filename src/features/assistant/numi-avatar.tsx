@@ -1,17 +1,23 @@
-import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-/** Identidad visual de Numi: la superficie de marca con la chispa del asistente. */
+// Vive en `public/` (no se importa como módulo) igual que el isotipo de Nummo:
+// lo genera `scripts/generate-icons.mjs` desde `brand/numi.png` y Workbox lo
+// precachea con el resto del shell.
+const NUMI_MARK_URL = `${import.meta.env.BASE_URL}numi-mark.png`
+
+/**
+ * Cara de Numi. El PNG ya trae su propia silueta y fondo oscuro, así que se
+ * pinta tal cual: funciona igual en tema claro y oscuro.
+ */
 export function NumiAvatar({ className }: { className?: string }) {
   return (
-    <span
-      className={cn(
-        'bg-brand-gradient grid size-7 shrink-0 place-items-center rounded-full text-white',
-        className,
-      )}
+    <img
+      src={NUMI_MARK_URL}
+      alt=""
       aria-hidden
-    >
-      <Sparkles className="size-[55%]" />
-    </span>
+      width={256}
+      height={256}
+      className={cn('size-7 shrink-0 object-contain', className)}
+    />
   )
 }

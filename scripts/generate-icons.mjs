@@ -20,6 +20,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PUBLIC = path.join(root, 'public')
 const ICONS = path.join(PUBLIC, 'icons')
 const SOURCE = path.join(root, 'brand', 'logo_nummo.png')
+/** Marca de Numi (el asistente). Ya viene con alfa y con su propia forma. */
+const NUMI_SOURCE = path.join(root, 'brand', 'numi.png')
 
 /** Fondo de los iconos "any": el logo se diseñó sobre blanco. */
 const BG = { r: 255, g: 255, b: 255, alpha: 1 }
@@ -123,6 +125,15 @@ async function main() {
   // Marca transparente para la UI (sidebar, login) — sirve en claro y oscuro.
   // 256px basta: en la UI se pinta a 28-44px (holgado incluso a 3x de DPR).
   await writeFile(path.join(PUBLIC, 'logo-mark.png'), await square(mark, 256, { ratio: 0.96 }))
+
+  // Marca de Numi para el chat: a diferencia del logo, el PNG ya trae alfa y
+  // su propia silueta (squircle con fondo oscuro), asi que solo se recorta el
+  // margen transparente y se baja de tamano. 256px sobra para 28-52px en UI.
+  const numi = await sharp(NUMI_SOURCE)
+    .trim({ threshold: 1 })
+    .png({ compressionLevel: 9, effort: 10 })
+    .toBuffer()
+  await writeFile(path.join(PUBLIC, 'numi-mark.png'), await square(numi, 256, { ratio: 1 }))
 
   // Iconos "any": fondo blanco, el logo casi a sangre.
   await writeFile(
