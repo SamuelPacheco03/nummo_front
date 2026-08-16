@@ -112,7 +112,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
       )}
     >
       <header className="bg-card flex items-center gap-2.5 border-b px-3 py-2.5 sm:rounded-t-lg">
-        <NumiAvatar className="size-7" />
+        <NumiAvatar className="size-9" />
         <div className="min-w-0 flex-1">
           <p className="font-display text-sm leading-tight font-semibold">Numi</p>
           <p className="text-muted-foreground truncate text-xs leading-tight">
@@ -130,25 +130,28 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         role="log"
         aria-live="polite"
         aria-label="Conversación con Numi"
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
+        className={cn(
+          'min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-3',
+          // Papel de la conversación: puntos casi invisibles sobre el fondo, el
+          // guiño al chat de mensajería sin meter una imagen de fondo.
+          'bg-[radial-gradient(var(--border)_0.5px,transparent_0.5px)] bg-[size:14px_14px]',
+        )}
       >
         {messages.length === 0 ? (
           <EmptyState onPick={(text) => void send(text)} canConfigure={canManageOrg(role)} />
         ) : (
-          messages.map((m, i) => (
-            <ChatMessageItem
-              key={m.id}
-              message={m}
-              grouped={messages[i - 1]?.role === m.role}
-            />
-          ))
+          messages.map((m, i) => {
+            const grouped = messages[i - 1]?.role === m.role
+            return (
+              <div key={m.id} className={cn(!grouped && i > 0 && 'pt-2')}>
+                <ChatMessageItem message={m} grouped={grouped} />
+              </div>
+            )
+          })
         )}
 
         {isTyping && (
-          <div className="flex gap-2">
-            <div className="w-6 shrink-0">
-              <NumiAvatar className="mt-1" />
-            </div>
+          <div className="flex justify-start pt-2">
             <ChatBubble role="assistant">
               <TypingIndicator />
             </ChatBubble>
@@ -181,7 +184,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
 
       <ChatComposer onSend={(text) => void send(text)} disabled={isTyping} autoFocus />
 
-      <p className="text-muted-foreground bg-card border-t px-3 py-1.5 text-center text-[0.65rem] sm:rounded-b-lg">
+      <p className="text-muted-foreground bg-card px-3 pb-2 text-center text-[0.65rem] sm:rounded-b-lg">
         Numi pide confirmación antes de registrar cualquier operación.
       </p>
     </div>
