@@ -62,6 +62,10 @@
     {
       "name": "Assistant",
       "description": "AI assistant configuration: providers, models and BYOK API keys"
+    },
+    {
+      "name": "Knowledge",
+      "description": "Platform knowledge base (RAG) for support and how-to answers"
     }
   ],
   "paths": {
@@ -7566,6 +7570,65 @@
           }
         }
       }
+    },
+    "/api/v1/organizations/{orgId}/knowledge/search": {
+      "get": {
+        "tags": [
+          "Knowledge"
+        ],
+        "summary": "Search the platform knowledge base (RAG) for support / how-to answers",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching knowledge chunks, most relevant first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeHit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -12630,6 +12693,30 @@
         "required": [
           "sessionId",
           "reply"
+        ],
+        "additionalProperties": false
+      },
+      "KnowledgeHit": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "heading": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "title",
+          "heading",
+          "content",
+          "score"
         ],
         "additionalProperties": false
       }
