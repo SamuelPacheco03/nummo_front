@@ -5,7 +5,6 @@ import { KpiTile } from '@/components/kpi-tile'
 import { BarList } from '@/components/bar-list'
 import { AgingChart } from '@/components/aging-chart'
 import { ContactAmountList } from '@/components/contact-amount-list'
-import { UpcomingList } from '@/components/upcoming-list'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useContacts } from '@/features/contacts/hooks'
@@ -24,8 +23,6 @@ import {
   useRecurringCommitment,
   useTopCreditors,
   useTopDebtors,
-  useUpcomingPayables,
-  useUpcomingReceivables,
 } from './hooks'
 
 const OPEN = new Set(['PENDING', 'PARTIAL', 'OVERDUE'])
@@ -75,8 +72,6 @@ export function ReportsPortfolioPage() {
   const { buckets: cxpAging } = usePayablesAging(orgId)
   const { debtors } = useTopDebtors(orgId, 5)
   const { creditors } = useTopCreditors(orgId, 5)
-  const { upcoming: upcomingCxc } = useUpcomingReceivables(orgId, 30, 5)
-  const { upcoming: upcomingCxp } = useUpcomingPayables(orgId, 30, 5)
 
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
   const nameOf = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
@@ -168,28 +163,13 @@ export function ReportsPortfolioPage() {
               sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Panel title="Top deudores">
-              <ContactAmountList
-                items={debtors.map((d) => ({ id: d.payerContactId, name: d.displayName, amount: d.overdueBalance }))}
-                currency={currency}
-                emptyLabel="Nadie en mora. 🎉"
-              />
-            </Panel>
-            <Panel title="Próximas a vencer">
-              <UpcomingList
-                items={upcomingCxc.map((u) => ({
-                  id: u.receivableId,
-                  href: `/cartera/cxc/${u.receivableId}`,
-                  name: u.displayName,
-                  dueDate: u.dueDate,
-                  amount: u.balance,
-                }))}
-                currency={currency}
-                emptyLabel="Nada próximo."
-              />
-            </Panel>
-          </div>
+          <Panel title="Top deudores">
+            <ContactAmountList
+              items={debtors.map((d) => ({ id: d.payerContactId, name: d.displayName, amount: d.overdueBalance }))}
+              currency={currency}
+              emptyLabel="Nadie en mora. 🎉"
+            />
+          </Panel>
           <Panel title="Antigüedad de la cartera">
             <AgingChart buckets={cxcAging} currency={currency} emptyLabel="No hay cartera abierta. 🎉" />
           </Panel>
@@ -220,28 +200,13 @@ export function ReportsPortfolioPage() {
               sub={`${activeSchedules.length} recurrente(s) activo(s)`}
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Panel title="Top acreedores">
-              <ContactAmountList
-                items={creditors.map((c) => ({ id: c.supplierContactId, name: c.displayName, amount: c.overdueBalance }))}
-                currency={currency}
-                emptyLabel="Nada por pagar vencido. 🎉"
-              />
-            </Panel>
-            <Panel title="Próximos pagos">
-              <UpcomingList
-                items={upcomingCxp.map((u) => ({
-                  id: u.expenseId,
-                  href: `/gastos/cxp/${u.expenseId}`,
-                  name: u.displayName,
-                  dueDate: u.dueDate,
-                  amount: u.balance,
-                }))}
-                currency={currency}
-                emptyLabel="Nada próximo."
-              />
-            </Panel>
-          </div>
+          <Panel title="Top acreedores">
+            <ContactAmountList
+              items={creditors.map((c) => ({ id: c.supplierContactId, name: c.displayName, amount: c.overdueBalance }))}
+              currency={currency}
+              emptyLabel="Nada por pagar vencido. 🎉"
+            />
+          </Panel>
           <Panel title="Antigüedad de lo que debes">
             <AgingChart buckets={cxpAging} currency={currency} emptyLabel="No tienes cuentas por pagar. 🎉" />
           </Panel>
