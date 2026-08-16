@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
 import { BarList } from '@/components/bar-list'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
+import { ContactAmountList } from '@/components/contact-amount-list'
+import { UpcomingList } from '@/components/upcoming-list'
 import { KpiTile } from '@/components/kpi-tile'
 import { Input } from '@/components/ui/input'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -202,76 +204,50 @@ export function DashboardPage() {
         </Panel>
 
         <Panel title="Top deudores">
-          {debtors.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Nadie en mora. 🎉</p>
-          ) : (
-            <ul className="divide-y">
-              {debtors.map((d) => (
-                <li key={d.payerContactId} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <Link to={`/contactos/${d.payerContactId}`} className="truncate hover:underline">
-                    {d.displayName}
-                  </Link>
-                  <span className="nums font-medium text-destructive">{formatAmount(d.overdueBalance, currency)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ContactAmountList
+            items={debtors.map((d) => ({ id: d.payerContactId, name: d.displayName, amount: d.overdueBalance }))}
+            currency={currency}
+            emptyLabel="Nadie en mora. 🎉"
+          />
         </Panel>
 
         <Panel title="Top acreedores">
-          {creditors.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Nada por pagar vencido. 🎉</p>
-          ) : (
-            <ul className="divide-y">
-              {creditors.map((c) => (
-                <li key={c.supplierContactId} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <Link to={`/contactos/${c.supplierContactId}`} className="truncate hover:underline">
-                    {c.displayName}
-                  </Link>
-                  <span className="nums font-medium text-destructive">{formatAmount(c.overdueBalance, currency)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ContactAmountList
+            items={creditors.map((c) => ({ id: c.supplierContactId, name: c.displayName, amount: c.overdueBalance }))}
+            currency={currency}
+            emptyLabel="Nada por pagar vencido. 🎉"
+          />
         </Panel>
       </div>
 
       {/* Próximos vencimientos: cobrar vs pagar */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Próximas a vencer">
-          {upcoming.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Nada próximo.</p>
-          ) : (
-            <ul className="divide-y">
-              {upcoming.map((u) => (
-                <li key={u.receivableId} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <Link to={`/cartera/cxc/${u.receivableId}`} className="min-w-0 flex-1 truncate hover:underline">
-                    {u.displayName}
-                  </Link>
-                  <span className="nums shrink-0 text-xs text-muted-foreground">{formatDateHuman(u.dueDate)}</span>
-                  <span className="nums shrink-0 font-medium">{formatAmount(u.balance, currency)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <UpcomingList
+            items={upcoming.map((u) => ({
+              id: u.receivableId,
+              href: `/cartera/cxc/${u.receivableId}`,
+              name: u.displayName,
+              dueDate: u.dueDate,
+              amount: u.balance,
+            }))}
+            currency={currency}
+            emptyLabel="Nada próximo."
+          />
         </Panel>
 
         <Panel title="Próximos pagos">
-          {upcomingPay.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Nada próximo.</p>
-          ) : (
-            <ul className="divide-y">
-              {upcomingPay.map((u) => (
-                <li key={u.expenseId} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <Link to={`/gastos/cxp/${u.expenseId}`} className="min-w-0 flex-1 truncate hover:underline">
-                    {u.displayName}
-                  </Link>
-                  <span className="nums shrink-0 text-xs text-muted-foreground">{formatDateHuman(u.dueDate)}</span>
-                  <span className="nums shrink-0 font-medium">{formatAmount(u.balance, currency)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <UpcomingList
+            items={upcomingPay.map((u) => ({
+              id: u.expenseId,
+              href: `/gastos/cxp/${u.expenseId}`,
+              name: u.displayName,
+              dueDate: u.dueDate,
+              amount: u.balance,
+            }))}
+            currency={currency}
+            emptyLabel="Nada próximo."
+          />
         </Panel>
       </div>
 
