@@ -29,6 +29,16 @@ Numi gana soporte: responde dudas de cómo usar Nummo desde una base de conocimi
 - En el chat, Numi usa esto automáticamente (tool `search_knowledge`) para preguntas de plataforma/soporte y responde solo con lo recuperado; el endpoint del chat no cambia.
 - Requiere configuración global en el backend (no BYOK): `VOYAGE_API_KEY` y una base con la extensión pgvector, más ingestar el corpus. Si no está configurado, el endpoint responde con un error claro ("La base de conocimiento no está configurada").
 
+## 🆕 Historial de conversaciones de Numi (persistente + scroll infinito)
+
+Numi ahora **guarda todas las conversaciones** (antes solo memoria efímera). El front puede listarlas y cargar mensajes con scroll estilo WhatsApp. Regenera con `pnpm api:gen`.
+
+- `POST /api/v1/organizations/:orgId/assistant/chat` — sin cambios de shape; el `sessionId` que devuelve **es el id de la conversación** (guárdalo y reenvíalo para continuar; si expira la memoria, el backend rehidrata solo).
+- `GET /api/v1/organizations/:orgId/assistant/conversations?limit=&cursor=` → `{ items: [{ id, title, messageCount, lastMessageAt, createdAt, updatedAt }], nextCursor }` — mis conversaciones, más recientes primero. Para la siguiente página, reenvía `nextCursor` como `cursor`.
+- `GET /api/v1/organizations/:orgId/assistant/conversations/:id/messages?limit=&before=` → `{ items: [{ id, role, content, createdAt }], nextCursor }` — mensajes del **más nuevo al más antiguo**. Para **cargar más viejos al hacer scroll hacia arriba**, reenvía `nextCursor` como `before` (keyset, sin OFFSET). Solo el dueño de la conversación puede verla (si no, 404).
+- **Privadas por usuario** y se **guardan siempre**. Requiere que el backend haya corrido `pnpm db:migrate` (migración 0011).
+- **UX sugerida:** lista de chats (como WhatsApp) desde el primer endpoint; al abrir uno, cargar la última página de mensajes y, al hacer scroll arriba, pedir la siguiente con `before`. Invierte cada página para mostrar del más viejo (arriba) al más nuevo (abajo).
+
 ## 🔁 Paginación de listas (unificada)
 
 Las listas del backend aceptan de forma consistente `q` (búsqueda), `sort` y `order`. Los valores válidos de `sort` dependen de cada lista (p. ej. receivables: `dueDate | balance | originalAmount`; los maestros: `name | createdAt`). Regenera el cliente para tomar los enums nuevos: `pnpm api:gen`.
