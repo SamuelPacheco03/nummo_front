@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Wand2 } from 'lucide-react'
-import { PageHeader } from '@/components/page-header'
+import { Loader2, Wand2 } from 'lucide-react'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
 import { MoneyInput } from '@/components/ui/money-input'
@@ -43,6 +42,10 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 const PURPOSES: Purpose[] = ['RECEIVABLE', 'ADVANCE', 'DIRECT_INCOME']
+
+const LIST = '/cartera/pagos'
+/** El botón de guardar vive en el pie del cajón, fuera del <form>. */
+const FORM_ID = 'register-payment-form'
 
 export function RegisterPaymentPage() {
   const navigate = useNavigate()
@@ -182,19 +185,23 @@ export function RegisterPaymentPage() {
   })
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader title="Registrar pago">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/cartera/pagos">
-            <ArrowLeft className="size-4" />
-            Volver
-          </Link>
-        </Button>
-      </PageHeader>
-
-      <Card>
-        <form onSubmit={onSubmit} noValidate>
-          <CardContent className="space-y-4">
+    <DetailDrawer
+      closeTo={LIST}
+      title="Registrar pago"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => navigate(LIST)}>
+            Cancelar
+          </Button>
+          {/* Fuera del <form>, así que se ata por id para poder enviarlo igual. */}
+          <Button type="submit" form={FORM_ID} disabled={register.isPending}>
+            {register.isPending && <Loader2 className="size-4 animate-spin" />}
+            Registrar pago
+          </Button>
+        </div>
+      }
+    >
+      <form id={FORM_ID} onSubmit={onSubmit} noValidate className="space-y-4">
             {/* Propósito */}
             <div className="inline-flex flex-wrap rounded-md border p-0.5">
               {PURPOSES.map((p) => (
@@ -335,18 +342,7 @@ export function RegisterPaymentPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-          <CardFooter className="justify-end gap-2 border-t pt-6">
-            <Button type="button" variant="outline" onClick={() => navigate('/cartera/pagos')}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={register.isPending}>
-              {register.isPending && <Loader2 className="size-4 animate-spin" />}
-              Registrar pago
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+      </form>
+    </DetailDrawer>
   )
 }

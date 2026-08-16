@@ -100,18 +100,18 @@ export const router = createBrowserRouter([
             // El detalle es hijo: la lista sigue montada detrás del cajón.
             children: [
               {
+                path: 'nuevo',
+                lazy: async () => ({
+                  Component: (await import('@/features/payments/register-payment-page')).RegisterPaymentPage,
+                }),
+              },
+              {
                 path: ':paymentId',
                 lazy: async () => ({
                   Component: (await import('@/features/payments/payment-detail-page')).PaymentDetailPage,
                 }),
               },
             ],
-          },
-          {
-            path: 'cartera/pagos/nuevo',
-            lazy: async () => ({
-              Component: (await import('@/features/payments/register-payment-page')).RegisterPaymentPage,
-            }),
           },
           {
             path: 'cartera/acuerdos',
