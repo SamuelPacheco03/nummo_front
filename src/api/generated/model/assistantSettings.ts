@@ -8,9 +8,11 @@
 import type { AiProviderCatalogEntry } from './aiProviderCatalogEntry';
 import type { AiProviderCredential } from './aiProviderCredential';
 import type { AssistantSettingsActiveProvider } from './assistantSettingsActiveProvider';
+import type { AssistantVoiceSettings } from './assistantVoiceSettings';
 
 export interface AssistantSettings {
   activeProvider: AssistantSettingsActiveProvider;
   providers: AiProviderCredential[];
   catalog: AiProviderCatalogEntry[];
+  voice: AssistantVoiceSettings;
 }

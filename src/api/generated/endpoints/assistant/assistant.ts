@@ -26,9 +26,14 @@ import type {
 
 import type {
   AiProviderCredential,
+  AiVoiceProviderCredential,
+  AssistantAudioChatForm,
+  AssistantAudioChatResponse,
   AssistantChatInput,
   AssistantChatResponse,
   AssistantSettings,
+  AssistantTranscribeForm,
+  AssistantTranscription,
   ConversationList,
   ErrorResponse,
   GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesParams,
@@ -94,6 +99,7 @@ export const getGetApiV1OrganizationsOrgIdAssistantSettingsUrl = (orgId: string,
 }
 
 /**
+ * Devuelve la configuración del LLM de chat en la raíz y la de transcripción de voz en el bloque `voice`. Cada bloque tiene su proveedor activo independiente.
  * @summary AI assistant settings: configured providers (masked), active provider and model catalog (OWNER/ADMIN)
  */
 export const getApiV1OrganizationsOrgIdAssistantSettings = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantSettingsResponse> => {
@@ -460,6 +466,281 @@ export const usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate = 
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantProvidersProviderActivateMutationOptions(options), queryClient);
     }
+    export type putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse200 = {
+  data: AiVoiceProviderCredential
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseSuccess = (putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseError = (putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse = (putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseSuccess | putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseError)
+
+export const getPutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderUrl = (orgId: string,
+    provider: 'deepgram' | 'elevenlabs',) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/voice/providers/${provider}`
+}
+
+/**
+ * Configura el modelo de voz que transcribe los mensajes de audio. `provider` es deepgram|elevenlabs y `model` es su id (p. ej. `nova-3`, `scribe_v1`). La API key se guarda cifrada y nunca se devuelve. El primer proveedor de voz configurado queda activo automáticamente; usa `activate:true` para cambiar a otro. Es independiente del proveedor de chat.
+ * @summary Set/replace the API key + model of a speech-to-text provider (OWNER/ADMIN)
+ */
+export const putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = async (orgId: string,
+    provider: 'deepgram' | 'elevenlabs',
+    upsertAiProviderCredential: UpsertAiProviderCredential, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse>(getPutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderUrl(orgId,provider),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(upsertAiProviderCredential)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs';data: UpsertAiProviderCredential}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs';data: UpsertAiProviderCredential}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, {orgId: string;provider: 'deepgram' | 'elevenlabs';data: UpsertAiProviderCredential}> = (props) => {
+          const {orgId,provider,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider(orgId,provider,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>>
+    export type PutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationBody = UpsertAiProviderCredential
+    export type PutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationError = ErrorResponse
+
+    /**
+ * @summary Set/replace the API key + model of a speech-to-text provider (OWNER/ADMIN)
+ */
+export const usePutApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs';data: UpsertAiProviderCredential}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>,
+        TError,
+        {orgId: string;provider: 'deepgram' | 'elevenlabs';data: UpsertAiProviderCredential},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationOptions(options), queryClient);
+    }
+    export type deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseSuccess = (deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse204) & {
+  headers: Headers;
+};
+export type deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseError = (deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse404) & {
+  headers: Headers;
+};
+
+export type deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse = (deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseSuccess | deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponseError)
+
+export const getDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderUrl = (orgId: string,
+    provider: 'deepgram' | 'elevenlabs',) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/voice/providers/${provider}`
+}
+
+/**
+ * @summary Remove a speech-to-text provider credential (OWNER/ADMIN)
+ */
+export const deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = async (orgId: string,
+    provider: 'deepgram' | 'elevenlabs', options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse> => {
+
+  return customFetch<deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse>(getDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderUrl(orgId,provider),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext> => {
+
+const mutationKey = ['deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, {orgId: string;provider: 'deepgram' | 'elevenlabs'}> = (props) => {
+          const {orgId,provider} = props ?? {};
+
+          return  deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider(orgId,provider,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>>
+
+    export type DeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationError = ErrorResponse
+
+    /**
+ * @summary Remove a speech-to-text provider credential (OWNER/ADMIN)
+ */
+export const useDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>,
+        TError,
+        {orgId: string;provider: 'deepgram' | 'elevenlabs'},
+        TContext
+      > => {
+      return useMutation(getDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse200 = {
+  data: AiVoiceProviderCredential
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponseSuccess = (postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponseError = (postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse404) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse = (postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponseSuccess | postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateUrl = (orgId: string,
+    provider: 'deepgram' | 'elevenlabs',) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/voice/providers/${provider}/activate`
+}
+
+/**
+ * @summary Make a configured speech-to-text provider the active one (OWNER/ADMIN)
+ */
+export const postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate = async (orgId: string,
+    provider: 'deepgram' | 'elevenlabs', options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse>(getPostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateUrl(orgId,provider),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>, {orgId: string;provider: 'deepgram' | 'elevenlabs'}> = (props) => {
+          const {orgId,provider} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate(orgId,provider,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>>
+
+    export type PostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateMutationError = ErrorResponse
+
+    /**
+ * @summary Make a configured speech-to-text provider the active one (OWNER/ADMIN)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>,
+        TError,
+        {orgId: string;provider: 'deepgram' | 'elevenlabs'},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateMutationOptions(options), queryClient);
+    }
     export type postApiV1OrganizationsOrgIdAssistantChatResponse200 = {
   data: AssistantChatResponse
   status: 200
@@ -822,3 +1103,198 @@ export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessages<TD
 
 
 
+export type postApiV1OrganizationsOrgIdAssistantTranscribeResponse200 = {
+  data: AssistantTranscription
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantTranscribeResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdAssistantTranscribeResponseSuccess = (postApiV1OrganizationsOrgIdAssistantTranscribeResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantTranscribeResponseError = (postApiV1OrganizationsOrgIdAssistantTranscribeResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantTranscribeResponse = (postApiV1OrganizationsOrgIdAssistantTranscribeResponseSuccess | postApiV1OrganizationsOrgIdAssistantTranscribeResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantTranscribeUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/transcribe`
+}
+
+/**
+ * Convierte un mensaje de voz en texto usando el proveedor de transcripción activo de la organización. No habla con Numi: úsalo para mostrar el texto al usuario, dejar que lo corrija y enviarlo después por `/assistant/chat`. Requiere un modelo de voz configurado por un administrador.
+ * @summary Transcribir un audio a texto (cualquier miembro)
+ */
+export const postApiV1OrganizationsOrgIdAssistantTranscribe = async (orgId: string,
+    assistantTranscribeForm: AssistantTranscribeForm, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantTranscribeResponse> => {
+    const formData = new FormData();
+formData.append(`audio`, assistantTranscribeForm.audio);
+if(assistantTranscribeForm.language !== undefined) {
+ formData.append(`language`, assistantTranscribeForm.language);
+ }
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantTranscribeResponse>(getPostApiV1OrganizationsOrgIdAssistantTranscribeUrl(orgId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantTranscribeMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantTranscribe>>, TError,{orgId: string;data: AssistantTranscribeForm}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantTranscribe>>, TError,{orgId: string;data: AssistantTranscribeForm}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantTranscribe'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantTranscribe>>, {orgId: string;data: AssistantTranscribeForm}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantTranscribe(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantTranscribeMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantTranscribe>>>
+    export type PostApiV1OrganizationsOrgIdAssistantTranscribeMutationBody = AssistantTranscribeForm
+    export type PostApiV1OrganizationsOrgIdAssistantTranscribeMutationError = ErrorResponse
+
+    /**
+ * @summary Transcribir un audio a texto (cualquier miembro)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantTranscribe = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantTranscribe>>, TError,{orgId: string;data: AssistantTranscribeForm}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantTranscribe>>,
+        TError,
+        {orgId: string;data: AssistantTranscribeForm},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantTranscribeMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantChatAudioResponse200 = {
+  data: AssistantAudioChatResponse
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatAudioResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatAudioResponseSuccess = (postApiV1OrganizationsOrgIdAssistantChatAudioResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantChatAudioResponseError = (postApiV1OrganizationsOrgIdAssistantChatAudioResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantChatAudioResponse = (postApiV1OrganizationsOrgIdAssistantChatAudioResponseSuccess | postApiV1OrganizationsOrgIdAssistantChatAudioResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatAudioUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/chat/audio`
+}
+
+/**
+ * Transcribe el audio y lo procesa como un mensaje de texto normal: mismas herramientas, mismos permisos por rol y mismo control de grounding. Devuelve `transcript` (lo que se entendió, para pintar la burbuja del usuario) y `reply`. El mensaje queda en el historial marcado con `source: "audio"`.
+ * @summary Enviar un mensaje de voz a Numi (transcribe y responde)
+ */
+export const postApiV1OrganizationsOrgIdAssistantChatAudio = async (orgId: string,
+    assistantAudioChatForm: AssistantAudioChatForm, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantChatAudioResponse> => {
+    const formData = new FormData();
+formData.append(`audio`, assistantAudioChatForm.audio);
+if(assistantAudioChatForm.sessionId !== undefined) {
+ formData.append(`sessionId`, assistantAudioChatForm.sessionId);
+ }
+if(assistantAudioChatForm.language !== undefined) {
+ formData.append(`language`, assistantAudioChatForm.language);
+ }
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantChatAudioResponse>(getPostApiV1OrganizationsOrgIdAssistantChatAudioUrl(orgId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatAudioMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatAudio>>, TError,{orgId: string;data: AssistantAudioChatForm}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatAudio>>, TError,{orgId: string;data: AssistantAudioChatForm}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantChatAudio'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatAudio>>, {orgId: string;data: AssistantAudioChatForm}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantChatAudio(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantChatAudioMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatAudio>>>
+    export type PostApiV1OrganizationsOrgIdAssistantChatAudioMutationBody = AssistantAudioChatForm
+    export type PostApiV1OrganizationsOrgIdAssistantChatAudioMutationError = ErrorResponse
+
+    /**
+ * @summary Enviar un mensaje de voz a Numi (transcribe y responde)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantChatAudio = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatAudio>>, TError,{orgId: string;data: AssistantAudioChatForm}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatAudio>>,
+        TError,
+        {orgId: string;data: AssistantAudioChatForm},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatAudioMutationOptions(options), queryClient);
+    }

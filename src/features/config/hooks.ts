@@ -21,9 +21,12 @@ import {
 import {
   getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey,
   useDeleteApiV1OrganizationsOrgIdAssistantProvidersProvider,
+  useDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider,
   useGetApiV1OrganizationsOrgIdAssistantSettings,
   usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate,
+  usePostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate,
   usePutApiV1OrganizationsOrgIdAssistantProvidersProvider,
+  usePutApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider,
 } from '@/api/generated/endpoints/assistant/assistant'
 import type {
   AssistantSettings,
@@ -179,6 +182,41 @@ export function useActivateAiProvider(orgId: string) {
 export function useRemoveAiProvider(orgId: string) {
   const qc = useQueryClient()
   return useDeleteApiV1OrganizationsOrgIdAssistantProvidersProvider({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/* --- Voz / transcripción (speech-to-text): mismo patrón, bloque `voice` de settings --- */
+
+/** Crea/reemplaza la credencial (modelo + API key) de un proveedor de voz. */
+export function useUpsertVoiceProvider(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/** Marca un proveedor de voz configurado como el activo. */
+export function useActivateVoiceProvider(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/** Elimina la credencial de un proveedor de voz. */
+export function useRemoveVoiceProvider(orgId: string) {
+  const qc = useQueryClient()
+  return useDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider({
     mutation: {
       onSuccess: () =>
         void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),

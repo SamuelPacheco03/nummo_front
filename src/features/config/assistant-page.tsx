@@ -12,35 +12,53 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
-import type { AiProviderCatalogEntry, AiProviderCredential } from '@/api/generated/model'
+import type { AiProviderCatalogEntry, AiVoiceProviderCatalogEntry } from '@/api/generated/model'
 import {
   useActivateAiProvider,
+  useActivateVoiceProvider,
   useAssistantSettings,
   useRemoveAiProvider,
+  useRemoveVoiceProvider,
   useUpsertAiProvider,
+  useUpsertVoiceProvider,
 } from './hooks'
 
-/** Tarjeta de un proveedor: modelo + API key (write-only) y acciones. */
-function ProviderCard({
-  orgId,
+/** Lo mínimo que la tarjeta necesita del catálogo y de la credencial guardada. */
+type CatalogEntry = { provider: string; label: string; suggestedModels: string[] }
+type Credential = { model: string; apiKeyLast4: string } | undefined
+
+/**
+ * Tarjeta presentacional de un proveedor (chat o voz): modelo + API key
+ * (write-only) y acciones Guardar/Activar/Eliminar. Las mutaciones las inyecta
+ * el envoltorio, así el mismo diseño sirve para ambos tipos.
+ */
+function ProviderCardView({
   entry,
   credential,
   isActive,
+  saving,
+  activating,
+  removing,
+  onSave,
+  onActivate,
+  onRemove,
 }: {
-  orgId: string
-  entry: AiProviderCatalogEntry
-  credential: AiProviderCredential | undefined
+  entry: CatalogEntry
+  credential: Credential
   isActive: boolean
+  saving: boolean
+  activating: boolean
+  removing: boolean
+  onSave: (model: string, apiKey: string) => Promise<unknown>
+  onActivate: () => Promise<unknown>
+  onRemove: () => Promise<unknown>
 }) {
-  const upsert = useUpsertAiProvider(orgId)
-  const activate = useActivateAiProvider(orgId)
-  const remove = useRemoveAiProvider(orgId)
   const configured = !!credential
   const [model, setModel] = useState(credential?.model ?? entry.suggestedModels[0] ?? '')
   const [apiKey, setApiKey] = useState('')
   const [confirmDel, setConfirmDel] = useState(false)
 
-  const onSave = async () => {
+  const handleSave = async () => {
     if (!model.trim()) {
       toast.error('Indica el modelo.')
       return
@@ -50,7 +68,7 @@ function ProviderCard({
       return
     }
     try {
-      await upsert.mutateAsync({ orgId, provider: entry.provider, data: { model: model.trim(), apiKey: apiKey.trim() } })
+      await onSave(model.trim(), apiKey.trim())
       setApiKey('')
       toast.success(`${entry.label} guardado`)
     } catch (err) {
@@ -58,18 +76,18 @@ function ProviderCard({
     }
   }
 
-  const onActivate = async () => {
+  const handleActivate = async () => {
     try {
-      await activate.mutateAsync({ orgId, provider: entry.provider })
+      await onActivate()
       toast.success(`${entry.label} activado`)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo activar'))
     }
   }
 
-  const onRemove = async () => {
+  const handleRemove = async () => {
     try {
-      await remove.mutateAsync({ orgId, provider: entry.provider })
+      await onRemove()
       setConfirmDel(false)
       toast.success(`${entry.label} eliminado`)
     } catch (err) {
@@ -83,7 +101,7 @@ function ProviderCard({
     <Card className={cn(isActive && 'ring-1 ring-brand')}>
       <CardContent className="space-y-4 pt-6">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-medium">{entry.label}</h2>
+          <h3 className="font-medium">{entry.label}</h3>
           {isActive ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
               <Check className="size-3" /> Activo
@@ -134,13 +152,13 @@ function ProviderCard({
         </Field>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" onClick={onSave} disabled={upsert.isPending}>
-            {upsert.isPending && <Loader2 className="size-4 animate-spin" />}
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="size-4 animate-spin" />}
             Guardar
           </Button>
           {configured && !isActive && (
-            <Button type="button" variant="outline" onClick={onActivate} disabled={activate.isPending}>
-              {activate.isPending && <Loader2 className="size-4 animate-spin" />}
+            <Button type="button" variant="outline" onClick={handleActivate} disabled={activating}>
+              {activating && <Loader2 className="size-4 animate-spin" />}
               Activar
             </Button>
           )}
@@ -165,10 +183,70 @@ function ProviderCard({
         description="Se borrará la credencial guardada. Podrás volver a configurarla cuando quieras."
         confirmLabel="Eliminar"
         destructive
-        loading={remove.isPending}
-        onConfirm={onRemove}
+        loading={removing}
+        onConfirm={handleRemove}
       />
     </Card>
+  )
+}
+
+/** Proveedor de CHAT (modelo de lenguaje de Numi). */
+function ChatProviderCard({
+  orgId,
+  entry,
+  credential,
+  isActive,
+}: {
+  orgId: string
+  entry: AiProviderCatalogEntry
+  credential: Credential
+  isActive: boolean
+}) {
+  const upsert = useUpsertAiProvider(orgId)
+  const activate = useActivateAiProvider(orgId)
+  const remove = useRemoveAiProvider(orgId)
+  return (
+    <ProviderCardView
+      entry={entry}
+      credential={credential}
+      isActive={isActive}
+      saving={upsert.isPending}
+      activating={activate.isPending}
+      removing={remove.isPending}
+      onSave={(model, apiKey) => upsert.mutateAsync({ orgId, provider: entry.provider, data: { model, apiKey } })}
+      onActivate={() => activate.mutateAsync({ orgId, provider: entry.provider })}
+      onRemove={() => remove.mutateAsync({ orgId, provider: entry.provider })}
+    />
+  )
+}
+
+/** Proveedor de VOZ (transcripción / speech-to-text). */
+function VoiceProviderCard({
+  orgId,
+  entry,
+  credential,
+  isActive,
+}: {
+  orgId: string
+  entry: AiVoiceProviderCatalogEntry
+  credential: Credential
+  isActive: boolean
+}) {
+  const upsert = useUpsertVoiceProvider(orgId)
+  const activate = useActivateVoiceProvider(orgId)
+  const remove = useRemoveVoiceProvider(orgId)
+  return (
+    <ProviderCardView
+      entry={entry}
+      credential={credential}
+      isActive={isActive}
+      saving={upsert.isPending}
+      activating={activate.isPending}
+      removing={remove.isPending}
+      onSave={(model, apiKey) => upsert.mutateAsync({ orgId, provider: entry.provider, data: { model, apiKey } })}
+      onActivate={() => activate.mutateAsync({ orgId, provider: entry.provider })}
+      onRemove={() => remove.mutateAsync({ orgId, provider: entry.provider })}
+    />
   )
 }
 
@@ -178,10 +256,10 @@ export function AssistantPage() {
   const { settings, isPending, isError, error } = useAssistantSettings(canManage ? orgId : undefined)
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-8">
       <PageHeader
         title="Asistente / IA"
-        description="Conecta tu propio proveedor de IA (BYOK): elige modelo y pega tu API key. Con un proveedor activo, Numi queda disponible en el botón flotante de todas las pantallas."
+        description="Conecta tu propio proveedor de IA (BYOK): un modelo de chat para Numi y, opcional, un modelo de voz para transcribir los mensajes de audio. Las API keys se guardan cifradas y nunca se muestran."
       />
 
       {!canManage ? (
@@ -198,17 +276,47 @@ export function AssistantPage() {
           {getErrorMessage(error, 'No se pudo cargar la configuración del asistente.')}
         </p>
       ) : (
-        <div className="space-y-4">
-          {settings.catalog.map((entry) => (
-            <ProviderCard
-              key={entry.provider}
-              orgId={orgId ?? ''}
-              entry={entry}
-              credential={settings.providers.find((p) => p.provider === entry.provider)}
-              isActive={settings.activeProvider === entry.provider}
-            />
-          ))}
-        </div>
+        <>
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-display text-lg font-semibold">Chat (modelo de lenguaje)</h2>
+              <p className="text-sm text-muted-foreground">
+                El modelo con el que Numi conversa y consulta tus datos.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {settings.catalog.map((entry) => (
+                <ChatProviderCard
+                  key={entry.provider}
+                  orgId={orgId ?? ''}
+                  entry={entry}
+                  credential={settings.providers.find((p) => p.provider === entry.provider)}
+                  isActive={settings.activeProvider === entry.provider}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-display text-lg font-semibold">Voz (transcripción)</h2>
+              <p className="text-sm text-muted-foreground">
+                El modelo que convierte los mensajes de audio en texto. Es independiente del de chat.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {settings.voice.catalog.map((entry) => (
+                <VoiceProviderCard
+                  key={entry.provider}
+                  orgId={orgId ?? ''}
+                  entry={entry}
+                  credential={settings.voice.providers.find((p) => p.provider === entry.provider)}
+                  isActive={settings.voice.activeProvider === entry.provider}
+                />
+              ))}
+            </div>
+          </section>
+        </>
       )}
     </div>
   )
