@@ -45,6 +45,11 @@
   --logo-blue: #2563eb;
   --logo-indigo: #4f46e5;
 
+  /* Burbuja propia del chat de Numi: azul lavado, no el azul de acción — es
+     superficie de lectura, no un botón, y a pantalla llena cansa la vista. */
+  --chat-bubble: #dbeafe;
+  --chat-bubble-foreground: #0f172a;
+
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
@@ -106,6 +111,11 @@
   --brand: #3b82f6;
   --brand-foreground: #ffffff;
 
+  /* En oscuro la burbuja propia va azul profundo (no lavado), que es lo que
+     mantiene la lectura cómoda sobre el fondo del hilo. */
+  --chat-bubble: #1e3a63;
+  --chat-bubble-foreground: #eaf1fb;
+
   --secondary: #1f2937;
   --secondary-foreground: #f8fafc;
   --muted: #1f2937;
@@ -159,6 +169,8 @@
   --color-logo-cyan: var(--logo-cyan);
   --color-logo-blue: var(--logo-blue);
   --color-logo-indigo: var(--logo-indigo);
+  --color-chat-bubble: var(--chat-bubble);
+  --color-chat-bubble-foreground: var(--chat-bubble-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

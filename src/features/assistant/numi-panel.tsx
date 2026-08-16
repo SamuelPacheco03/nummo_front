@@ -34,13 +34,7 @@ function HeaderAction({
 }
 
 /** Presentación de Numi y tres arranques, para no abrir sobre una caja vacía. */
-function EmptyState({
-  onPick,
-  canConfigure,
-}: {
-  onPick: (text: string) => void
-  canConfigure: boolean
-}) {
+function EmptyState({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="space-y-5 py-2">
       <div className="flex gap-3">
@@ -72,16 +66,6 @@ function EmptyState({
           ))}
         </div>
       </div>
-
-      {canConfigure && (
-        <p className="text-muted-foreground text-xs">
-          ¿Numi no responde?{' '}
-          <Link to="/config/asistente" className="text-brand underline-offset-4 hover:underline">
-            Revisa el proveedor de IA
-          </Link>
-          .
-        </p>
-      )}
     </div>
   )
 }
@@ -138,7 +122,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         )}
       >
         {messages.length === 0 ? (
-          <EmptyState onPick={(text) => void send(text)} canConfigure={canManageOrg(role)} />
+          <EmptyState onPick={(text) => void send(text)} />
         ) : (
           messages.map((m, i) => {
             const grouped = messages[i - 1]?.role === m.role
@@ -183,10 +167,6 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <ChatComposer onSend={(text) => void send(text)} disabled={isTyping} autoFocus />
-
-      <p className="text-muted-foreground bg-card px-3 pb-2 text-center text-[0.65rem] sm:rounded-b-lg">
-        Numi pide confirmación antes de registrar cualquier operación.
-      </p>
     </div>
   )
 }
