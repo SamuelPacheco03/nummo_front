@@ -21,6 +21,7 @@ import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { KnowledgeSearch } from './knowledge-search'
 
 type Tone = 'success' | 'warning' | 'destructive' | 'muted'
 const DOT: Record<Tone, string> = {
@@ -330,6 +331,8 @@ export function GuidePage() {
         title="Guía y ayuda"
         description="Qué es cada cosa, en qué orden usar Nummo y qué significa cada estado. Sin tecnicismos."
       />
+
+      <KnowledgeSearch />
 
       {/* Índice */}
       <nav className="rounded-lg border bg-muted/30 p-4">

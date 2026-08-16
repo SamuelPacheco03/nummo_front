@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   MapPin,
   Menu,
+  MonitorSmartphone,
   Palette,
   Percent,
   PieChart,
@@ -100,6 +101,7 @@ const SECTIONS: NavSection[] = [
       { to: '/config/miembros', label: 'Miembros', Icon: UserCog },
       { to: '/config/apariencia', label: 'Apariencia', Icon: Palette },
       { to: '/config/asistente', label: 'Asistente', Icon: Bot },
+      { to: '/config/sesiones', label: 'Sesiones', Icon: MonitorSmartphone },
     ],
   },
 ]

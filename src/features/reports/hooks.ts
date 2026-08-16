@@ -11,18 +11,22 @@ import {
   useGetApiV1OrganizationsOrgIdReportsPayablesSummary,
   useGetApiV1OrganizationsOrgIdReportsReceivablesAging,
   useGetApiV1OrganizationsOrgIdReportsReceivablesSummary,
+  useGetApiV1OrganizationsOrgIdReportsTopCreditors,
   useGetApiV1OrganizationsOrgIdReportsTopDebtors,
+  useGetApiV1OrganizationsOrgIdReportsUpcomingPayables,
   useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables,
 } from '@/api/generated/endpoints/reports/reports'
 import type {
   AgingBucket,
   CashflowReport,
+  Creditor,
   Debtor,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
   MonthlyCashflow,
   NamedAmount,
   PayablesSummary,
   ReceivablesSummary,
+  UpcomingPayable,
   UpcomingReceivable,
 } from '@/api/generated/model'
 import { todayISODate } from '@/lib/format'
@@ -84,9 +88,21 @@ export function useTopDebtors(orgId: string | undefined, limit = 5) {
   return { ...query, debtors: (query.data?.data ?? []) as Debtor[] }
 }
 
+/** A quién le debes más (proveedores por saldo vencido) — espejo de top-debtors. */
+export function useTopCreditors(orgId: string | undefined, limit = 5) {
+  const query = useGetApiV1OrganizationsOrgIdReportsTopCreditors(orgId ?? '', { limit }, enabled(orgId))
+  return { ...query, creditors: (query.data?.data ?? []) as Creditor[] }
+}
+
 export function useUpcomingReceivables(orgId: string | undefined, days = 30, limit = 5) {
   const query = useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables(orgId ?? '', { days, limit }, enabled(orgId))
   return { ...query, upcoming: (query.data?.data ?? []) as UpcomingReceivable[] }
+}
+
+/** Cuentas por pagar próximas a vencer — espejo de upcoming-receivables. */
+export function useUpcomingPayables(orgId: string | undefined, days = 30, limit = 5) {
+  const query = useGetApiV1OrganizationsOrgIdReportsUpcomingPayables(orgId ?? '', { days, limit }, enabled(orgId))
+  return { ...query, upcoming: (query.data?.data ?? []) as UpcomingPayable[] }
 }
 
 export function useIncomeByConcept(orgId: string | undefined, period: Period) {

@@ -20,7 +20,9 @@ import {
   usePayablesSummary,
   useReceivablesSummary,
   useRecurringCommitment,
+  useTopCreditors,
   useTopDebtors,
+  useUpcomingPayables,
   useUpcomingReceivables,
   type Period,
 } from './hooks'
@@ -69,7 +71,9 @@ export function DashboardPage() {
   const { items: expenses } = useExpensesByCategory(orgId, period)
   const { balances } = useAccountBalances(orgId)
   const { debtors } = useTopDebtors(orgId, 5)
+  const { creditors } = useTopCreditors(orgId, 5)
   const { upcoming } = useUpcomingReceivables(orgId, 30, 5)
+  const { upcoming: upcomingPay } = useUpcomingPayables(orgId, 30, 5)
   const { items: movements } = useMovements(orgId, { page: 1, pageSize: 8, order: 'desc' })
 
   const accountName = useMemo(() => new Map(balances.map((b) => [b.accountId, b.name])), [balances])
@@ -214,6 +218,26 @@ export function DashboardPage() {
           )}
         </Panel>
 
+        <Panel title="Top acreedores">
+          {creditors.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">Nada por pagar vencido. 🎉</p>
+          ) : (
+            <ul className="divide-y">
+              {creditors.map((c) => (
+                <li key={c.supplierContactId} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <Link to={`/contactos/${c.supplierContactId}`} className="truncate hover:underline">
+                    {c.displayName}
+                  </Link>
+                  <span className="nums font-medium text-destructive">{formatAmount(c.overdueBalance, currency)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+
+      {/* Próximos vencimientos: cobrar vs pagar */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Próximas a vencer">
           {upcoming.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">Nada próximo.</p>
@@ -222,6 +246,24 @@ export function DashboardPage() {
               {upcoming.map((u) => (
                 <li key={u.receivableId} className="flex items-center justify-between gap-2 py-2 text-sm">
                   <Link to={`/cartera/cxc/${u.receivableId}`} className="min-w-0 flex-1 truncate hover:underline">
+                    {u.displayName}
+                  </Link>
+                  <span className="nums shrink-0 text-xs text-muted-foreground">{formatDateHuman(u.dueDate)}</span>
+                  <span className="nums shrink-0 font-medium">{formatAmount(u.balance, currency)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel title="Próximos pagos">
+          {upcomingPay.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">Nada próximo.</p>
+          ) : (
+            <ul className="divide-y">
+              {upcomingPay.map((u) => (
+                <li key={u.expenseId} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <Link to={`/gastos/cxp/${u.expenseId}`} className="min-w-0 flex-1 truncate hover:underline">
                     {u.displayName}
                   </Link>
                   <span className="nums shrink-0 text-xs text-muted-foreground">{formatDateHuman(u.dueDate)}</span>

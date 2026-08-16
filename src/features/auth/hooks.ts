@@ -1,12 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
 import {
   getGetApiV1AuthMeQueryKey,
+  getGetApiV1AuthSessionsQueryKey,
+  useDeleteApiV1AuthSessionsId,
   useGetApiV1AuthMe,
+  useGetApiV1AuthSessions,
   usePostApiV1AuthLogin,
   usePostApiV1AuthLogout,
   usePostApiV1AuthRegister,
+  usePostApiV1AuthSessionsRevokeOthers,
 } from '@/api/generated/endpoints/auth/auth'
-import type { User } from '@/api/generated/model'
+import type { Session, User } from '@/api/generated/model'
 import { clearCsrfToken, refreshCsrfToken } from '@/lib/csrf'
 
 /**
@@ -70,3 +74,27 @@ export function useLogout() {
 
 /** Query key de `/auth/me` (para invalidaciones puntuales). */
 export const authMeQueryKey = getGetApiV1AuthMeQueryKey
+
+/* ---------- Sesiones activas ---------- */
+
+/** Sesiones activas del usuario (dispositivos con la sesión abierta). */
+export function useSessions() {
+  const query = useGetApiV1AuthSessions({ query: { staleTime: 30_000 } })
+  return { ...query, sessions: (query.data?.data ?? []) as Session[] }
+}
+
+/** Cierra una sesión concreta por id. */
+export function useRevokeSession() {
+  const qc = useQueryClient()
+  return useDeleteApiV1AuthSessionsId({
+    mutation: { onSuccess: () => void qc.invalidateQueries({ queryKey: getGetApiV1AuthSessionsQueryKey() }) },
+  })
+}
+
+/** Cierra todas las demás sesiones (deja solo la actual). */
+export function useRevokeOtherSessions() {
+  const qc = useQueryClient()
+  return usePostApiV1AuthSessionsRevokeOthers({
+    mutation: { onSuccess: () => void qc.invalidateQueries({ queryKey: getGetApiV1AuthSessionsQueryKey() }) },
+  })
+}
