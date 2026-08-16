@@ -1,5 +1,4 @@
 import { type Ref } from 'react'
-import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NumiAppMark } from './numi-avatar'
 
@@ -9,39 +8,23 @@ import { NumiAppMark } from './numi-avatar'
  * cualquier pantalla: no es un destino al que se navega, es una ayuda que se
  * abre encima de lo que estés haciendo — y en móvil la barra superior ya está
  * ocupada por el menú y el usuario.
+ *
+ * Solo existe con el chat cerrado: abierto, estorbaría sobre el composer y
+ * duplicaría la X de la cabecera, que es la que cierra.
  */
-export function NumiLauncher({
-  open,
-  onClick,
-  ref,
-}: {
-  open: boolean
-  onClick: () => void
-  ref?: Ref<HTMLButtonElement>
-}) {
+export function NumiLauncher({ onClick, ref }: { onClick: () => void; ref?: Ref<HTMLButtonElement> }) {
   return (
     <button
       ref={ref}
       type="button"
       onClick={onClick}
-      aria-label={open ? 'Cerrar el chat con Numi' : 'Abrir el chat con Numi'}
-      aria-expanded={open}
+      aria-label="Abrir el chat con Numi"
       className={cn(
         'fixed right-4 bottom-4 z-50 grid size-14 place-items-center rounded-[28%] transition-transform hover:scale-105 active:scale-95',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
-        // En móvil el panel ocupa toda la pantalla: el botón estorbaría.
-        open && 'hidden sm:grid',
       )}
     >
-      {open ? (
-        // Abierto, la marca ya está en la cabecera del panel: aquí manda la
-        // acción de cerrar.
-        <span className="bg-card text-foreground grid size-12 place-items-center rounded-full border shadow-lg">
-          <X className="size-5" />
-        </span>
-      ) : (
-        <NumiAppMark className="drop-shadow-lg" />
-      )}
+      <NumiAppMark className="drop-shadow-lg" />
     </button>
   )
 }

@@ -157,3 +157,18 @@ test('agrupa los turnos seguidos y sella la hora de cada mensaje', async () => {
   const log = screen.getByRole('log')
   expect(log.querySelectorAll('time')).toHaveLength(2)
 })
+
+test('el botón flotante desaparece con el chat abierto y recupera el foco al cerrar', async () => {
+  stubApi(async () => json({ sessionId: 's5', reply: 'hola' }))
+  const user = userEvent.setup()
+  mount()
+
+  await user.click(await screen.findByRole('button', { name: 'Abrir el chat con Numi' }))
+  // Abierto manda la X de la cabecera: nada de dos cierres flotando.
+  expect(screen.queryByRole('button', { name: 'Abrir el chat con Numi' })).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Cerrar el chat' }))
+
+  const launcher = await screen.findByRole('button', { name: 'Abrir el chat con Numi' })
+  expect(launcher).toHaveFocus()
+})

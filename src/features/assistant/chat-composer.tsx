@@ -64,7 +64,12 @@ export function ChatComposer({
     const el = ref.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT)}px`
+    const content = el.scrollHeight
+    el.style.height = `${Math.min(content, COMPOSER_MAX_HEIGHT)}px`
+    // La barra nativa solo cuando el texto pasa del tope. Sin esto el navegador
+    // la pinta igual por un redondeo de subpíxel entre alto y contenido, y se ve
+    // una barra muerta con sus flechas dentro de la caja de escribir.
+    el.style.overflowY = content > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden'
   }, [value])
 
   const canSend = !!value.trim() && !disabled
@@ -104,7 +109,7 @@ export function ChatComposer({
           maxLength={MAX_MESSAGE_LENGTH}
           aria-label="Mensaje para Numi"
           placeholder="Escríbele a Numi…"
-          className="placeholder:text-muted-foreground min-h-9 w-full resize-none bg-transparent px-3 pt-2.5 text-sm leading-relaxed outline-none"
+          className="placeholder:text-muted-foreground min-h-9 w-full resize-none overflow-y-hidden bg-transparent px-3 pt-2.5 text-sm leading-relaxed outline-none"
         />
         <div className="flex items-center gap-1 px-2 pb-2">
           <ComposerAction label="Adjuntar archivo (próximamente)" Icon={Paperclip} disabled />
