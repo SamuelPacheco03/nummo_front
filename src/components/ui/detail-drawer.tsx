@@ -28,6 +28,7 @@ export function DetailDrawer({
   actions,
   loading = false,
   error,
+  footer,
   children,
 }: {
   /** Ruta de la lista: a donde se navega al cerrar. */
@@ -41,6 +42,8 @@ export function DetailDrawer({
   actions?: ReactNode
   loading?: boolean
   error?: string | null
+  /** Pie fijo. Los formularios ponen aquí Guardar/Cancelar; las fichas no lo usan. */
+  footer?: ReactNode
   children?: ReactNode
 }) {
   const navigate = useNavigate()
@@ -104,7 +107,14 @@ export function DetailDrawer({
             {!loading && actions && <div className="mt-3 flex flex-wrap gap-2">{actions}</div>}
           </div>
 
-          <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
+          <div
+            className={cn(
+              'flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6',
+              // Sin pie, el respiro de abajo lo pone el propio cuerpo; con pie,
+              // lo pone el pie, que es quien toca el borde de la pantalla.
+              !footer && 'pb-[max(1.25rem,env(safe-area-inset-bottom))]',
+            )}
+          >
             {loading ? (
               <>
                 <Skeleton className="h-24 w-full" />
@@ -118,6 +128,16 @@ export function DetailDrawer({
               children
             )}
           </div>
+
+          {/*
+            Pie fijo fuera del área con scroll: en un formulario, Guardar tiene
+            que estar visible sin llegar al final de los campos.
+          */}
+          {!loading && !error && footer && (
+            <div className="bg-card flex-none border-t px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+              {footer}
+            </div>
+          )}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
