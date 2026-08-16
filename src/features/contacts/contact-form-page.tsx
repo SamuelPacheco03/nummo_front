@@ -1,16 +1,14 @@
 import { useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { PageHeader } from '@/components/page-header'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
@@ -79,6 +77,10 @@ function toForm(c: Contact): Values {
 
 const nn = (v: string | undefined) => (v ? v : null)
 
+const LIST = '/contactos'
+/** El botón de guardar vive en el pie del cajón, fuera del <form>. */
+const FORM_ID = 'contact-form'
+
 export function ContactFormPage() {
   const { contactId } = useParams()
   const isEdit = !!contactId
@@ -134,24 +136,30 @@ export function ContactFormPage() {
     }
   })
 
+  const closeTo = isEdit && contactId ? `/contactos/${contactId}` : LIST
+
   if (isEdit && loadingContact) {
-    return <Skeleton className="h-96 w-full max-w-2xl" />
+    return <DetailDrawer closeTo={closeTo} loading />
   }
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader title={isEdit ? 'Editar contacto' : 'Nuevo contacto'}>
-        <Button asChild variant="ghost" size="sm">
-          <Link to={isEdit && contactId ? `/contactos/${contactId}` : '/contactos'}>
-            <ArrowLeft className="size-4" />
-            Volver
-          </Link>
-        </Button>
-      </PageHeader>
-
-      <Card>
-        <form onSubmit={onSubmit} noValidate>
-          <CardContent className="space-y-4">
+    <DetailDrawer
+      closeTo={closeTo}
+      title={isEdit ? 'Editar contacto' : 'Nuevo contacto'}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => navigate(closeTo)}>
+            Cancelar
+          </Button>
+          {/* Fuera del <form>, así que se ata por id para poder enviarlo igual. */}
+          <Button type="submit" form={FORM_ID} disabled={busy}>
+            {busy && <Loader2 className="size-4 animate-spin" />}
+            {isEdit ? 'Guardar cambios' : 'Crear contacto'}
+          </Button>
+        </div>
+      }
+    >
+      <form id={FORM_ID} onSubmit={onSubmit} noValidate className="space-y-4">
             <div className="inline-flex rounded-md border p-0.5">
               {(['PERSON', 'COMPANY'] as const).map((t) => (
                 <button
@@ -215,22 +223,7 @@ export function ContactFormPage() {
             <Field label="Notas" htmlFor="f-notes" error={errors.notes?.message}>
               <Textarea id="f-notes" rows={3} {...register('notes')} />
             </Field>
-          </CardContent>
-          <CardFooter className="justify-end gap-2 border-t pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(isEdit && contactId ? `/contactos/${contactId}` : '/contactos')}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader2 className="size-4 animate-spin" />}
-              {isEdit ? 'Guardar cambios' : 'Crear contacto'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+      </form>
+    </DetailDrawer>
   )
 }

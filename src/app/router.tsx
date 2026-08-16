@@ -59,23 +59,26 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/contacts/contacts-list-page')).ContactsListPage,
             }),
-          },
-          {
-            path: 'contactos/nuevo',
-            lazy: async () => ({
-              Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
-            }),
+            // Alta y edición cuelgan de la lista: abren en cajón sobre ella.
+            children: [
+              {
+                path: 'nuevo',
+                lazy: async () => ({
+                  Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
+                }),
+              },
+              {
+                path: ':contactId/editar',
+                lazy: async () => ({
+                  Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
+                }),
+              },
+            ],
           },
           {
             path: 'contactos/:contactId',
             lazy: async () => ({
               Component: (await import('@/features/contacts/contact-detail-page')).ContactDetailPage,
-            }),
-          },
-          {
-            path: 'contactos/:contactId/editar',
-            lazy: async () => ({
-              Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
             }),
           },
 

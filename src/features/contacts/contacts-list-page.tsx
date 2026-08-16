@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SortingState } from '@tanstack/react-table'
-import { Link, useNavigate } from 'react-router'
+import { Link, Outlet, useNavigate } from 'react-router'
 import { Building2, Plus, User } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
@@ -181,6 +181,9 @@ export function ContactsListPage() {
           )}
         </>
       )}
+
+      {/* Alta y edición en cajón: rutas hijas, la lista se queda detrás. */}
+      <Outlet />
     </div>
   )
 }
