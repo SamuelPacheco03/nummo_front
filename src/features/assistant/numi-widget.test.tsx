@@ -131,3 +131,29 @@ test('sin proveedor de IA (422) manda a Configuración en vez de reintentar', as
   )
   expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
 })
+
+test('deja preparados adjuntos y voz, pero anunciados como próximos', async () => {
+  stubApi(async () => json({ sessionId: 's3', reply: 'hola' }))
+  const user = userEvent.setup()
+  mount()
+
+  await user.click(await screen.findByRole('button', { name: 'Abrir el chat con Numi' }))
+
+  expect(screen.getByRole('button', { name: /Adjuntar archivo/ })).toBeDisabled()
+  expect(screen.getByRole('button', { name: /Mensaje de voz/ })).toBeDisabled()
+})
+
+test('agrupa los turnos seguidos y sella la hora de cada mensaje', async () => {
+  stubApi(async (message) => json({ sessionId: 's4', reply: `eco: ${message}` }))
+  const user = userEvent.setup()
+  mount()
+
+  await user.click(await screen.findByRole('button', { name: 'Abrir el chat con Numi' }))
+  await user.type(screen.getByLabelText('Mensaje para Numi'), 'hola')
+  await user.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+
+  expect(await screen.findByText('eco: hola')).toBeInTheDocument()
+  // Una marca de tiempo por mensaje (usuario + respuesta).
+  const log = screen.getByRole('log')
+  expect(log.querySelectorAll('time')).toHaveLength(2)
+})

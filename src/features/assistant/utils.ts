@@ -91,3 +91,10 @@ export function mentionsAppliedChange(reply: string): boolean {
 export function shouldRefreshData(userMessage: string, reply: string): boolean {
   return isConfirmation(userMessage) || mentionsAppliedChange(reply)
 }
+
+/** Hora local corta para la marca de tiempo de cada burbuja. */
+export function formatTime(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+}

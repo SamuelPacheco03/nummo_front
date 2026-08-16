@@ -1,23 +1,42 @@
 import { cn } from '@/lib/utils'
 
-// Vive en `public/` (no se importa como módulo) igual que el isotipo de Nummo:
-// lo genera `scripts/generate-icons.mjs` desde `brand/numi.png` y Workbox lo
-// precachea con el resto del shell.
-const NUMI_MARK_URL = `${import.meta.env.BASE_URL}numi-mark.png`
+// Viven en `public/` (no se importan como módulo) igual que el isotipo de
+// Nummo: los genera `scripts/generate-icons.mjs` desde `brand/numi.png` y
+// Workbox los precachea con el resto del shell.
+const GLYPH_URL = `${import.meta.env.BASE_URL}numi-glyph.png`
+const MARK_URL = `${import.meta.env.BASE_URL}numi-mark.png`
 
 /**
- * Cara de Numi. El PNG ya trae su propia silueta y fondo oscuro, así que se
- * pinta tal cual: funciona igual en tema claro y oscuro.
+ * Cara de Numi DENTRO del chat: solo el glifo, sobre transparente. El icono de
+ * app trae un squircle azul casi negro que se funde con las superficies del
+ * tema oscuro; suelto, el glifo se lee sobre cualquier fondo.
  */
 export function NumiAvatar({ className }: { className?: string }) {
   return (
     <img
-      src={NUMI_MARK_URL}
+      src={GLYPH_URL}
       alt=""
       aria-hidden
       width={256}
       height={256}
-      className={cn('size-7 shrink-0 object-contain', className)}
+      className={cn('size-6 shrink-0 object-contain', className)}
+    />
+  )
+}
+
+/**
+ * Icono de app completo (squircle con su fondo). Se usa en el botón flotante,
+ * donde funciona como la "app" de Numi sobre el contenido de la pantalla.
+ */
+export function NumiAppMark({ className }: { className?: string }) {
+  return (
+    <img
+      src={MARK_URL}
+      alt=""
+      aria-hidden
+      width={256}
+      height={256}
+      className={cn('size-14 shrink-0 object-contain', className)}
     />
   )
 }

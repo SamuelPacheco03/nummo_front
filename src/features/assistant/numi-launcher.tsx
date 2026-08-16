@@ -1,7 +1,7 @@
 import { type Ref } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NumiAvatar } from './numi-avatar'
+import { NumiAppMark } from './numi-avatar'
 
 /**
  * Botón flotante siempre presente (esquina inferior derecha, como los widgets
@@ -40,7 +40,7 @@ export function NumiLauncher({
           <X className="size-5" />
         </span>
       ) : (
-        <NumiAvatar className="size-14 drop-shadow-lg" />
+        <NumiAppMark className="drop-shadow-lg" />
       )}
     </button>
   )

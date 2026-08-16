@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
-import { RotateCcw, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ChevronRight, RotateCcw, X } from 'lucide-react'
 import { canManageOrg } from '@/features/organizations/roles'
+import { cn } from '@/lib/utils'
 import { SUGGESTIONS } from './constants'
 import { ChatBubble, ChatMessageItem } from './chat-message-item'
 import { ChatComposer } from './chat-composer'
@@ -10,35 +10,74 @@ import { NumiAvatar } from './numi-avatar'
 import { TypingIndicator } from './typing-indicator'
 import { useNumiChat } from './hooks'
 
-/** Estado vacío: qué es Numi y tres arranques para no mirar una caja en blanco. */
-function EmptyState({ onPick, canConfigure }: { onPick: (text: string) => void; canConfigure: boolean }) {
+/** Botón de la cabecera: icono suelto, sin peso visual. */
+function HeaderAction({
+  label,
+  Icon,
+  onClick,
+}: {
+  label: string
+  Icon: typeof X
+  onClick: () => void
+}) {
   return (
-    <div className="space-y-4 py-4 text-center">
-      <NumiAvatar className="mx-auto size-11" />
-      <div className="space-y-1">
-        <p className="font-display text-base font-semibold">Hola, soy Numi</p>
-        <p className="text-sm text-muted-foreground">
-          Consulto tus cifras y también registro operaciones. Antes de guardar algo te muestro un
-          resumen y espero tu confirmación.
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 grid size-8 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+    >
+      <Icon className="size-4" />
+    </button>
+  )
+}
+
+/** Presentación de Numi y tres arranques, para no abrir sobre una caja vacía. */
+function EmptyState({
+  onPick,
+  canConfigure,
+}: {
+  onPick: (text: string) => void
+  canConfigure: boolean
+}) {
+  return (
+    <div className="space-y-5 py-2">
+      <div className="flex gap-3">
+        <NumiAvatar className="mt-0.5 size-8" />
+        <div className="space-y-1">
+          <p className="font-display text-sm font-semibold">Hola, soy Numi</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Consulto tus cifras y registro operaciones por chat. Antes de guardar algo te muestro un
+            resumen y espero tu confirmación.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="text-muted-foreground px-0.5 text-[0.68rem] font-medium tracking-wider uppercase">
+          Para empezar
         </p>
+        <div className="divide-border bg-card divide-y overflow-hidden rounded-lg border">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onPick(s)}
+              className="hover:bg-secondary focus-visible:ring-ring/50 flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none focus-visible:-outline-offset-1"
+            >
+              <span className="min-w-0 flex-1 truncate">{s}</span>
+              <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-col gap-1.5">
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onPick(s)}
-            className="rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+
       {canConfigure && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           ¿Numi no responde?{' '}
           <Link to="/config/asistente" className="text-brand underline-offset-4 hover:underline">
-            Configura el proveedor de IA
+            Revisa el proveedor de IA
           </Link>
           .
         </p>
@@ -53,7 +92,7 @@ function EmptyState({ onPick, canConfigure }: { onPick: (text: string) => void; 
  * se puede seguir leyendo la pantalla mientras se conversa).
  */
 export function NumiPanel({ onClose }: { onClose: () => void }) {
-  const { messages, error, isTyping, role, send, retry, newConversation } = useNumiChat()
+  const { messages, error, isTyping, role, orgName, send, retry, newConversation } = useNumiChat()
   const listRef = useRef<HTMLDivElement>(null)
 
   // El hilo siempre pegado abajo: hay que escribir el scroll del DOM.
@@ -66,29 +105,24 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Numi, asistente de Nummo"
-      className="animate-in fade-in-0 slide-in-from-bottom-4 bg-card text-card-foreground fixed inset-0 z-50 flex flex-col shadow-2xl duration-200 sm:inset-auto sm:right-4 sm:bottom-4 sm:h-[min(36rem,calc(100dvh-6rem))] sm:w-96 sm:rounded-xl sm:border"
+      className={cn(
+        'bg-background text-foreground fixed inset-0 z-50 flex flex-col',
+        'animate-in fade-in-0 slide-in-from-bottom-4 duration-200',
+        'sm:inset-auto sm:right-4 sm:bottom-4 sm:h-[min(38rem,calc(100dvh-6rem))] sm:w-[25rem] sm:rounded-lg sm:border sm:shadow-xl',
+      )}
     >
-      <header className="flex items-center gap-2 border-b px-3 py-2.5">
-        <NumiAvatar />
+      <header className="bg-card flex items-center gap-2.5 border-b px-3 py-2.5 sm:rounded-t-lg">
+        <NumiAvatar className="size-7" />
         <div className="min-w-0 flex-1">
-          <p className="font-display text-sm font-semibold">Numi</p>
-          <p className="truncate text-xs text-muted-foreground">Asistente de Nummo</p>
+          <p className="font-display text-sm leading-tight font-semibold">Numi</p>
+          <p className="text-muted-foreground truncate text-xs leading-tight">
+            {orgName ?? 'Asistente de Nummo'}
+          </p>
         </div>
         {messages.length > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={newConversation}
-            aria-label="Nueva conversación"
-            title="Nueva conversación"
-          >
-            <RotateCcw className="size-4" />
-          </Button>
+          <HeaderAction label="Nueva conversación" Icon={RotateCcw} onClick={newConversation} />
         )}
-        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar el chat">
-          <X className="size-4" />
-        </Button>
+        <HeaderAction label="Cerrar el chat" Icon={X} onClick={onClose} />
       </header>
 
       <div
@@ -101,17 +135,28 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         {messages.length === 0 ? (
           <EmptyState onPick={(text) => void send(text)} canConfigure={canManageOrg(role)} />
         ) : (
-          messages.map((m) => <ChatMessageItem key={m.id} message={m} />)
+          messages.map((m, i) => (
+            <ChatMessageItem
+              key={m.id}
+              message={m}
+              grouped={messages[i - 1]?.role === m.role}
+            />
+          ))
         )}
 
         {isTyping && (
-          <ChatBubble role="assistant">
-            <TypingIndicator />
-          </ChatBubble>
+          <div className="flex gap-2">
+            <div className="w-6 shrink-0">
+              <NumiAvatar className="mt-1" />
+            </div>
+            <ChatBubble role="assistant">
+              <TypingIndicator />
+            </ChatBubble>
+          </div>
         )}
 
         {error && (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border px-3 py-2 text-xs">
             <p>{error.message}</p>
             {error.needsSetup && canManageOrg(role) ? (
               <Link
@@ -135,6 +180,10 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <ChatComposer onSend={(text) => void send(text)} disabled={isTyping} autoFocus />
+
+      <p className="text-muted-foreground bg-card border-t px-3 py-1.5 text-center text-[0.65rem] sm:rounded-b-lg">
+        Numi pide confirmación antes de registrar cualquier operación.
+      </p>
     </div>
   )
 }

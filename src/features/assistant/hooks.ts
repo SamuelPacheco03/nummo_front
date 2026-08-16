@@ -13,7 +13,7 @@ import { shouldRefreshData } from './utils'
  * datos. Es el único punto que conoce el endpoint; la UI solo consume esto.
  */
 export function useNumiChat() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId, role, organization } = useCurrentOrg()
   const queryClient = useQueryClient()
   const messages = useNumiStore((s) => s.messages)
   const error = useNumiStore((s) => s.error)
@@ -76,6 +76,8 @@ export function useNumiChat() {
     isTyping: isPending,
     canChat: !!orgId,
     role,
+    /** Nombre de la organización: el hilo habla de SUS datos, y eso se ve en la cabecera. */
+    orgName: organization?.name,
     send,
     retry,
     newConversation,

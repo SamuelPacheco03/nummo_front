@@ -31,6 +31,62 @@ const SAT_FLOOR = 6
 /** Pendiente de la rampa alfa (satura rápido para no comerse el borde). */
 const SAT_GAIN = 8
 
+/** Numi: umbral y pendiente sobre el canal máximo para separar glifo de fondo. */
+const GLYPH_FLOOR = 95
+const GLYPH_GAIN = 3
+/** Radio de erosión de la silueta para descartar su propio filo. */
+const GLYPH_ERODE = 14
+/** Azul del squircle sobre el que está compuesto el glifo. */
+const NUMI_BG = { r: 2, g: 14, b: 60 }
+
+/**
+ * Glifo de Numi sobre transparente.
+ *
+ * El PNG de Numi viene como icono de app: el glifo brillante va compuesto sobre
+ * un squircle azul casi negro. Ese fondo se funde con las superficies del tema
+ * oscuro (el card es #111827), asi que para pintarlo DENTRO del chat hace falta
+ * quedarse solo con el glifo. El fondo esta en el tramo bajo del canal maximo
+ * (32-95) y el glifo por encima de 224, con una banda de transicion minima:
+ * basta una rampa de alfa sobre ese canal y des-componer el color sobre el
+ * azul del fondo para que los bordes no dejen halo oscuro en tema claro.
+ */
+async function buildNumiGlyph() {
+  const { data, info } = await sharp(NUMI_SOURCE).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+
+  // El filo del squircle es mas claro que su relleno y, al des-componer, se
+  // convierte en un halo casi blanco con la forma del icono. Se recorta con el
+  // propio alfa erosionado (desenfocar + umbral encoge la silueta): el glifo
+  // vive holgadamente dentro, asi que no pierde nada.
+  const mask = await sharp(NUMI_SOURCE)
+    .ensureAlpha()
+    .extractChannel('alpha')
+    .blur(GLYPH_ERODE)
+    .threshold(252)
+    .raw()
+    .toBuffer()
+
+  const out = Buffer.alloc(data.length)
+  for (let i = 0; i < data.length; i += 4) {
+    const [r, g, b] = [data[i], data[i + 1], data[i + 2]]
+    const a = Math.min(255, Math.max(0, (Math.max(r, g, b) - GLYPH_FLOOR) * GLYPH_GAIN))
+
+    if (a === 0 || mask[i / 4] < 128) {
+      out[i] = out[i + 1] = out[i + 2] = out[i + 3] = 0
+      continue
+    }
+    const k = a / 255
+    out[i] = Math.min(255, Math.max(0, Math.round((r - NUMI_BG.r * (1 - k)) / k)))
+    out[i + 1] = Math.min(255, Math.max(0, Math.round((g - NUMI_BG.g * (1 - k)) / k)))
+    out[i + 2] = Math.min(255, Math.max(0, Math.round((b - NUMI_BG.b * (1 - k)) / k)))
+    out[i + 3] = a
+  }
+
+  return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .trim({ threshold: 1 })
+    .png({ compressionLevel: 9, effort: 10 })
+    .toBuffer()
+}
+
 /** Devuelve el logo recortado y con fondo transparente, como buffer PNG. */
 async function buildTransparentMark() {
   const { data, info } = await sharp(SOURCE)
@@ -134,6 +190,13 @@ async function main() {
     .png({ compressionLevel: 9, effort: 10 })
     .toBuffer()
   await writeFile(path.join(PUBLIC, 'numi-mark.png'), await square(numi, 256, { ratio: 1 }))
+
+  // Glifo suelto para pintarlo sobre las superficies del chat (cabecera,
+  // burbujas, estado vacío), donde el squircle oscuro se perdería.
+  await writeFile(
+    path.join(PUBLIC, 'numi-glyph.png'),
+    await square(await buildNumiGlyph(), 256, { ratio: 0.98 }),
+  )
 
   // Iconos "any": fondo blanco, el logo casi a sangre.
   await writeFile(
