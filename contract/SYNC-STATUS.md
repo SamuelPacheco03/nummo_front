@@ -1,6 +1,49 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-15 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–C).**
+**Fecha:** 2026-08-16 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz.**
+
+## 🆕 Mensajes de voz de Numi (audio → texto) — regenera con `pnpm api:gen`
+
+Numi ya acepta **audios**. El backend los transcribe con un modelo de voz que se configura **por organización igual que el LLM** (BYOK, aparte del de chat) y el texto entra al **mismo flujo de chat de siempre**: mismas herramientas, mismos permisos por rol, mismo historial. Requiere que el backend haya corrido `pnpm db:migrate` (migración **0012**).
+
+### Endpoints de audio (cualquier miembro)
+
+Ambos son **`multipart/form-data`** con el archivo en el campo **`audio`** y aceptan un campo opcional `language` (ISO-639-1, p. ej. `es`). Como cualquier mutación, requieren `x-csrf-token`.
+
+- `POST /api/v1/organizations/:orgId/assistant/transcribe` → `{ text, language, durationSeconds }`. **Solo transcribe.** Úsalo si quieres mostrar el texto para que el usuario lo **corrija antes de enviarlo** por el `/assistant/chat` normal.
+- `POST /api/v1/organizations/:orgId/assistant/chat/audio` → `{ sessionId, transcript, reply }`. **Transcribe y responde en una sola llamada** (estilo WhatsApp). Acepta además `sessionId` para continuar una conversación.
+
+> Recomendación: para operaciones de **escritura** conviene el flujo de dos pasos (transcribir → dejar corregir → enviar). Una transcripción equivocada que se ejecuta sin revisión cuesta deshacerla. Numi igual pide confirmación explícita antes de escribir.
+
+### Historial: los mensajes dictados vienen marcados
+
+`GET /assistant/conversations/:id/messages` ahora devuelve **`source`** en cada mensaje: `"text"` | `"audio"`. Úsalo para pintar un ícono de micrófono en la burbuja al recargar la conversación. El contenido guardado es la **transcripción** (el audio no se almacena).
+
+### Configuración del modelo de voz (OWNER/ADMIN)
+
+`GET /assistant/settings` ahora trae un bloque **`voice`** además de la config de chat que ya conocías:
+
+```
+{
+  activeProvider, providers[], catalog[],        // chat (sin cambios)
+  voice: { activeProvider, providers[], catalog[] }  // transcripción (NUEVO)
+}
+```
+
+- `voice.catalog`: `[{ provider, label, suggestedModels[] }]` — **`deepgram`** (`nova-3`, `nova-2`) y **`elevenlabs`** (`scribe_v1`, `scribe_v2`). Igual que en chat, `model` es **texto libre**; los sugeridos son solo para el dropdown.
+- `voice.providers`: los configurados, enmascarados (`{ provider, model, apiKeyLast4, isActive, ... }`). La API key **nunca se devuelve**.
+- `PUT /api/v1/organizations/:orgId/assistant/voice/providers/:provider` — body `{ model, apiKey, activate? }`.
+- `POST /api/v1/organizations/:orgId/assistant/voice/providers/:provider/activate`
+- `DELETE /api/v1/organizations/:orgId/assistant/voice/providers/:provider` (204)
+- `:provider` ∈ `deepgram | elevenlabs`. **El proveedor de voz es independiente del de chat**: cada uno tiene su propio activo, y configurar uno no toca al otro.
+
+### Qué hay que construir en el front
+
+- **Grabador:** `MediaRecorder` produce `audio/webm` (Chrome/Edge/Android) o `audio/ogg` (Firefox); Safari graba en `audio/mp4`. Los tres están soportados — manda el `Blob` tal cual en el campo `audio`, sin convertir.
+- **Ajustes:** en la pantalla "Asistente / IA", una segunda sección "Voz" con las mismas tarjetas que ya usas para el chat, alimentada por `voice.catalog` / `voice.providers`.
+- **Errores esperados (422, con mensaje en español listo para mostrar):** formato no soportado, archivo vacío, **sin voz detectada** (silencio), audio demasiado largo (>4000 caracteres transcritos), supera 20 MB, y "los mensajes de voz no están configurados" si el admin no eligió proveedor.
+- **429:** el endpoint de voz tiene su **propio limitador, más estricto** que el del chat de texto (10/min por IP por defecto), porque cada audio cuesta una transcripción **más** un turno de LLM.
+
 
 ## 💬 Chat de Numi (asistente) — consulta y registra
 

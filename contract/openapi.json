@@ -61,7 +61,7 @@
     },
     {
       "name": "Assistant",
-      "description": "AI assistant configuration: providers, models and BYOK API keys"
+      "description": "AI assistant: chat with Numi, BYOK provider/model configuration (chat LLM and speech-to-text) and voice messages"
     },
     {
       "name": "Knowledge",
@@ -7287,6 +7287,7 @@
           "Assistant"
         ],
         "summary": "AI assistant settings: configured providers (masked), active provider and model catalog (OWNER/ADMIN)",
+        "description": "Devuelve la configuración del LLM de chat en la raíz y la de transcripción de voz en el bloque `voice`. Cada bloque tiene su proveedor activo independiente.",
         "security": [
           {
             "cookieAuth": []
@@ -7513,6 +7514,185 @@
         }
       }
     },
+    "/api/v1/organizations/{orgId}/assistant/voice/providers/{provider}": {
+      "put": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Set/replace the API key + model of a speech-to-text provider (OWNER/ADMIN)",
+        "description": "Configura el modelo de voz que transcribe los mensajes de audio. `provider` es deepgram|elevenlabs y `model` es su id (p. ej. `nova-3`, `scribe_v1`). La API key se guarda cifrada y nunca se devuelve. El primer proveedor de voz configurado queda activo automáticamente; usa `activate:true` para cambiar a otro. Es independiente del proveedor de chat.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "deepgram",
+                "elevenlabs"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAiProviderCredential"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved voice credential (masked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiVoiceProviderCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Remove a speech-to-text provider credential (OWNER/ADMIN)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "deepgram",
+                "elevenlabs"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/voice/providers/{provider}/activate": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Make a configured speech-to-text provider the active one (OWNER/ADMIN)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "deepgram",
+                "elevenlabs"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activated voice credential (masked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiVoiceProviderCredential"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{orgId}/assistant/chat": {
       "post": {
         "tags": [
@@ -7692,6 +7872,122 @@
           },
           "default": {
             "description": "Conversación no encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/transcribe": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Transcribir un audio a texto (cualquier miembro)",
+        "description": "Convierte un mensaje de voz en texto usando el proveedor de transcripción activo de la organización. No habla con Numi: úsalo para mostrar el texto al usuario, dejar que lo corrija y enviarlo después por `/assistant/chat`. Requiere un modelo de voz configurado por un administrador.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantTranscribeForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcripción del audio.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantTranscription"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Audio inválido o proveedor de voz no configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/chat/audio": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Enviar un mensaje de voz a Numi (transcribe y responde)",
+        "description": "Transcribe el audio y lo procesa como un mensaje de texto normal: mismas herramientas, mismos permisos por rol y mismo control de grounding. Devuelve `transcript` (lo que se entendió, para pintar la burbuja del usuario) y `reply`. El mensaje queda en el historial marcado con `source: \"audio\"`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantAudioChatForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcripción + respuesta del asistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantAudioChatResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Audio inválido o proveedor de voz no configurado.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9829,6 +10125,44 @@
         },
         "required": [
           "message"
+        ]
+      },
+      "AssistantTranscribeForm": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "type": "string",
+            "format": "binary",
+            "description": "Archivo de audio (audio/webm, audio/ogg, audio/mpeg, audio/mp4, audio/wav, audio/flac)."
+          },
+          "language": {
+            "description": "Pista de idioma ISO-639-1 (p. ej. `es`). Por defecto, el del servidor.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "audio"
+        ]
+      },
+      "AssistantAudioChatForm": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "type": "string",
+            "format": "binary",
+            "description": "Archivo de audio (audio/webm, audio/ogg, audio/mpeg, audio/mp4, audio/wav, audio/flac)."
+          },
+          "sessionId": {
+            "description": "Conversación a continuar. Omitir para empezar una nueva.",
+            "type": "string"
+          },
+          "language": {
+            "description": "Pista de idioma ISO-639-1 (p. ej. `es`). Por defecto, el del servidor.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "audio"
         ]
       },
       "HealthResponse": {
@@ -12730,12 +13064,16 @@
             "items": {
               "$ref": "#/components/schemas/AiProviderCatalogEntry"
             }
+          },
+          "voice": {
+            "$ref": "#/components/schemas/AssistantVoiceSettings"
           }
         },
         "required": [
           "activeProvider",
           "providers",
-          "catalog"
+          "catalog",
+          "voice"
         ],
         "additionalProperties": false
       },
@@ -12791,6 +13129,110 @@
               "openai",
               "google",
               "deepseek"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "suggestedModels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "provider",
+          "label",
+          "suggestedModels"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantVoiceSettings": {
+        "type": "object",
+        "properties": {
+          "activeProvider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "deepgram",
+                  "elevenlabs"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiVoiceProviderCredential"
+            }
+          },
+          "catalog": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiVoiceProviderCatalogEntry"
+            }
+          }
+        },
+        "required": [
+          "activeProvider",
+          "providers",
+          "catalog"
+        ],
+        "additionalProperties": false
+      },
+      "AiVoiceProviderCredential": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "deepgram",
+              "elevenlabs"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "apiKeyLast4": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "apiKeyLast4",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AiVoiceProviderCatalogEntry": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "deepgram",
+              "elevenlabs"
             ]
           },
           "label": {
@@ -12940,6 +13382,13 @@
           "content": {
             "type": "string"
           },
+          "source": {
+            "type": "string",
+            "enum": [
+              "text",
+              "audio"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -12950,7 +13399,64 @@
           "id",
           "role",
           "content",
+          "source",
           "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantTranscription": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "durationSeconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "text",
+          "language",
+          "durationSeconds"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantAudioChatResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "transcript": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionId",
+          "transcript",
+          "reply"
         ],
         "additionalProperties": false
       },
