@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight, RotateCcw, X } from 'lucide-react'
+import { ChevronRight, RotateCcw, Sparkles, X } from 'lucide-react'
 import { canManageOrg } from '@/features/organizations/roles'
 import { cn } from '@/lib/utils'
 import { SUGGESTIONS } from './constants'
-import { ChatBubble, ChatMessageItem } from './chat-message-item'
+import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
 import { ChatComposer } from './chat-composer'
 import { NumiAvatar } from './numi-avatar'
 import { TypingIndicator } from './typing-indicator'
@@ -33,38 +33,46 @@ function HeaderAction({
   )
 }
 
-/** Presentación de Numi y tres arranques, para no abrir sobre una caja vacía. */
-function EmptyState({ onPick }: { onPick: (text: string) => void }) {
+/**
+ * Apertura del hilo: el saludo entra como un mensaje recibido de Numi (misma
+ * burbuja, misma cara que sus respuestas) y debajo los arranques sugeridos,
+ * para no abrir sobre una caja vacía.
+ */
+function Greeting() {
   return (
-    <div className="space-y-5 py-2">
-      <div className="flex gap-3">
-        <NumiAvatar className="mt-0.5 size-8" />
-        <div className="space-y-1">
-          <p className="font-display text-sm font-semibold">Hola, soy Numi</p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Consulto tus cifras y registro operaciones por chat. Antes de guardar algo te muestro un
-            resumen y espero tu confirmación.
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <p className="text-muted-foreground px-0.5 text-[0.68rem] font-medium tracking-wider uppercase">
-          Para empezar
+    <AssistantRow>
+      <ChatBubble role="assistant">
+        <p className="font-display mb-1 text-sm font-semibold">
+          Hola, soy <span className="text-brand">Numi</span>
         </p>
-        <div className="divide-border bg-card divide-y overflow-hidden rounded-lg border">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => onPick(s)}
-              className="hover:bg-secondary focus-visible:ring-ring/50 flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none focus-visible:-outline-offset-1"
-            >
-              <span className="min-w-0 flex-1 truncate">{s}</span>
-              <ChevronRight className="text-muted-foreground size-4 shrink-0" />
-            </button>
-          ))}
-        </div>
+        <p className="text-muted-foreground">
+          Consulto tus cifras y registro operaciones por chat. Antes de guardar algo te muestro un
+          resumen y espero tu confirmación.
+        </p>
+      </ChatBubble>
+    </AssistantRow>
+  )
+}
+
+function QuickStart({ onPick }: { onPick: (text: string) => void }) {
+  return (
+    <div className="space-y-2 pt-1">
+      <p className="text-muted-foreground flex items-center gap-1.5 px-1 text-[0.68rem] font-medium tracking-wider uppercase">
+        <Sparkles className="size-3.5" />
+        Para empezar
+      </p>
+      <div className="flex flex-col gap-2">
+        {SUGGESTIONS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => onPick(s)}
+            className="bg-card hover:border-brand/40 hover:bg-secondary focus-visible:ring-ring/50 flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm shadow-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            <span className="min-w-0 flex-1">{s}</span>
+            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -114,32 +122,23 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         role="log"
         aria-live="polite"
         aria-label="Conversación con Numi"
-        className={cn(
-          'min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-3',
-          // Papel de la conversación: puntos casi invisibles sobre el fondo, el
-          // guiño al chat de mensajería sin meter una imagen de fondo.
-          'bg-[radial-gradient(var(--border)_0.5px,transparent_0.5px)] bg-[size:14px_14px]',
-        )}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
       >
         {messages.length === 0 ? (
-          <EmptyState onPick={(text) => void send(text)} />
+          <>
+            <Greeting />
+            <QuickStart onPick={(text) => void send(text)} />
+          </>
         ) : (
-          messages.map((m, i) => {
-            const grouped = messages[i - 1]?.role === m.role
-            return (
-              <div key={m.id} className={cn(!grouped && i > 0 && 'pt-2')}>
-                <ChatMessageItem message={m} grouped={grouped} />
-              </div>
-            )
-          })
+          messages.map((m) => <ChatMessageItem key={m.id} message={m} />)
         )}
 
         {isTyping && (
-          <div className="flex justify-start pt-2">
+          <AssistantRow>
             <ChatBubble role="assistant">
               <TypingIndicator />
             </ChatBubble>
-          </div>
+          </AssistantRow>
         )}
 
         {error && (

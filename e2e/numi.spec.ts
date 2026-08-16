@@ -13,7 +13,7 @@ test('Numi se abre desde el botón flotante y se cierra por la cabecera', async 
   await launcher.click()
   const panel = page.getByRole('dialog', { name: /Numi/ })
   await expect(panel).toBeVisible()
-  await expect(panel.getByText('Hola, soy Numi')).toBeVisible()
+  await expect(panel.getByText(/Hola, soy/).first()).toBeVisible()
   // Abierto no queda un segundo cierre flotando sobre el composer.
   await expect(launcher).toBeHidden()
   // Adjuntos y voz están preparados, pero aún no habilitados.

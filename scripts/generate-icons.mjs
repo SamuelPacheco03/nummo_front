@@ -34,6 +34,10 @@ const SAT_GAIN = 8
 /** Numi: umbral y pendiente sobre el canal máximo para separar glifo de fondo. */
 const GLYPH_FLOOR = 95
 const GLYPH_GAIN = 3
+/** Fracción de píxeles transparentes a partir de la cual el arte ya viene
+    recortado. Medido: el icono de app (squircle con margen) da 0.32 y un glifo
+    suelto 0.77, así que el corte va en medio y no en el filo de ninguno. */
+const TRANSPARENT_ART_RATIO = 0.55
 /** Radio de erosión de la silueta para descartar su propio filo. */
 const GLYPH_ERODE = 14
 /** Azul del squircle sobre el que está compuesto el glifo. */
@@ -52,6 +56,19 @@ const NUMI_BG = { r: 2, g: 14, b: 60 }
  */
 async function buildNumiGlyph() {
   const { data, info } = await sharp(NUMI_SOURCE).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+
+  // Si el arte ya viene recortado sobre transparente, no hay nada que extraer:
+  // separar glifo de fondo solo aplica al icono de app (squircle opaco). Esto
+  // deja cambiar `brand/numi.png` por cualquiera de las dos formas sin tocar
+  // el script.
+  let clear = 0
+  for (let i = 3; i < data.length; i += 4) if (data[i] < 10) clear++
+  if (clear / (data.length / 4) > TRANSPARENT_ART_RATIO) {
+    return sharp(NUMI_SOURCE)
+      .trim({ threshold: 1 })
+      .png({ compressionLevel: 9, effort: 10 })
+      .toBuffer()
+  }
 
   // El filo del squircle es mas claro que su relleno y, al des-componer, se
   // convierte en un halo casi blanco con la forma del icono. Se recorta con el

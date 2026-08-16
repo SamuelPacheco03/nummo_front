@@ -60,7 +60,11 @@ test('abre el chat desde el botón flotante y muestra el estado vacío', async (
   await user.click(await screen.findByRole('button', { name: 'Abrir el chat con Numi' }))
 
   expect(await screen.findByRole('dialog', { name: /Numi/ })).toBeInTheDocument()
-  expect(screen.getByText('Hola, soy Numi')).toBeInTheDocument()
+  // El saludo abre el hilo como un mensaje recibido más ("Numi" va resaltado,
+  // así que el texto vive partido entre nodos).
+  expect(
+    screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Hola, soy Numi'),
+  ).toBeInTheDocument()
 })
 
 test('envía el mensaje, avisa que Numi escribe y pinta la respuesta', async () => {
@@ -143,7 +147,7 @@ test('deja preparados adjuntos y voz, pero anunciados como próximos', async () 
   expect(screen.getByRole('button', { name: /Mensaje de voz/ })).toBeDisabled()
 })
 
-test('agrupa los turnos seguidos y sella la hora de cada mensaje', async () => {
+test('sella la hora de cada mensaje', async () => {
   stubApi(async (message) => json({ sessionId: 's4', reply: `eco: ${message}` }))
   const user = userEvent.setup()
   mount()
