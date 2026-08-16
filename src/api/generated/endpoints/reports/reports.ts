@@ -23,17 +23,21 @@ import type {
 import type {
   AgingBucket,
   CashflowReport,
+  Creditor,
   Debtor,
   GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
   GetApiV1OrganizationsOrgIdReportsExpensesByCategoryParams,
   GetApiV1OrganizationsOrgIdReportsIncomeByConceptParams,
+  GetApiV1OrganizationsOrgIdReportsTopCreditorsParams,
   GetApiV1OrganizationsOrgIdReportsTopDebtorsParams,
+  GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams,
   GetApiV1OrganizationsOrgIdReportsUpcomingReceivablesParams,
   MonthlyCashflow,
   NamedAmount,
   PayablesSummary,
   ReceivablesSummary,
+  UpcomingPayable,
   UpcomingReceivable
 } from '../../model';
 
@@ -1004,6 +1008,260 @@ export function useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables<TData = 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiV1OrganizationsOrgIdReportsUpcomingReceivablesQueryOptions(orgId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdReportsTopCreditorsResponse200 = {
+  data: Creditor[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdReportsTopCreditorsResponseSuccess = (getApiV1OrganizationsOrgIdReportsTopCreditorsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiV1OrganizationsOrgIdReportsTopCreditorsResponse = (getApiV1OrganizationsOrgIdReportsTopCreditorsResponseSuccess)
+
+export const getGetApiV1OrganizationsOrgIdReportsTopCreditorsUrl = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/organizations/${orgId}/reports/top-creditors?${stringifiedParams}` : `/api/v1/organizations/${orgId}/reports/top-creditors`
+}
+
+/**
+ * @summary Top suppliers by overdue balance
+ */
+export const getApiV1OrganizationsOrgIdReportsTopCreditors = async (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdReportsTopCreditorsResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdReportsTopCreditorsResponse>(getGetApiV1OrganizationsOrgIdReportsTopCreditorsUrl(orgId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdReportsTopCreditorsQueryKey = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams,) => {
+    return [
+    `/api/v1/organizations/${orgId}/reports/top-creditors`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdReportsTopCreditorsQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError = unknown>(orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdReportsTopCreditorsQueryKey(orgId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>> = ({ signal }) => getApiV1OrganizationsOrgIdReportsTopCreditors(orgId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdReportsTopCreditorsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>>
+export type GetApiV1OrganizationsOrgIdReportsTopCreditorsQueryError = unknown
+
+
+export function useGetApiV1OrganizationsOrgIdReportsTopCreditors<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError = unknown>(
+ orgId: string,
+    params: undefined |  GetApiV1OrganizationsOrgIdReportsTopCreditorsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsTopCreditors<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsTopCreditors<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Top suppliers by overdue balance
+ */
+
+export function useGetApiV1OrganizationsOrgIdReportsTopCreditors<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsTopCreditorsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsTopCreditors>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdReportsTopCreditorsQueryOptions(orgId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponse200 = {
+  data: UpcomingPayable[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponseSuccess = (getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponse = (getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponseSuccess)
+
+export const getGetApiV1OrganizationsOrgIdReportsUpcomingPayablesUrl = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/organizations/${orgId}/reports/upcoming-payables?${stringifiedParams}` : `/api/v1/organizations/${orgId}/reports/upcoming-payables`
+}
+
+/**
+ * @summary Payables due within the next N days
+ */
+export const getApiV1OrganizationsOrgIdReportsUpcomingPayables = async (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdReportsUpcomingPayablesResponse>(getGetApiV1OrganizationsOrgIdReportsUpcomingPayablesUrl(orgId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdReportsUpcomingPayablesQueryKey = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams,) => {
+    return [
+    `/api/v1/organizations/${orgId}/reports/upcoming-payables`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdReportsUpcomingPayablesQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError = unknown>(orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdReportsUpcomingPayablesQueryKey(orgId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>> = ({ signal }) => getApiV1OrganizationsOrgIdReportsUpcomingPayables(orgId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdReportsUpcomingPayablesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>>
+export type GetApiV1OrganizationsOrgIdReportsUpcomingPayablesQueryError = unknown
+
+
+export function useGetApiV1OrganizationsOrgIdReportsUpcomingPayables<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError = unknown>(
+ orgId: string,
+    params: undefined |  GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsUpcomingPayables<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsUpcomingPayables<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Payables due within the next N days
+ */
+
+export function useGetApiV1OrganizationsOrgIdReportsUpcomingPayables<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsUpcomingPayablesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsUpcomingPayables>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdReportsUpcomingPayablesQueryOptions(orgId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
