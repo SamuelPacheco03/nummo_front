@@ -121,23 +121,26 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/billing/agreements-list-page')).AgreementsListPage,
             }),
-          },
-          {
-            path: 'cartera/acuerdos/nuevo',
-            lazy: async () => ({
-              Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
-            }),
+            // Alta y edición cuelgan de la lista: abren en cajón sobre ella.
+            children: [
+              {
+                path: 'nuevo',
+                lazy: async () => ({
+                  Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
+                }),
+              },
+              {
+                path: ':agreementId/editar',
+                lazy: async () => ({
+                  Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
+                }),
+              },
+            ],
           },
           {
             path: 'cartera/acuerdos/:agreementId',
             lazy: async () => ({
               Component: (await import('@/features/billing/agreement-detail-page')).AgreementDetailPage,
-            }),
-          },
-          {
-            path: 'cartera/acuerdos/:agreementId/editar',
-            lazy: async () => ({
-              Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
             }),
           },
           {

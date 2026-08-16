@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, Outlet, useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
@@ -182,6 +182,9 @@ export function AgreementsListPage() {
           )}
         </>
       )}
+
+      {/* Alta y edición en cajón: rutas hijas, la lista se queda detrás. */}
+      <Outlet />
     </div>
   )
 }
