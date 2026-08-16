@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
-import { ChevronRight, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
-import { SearchInput } from '@/components/search-input'
 import { Button } from '@/components/ui/button'
-import { DataTable, type Column } from '@/components/ui/data-table'
+import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useMasterListState } from '@/features/masters/master-crud'
@@ -15,7 +14,16 @@ import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { RECURRENCE_LABELS, SCHEDULE_STATUS_LABELS, TONE_DOT, scheduleStatusTone } from './labels'
+import type { ExpenseSchedule } from '@/api/generated/model'
 import { useExpenseSchedules } from './hooks'
+
+/** Columnas ordenables que acepta el endpoint (contrato: NamedListQuery). */
+const SORT_OPTIONS = [
+  { field: 'createdAt', label: 'Creación' },
+  { field: 'name', label: 'Nombre' },
+]
+
+const column = listColumns<ExpenseSchedule>()
 
 export function ScheduleStatusPill({ status }: { status: string }) {
   const tone = scheduleStatusTone(status)
@@ -37,8 +45,8 @@ export function SchedulesListPage() {
     page: state.params.page,
     pageSize: state.params.pageSize,
     q: state.params.q,
-    sort: 'createdAt',
-    order: 'desc',
+    sort: state.params.sort,
+    order: state.params.order,
   })
 
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
@@ -46,48 +54,55 @@ export function SchedulesListPage() {
   const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
 
-  type Row = (typeof items)[number]
-  const columns: Column<Row>[] = [
-    {
-      header: 'Proveedor',
-      cell: (s) => (
-        <>
-          {contactMap.get(s.supplierContactId) ?? '—'}
-          {s.name && <span className="block text-xs font-normal text-muted-foreground">{s.name}</span>}
-        </>
-      ),
-      className: 'font-medium',
-    },
-    { header: 'Categoría', cell: (s) => categoryMap.get(s.expenseCategoryId) ?? '—', className: 'text-muted-foreground' },
-    {
-      header: 'Monto',
-      cell: (s) => formatAmount(s.agreedAmount, s.currency),
-      className: 'nums text-right',
-      headClassName: 'text-right',
-    },
-    {
-      header: 'Recurrencia',
-      cell: (s) => `${RECURRENCE_LABELS[s.recurrenceType] ?? s.recurrenceType} · día ${s.dueDay}`,
-      className: 'text-muted-foreground',
-    },
-    { header: 'Estado', cell: (s) => <ScheduleStatusPill status={s.status} /> },
-    { header: '', cell: () => <ChevronRight className="size-4 text-muted-foreground" />, className: 'w-8', cardHidden: true },
-  ]
-  const renderCard = (s: Row) => (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium">{contactMap.get(s.supplierContactId) ?? '—'}</span>
-        <span className="nums shrink-0 font-medium">{formatAmount(s.agreedAmount, s.currency)}</span>
-      </div>
-      {s.name && <div className="truncate text-xs text-muted-foreground">{s.name}</div>}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span>{categoryMap.get(s.expenseCategoryId) ?? '—'}</span>
-        <span aria-hidden>·</span>
-        <span>día {s.dueDay}</span>
-        <span aria-hidden>·</span>
-        <ScheduleStatusPill status={s.status} />
-      </div>
-    </div>
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.display({
+          id: 'supplier',
+          header: 'Proveedor',
+          meta: { grow: 2 },
+          cell: ({ row }) => (
+            <div className="min-w-0">
+              <p className="truncate font-medium">
+                {contactMap.get(row.original.supplierContactId) ?? '—'}
+              </p>
+              <p className="text-muted-foreground truncate text-xs">
+                {row.original.name ?? categoryMap.get(row.original.expenseCategoryId) ?? '—'}
+              </p>
+            </div>
+          ),
+        }),
+        column.display({
+          id: 'recurrence',
+          header: 'Recurrencia',
+          meta: { grow: 1 },
+          cell: ({ row }) => (
+            <span className="text-muted-foreground">
+              {RECURRENCE_LABELS[row.original.recurrenceType] ?? row.original.recurrenceType} · día{' '}
+              {row.original.dueDay}
+            </span>
+          ),
+        }),
+        column.display({
+          id: 'status',
+          header: 'Estado',
+          meta: { grow: 1 },
+          cell: ({ row }) => <ScheduleStatusPill status={row.original.status} />,
+        }),
+        column.display({
+          id: 'amount',
+          header: 'Monto',
+          meta: { grow: 1, align: 'right' },
+          cell: ({ row }) => formatAmount(row.original.agreedAmount, row.original.currency),
+        }),
+        column.display({
+          id: 'chevron',
+          header: '',
+          meta: { width: 'auto', hideOnStack: true },
+          cell: () => <RowChevron />,
+        }),
+      ]),
+    [contactMap, categoryMap],
   )
 
   return (
@@ -103,25 +118,22 @@ export function SchedulesListPage() {
         )}
       </PageHeader>
 
-      <div className="mb-4">
-        <SearchInput value={state.search} onChange={state.setSearch} placeholder="Buscar…" className="sm:max-w-xs" />
-      </div>
-
       {isError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {getErrorMessage(error, 'No se pudieron cargar.')}
         </div>
       ) : (
         <>
-          <DataTable
+          <DataList
             columns={columns}
             rows={items}
-            getKey={(s) => s.id}
+            getRowId={(s) => s.id}
             onRowClick={(s) => navigate(`/gastos/recurrentes/${s.id}`)}
             isLoading={isPending}
             skeletonRows={6}
             emptyText="No hay gastos recurrentes."
-            renderCard={renderCard}
+            search={{ value: state.search, onChange: state.setSearch, placeholder: 'Buscar recurrente…' }}
+            sort={{ value: state.sorting, onChange: state.setSorting, options: SORT_OPTIONS }}
           />
 
           {!isPending && total > 0 && (
