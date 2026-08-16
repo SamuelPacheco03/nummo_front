@@ -65,17 +65,15 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
     <ChatBubble role={message.role} className="animate-in fade-in-0 slide-in-from-bottom-1">
       <span className="sr-only">{isUser ? 'Tú' : 'Numi'}: </span>
       {message.audioUrl ? (
-        <div className="min-w-[11.5rem]">
-          <AudioPlayer src={message.audioUrl} />
-          {message.content ? (
-            <p className="mt-1 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
+        <>
+          {/* La nota de voz muestra su propia duración y hora bajo la onda. */}
+          <AudioPlayer src={message.audioUrl} at={message.at} />
+          {message.content && (
+            <p className="mt-1.5 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
               {message.content}
-              {spacer}
             </p>
-          ) : (
-            <span className={TIME_SLOT} aria-hidden />
           )}
-        </div>
+        </>
       ) : isUser ? (
         <p className="whitespace-pre-wrap">
           {message.content}
@@ -84,15 +82,17 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
       ) : (
         <RichText text={message.content} trailing={spacer} />
       )}
-      <time
-        dateTime={message.at}
-        className={cn(
-          'absolute right-3 bottom-1.5 text-[0.6rem] tabular-nums',
-          isUser ? 'text-chat-bubble-foreground/60' : 'text-muted-foreground',
-        )}
-      >
-        {formatTime(message.at)}
-      </time>
+      {!message.audioUrl && (
+        <time
+          dateTime={message.at}
+          className={cn(
+            'absolute right-3 bottom-1.5 text-[0.6rem] tabular-nums',
+            isUser ? 'text-chat-bubble-foreground/60' : 'text-muted-foreground',
+          )}
+        >
+          {formatTime(message.at)}
+        </time>
+      )}
     </ChatBubble>
   )
 
