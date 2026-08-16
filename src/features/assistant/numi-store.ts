@@ -4,14 +4,10 @@ import type { ChatMessage, ChatRole, NumiError } from './types'
 /**
  * Estado del panel de Numi.
  *
- * Zustand y no TanStack Query a propósito: el backend NO expone historial de
- * conversación (la memoria vive en Redis, ~3 turnos, y solo se referencia por
- * `sessionId`). El hilo que se ve en pantalla es estado de cliente puro; lo
- * único "de servidor" es el `sessionId`, que se reenvía en cada mensaje.
- *
- * No se persiste: al recargar, la memoria del servidor ya puede haber expirado
- * y mostrar un hilo viejo con un asistente que no lo recuerda confunde más de
- * lo que ayuda.
+ * El hilo visible es estado de cliente, pero el backend SÍ persiste las
+ * conversaciones (list + messages, referenciadas por `sessionId`). Al abrir el
+ * panel, `useNumiChat` lo hidrata con la conversación más reciente; a partir de
+ * ahí los envíos se agregan de forma optimista y `sessionId` la continúa.
  */
 
 let seq = 0
@@ -31,6 +27,8 @@ interface NumiState {
   messages: ChatMessage[]
   /** Último fallo de envío; se muestra bajo el hilo con opción de reintentar. */
   error: NumiError | null
+  /** Ya se intentó cargar el historial persistido (evita recargarlo en bucle). */
+  hydrated: boolean
 
   open: () => void
   close: () => void
@@ -38,6 +36,8 @@ interface NumiState {
   /** Guarda la respuesta y el `sessionId` con el que continuar. */
   appendReply: (sessionId: string, reply: string) => void
   setError: (error: NumiError | null) => void
+  /** Siembra el hilo con la conversación persistida más reciente (una sola vez). */
+  hydrate: (sessionId: string | undefined, messages: ChatMessage[]) => void
   /** Empieza de cero: olvida el hilo del servidor y limpia la vista. */
   newConversation: () => void
   /** Ata el hilo a una organización; si cambia, la conversación se reinicia. */
@@ -49,6 +49,7 @@ const EMPTY = { sessionId: undefined, messages: [] as ChatMessage[], error: null
 export const useNumiStore = create<NumiState>()((set) => ({
   isOpen: false,
   orgId: null,
+  hydrated: false,
   ...EMPTY,
 
   open: () => set({ isOpen: true }),
@@ -66,7 +67,20 @@ export const useNumiStore = create<NumiState>()((set) => ({
 
   setError: (error) => set({ error }),
 
-  newConversation: () => set({ ...EMPTY }),
+  hydrate: (sessionId, messages) =>
+    set((s) => {
+      if (s.hydrated) return s
+      // Si el usuario ya empezó a escribir antes de que llegara el historial,
+      // se respeta su hilo nuevo y solo se marca como hidratado.
+      if (s.messages.length > 0) return { hydrated: true }
+      return { hydrated: true, sessionId, messages }
+    }),
 
-  switchOrg: (orgId) => set((s) => (s.orgId === orgId ? s : { orgId, ...EMPTY })),
+  // Hilo limpio, pero marcado como hidratado para no recargar la conversación
+  // que el usuario acaba de dejar.
+  newConversation: () => set({ ...EMPTY, hydrated: true }),
+
+  // Cambiar de organización reinicia el hilo y vuelve a hidratar con las
+  // conversaciones de la nueva empresa.
+  switchOrg: (orgId) => set((s) => (s.orgId === orgId ? s : { orgId, ...EMPTY, hydrated: false })),
 }))

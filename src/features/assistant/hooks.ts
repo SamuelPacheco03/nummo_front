@@ -6,7 +6,33 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage, isApiStatus } from '@/lib/errors'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
+import { useNumiConversations, useNumiMessages } from './use-numi-history'
 import { shouldRefreshData } from './utils'
+
+/**
+ * Al abrir el panel, siembra el hilo con la conversación persistida más reciente
+ * (una sola vez por sesión de cliente). Con `hydrated`, deshabilita las queries
+ * pasando `orgId` undefined para no volver a pedir el historial.
+ */
+function useHydrateThread(orgId: string | undefined) {
+  const hydrated = useNumiStore((s) => s.hydrated)
+  const hydrate = useNumiStore((s) => s.hydrate)
+  const activeOrg = hydrated ? undefined : orgId
+  const { conversations, isLoading: loadingConversations } = useNumiConversations(activeOrg)
+  const latestId = conversations[0]?.id
+  const { messages, isLoading: loadingMessages } = useNumiMessages(activeOrg, latestId)
+
+  useEffect(() => {
+    if (hydrated || !orgId || loadingConversations) return
+    // Sin conversaciones previas → hilo vacío (se ve el saludo).
+    if (!latestId) {
+      hydrate(undefined, [])
+      return
+    }
+    if (loadingMessages) return
+    hydrate(latestId, messages)
+  }, [hydrated, orgId, loadingConversations, latestId, loadingMessages, messages, hydrate])
+}
 
 /**
  * Conversación con Numi: envío, estado "escribiendo", errores y refresco de
@@ -26,6 +52,10 @@ export function useNumiChat() {
   useEffect(() => {
     if (orgId) switchOrg(orgId)
   }, [orgId, switchOrg])
+
+  // Historial persistido: al abrir el panel, el hilo se siembra con la última
+  // conversación de la organización (ver `useHydrateThread`).
+  useHydrateThread(orgId)
 
   /** Envía al backend y consume la respuesta. No toca el hilo del usuario. */
   const ask = useCallback(
