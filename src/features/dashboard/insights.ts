@@ -60,7 +60,7 @@ export function buildInsight({
   return null
 }
 
-export type Due = {
+type Due = {
   id: string
   kind: 'in' | 'out'
   name: string

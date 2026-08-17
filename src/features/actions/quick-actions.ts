@@ -9,7 +9,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { canEditContacts, canManageAgreements, type AnyRole } from '@/features/organizations/roles'
 
-export type QuickAction = {
+type QuickAction = {
   to: string
   label: string
   /** Verbo suelto para la rejilla del Panel, donde el espacio manda. */

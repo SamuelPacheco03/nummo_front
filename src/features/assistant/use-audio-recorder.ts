@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export interface AudioRecorder {
+interface AudioRecorder {
   isRecording: boolean
   /** Segundos transcurridos de la grabación en curso. */
   seconds: number

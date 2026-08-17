@@ -4,8 +4,8 @@
  * (y para no romper el Fast Refresh del render).
  */
 
-export type InlineToken = { type: 'text' | 'bold' | 'code'; value: string }
-export type Block = { type: 'p'; text: string } | { type: 'ul'; items: string[] }
+type InlineToken = { type: 'text' | 'bold' | 'code'; value: string }
+type Block = { type: 'p'; text: string } | { type: 'ul'; items: string[] }
 
 /** `- item`, `* item`, `• item`, `1. item`, `1) item` */
 const BULLET = /^\s*(?:[-*•]|\d+[.)])\s+(.*)$/

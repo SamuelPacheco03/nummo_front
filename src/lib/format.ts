@@ -192,3 +192,17 @@ export function parseAmountInput(input: string, opts?: { allowNegative?: boolean
 export function plural(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`
 }
+
+/**
+ * Variación porcentual entre dos importes, para el delta de un KPI.
+ *
+ * Devuelve `null` —y el KPI se calla— cuando el período anterior fue cero o no
+ * llegó: dividir por cero daría un «∞ %» y un cero de partida convierte
+ * cualquier cifra en «+100 %», que no informa de nada (§70).
+ */
+export function pctChange(current: string | undefined, previous: string | undefined): number | null {
+  const c = Number(current)
+  const p = Number(previous)
+  if (!Number.isFinite(c) || !Number.isFinite(p) || p === 0) return null
+  return ((c - p) / Math.abs(p)) * 100
+}

@@ -3,7 +3,7 @@ import { Controller, type Control, type FieldPath, type FieldValues } from 'reac
 import { Field } from '@/components/ui/field'
 import { MoneyInput } from '@/components/ui/money-input'
 
-export interface MoneyFieldProps<T extends FieldValues> {
+interface MoneyFieldProps<T extends FieldValues> {
   control: Control<T>
   name: FieldPath<T>
   label: string

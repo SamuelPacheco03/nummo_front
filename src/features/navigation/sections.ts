@@ -12,8 +12,8 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean }
-export type NavSection = { title?: string; items: NavItem[] }
+type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean }
+type NavSection = { title?: string; items: NavItem[] }
 
 export const SECTIONS: NavSection[] = [
   {
@@ -71,4 +71,16 @@ export const SECTIONS: NavSection[] = [
 export const PORTFOLIO_SECTIONS = [
   { to: '/cartera/cxc', label: 'Por cobrar' },
   { to: '/gastos/cxp', label: 'Por pagar' },
+]
+
+/**
+ * El otro par espejo: el dinero que ya se movió.
+ *
+ * Mismo motivo que `PORTFOLIO_SECTIONS` —se consultan a la vez y en móvil la
+ * navegación está detrás de «Más»— y misma pareja de destinos para la barra
+ * inferior.
+ */
+export const LEDGER_SECTIONS = [
+  { to: '/cartera/pagos', label: 'Pagos' },
+  { to: '/gastos/egresos', label: 'Egresos' },
 ]

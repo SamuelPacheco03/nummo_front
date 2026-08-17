@@ -22,13 +22,13 @@ import { listFeatures, type ListFeatures } from '@/components/ui/list-columns'
 import { cn } from '@/lib/utils'
 
 
-export interface SortOption {
+interface SortOption {
   /** Valor de `sort` que acepta el endpoint. */
   field: string
   label: string
 }
 
-export interface DataListProps<TData extends RowData> {
+interface DataListProps<TData extends RowData> {
   columns: ColumnDef<ListFeatures, TData, unknown>[]
   rows: TData[]
   getRowId: (row: TData) => string

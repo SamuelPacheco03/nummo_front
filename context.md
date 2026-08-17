@@ -799,6 +799,8 @@ de acciones.
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
+Lo usan las cuatro pantallas de dinero —cuentas por cobrar y por pagar, pagos y egresos—; las
+demás listas todavía llevan su barra de filtros dentro de `DataList` (§95).
 No es un capricho técnico: es lo que hace que el botón «atrás» funcione, que se pueda mandar
 «mira estas cuentas» por chat y que recargar no devuelva al principio. El estado de React no
 duplica nada — se deriva de los parámetros en cada render.
@@ -816,6 +818,20 @@ Las claves van **en español**, como las rutas (§87.5):
 **Sesión y no `localStorage`, a propósito:** un filtro de cartera es contexto de un rato, no una
 preferencia. Que dentro de una semana la lista abra filtrada por algo elegido hoy desorienta más
 de lo que ayuda.
+
+### Qué cifras van en la cabecera
+
+No todas las listas se resumen igual, y copiar el resumen de al lado es la forma rápida de poner
+un número que no responde a la pregunta de la pantalla:
+
+| Pantalla | Pregunta | Componente | Fuente |
+| --- | --- | --- | --- |
+| Cuentas por cobrar / por pagar | ¿Cuánto queda vivo? | `BalanceKpis` | `receivables-summary` · `payables-summary` |
+| Pagos / egresos | ¿Cuánto se movió este mes? | `CashflowKpis` | `reports/cashflow` |
+
+Una cartera es **saldo** (stock) y una lista de pagos es **flujo**: la primera se resume por total,
+vencido y al día; la segunda por lo del período y lo del período anterior. La comparación la firma
+el backend —`cashflow` devuelve `previous`—, no se calcula aquí (§88.4).
 
 ### Cómo se reparten los filtros en la pantalla
 
@@ -1029,9 +1045,15 @@ salto espejo de §15.2.
 
 ## 15.2. Salto entre pantallas espejo
 
-Por cobrar y por pagar se consultan a la vez. En móvil la navegación vive detrás de «Más», a dos
-toques, así que las dos pantallas llevan un `SectionSwitch`: dos botones —«Por cobrar» y «Por
-pagar»— debajo de la cabecera, con el actual marcado.
+Hay **dos pares espejo**, y los dos llevan `SectionSwitch`: dos botones debajo de la cabecera,
+con el actual marcado.
+
+| Par | Constante | Botones |
+| --- | --- | --- |
+| Lo que se debe | `PORTFOLIO_SECTIONS` | Por cobrar · Por pagar |
+| Lo que ya se movió | `LEDGER_SECTIONS` | Pagos · Egresos |
+
+Se consultan a la vez, y en móvil la navegación vive detrás de «Más», a dos toques.
 
 Se probó reducirlo a un solo enlace hacia la otra («Ver cuentas por pagar →») para ahorrar sitio.
 **Se descartó:** ver las dos caras a la vez es lo que enseña que existen y en cuál estás; con un
@@ -2874,6 +2896,7 @@ siempre son palabras y un endpoint, así que viajan como props:
 | --- | --- | --- |
 | Cuentas por cobrar / por pagar | `BalanceKpis`, `FilterSortField`, `DataList` | Etiquetas y su consulta |
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
+| Pagos / egresos | `SettlementList`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 
 `SettlementDrawer` nació de dos archivos de ~310 líneas idénticos salvo por eso. Hoy el
 formulario vive una vez y cada página son ~120 líneas: sus palabras, su consulta de cuentas
@@ -2917,6 +2940,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
 | `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale |
+| `SettlementList` | `components/settlement-list.tsx` | Listado de pagos o egresos |
+| `CashflowKpis` | `components/cashflow-kpis.tsx` | Cifras de flujo del mes, con comparación |
 | `Sheet` · `Dialog` · `Popover` · `DropdownMenu` | `components/ui/` | Primitivas Radix |
 | `Field` · `Label` · `Input` · `Textarea` · `NativeSelect` | `components/ui/` | Formularios |
 | `SegmentedControl` | `components/ui/segmented-control.tsx` | Alternador de pocas opciones |

@@ -14,7 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 export type SettingsItem = { to: string; label: string; Icon: LucideIcon }
-export type SettingsGroup = { title: string; items: SettingsItem[] }
+type SettingsGroup = { title: string; items: SettingsItem[] }
 
 /**
  * Todo lo que se configura una vez y luego se olvida. Vive aquí y no en el

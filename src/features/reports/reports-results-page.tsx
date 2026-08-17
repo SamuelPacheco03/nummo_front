@@ -6,7 +6,7 @@ import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { formatMoney, todayISODate } from '@/lib/format'
+import { formatMoney, pctChange, todayISODate } from '@/lib/format'
 import { ReportBreakdown } from './report-breakdown'
 import {
   defaultPeriod,
@@ -16,13 +16,6 @@ import {
   useIncomeByConcept,
   type Period,
 } from './hooks'
-
-function pctChange(current: string | undefined, previous: string | undefined): number | null {
-  const c = Number(current)
-  const p = Number(previous)
-  if (!Number.isFinite(c) || !Number.isFinite(p) || p === 0) return null
-  return ((c - p) / Math.abs(p)) * 100
-}
 
 export function ReportsResultsPage() {
   const { orgId, organization } = useCurrentOrg()
@@ -71,18 +64,18 @@ export function ReportsResultsPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <KpiTile
             label="Ingresos"
-            value={formatMoney(cashflow?.current.income ?? '0', currency)}
-            delta={{ pct: pctChange(cashflow?.current.income, cashflow?.previous.income), higherIsGood: true }}
+            value={formatMoney(cashflow?.current?.income ?? '0', currency)}
+            delta={{ pct: pctChange(cashflow?.current?.income, cashflow?.previous?.income), higherIsGood: true }}
           />
           <KpiTile
             label="Egresos"
-            value={formatMoney(cashflow?.current.expense ?? '0', currency)}
-            delta={{ pct: pctChange(cashflow?.current.expense, cashflow?.previous.expense), higherIsGood: false }}
+            value={formatMoney(cashflow?.current?.expense ?? '0', currency)}
+            delta={{ pct: pctChange(cashflow?.current?.expense, cashflow?.previous?.expense), higherIsGood: false }}
           />
           <KpiTile
             label="Neto"
-            value={formatMoney(cashflow?.current.net ?? '0', currency)}
-            delta={{ pct: pctChange(cashflow?.current.net, cashflow?.previous.net), higherIsGood: true }}
+            value={formatMoney(cashflow?.current?.net ?? '0', currency)}
+            delta={{ pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net), higherIsGood: true }}
           />
         </div>
       )}

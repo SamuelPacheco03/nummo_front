@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 
 type BaseProps = Omit<ComponentProps<'input'>, 'value' | 'onChange' | 'type' | 'inputMode'>
 
-export interface MoneyInputProps extends BaseProps {
+interface MoneyInputProps extends BaseProps {
   /** Valor CRUDO (string decimal con punto, como lo espera el API). */
   value?: string
   /** Recibe el valor CRUDO ya normalizado. */

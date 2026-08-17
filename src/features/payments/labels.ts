@@ -1,6 +1,6 @@
 import type { StatusTone } from '@/components/ui/status-badge'
 
-export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
   POSTED: 'Registrado',
   REVERSED: 'Reversado',
 }

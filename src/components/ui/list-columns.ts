@@ -19,7 +19,7 @@ export function listColumns<TData extends RowData>() {
  * único modelo de columnas dibuje la rejilla de escritorio y el apilado de
  * móvil sin duplicar la definición en dos sitios.
  */
-export interface ListColumnMeta {
+interface ListColumnMeta {
   /** Etiqueta en el apilado de móvil. Por defecto, la cabecera si es texto. */
   label?: string
   /** Alineación del valor. Los importes van a la derecha. */

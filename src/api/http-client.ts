@@ -17,7 +17,7 @@ import { ensureCsrfToken } from '@/lib/csrf'
  */
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
-export interface ApiErrorPayload {
+interface ApiErrorPayload {
   code: string
   message: string
   details?: unknown

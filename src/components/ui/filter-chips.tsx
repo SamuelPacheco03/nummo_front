@@ -19,11 +19,14 @@ export interface FilterChoice {
  * opciones detrás de un gesto que nadie ve, y a 360 px el corte a media ficha
  * es ruido visual constante. Envolver ocupa una línea más y no esconde nada.
  *
- * Por debajo de `sm` van en **rejilla de dos columnas**, no envolviendo libres.
- * Cuatro fichas no caben en una línea a 360 px sin encoger el texto hasta hacerlo
- * incómodo, y dejarlas envolver da un 3 + 1 con una ficha suelta abajo que se lee
- * como un descuido. Dos y dos se lee como una decisión, y de paso el objetivo
- * táctil queda holgado (§43).
+ * Con **cuatro fichas o más**, por debajo de `sm` van en rejilla de dos
+ * columnas. Cuatro no caben en una línea a 360 px sin encoger el texto hasta
+ * hacerlo incómodo, y dejarlas envolver da un 3 + 1 con una ficha suelta abajo
+ * que se lee como un descuido. Dos y dos se lee como una decisión, y de paso el
+ * objetivo táctil queda holgado (§43).
+ *
+ * Con **tres o menos** caben en una línea y envuelven libres: forzar la rejilla
+ * ahí produce el 2 + 1 que la rejilla venía a evitar.
  *
  * Desde `sm` vuelven a ser fichas que hugean su contenido, que es como deben
  * verse cuando hay sitio.
@@ -48,7 +51,11 @@ export function FilterChips({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn('grid grid-cols-2 gap-2 sm:flex sm:flex-wrap', className)}
+      className={cn(
+        'gap-2 sm:flex sm:flex-wrap',
+        choices.length > 3 ? 'grid grid-cols-2' : 'flex flex-wrap',
+        className,
+      )}
     >
       {choices.map((choice) => {
         const isActive = choice.value === value

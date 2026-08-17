@@ -77,9 +77,10 @@ export function DisbursementDetailPage() {
         closeTo={LIST}
         title={supplier?.displayName ?? 'Egreso directo'}
         meta={
-          <span className="inline-flex items-center gap-1.5">
-            <StatusBadge {...disbursementStatus(d.status)} />·{' '}
+          <span className="flex items-center gap-2">
             {DISBURSEMENT_PURPOSE_LABELS[d.purpose] ?? d.purpose}
+            <span className="text-border">·</span>
+            <StatusBadge {...disbursementStatus(d.status)} />
           </span>
         }
         amount={

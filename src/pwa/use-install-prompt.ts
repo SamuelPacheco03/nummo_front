@@ -58,7 +58,7 @@ function isIos(): boolean {
   return iOs || iPadOs
 }
 
-export interface InstallPrompt {
+interface InstallPrompt {
   /** Hay un prompt nativo disponible ahora mismo. */
   canPrompt: boolean
   /** La app ya está instalada (o corriendo instalada) → no ofrecer instalar. */

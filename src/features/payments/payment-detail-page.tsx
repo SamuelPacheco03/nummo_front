@@ -11,6 +11,7 @@ import {
   DetailRows,
   DetailSection,
 } from '@/components/ui/detail-drawer'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { usePaymentMethods } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -18,7 +19,7 @@ import { canEditContacts, canManageAgreements } from '@/features/organizations/r
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { PAYMENT_PURPOSE_LABELS, PAYMENT_STATUS_LABELS } from './labels'
+import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
 import { ApplyAdvanceDialog } from './apply-advance-dialog'
 import { usePayment, useReversePayment } from './hooks'
 
@@ -76,15 +77,10 @@ export function PaymentDetailPage() {
         closeTo={LIST}
         title={payer?.displayName ?? 'Ingreso directo'}
         meta={
-          <span className="inline-flex items-center gap-1.5">
-            <span
-              className={cn(
-                'size-1.5 rounded-full',
-                reversed ? 'bg-muted-foreground/40' : 'bg-success',
-              )}
-            />
-            {PAYMENT_STATUS_LABELS[p.status] ?? p.status} ·{' '}
+          <span className="flex items-center gap-2">
             {PAYMENT_PURPOSE_LABELS[p.purpose] ?? p.purpose}
+            <span className="text-border">·</span>
+            <StatusBadge {...paymentStatus(p.status)} />
           </span>
         }
         amount={
