@@ -59,3 +59,51 @@ export function buildInsight({
 
   return null
 }
+
+export type Due = {
+  id: string
+  kind: 'in' | 'out'
+  name: string
+  dueDate: string
+  balance: string
+  to: string
+}
+
+/**
+ * Mezcla los próximos cobros y pagos en una sola lista **ordenada por fecha**,
+ * que es el orden en que el usuario va a ocuparse de ellos.
+ *
+ * Antes se enseñaba el próximo cobro y el próximo pago, uno de cada, y eso
+ * escondía información: si los tres vencimientos más cercanos son cobros, ver
+ * solo uno no ayuda a planear la semana.
+ *
+ * Las fechas llegan como `YYYY-MM-DD`, así que ordenarlas como texto es
+ * equivalente a ordenarlas como fecha y evita construir un `Date` por elemento.
+ */
+export function mergeUpcoming(
+  receivables: { receivableId: string; displayName: string; dueDate: string; balance: string }[],
+  payables: { expenseId: string; displayName: string; dueDate: string; balance: string }[],
+  limit: number,
+): Due[] {
+  if (limit <= 0) return []
+  return [
+    ...receivables.map<Due>((r) => ({
+      id: `in-${r.receivableId}`,
+      kind: 'in',
+      name: r.displayName,
+      dueDate: r.dueDate,
+      balance: r.balance,
+      to: `/cartera/cxc/${r.receivableId}`,
+    })),
+    ...payables.map<Due>((e) => ({
+      id: `out-${e.expenseId}`,
+      kind: 'out',
+      name: e.displayName,
+      dueDate: e.dueDate,
+      balance: e.balance,
+      to: `/gastos/cxp/${e.expenseId}`,
+    })),
+  ]
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .slice(0, limit)
+}

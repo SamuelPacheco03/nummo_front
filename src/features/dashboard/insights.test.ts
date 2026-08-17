@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balanceByCurrency, buildInsight } from './insights'
+import { balanceByCurrency, buildInsight, mergeUpcoming } from './insights'
 
 describe('balanceByCurrency', () => {
   it('suma los saldos de cada moneda por separado', () => {
@@ -80,5 +80,46 @@ describe('buildInsight', () => {
     expect(insight?.text).not.toContain('NaN')
     expect(insight?.text).not.toContain('Infinity')
     expect(insight?.text).not.toContain('%')
+  })
+})
+
+describe('mergeUpcoming', () => {
+  const cobros = [
+    { receivableId: 'r1', displayName: 'Laura', dueDate: '2026-08-20', balance: '100000' },
+    { receivableId: 'r2', displayName: 'Marcos', dueDate: '2026-08-18', balance: '200000' },
+  ]
+  const pagos = [
+    { expenseId: 'e1', displayName: 'Arriendo', dueDate: '2026-08-19', balance: '1800000' },
+  ]
+
+  it('mezcla cobros y pagos y los ordena por fecha, no por tipo', () => {
+    const rows = mergeUpcoming(cobros, pagos, 5)
+
+    expect(rows.map((r) => r.dueDate)).toEqual(['2026-08-18', '2026-08-19', '2026-08-20'])
+    expect(rows.map((r) => r.kind)).toEqual(['in', 'out', 'in'])
+  })
+
+  it('respeta el tope, quedándose con lo que vence antes', () => {
+    const rows = mergeUpcoming(cobros, pagos, 2)
+
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => r.name)).toEqual(['Marcos', 'Arriendo'])
+  })
+
+  it('sin sitio no devuelve nada', () => {
+    expect(mergeUpcoming(cobros, pagos, 0)).toEqual([])
+    expect(mergeUpcoming(cobros, pagos, -1)).toEqual([])
+  })
+
+  it('cada fila apunta a su propia ficha', () => {
+    const [first] = mergeUpcoming([], pagos, 5)
+
+    expect(first.to).toBe('/gastos/cxp/e1')
+    expect(first.id).toBe('out-e1')
+  })
+
+  it('funciona con una sola de las dos listas', () => {
+    expect(mergeUpcoming(cobros, [], 5)).toHaveLength(2)
+    expect(mergeUpcoming([], [], 5)).toEqual([])
   })
 })

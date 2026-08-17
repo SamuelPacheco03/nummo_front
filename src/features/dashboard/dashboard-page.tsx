@@ -1,6 +1,6 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, Wallet } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Wallet } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
@@ -15,7 +15,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useAccountBalances, useMovements } from '@/features/finances/hooks'
 import { MOVEMENT_TYPE_LABELS } from '@/features/finances/labels'
 import { formatDateHuman, formatMoney, plural } from '@/lib/format'
-import { balanceByCurrency, buildInsight } from './insights'
+import { balanceByCurrency, buildInsight, mergeUpcoming } from './insights'
 import { cn } from '@/lib/utils'
 import {
   useCashflowMonthly,
@@ -36,7 +36,7 @@ function AttentionRow({
   to,
 }: {
   Icon: LucideIcon
-  tone: 'destructive' | 'warning'
+  tone: 'destructive' | 'warning' | 'muted'
   title: string
   context: string
   amount: string
@@ -54,7 +54,9 @@ function AttentionRow({
         aria-hidden
         className={cn(
           'mt-0.5 size-4 shrink-0',
-          tone === 'destructive' ? 'text-destructive' : 'text-warning',
+          tone === 'destructive' && 'text-destructive',
+          tone === 'warning' && 'text-warning',
+          tone === 'muted' && 'text-muted-foreground',
         )}
       />
       <span className="min-w-0 flex-1">
@@ -67,75 +69,77 @@ function AttentionRow({
   )
 }
 
+/** Número máximo de filas del bloque. Ver el comentario de `AttentionList`. */
+const ATTENTION_LIMIT = 5
+
+/**
+ * Lo que hay que atender, ordenado por urgencia.
+ *
+ * La versión anterior enseñaba **el próximo cobro y el próximo pago**, uno de
+ * cada, y eso escondía información: si los tres vencimientos más cercanos son
+ * cobros, ver solo uno no ayuda a planear la semana. Ahora se mezclan las dos
+ * listas y se ordenan por fecha, que es el orden en que el usuario va a
+ * ocuparse de ellas.
+ *
+ * El tope son cinco filas: es lo que cabe junto al gráfico sin que el bloque
+ * crezca más que él, y a partir de ahí una lista deja de ser "lo que requiere
+ * atención" y pasa a ser un listado — que ya existe, en Cartera y en Gastos.
+ */
 function AttentionList({
   currency,
   overdueAmount,
   overdueCount,
   topDebtor,
-  nextReceivable,
-  nextPayable,
+  receivables,
+  payables,
 }: {
   currency?: string
   overdueAmount?: string
   overdueCount: number
   topDebtor?: string
-  nextReceivable?: { receivableId: string; displayName: string; dueDate: string; balance: string }
-  nextPayable?: { expenseId: string; displayName: string; dueDate: string; balance: string }
+  receivables: { receivableId: string; displayName: string; dueDate: string; balance: string }[]
+  payables: { expenseId: string; displayName: string; dueDate: string; balance: string }[]
 }) {
-  const rows: ReactNode[] = []
+  const hasOverdue = overdueCount > 0
 
-  if (overdueCount > 0) {
-    rows.push(
-      <AttentionRow
-        key="overdue"
-        Icon={AlertTriangle}
-        tone="destructive"
-        title={plural(overdueCount, 'cuenta vencida', 'cuentas vencidas')}
-        context={topDebtor ? `El mayor saldo es de ${topDebtor}` : 'Requieren gestión de cobro'}
-        amount={formatMoney(overdueAmount ?? '0', currency)}
-        to="/cartera/cxc"
-      />,
-    )
-  }
+  const upcoming = mergeUpcoming(receivables, payables, ATTENTION_LIMIT - (hasOverdue ? 1 : 0))
 
-  if (nextReceivable) {
-    rows.push(
-      <AttentionRow
-        key="next-in"
-        Icon={CalendarClock}
-        tone="warning"
-        title="Próximo cobro"
-        context={`${nextReceivable.displayName} · vence ${formatDateHuman(nextReceivable.dueDate)}`}
-        amount={formatMoney(nextReceivable.balance, currency)}
-        to={`/cartera/cxc/${nextReceivable.receivableId}`}
-      />,
-    )
-  }
-
-  if (nextPayable) {
-    rows.push(
-      <AttentionRow
-        key="next-out"
-        Icon={CalendarClock}
-        tone="warning"
-        title="Próximo pago"
-        context={`${nextPayable.displayName} · vence ${formatDateHuman(nextPayable.dueDate)}`}
-        amount={formatMoney(nextPayable.balance, currency)}
-        to={`/gastos/cxp/${nextPayable.expenseId}`}
-      />,
-    )
-  }
-
-  // Nada que atender es una buena noticia, y se dice como tal (§27, §73).
-  if (rows.length === 0) {
+  if (!hasOverdue && upcoming.length === 0) {
+    // Nada que atender es una buena noticia, y se dice como tal (§27, §73).
     return (
-      <p className="text-muted-foreground py-4 text-center text-sm">
-        Nada vencido y nada que venza esta semana. Todo al día.
+      <p className="text-muted-foreground py-6 text-center text-sm">
+        Nada vencido y nada que venza en los próximos días. Todo al día.
       </p>
     )
   }
 
-  return <div className="divide-y">{rows}</div>
+  return (
+    <div className="divide-y">
+      {hasOverdue && (
+        <AttentionRow
+          Icon={AlertTriangle}
+          tone="destructive"
+          title={plural(overdueCount, 'cuenta vencida', 'cuentas vencidas')}
+          context={topDebtor ? `El mayor saldo es de ${topDebtor}` : 'Requieren gestión de cobro'}
+          amount={formatMoney(overdueAmount ?? '0', currency)}
+          to="/cartera/cxc"
+        />
+      )}
+      {upcoming.map((due) => (
+        <AttentionRow
+          key={due.id}
+          // Entra o sale: el mismo par de flechas que la actividad reciente, para
+          // no inventar un segundo lenguaje para la misma idea.
+          Icon={due.kind === 'in' ? ArrowDownRight : ArrowUpRight}
+          tone={due.kind === 'in' ? 'warning' : 'muted'}
+          title={due.name}
+          context={`${due.kind === 'in' ? 'Cobras' : 'Pagas'} · vence ${formatDateHuman(due.dueDate)}`}
+          amount={formatMoney(due.balance, currency)}
+          to={due.to}
+        />
+      ))}
+    </div>
+  )
 }
 
 /**
@@ -172,8 +176,8 @@ export function DashboardPage() {
   const { balances, isPending: balancesLoading } = useAccountBalances(orgId)
   const { items: monthly } = useCashflowMonthly(orgId, 6)
   const { debtors } = useTopDebtors(orgId, 1)
-  const { upcoming } = useUpcomingReceivables(orgId, 7, 1)
-  const { upcoming: upcomingPay } = useUpcomingPayables(orgId, 7, 1)
+  const { upcoming } = useUpcomingReceivables(orgId, 14, ATTENTION_LIMIT)
+  const { upcoming: upcomingPay } = useUpcomingPayables(orgId, 14, ATTENTION_LIMIT)
   const { items: movements, isPending: movementsLoading } = useMovements(orgId, {
     page: 1,
     pageSize: 6,
@@ -259,8 +263,8 @@ export function DashboardPage() {
             overdueAmount={cxc?.overdueAmount}
             overdueCount={cxc?.overdueCount ?? 0}
             topDebtor={debtors[0]?.displayName}
-            nextReceivable={upcoming[0]}
-            nextPayable={upcomingPay[0]}
+            receivables={upcoming}
+            payables={upcomingPay}
           />
         </Panel>
       </div>
