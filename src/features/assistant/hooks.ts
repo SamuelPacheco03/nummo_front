@@ -9,7 +9,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage, isApiStatus } from '@/lib/errors'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
-import { useNumiConversations, useNumiMessages } from './use-numi-history'
+import { useMessageAudioLoader, useNumiConversations, useNumiMessages } from './use-numi-history'
 import { shouldRefreshData } from './utils'
 
 /**
@@ -51,6 +51,9 @@ export function useNumiChat() {
   const { mutateAsync, isPending } = usePostApiV1OrganizationsOrgIdAssistantChat()
   const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
   const hydrated = useNumiStore((s) => s.hydrated)
+  // La conversación viva del hilo: de ella cuelgan los audios archivados.
+  const conversationId = useNumiStore((s) => s.sessionId)
+  const loadAudio = useMessageAudioLoader(orgId, conversationId)
 
   // El hilo pertenece a una organización: si el usuario cambia de empresa, la
   // conversación anterior habla de datos que ya no son los de esta pantalla.
@@ -145,5 +148,7 @@ export function useNumiChat() {
     sendAudio,
     retry,
     newConversation,
+    /** Pide la URL firmada de una nota de voz archivada (§«Numi»). */
+    loadAudio,
   }
 }

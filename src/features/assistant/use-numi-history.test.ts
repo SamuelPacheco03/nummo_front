@@ -26,4 +26,15 @@ describe('flattenMessagePages', () => {
   it('returns [] for no pages', () => {
     expect(flattenMessagePages([])).toEqual([])
   })
+
+  it('carries what the archive knows about a dictated message', () => {
+    const dictated = { ...msg('m1'), source: 'audio' as const, hasAudio: true, content: 'cuánto debe Ana' }
+    // Dictated but the audio is gone (no object storage): only the transcript survives.
+    const orphan = { ...msg('m2'), source: 'audio' as const, hasAudio: false }
+    const out = flattenMessagePages([{ items: [orphan, dictated], nextCursor: null }])
+
+    expect(out[0]).toMatchObject({ id: 'm1', dictated: true, hasAudio: true })
+    expect(out[1]).toMatchObject({ id: 'm2', dictated: true, hasAudio: false })
+    expect(out.every((m) => m.audioUrl === undefined)).toBe(true) // el blob local no viene del servidor
+  })
 })

@@ -1742,6 +1742,32 @@ Tipos de respuesta:
 - acciones;
 - confirmación.
 
+## 32.1. Notas de voz en el hilo
+
+Un mensaje dictado se pinta como en cualquier app de mensajería: play, onda, duración y hora, con
+la transcripción debajo (`AudioPlayer`). Y **sobrevive a la recarga**, que era lo que faltaba: el
+audio de la sesión se reproducía y al volver al día siguiente quedaba solo el texto.
+
+El contrato lo dice todo en dos campos de `ChatMessage`:
+
+| Campo | Qué significa | Cómo se pinta |
+| --- | --- | --- |
+| `source: 'audio'` | Se dictó | Micrófono junto al texto |
+| `hasAudio: true` | El servidor todavía guarda el audio | Reproductor |
+
+Los dos juntos no son lo mismo que cada uno: **dictado sin audio guardado** —almacenamiento de
+objetos sin configurar, o audio purgado— se lee como lo que queda de él, su transcripción con el
+micrófono delante. Inventar un botón de play que no puede sonar sería peor que no ponerlo.
+
+**El audio se pide al pulsar play, no al pintar el hilo.** La URL que devuelve
+`…/messages/{messageId}/audio` es **temporal y firmada**, así que pedirla por adelantado para
+treinta mensajes es firmar treinta enlaces que caducan sin que nadie los use. Hasta esa primera
+pulsación la onda va plana, igual que una nota que aún no se ha descargado.
+
+Como la URL caduca, hay dos redes debajo: se reutiliza cinco minutos (`fetchQuery`, así que dos
+pulsaciones seguidas comparten petición) y, si al reproducir ya no vale, el botón se convierte en
+un «reintentar» que tira la guardada y pide otra.
+
 ---
 
 # 33. Cards dentro del chat
@@ -3343,6 +3369,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
+| `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |

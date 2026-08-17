@@ -61,7 +61,12 @@ Ambos son **`multipart/form-data`** con el archivo en el campo **`audio`** y ace
 
 ### Historial: los mensajes dictados vienen marcados
 
-`GET /assistant/conversations/:id/messages` ahora devuelve **`source`** en cada mensaje: `"text"` | `"audio"`. Úsalo para pintar un ícono de micrófono en la burbuja al recargar la conversación. El contenido guardado es la **transcripción** (el audio no se almacena).
+`GET /assistant/conversations/:id/messages` ahora devuelve **`source`** en cada mensaje: `"text"` | `"audio"`, y **`hasAudio`**, que dice si el audio original sigue guardado.
+
+- `source: "audio"` con `hasAudio: false` → solo queda la transcripción. El front pinta el ícono de micrófono en la burbuja.
+- `source: "audio"` con `hasAudio: true` → el audio se puede reproducir: `GET /assistant/conversations/:id/messages/:messageId/audio` devuelve `{ url }`, una URL **firmada y temporal**. El front la pide al pulsar play (no al cargar el hilo, que serían N firmas para audios que nadie escucha) y la reutiliza unos minutos; si caduca, vuelve a pedirla.
+
+> Esta línea decía «el audio no se almacena». Dejó de ser cierto cuando el contrato incorporó `hasAudio` y el endpoint de reproducción; queda corregida. **Cableado en el front** (§32.1 de `context.md`).
 
 ### Configuración del modelo de voz (OWNER/ADMIN)
 

@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react'
+import { Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
@@ -57,17 +58,36 @@ const TIME_SLOT = 'inline-block w-[3.4rem] align-baseline'
  * su hueco con un espaciador al final del último bloque, así no baja una línea
  * entera por ella.
  */
-export function ChatMessageItem({ message }: { message: ChatMessage }) {
+export function ChatMessageItem({
+  message,
+  loadAudio,
+}: {
+  message: ChatMessage
+  /** Trae la URL firmada del audio archivado de este mensaje. */
+  loadAudio?: (messageId: string, force?: boolean) => Promise<string>
+}) {
   const isUser = message.role === 'user'
   const spacer = <span aria-hidden className={TIME_SLOT} />
+
+  /*
+    Suena si el audio está aquí (recién grabado) o si el servidor lo guarda y
+    puede firmar una URL. Un mensaje dictado cuyo audio ya no existe se lee como
+    lo que queda de él: su transcripción, con el micrófono que dice de dónde
+    salió.
+  */
+  const playable = Boolean(message.audioUrl) || Boolean(message.hasAudio && loadAudio)
 
   const bubble = (
     <ChatBubble role={message.role} className="animate-in fade-in-0 slide-in-from-bottom-1">
       <span className="sr-only">{isUser ? 'Tú' : 'Numi'}: </span>
-      {message.audioUrl ? (
+      {playable ? (
         <>
           {/* La nota de voz muestra su propia duración y hora bajo la onda. */}
-          <AudioPlayer src={message.audioUrl} at={message.at} />
+          <AudioPlayer
+            src={message.audioUrl}
+            load={loadAudio && ((force) => loadAudio(message.id, force))}
+            at={message.at}
+          />
           {message.content && (
             <p className="mt-1.5 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
               {message.content}
@@ -76,13 +96,16 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
         </>
       ) : isUser ? (
         <p className="whitespace-pre-wrap">
+          {message.dictated && (
+            <Mic aria-label="Mensaje dictado" className="mr-1 inline size-3 shrink-0 align-[-0.1em] opacity-70" />
+          )}
           {message.content}
           {spacer}
         </p>
       ) : (
         <RichText text={message.content} trailing={spacer} />
       )}
-      {!message.audioUrl && (
+      {!playable && (
         <time
           dateTime={message.at}
           className={cn(

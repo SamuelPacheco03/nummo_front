@@ -8,10 +8,21 @@ export interface ChatMessage {
   /** ISO-8601; la burbuja muestra la hora local. */
   at: string
   /**
-   * Nota de voz: URL local (blob) para reproducirla. Solo existe para audios
-   * grabados en esta sesión; al recargar solo queda la transcripción (`content`).
+   * Nota de voz recién grabada: URL local (blob), reproducible al instante y
+   * sin pedirle nada al servidor. Solo existe para los audios de esta sesión.
    */
   audioUrl?: string
+  /**
+   * El mensaje se dictó. Sobrevive a la recarga (`source: 'audio'` del
+   * contrato) aunque su audio ya no esté guardado.
+   */
+  dictated?: boolean
+  /**
+   * El backend conserva el audio y puede firmar una URL para reproducirlo
+   * (`hasAudio` del contrato). Se pide **al darle a play**, no antes: la URL
+   * caduca y pedir una por mensaje al abrir el hilo sería una ráfaga inútil.
+   */
+  hasAudio?: boolean
 }
 
 /**

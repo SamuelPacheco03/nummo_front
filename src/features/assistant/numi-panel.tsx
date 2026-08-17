@@ -85,8 +85,19 @@ function QuickStart({ onPick }: { onPick: (text: string) => void }) {
  * se puede seguir leyendo la pantalla mientras se conversa).
  */
 export function NumiPanel({ onClose }: { onClose: () => void }) {
-  const { messages, error, isTyping, isHydrating, role, orgName, send, sendAudio, retry, newConversation } =
-    useNumiChat()
+  const {
+    messages,
+    error,
+    isTyping,
+    isHydrating,
+    role,
+    orgName,
+    send,
+    sendAudio,
+    retry,
+    newConversation,
+    loadAudio,
+  } = useNumiChat()
 
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -137,7 +148,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             <QuickStart onPick={(text) => void send(text)} />
           </>
         ) : (
-          messages.map((m) => <ChatMessageItem key={m.id} message={m} />)
+          messages.map((m) => <ChatMessageItem key={m.id} message={m} loadAudio={loadAudio} />)
         )}
 
         {isTyping && (

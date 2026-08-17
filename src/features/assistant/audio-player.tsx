@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Pause, Play } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
+import { Pause, Play, RotateCcw } from 'lucide-react'
+import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { formatDuration } from './use-audio-recorder'
 import { formatTime } from './utils'
@@ -29,10 +30,16 @@ async function extractPeaks(url: string, buckets: number): Promise<number[]> {
   }
 }
 
-/** Onda del audio; hasta que se decodifica (o si falla) muestra barras planas. */
-function useWaveform(src: string): number[] {
-  const [peaks, setPeaks] = useState<number[]>(() => Array(BARS).fill(0.35))
+const FLAT = Array<number>(BARS).fill(0.35)
+
+/** Onda del audio; sin audio todavía (o si falla la decodificación), barras planas. */
+function useWaveform(src: string | undefined): number[] {
+  const [peaks, setPeaks] = useState<number[]>(FLAT)
   useEffect(() => {
+    if (!src) {
+      setPeaks(FLAT)
+      return
+    }
     let alive = true
     extractPeaks(src, BARS)
       .then((p) => alive && setPeaks(p))
@@ -48,15 +55,64 @@ function useWaveform(src: string): number[] {
  * Nota de voz al estilo de una app de mensajería: play/pausa + onda con los
  * altos y bajos del audio, y debajo la duración a un lado y la hora al otro.
  * Los colores heredan de la burbuja (`currentColor`).
+ *
+ * **El audio puede no estar todavía.** Los de esta sesión llegan como `src` —un
+ * blob local, listo—; los del historial hay que pedirlos, y entonces llega
+ * `load`: se llama al pulsar play, y hasta ahí la onda va plana. Es lo que hace
+ * cualquier app de mensajería con una nota que aún no ha descargado, y evita
+ * firmar treinta URLs temporales al abrir un hilo largo.
  */
-export function AudioPlayer({ src, at }: { src: string; at: string }) {
+export function AudioPlayer({
+  src,
+  load,
+  at,
+}: {
+  src?: string
+  /** Trae la URL del audio. Se invoca al pulsar play; `force` salta la caché. */
+  load?: (force?: boolean) => Promise<string>
+  at: string
+}) {
   const ref = useRef<HTMLAudioElement>(null)
-  const peaks = useWaveform(src)
+  const [resolved, setResolved] = useState<string | undefined>(src)
+  const [loading, setLoading] = useState(false)
+  const [failed, setFailed] = useState(false)
+  // Play pedido antes de tener el audio: se cumple en cuanto llega.
+  const wanted = useRef(false)
+  const peaks = useWaveform(resolved)
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
 
+  useEffect(() => setResolved(src), [src])
+
+  useEffect(() => {
+    if (!resolved || !wanted.current) return
+    wanted.current = false
+    void ref.current?.play()
+  }, [resolved])
+
+  /** Pide el audio y, si sale bien, lo deja listo para sonar. */
+  const fetchAudio = useCallback(async (force: boolean) => {
+    if (!load || loading) return
+    wanted.current = true
+    setLoading(true)
+    setFailed(false)
+    try {
+      setResolved(await load(force))
+    } catch {
+      wanted.current = false
+      setFailed(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [load, loading])
+
   const toggle = () => {
+    if (!resolved) {
+      // Tras un fallo se pide una URL nueva: la anterior pudo caducar.
+      void fetchAudio(failed)
+      return
+    }
     const el = ref.current
     if (!el) return
     if (playing) el.pause()
@@ -82,10 +138,25 @@ export function AudioPlayer({ src, at }: { src: string; at: string }) {
         <button
           type="button"
           onClick={toggle}
-          aria-label={playing ? 'Pausar' : 'Reproducir'}
+          disabled={loading}
+          aria-label={
+            failed
+              ? 'Reintentar la nota de voz'
+              : playing
+                ? 'Pausar la nota de voz'
+                : 'Reproducir la nota de voz'
+          }
           className="grid size-8 shrink-0 place-items-center rounded-full bg-current/15 transition-transform active:scale-95"
         >
-          {playing ? <Pause className="size-4" /> : <Play className="size-4 translate-x-px" />}
+          {loading ? (
+            <Loader size="sm" />
+          ) : failed ? (
+            <RotateCcw className="size-4" />
+          ) : playing ? (
+            <Pause className="size-4" />
+          ) : (
+            <Play className="size-4 translate-x-px" />
+          )}
         </button>
 
         <div className="relative flex-1">
@@ -113,15 +184,29 @@ export function AudioPlayer({ src, at }: { src: string; at: string }) {
       </div>
 
       <div className="mt-1 flex items-center justify-between gap-3 text-[0.62rem] tabular-nums opacity-70">
-        <span>{formatDuration(playing || current ? current : duration)}</span>
+        <span>
+          {failed
+            ? 'No se pudo cargar'
+            : formatDuration(playing || current ? current : duration)}
+        </span>
         <time dateTime={at}>{formatTime(at)}</time>
       </div>
 
       <audio
         ref={ref}
-        src={src}
+        src={resolved}
         preload="metadata"
         hidden
+        /*
+          La URL firmada caduca. Si al reproducir ya no vale, se olvida y el
+          botón vuelve a ser un «reintentar»: la siguiente pulsación pide otra.
+        */
+        onError={() => {
+          if (!resolved || !load) return
+          setResolved(undefined)
+          setFailed(true)
+          setPlaying(false)
+        }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => {
