@@ -89,12 +89,15 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/receivables/receivables-list-page')).ReceivablesListPage,
             }),
-          },
-          {
-            path: 'cartera/cxc/:receivableId',
-            lazy: async () => ({
-              Component: (await import('@/features/receivables/receivable-detail-page')).ReceivableDetailPage,
-            }),
+            // El detalle es hijo: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':receivableId',
+                lazy: async () => ({
+                  Component: (await import('@/features/receivables/receivable-detail-page')).ReceivableDetailPage,
+                }),
+              },
+            ],
           },
           {
             path: 'cartera/pagos',

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Outlet, useNavigate } from 'react-router'
 import { ChevronDown, Coins, Download, MoreHorizontal, Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -492,6 +492,9 @@ export function ExpensesListPage() {
       {orgId && (
         <CreateExpenseDialog orgId={orgId} open={createOpen} onOpenChange={setCreateOpen} />
       )}
+
+      {/* Detalle en cajón: ruta hija, la lista se queda montada detrás. */}
+      <Outlet />
     </div>
   )
 }

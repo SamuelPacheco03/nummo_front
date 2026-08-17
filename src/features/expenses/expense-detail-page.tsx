@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { Ban, Coins, XCircle } from 'lucide-react'
+import { Ban, Coins, MoreHorizontal, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
@@ -88,22 +94,34 @@ export function ExpenseDetailPage() {
             {canPay && !isClosed && (
               <Button asChild size="sm">
                 <Link to={`/gastos/egresos/nuevo?supplier=${e.supplierContactId}`}>
-                  <Coins className="size-4" />
+                  <Coins aria-hidden className="size-4" />
                   Registrar egreso
                 </Link>
               </Button>
             )}
+            {/*
+              Pagar es lo que se viene a hacer; cerrar la cuenta es la excepción
+              y no debe quedar a la misma altura visual (igual que en su espejo).
+            */}
             {canManage && !isClosed && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setCancelOpen(true)}>
-                  <XCircle className="size-4" />
-                  Cancelar
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setWriteOffOpen(true)}>
-                  <Ban className="size-4" />
-                  Castigar
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreHorizontal aria-hidden className="size-4" />
+                    Más
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => setCancelOpen(true)}>
+                    <XCircle className="size-4" />
+                    Cancelar gasto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
+                    <Ban className="size-4" />
+                    Castigar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </>
         }
@@ -125,7 +143,7 @@ export function ExpenseDetailPage() {
         <DetailSection title="Detalle">
           <DetailRows>
             <DetailRow label="Vence">{formatDateHuman(e.dueDate)}</DetailRow>
-            <DetailRow label="Emitido">{e.issueDate}</DetailRow>
+            <DetailRow label="Emitido">{formatDateHuman(e.issueDate)}</DetailRow>
             <DetailRow label="Notas">{e.notes}</DetailRow>
             <DetailRow label="Motivo cierre">{e.cancellationReason}</DetailRow>
           </DetailRows>
