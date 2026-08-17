@@ -7,6 +7,7 @@ import {
   Palette,
   Percent,
   ReceiptText,
+  RefreshCw,
   Tags,
   UserCog,
   Wallet,
@@ -34,6 +35,7 @@ export const GROUPS: SectionGroup[] = [
     items: [
       { to: '/config/apariencia', label: 'Apariencia', Icon: Palette },
       { to: '/config/asistente', label: 'Asistente', Icon: Bot },
+      { to: '/config/aplicacion', label: 'Aplicación', Icon: RefreshCw },
     ],
   },
   {

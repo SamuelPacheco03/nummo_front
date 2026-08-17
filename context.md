@@ -960,6 +960,25 @@ el icono—, para que el texto se lea igual de bien en los cuatro (§7: nunca fi
 **Qué se escribe dentro:** el título es el hecho en tres palabras («Sede creada», «Rol
 actualizado»); el error sale de `getErrorMessage(err, '…')` (§88), nunca del `statusText`.
 
+**Dos ajustes que no se ven hasta que fallan.** El ancho es 400 px en escritorio, porque los 356
+de Sonner dejan al texto un palmo cuando el aviso lleva un botón —y en móvil **no se toca**, que
+ahí el aviso ocupa la pantalla y un valor fijo se desborda—. Y el hueco superior hay que decirlo
+dos veces: por debajo de 600 px Sonner ignora `offset` y usa `mobileOffset`.
+
+## 11.1.6. El aviso de versión nueva
+
+Es el único aviso que rompe las reglas de §11.1.5, y las rompe por lo mismo: **no lo dispara una
+acción del usuario, así que no puede desaparecer como si la hubiera**.
+
+- **No caduca.** Cuatro segundos aquí son una versión nueva que pasa de largo mientras miras otra
+  pestaña.
+- **Vuelve.** Cerrarlo aplaza el aviso, no la actualización: reaparece al volver a la pestaña. Por
+  eso tampoco lleva un «Después» al lado de «Actualizar» —dos botones dejan al texto sin sitio, y
+  la X ya significa «ahora no»—.
+- **`id` fijo** (`app-update`), así nunca se apila consigo mismo.
+
+Lo demás es el mismo aviso de siempre: filo `brand`, icono de descarga, superficie de tarjeta.
+
 ---
 
 ## 21.1. Filtros que sobreviven a la navegación
@@ -1918,6 +1937,51 @@ No usar toast para información que el usuario necesita estudiar o decidir.
 
 Errores críticos deben permanecer visibles.
 
+**La forma la define §11.1.5** (`components/ui/sonner.tsx`) y el caso raro, §11.1.6.
+
+---
+
+# 40.1. Actualizar la aplicación instalada
+
+`registerType: 'prompt'`: Nummo **no se recarga sola**. Alguien puede estar a medio formulario, y
+en una consola financiera eso no se hace. Pero prompt sin comprobación es lo peor de los dos
+mundos —una versión vieja servida desde la caché y ningún aviso—, así que la comprobación es
+donde está el trabajo. Todo vive en `pwa/app-update.ts`.
+
+**El navegador no comprueba solo.** Vuelve a por el `sw.js` al navegar, que en una SPA es casi
+nunca; instalada como app, Nummo puede pasar días abierta. Se pregunta en cuatro momentos:
+
+| Momento | Por qué |
+| --- | --- |
+| Al abrir | El despliegue pudo ocurrir con la app cerrada |
+| Al volver a la pestaña | Es el «vuelvo al trabajo» de verdad |
+| Al recuperar conexión | Sin red la comprobación no sale |
+| Cada 30 min | Para la sesión que se queda abierta toda la tarde |
+
+Antes solo estaba el temporizador, y es **el más débil de los cuatro**: el navegador congela los
+de una pestaña en segundo plano y en móvil suspende la app entera. De ahí el «a veces sale el
+aviso y a veces no». Entre dos comprobaciones hay un mínimo de un minuto, para que volver a la
+pestaña no dispare una ráfaga.
+
+**Y hay que preguntar bien.** `registration.update()` vuelve a pedir el `sw.js`, pero el navegador
+puede responderlo **desde su propia caché HTTP** y entonces la comprobación no comprueba nada. Por
+eso primero se pide el fichero con `cache: 'no-store'` —eso refresca la entrada— y solo después se
+llama a `update()`. Esa línea es la diferencia entre detectar el despliegue y creer que no lo hay.
+
+**Al aceptar**, la recarga la dispara el evento `controlling` de vite-plugin-pwa. Si no llega
+—un worker que no responde al `SKIP_WAITING`— se recarga a mano a los 4 s: más vale una recarga de
+más que un botón que no hace nada.
+
+**La versión es el commit**, no la fecha de compilación (`__BUILD_ID__`, `vite.config.ts`). Una
+fecha cambia en cada `vite build` aunque no haya cambiado una línea: se cuela en el bundle, mueve
+el hash y hace que el service worker anuncie «versión nueva» por un rebuild del mismo código.
+
+**Y una salida de emergencia**, `/config/aplicacion`: comprobar a mano, ver la versión instalada y
+**vaciar y recargar** —borra las cachés, da de baja los workers y vuelve a descargar—. No toca
+`localStorage`, así que la sesión, el tema y las preferencias sobreviven. Existe porque la
+alternativa del usuario era «borrar los datos del sitio» en un menú del navegador que casi nadie
+encuentra.
+
 ---
 
 # 41. Animaciones
@@ -2875,7 +2939,7 @@ src/
     *-dialog.tsx         # diálogos del dominio
   lib/                   # utilidades puras y sin estado (format, errors, csv, utils)
   pages/                 # pantallas sueltas que no son un dominio (health)
-  pwa/                   # service worker, prompt de instalación, aviso sin conexión
+  pwa/                   # service worker y actualización, prompt de instalación, aviso sin conexión
   stores/                # Zustand — SOLO estado de UI
   test/setup.ts          # setup de Vitest
 ```
@@ -3243,6 +3307,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
+| `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList`, con su papel en la tarjeta |
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |

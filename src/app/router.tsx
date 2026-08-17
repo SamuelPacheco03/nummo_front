@@ -312,6 +312,12 @@ export const router = createBrowserRouter([
                 }),
               },
               {
+                path: 'config/aplicacion',
+                lazy: async () => ({
+                  Component: (await import('@/features/config/app-page')).AppPage,
+                }),
+              },
+              {
                 path: 'config/sesiones',
                 lazy: async () => ({
                   Component: (await import('@/features/config/sessions-page')).SessionsPage,

@@ -4,7 +4,7 @@ import { GROUPS } from './settings-nav'
 
 /**
  * Shell de Configuración: una sola entrada en el pie del sidebar que abre sus
- * once destinos en cuatro grupos.
+ * doce destinos en cuatro grupos.
  *
  * La forma —columna fija en escritorio, cajón detrás de «Secciones» por debajo
  * de `lg`— vive en `SectionedLayout`, que comparte con Ayuda.

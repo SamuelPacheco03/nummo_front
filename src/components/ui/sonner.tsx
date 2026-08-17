@@ -65,8 +65,10 @@ export function Toaster() {
     <SonnerToaster
       theme={theme}
       position={compact ? 'top-center' : 'top-right'}
-      // Debajo de la cabecera (64 px en escritorio, 56 en móvil) y no encima.
-      offset={compact ? 64 : 76}
+      // Debajo de la cabecera y no encima. Por debajo de 600 px Sonner ignora
+      // `offset` y usa `mobileOffset`, así que hay que decirlo dos veces.
+      offset={76}
+      mobileOffset={{ top: 64, left: 12, right: 12 }}
       closeButton
       /*
         Los iconos son los de lucide, como en el resto de la app: los de Sonner
@@ -91,6 +93,10 @@ export function Toaster() {
           '--normal-text': 'var(--card-foreground)',
           '--normal-border': 'var(--border)',
           '--border-radius': 'var(--radius-lg)',
+          // Los 356 px de Sonner dejan sin sitio a un aviso con acción: el texto
+          // parte en tres líneas contra el botón. En móvil no se toca —ahí el
+          // aviso ocupa el ancho de la pantalla y un valor fijo se desborda—.
+          ...(compact ? null : { '--width': '400px' }),
           // La X, dentro y a la derecha. Sonner la deja flotando fuera de la
           // esquina superior izquierda, que es donde empieza a leerse el aviso.
           '--toast-close-button-start': 'auto',
@@ -108,7 +114,7 @@ export function Toaster() {
             El pseudo-elemento no se lo disputa nadie.
           */
           toast:
-            'font-sans relative items-start gap-3 overflow-hidden p-4 shadow-lg before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-[""] [&>[data-icon]]:mt-0.5 [&>[data-icon]]:shrink-0',
+            'font-sans relative items-start gap-3 overflow-hidden p-4 shadow-lg before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-[""] [&>[data-icon]]:mt-0.5 [&>[data-icon]]:shrink-0 [&>[data-icon]]:self-start',
           title: 'text-foreground text-sm font-medium',
           description: 'text-muted-foreground text-sm leading-relaxed',
           closeButton:
@@ -120,6 +126,9 @@ export function Toaster() {
           // El filo de la izquierda es lo único que cambia por tono: el fondo se
           // queda en superficie de tarjeta para que el texto se lea igual de bien
           // en los cuatro (§7 — no fiarlo todo al color).
+          // Un aviso sin tono —`toast()` a secas— también lleva filo: si no, se
+          // sale de la familia y parece de otra app.
+          default: 'before:bg-border',
           success: 'before:bg-success',
           error: 'before:bg-destructive',
           warning: 'before:bg-warning',

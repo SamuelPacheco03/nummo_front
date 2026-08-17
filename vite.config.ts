@@ -1,9 +1,28 @@
 import { defineConfig } from 'vitest/config'
 import { loadEnv } from 'vite'
+import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+/**
+ * Identidad del build, para «Aplicación» en Configuración y para soporte.
+ *
+ * Es el commit y no una fecha a propósito: la fecha cambia en cada `vite build`
+ * aunque no haya cambiado una línea, y eso mete el timestamp en el bundle, mueve
+ * el hash y hace que el service worker anuncie «versión nueva» por un rebuild
+ * del mismo código. El SHA solo cambia cuando cambia el código.
+ */
+function buildId(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return 'dev'
+  }
+}
 
 export default defineConfig(({ mode }) => {
   // Carga las VITE_* de .env / .env.[mode] para este contexto de Node (el proxy).
@@ -105,6 +124,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
+    define: { __BUILD_ID__: JSON.stringify(buildId()) },
     // El chunk principal (~166KB gzip) es el core de la app (router+query+radix+shell);
     // las páginas van en chunks lazy aparte. Subimos el umbral del aviso informativo.
     build: { chunkSizeWarningLimit: 700 },

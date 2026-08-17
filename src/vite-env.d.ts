@@ -2,6 +2,9 @@
 /// <reference types="vite-plugin-pwa/client" />
 /// <reference types="vite-plugin-pwa/react" />
 
+/** Commit corto con el que se compiló esta copia (`vite.config.ts` → `define`). */
+declare const __BUILD_ID__: string
+
 interface ImportMetaEnv {
   /**
    * Base URL del API en runtime. Vacío = mismo origen (dev usa el proxy de Vite).
