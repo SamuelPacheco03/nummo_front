@@ -15,7 +15,7 @@ import type {
   Payment,
   PaymentDetail,
 } from '@/api/generated/model'
-import type { ListResult } from '@/features/masters/master-crud'
+import type { ListResult } from '@/features/masters/master-list-state'
 
 /** Un pago mueve saldos de cartera: invalidamos pagos + receivables. */
 function invalidateAll(qc: QueryClient, orgId: string, paymentId?: string) {

@@ -31,11 +31,18 @@ export function DetailDrawer({
   )
 }
 
-/** Bloque con título en versalitas dentro del cajón. */
+/**
+ * Bloque titulado dentro de una ficha.
+ *
+ * Título **en frase y del color del texto**, no en versaditas grises: así se lee
+ * antes que la tabla que encabeza, y no arrastra el tic de plantilla que §11.1
+ * prohíbe. Las versaditas se quedan donde sí significan algo —las cabeceras de
+ * una tabla de datos—, no en los títulos de contenido.
+ */
 export function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h3 className="text-muted-foreground text-xs font-medium tracking-wider uppercase">{title}</h3>
+      <h3 className="text-sm font-medium">{title}</h3>
       {children}
     </section>
   )

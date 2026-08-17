@@ -20,7 +20,7 @@ import type {
   InterestPolicy,
 } from '@/api/generated/model'
 import type { MasterParams } from '@/features/masters/hooks'
-import type { ListResult } from '@/features/masters/master-crud'
+import type { ListResult } from '@/features/masters/master-list-state'
 
 function pageOf<T>(data: unknown): { data: T[]; total: number; totalPages: number } | undefined {
   return (data as { data?: { data: T[]; total: number; totalPages: number } })?.data

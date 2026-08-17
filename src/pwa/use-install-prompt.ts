@@ -38,7 +38,7 @@ function subscribe(listener: () => void) {
 }
 
 /** true si la app se está ejecutando ya instalada (no en pestaña del navegador). */
-export function isStandalone(): boolean {
+function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
   return (
     window.matchMedia?.('(display-mode: standalone)').matches ||
@@ -49,7 +49,7 @@ export function isStandalone(): boolean {
 }
 
 /** true en Safari/iOS y iPadOS, donde no existe `beforeinstallprompt`. */
-export function isIos(): boolean {
+function isIos(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
   const iOs = /iPad|iPhone|iPod/.test(ua)

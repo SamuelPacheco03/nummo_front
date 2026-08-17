@@ -18,11 +18,6 @@ export function getErrorMessage(error: unknown, fallback = 'Ocurrió un error in
   return fallback
 }
 
-/** Código de error del backend (VALIDATION, CONFLICT, …) si aplica. */
-export function getErrorCode(error: unknown): string | undefined {
-  return error instanceof ApiError ? error.code : undefined
-}
-
 /** ¿El error es un status HTTP concreto? */
 export function isApiStatus(error: unknown, status: number): boolean {
   return error instanceof ApiError && error.status === status

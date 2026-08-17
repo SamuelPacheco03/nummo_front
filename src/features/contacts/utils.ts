@@ -1,6 +1,6 @@
 import type { Contact } from '@/api/generated/model'
 
-export const CONTACT_TYPE_LABELS: Record<string, string> = {
+const CONTACT_TYPE_LABELS: Record<string, string> = {
   PERSON: 'Persona',
   COMPANY: 'Empresa',
 }

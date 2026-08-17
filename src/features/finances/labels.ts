@@ -7,11 +7,6 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   REVERSAL: 'Reversión',
 }
 
-export const DIRECTION_LABELS: Record<string, string> = {
-  IN: 'Entrada',
-  OUT: 'Salida',
-}
-
 export const MOVEMENT_TYPES = [
   'PAYMENT',
   'DISBURSEMENT',

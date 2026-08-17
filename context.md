@@ -755,6 +755,20 @@ ancha y clara que sobre el sidebar oscuro se ve como una cicatriz.
 El pulgar va en `currentColor` a baja opacidad, así que **hereda la superficie** y no hace falta
 declarar dos versiones (§11.2).
 
+## 11.1.2b. Dónde sí van las versaditas
+
+Las versaditas grises (`text-xs uppercase tracking-wider`) sirven **solo** para dos cosas:
+
+1. **Cabeceras de una tabla de datos** — es la convención de consola y ahí se lee como estructura.
+2. **Separadores de grupo en un menú de navegación** — el sidebar, la sub-navegación de ajustes,
+   los grupos de la paleta de comandos.
+
+**Nunca para un título de contenido.** Un `SALDO` o un `DETALLE` en versaditas grises encima de
+su propia tabla se lee después que la tabla —queda por debajo de lo que nombra— y es el tic de
+plantilla que §11.1 prohíbe. Los títulos de sección van **en frase y del color del texto**
+(`text-sm font-medium`): `DetailSection` los pone así, y quien no pueda usarlo copia ese estilo,
+no el anterior.
+
 ## 11.1.3. Un solo panel lateral
 
 Todo lo que se abre «de lado» —la ficha de un registro, los filtros avanzados, registrar dinero—
@@ -2597,8 +2611,20 @@ src/
 | lo generó Orval | `api/generated/` — **intocable** |
 
 **Regla de dirección de dependencias:** `features/` puede importar de `components/`, `lib/` y
-`api/`. `components/` y `lib/` **nunca** importan de `features/`. Un componente compartido
-que necesita saber de un dominio está mal ubicado.
+`api/`. `lib/` **no importa nada** de la app: es puro. `components/` no importa **pantallas,
+diálogos ni UI** de una feature — eso sería acoplar la capa compartida a un dominio y abre la
+puerta a ciclos.
+
+**La excepción, acotada:** un componente compartido **sí puede llamar a hooks** de datos o de
+contexto (`useCurrentOrg`, `useContacts`, `usePaymentMethods`). La regla se escribió como
+prohibición total y la realidad la desmintió tres veces —`ContactPicker`, `SettlementDrawer`—:
+un componente transversal que necesita datos solo tiene dos salidas, llamar al hook o exigir que
+cada llamante le pase todo por props, y lo segundo devuelve al sitio de origen la duplicación que
+el componente venía a quitar. Lo que importa es que la dependencia sea **hacia los datos, nunca
+hacia la pantalla**.
+
+Regla práctica: si el import de `components/` termina en `hooks`, está bien; si termina en
+`-page`, `-dialog` o `-panel`, el componente está mal ubicado.
 
 ## 87.3. Capas por pantalla
 
@@ -2897,6 +2923,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `InfoHint` | `components/ui/info-hint.tsx` | Ayuda contextual breve |
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
 | `MasterCrud` | `features/masters/master-crud.tsx` | CRUD genérico de maestros |
+| `useMasterListState` | `features/masters/master-list-state.ts` | Filtros y paginación de un maestro |
+| `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
 | `FilterSheet` · `FilterSheetTrigger` · `FilterField` · `FilterSortField` | `components/ui/filter-sheet.tsx` | Filtros avanzados y orden, en hoja inferior / cajón |

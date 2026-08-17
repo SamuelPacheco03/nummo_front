@@ -58,7 +58,7 @@ function Greeting() {
 function QuickStart({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="space-y-2 pt-1">
-      <p className="text-muted-foreground flex items-center gap-1.5 px-1 text-[0.68rem] font-medium tracking-wider uppercase">
+      <p className="text-muted-foreground flex items-center gap-1.5 px-1 text-xs font-medium">
         <Sparkles className="size-3.5" />
         Para empezar
       </p>

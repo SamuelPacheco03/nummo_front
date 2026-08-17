@@ -20,7 +20,8 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import type { ExpenseCategory } from '@/api/generated/model'
-import { MasterCrud, useMasterListState, type Column } from './master-crud'
+import { MasterCrud } from './master-crud'
+import { useMasterListState, type Column } from './master-list-state'
 import { useCreateExpenseCategory, useExpenseCategories, useUpdateExpenseCategory } from './hooks'
 
 const schema = z.object({

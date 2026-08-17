@@ -19,7 +19,8 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
-import { MasterCrud, useMasterListState, type Column } from '@/features/masters/master-crud'
+import { MasterCrud } from '@/features/masters/master-crud'
+import { useMasterListState, type Column } from '@/features/masters/master-list-state'
 import type { InterestPolicy } from '@/api/generated/model'
 import {
   BASE_TYPES,

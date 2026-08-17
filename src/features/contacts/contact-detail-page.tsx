@@ -138,9 +138,7 @@ export function ContactDetailPage() {
 
       {/* Información */}
       <section>
-        <h2 className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          Información
-        </h2>
+        <h2 className="mb-2 text-sm font-medium">Información</h2>
         <Card className="gap-0 py-0">
           <dl className="divide-y">
             <InfoRow label="Tipo" value={contactTypeLabel(contact.contactType)} />
@@ -163,9 +161,7 @@ export function ContactDetailPage() {
       {/* Relaciones */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-            Relaciones
-          </h2>
+          <h2 className="text-sm font-medium">Relaciones</h2>
           {canEdit && (
             <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
               <Plus className="size-4" />

@@ -38,7 +38,3 @@ export const ADJUSTMENT_TYPE_LABELS: Record<string, string> = {
 /** Solo estos tipos son creables desde el front (INTEREST/WAIVER los pone el motor de mora). */
 export const CREATE_ADJUSTMENT_TYPES = ['DISCOUNT', 'MANUAL_ADD', 'MANUAL_SUBTRACT'] as const
 
-/** Un ajuste que resta al saldo (para mostrar el signo). */
-export function isNegativeAdjustment(type: string): boolean {
-  return type === 'DISCOUNT' || type === 'MANUAL_SUBTRACT' || type === 'WAIVER'
-}

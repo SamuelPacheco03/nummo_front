@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  getGetApiV1AuthMeQueryKey,
   getGetApiV1AuthSessionsQueryKey,
   useDeleteApiV1AuthSessionsId,
   useGetApiV1AuthMe,
@@ -71,9 +70,6 @@ export function useLogout() {
     },
   })
 }
-
-/** Query key de `/auth/me` (para invalidaciones puntuales). */
-export const authMeQueryKey = getGetApiV1AuthMeQueryKey
 
 /* ---------- Sesiones activas ---------- */
 

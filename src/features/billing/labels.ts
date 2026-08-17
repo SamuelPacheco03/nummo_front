@@ -1,6 +1,6 @@
 import type { StatusTone } from '@/components/ui/status-badge'
 
-export const AGREEMENT_STATUS_LABELS: Record<string, string> = {
+const AGREEMENT_STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Activo',
   PAUSED: 'Pausado',
   ENDED: 'Finalizado',
@@ -32,7 +32,7 @@ export const BASE_TYPE_LABELS: Record<string, string> = {
 
 export const BASE_TYPES = ['ORIGINAL_AMOUNT', 'OUTSTANDING_NON_INTEREST'] as const
 
-export function agreementStatusTone(status: string): StatusTone {
+function agreementStatusTone(status: string): StatusTone {
   if (status === 'ACTIVE') return 'success'
   if (status === 'PAUSED') return 'warning'
   return 'muted'

@@ -17,7 +17,7 @@ export function canManageAgreements(role: AnyRole | undefined): boolean {
   return role === 'OWNER' || role === 'ADMIN' || role === 'ACCOUNTANT'
 }
 
-export const ROLE_LABELS: Record<AnyRole, string> = {
+const ROLE_LABELS: Record<AnyRole, string> = {
   OWNER: 'Propietario',
   ADMIN: 'Administrador',
   ACCOUNTANT: 'Contador',

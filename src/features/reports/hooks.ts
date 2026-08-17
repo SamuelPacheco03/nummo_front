@@ -38,7 +38,7 @@ export interface Period {
 }
 
 /** Primer día del mes actual (mismo criterio que el Panel). */
-export function monthStart(): string {
+function monthStart(): string {
   return `${todayISODate().slice(0, 7)}-01`
 }
 

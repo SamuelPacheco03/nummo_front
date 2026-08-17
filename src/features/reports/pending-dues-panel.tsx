@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router'
 import { Download } from 'lucide-react'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
-import { DataList, listColumns } from '@/components/ui/data-list'
+import { DataList } from '@/components/ui/data-list'
+import { listColumns } from '@/components/ui/list-columns'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { downloadCsv } from '@/lib/csv'
@@ -24,6 +25,9 @@ export type DueRow = {
 type Filter = 'all' | 'overdue' | 'upcoming'
 
 const PAGE_SIZE = 8
+
+/** Estable entre renders: la fábrica no depende de nada del componente. */
+const column = listColumns<DueRow>()
 
 /**
  * Panel de cuentas pendientes (por cobrar o por pagar): tabla/tarjetas ordenadas
@@ -70,7 +74,6 @@ export function PendingDuesPanel({
       filtered.map((r) => [r.name, r.dueDate, r.statusLabel, r.balance]),
     )
 
-  const column = listColumns<DueRow>()
   const columns = useMemo(
     () =>
       column.columns([

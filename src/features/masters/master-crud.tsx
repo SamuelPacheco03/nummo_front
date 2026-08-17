@@ -1,77 +1,26 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { SortingState } from '@tanstack/react-table'
+import { useMemo, useRef } from 'react'
 import { Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns } from '@/components/ui/data-list'
+import { DataList } from '@/components/ui/data-list'
+import { listColumns } from '@/components/ui/list-columns'
 import { StatusDot } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
-import { useDebouncedValue } from '@/lib/use-debounced-value'
-import type { MasterParams } from './hooks'
-
-const PAGE_SIZE = 20
+import {
+  MASTER_PAGE_SIZE,
+  type Column,
+  type ListResult,
+  type MasterListState,
+} from './master-list-state'
 
 /** Los maestros solo ordenan por estas dos, según el contrato (NamedListQuery). */
 const SORT_OPTIONS = [
   { field: 'name', label: 'Nombre' },
   { field: 'createdAt', label: 'Creación' },
 ]
-
-export interface Column<T> {
-  header: string
-  cell: (row: T) => ReactNode
-  className?: string
-  headClassName?: string
-}
-
-export interface ListResult<T> {
-  items: T[]
-  total: number
-  totalPages: number
-  isPending: boolean
-  isError: boolean
-  error: unknown
-  isFetching: boolean
-}
-
-export interface MasterListState {
-  sorting: SortingState
-  setSorting: (value: SortingState) => void
-  search: string
-  setSearch: (value: string) => void
-  active: '' | 'true' | 'false'
-  setActive: (value: '' | 'true' | 'false') => void
-  page: number
-  setPage: (page: number) => void
-  params: MasterParams
-}
-
-/** Estado de filtros/paginación para un listado de maestros. */
-export function useMasterListState(): MasterListState {
-  const [search, setSearch] = useState('')
-  const q = useDebouncedValue(search.trim(), 300)
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }])
-  const [active, setActive] = useState<'' | 'true' | 'false'>('true')
-  const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    setPage(1)
-  }, [q, active, sorting])
-
-  const params: MasterParams = {
-    page,
-    pageSize: PAGE_SIZE,
-    q: q || undefined,
-    isActive: active || undefined,
-    sort: (sorting[0]?.id ?? 'name') as MasterParams['sort'],
-    order: sorting[0]?.desc ? 'desc' : 'asc',
-  }
-
-  return { sorting, setSorting, search, setSearch, active, setActive, page, setPage, params }
-}
 
 /** Listado CRUD genérico de maestros (presentacional): filtros + filas-tarjeta + paginación. */
 export function MasterCrud<T extends { id: string; isActive: boolean }>({
@@ -99,12 +48,21 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
 }) {
   const { items, total, totalPages, isPending, isError, error, isFetching } = list
 
-  const editButton = (row: T) => (
-    <Button variant="ghost" size="icon" className="size-8" onClick={() => onEdit(row)} aria-label="Editar">
-      <Pencil className="size-4" />
-    </Button>
-  )
-  const column = listColumns<T>()
+  /*
+    `onEdit` se recrea en cada render del padre. Guardarlo en una ref permite
+    memorizar las columnas por su identidad —lo correcto— sin quedarse con una
+    versión vieja del callback.
+
+    Antes se memorizaba por `columns.length`, y eso escondía un fallo real: una
+    celda que cerrara sobre datos que llegan del API (el nombre de la sede en
+    cuentas financieras) se quedaba congelada en su primer valor, porque el
+    número de columnas nunca cambia. **Quien llame a `MasterCrud` debe pasar una
+    lista de columnas estable** (constante de módulo o `useMemo`).
+  */
+  const onEditRef = useRef(onEdit)
+  onEditRef.current = onEdit
+
+  const column = useMemo(() => listColumns<T>(), [])
   const allColumns = useMemo(
     () =>
       column.columns([
@@ -127,14 +85,22 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
                 id: 'edit',
                 header: '',
                 meta: { hideOnStack: true },
-                cell: ({ row }) => editButton(row.original),
+                cell: ({ row }) => (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => onEditRef.current(row.original)}
+                    aria-label="Editar"
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                ),
               }),
             ]
           : []),
       ]),
-    // Las props columns y editButton se recrean en cada render del padre; lo
-    // que de verdad cambia el modelo es cuántas columnas hay y si se edita.
-    [columns.length, canManage],
+    [column, columns, canManage],
   )
 
   const hasFilters = Boolean(state.search) || state.active !== 'true'
@@ -201,7 +167,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
           {!isPending && total > 0 && (
             <Pagination
               page={state.page}
-              pageSize={PAGE_SIZE}
+              pageSize={MASTER_PAGE_SIZE}
               total={total}
               totalPages={totalPages}
               isFetching={isFetching}

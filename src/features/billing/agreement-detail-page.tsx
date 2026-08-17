@@ -152,7 +152,7 @@ export function AgreementDetailPage() {
       </div>
 
       <section>
-        <h2 className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">Detalle</h2>
+        <h2 className="mb-2 text-sm font-medium">Detalle</h2>
         <Card className="gap-0 py-0">
           <dl className="divide-y">
             <InfoRow label="Referencia">{agreement.name}</InfoRow>

@@ -3,7 +3,8 @@ import { Link, useSearchParams } from 'react-router'
 import { ArrowLeftRight, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { DataList, listColumns } from '@/components/ui/data-list'
+import { DataList } from '@/components/ui/data-list'
+import { listColumns } from '@/components/ui/list-columns'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -36,7 +37,9 @@ export function AccountsPage() {
     )
   }, [wantsTransfer, setParams])
 
-  const column = listColumns<(typeof balances)[number]>()
+  // La fábrica no depende de nada del componente, pero el tipo sí sale de aquí,
+  // así que no puede subir a nivel de módulo: se memoriza en su sitio.
+  const column = useMemo(() => listColumns<(typeof balances)[number]>(), [])
   const columns = useMemo(
     () =>
       column.columns([
@@ -86,7 +89,7 @@ export function AccountsPage() {
           ),
         }),
       ]),
-    [],
+    [column],
   )
 
   return (

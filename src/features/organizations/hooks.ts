@@ -9,7 +9,7 @@ import type { OrganizationSummary } from '@/api/generated/model'
 import { useOrgStore } from './org-store'
 
 /** Lista de organizaciones del usuario (`{ organization, role }[]`). */
-export function useOrganizations() {
+function useOrganizations() {
   const query = useGetApiV1Organizations({ query: { staleTime: 60_000 } })
   const organizations = (query.data?.data ?? []) as OrganizationSummary[]
   return { ...query, organizations }

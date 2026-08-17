@@ -22,7 +22,8 @@ import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
 import type { FinancialAccount } from '@/api/generated/model'
-import { MasterCrud, useMasterListState, type Column } from './master-crud'
+import { MasterCrud } from './master-crud'
+import { useMasterListState, type Column } from './master-list-state'
 import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, isValidAmount } from './labels'
 import { useCreateFinancialAccount, useFinancialAccounts, useUpdateFinancialAccount } from './hooks'
 
@@ -184,18 +185,27 @@ export function FinancialAccountsPage() {
     return (id: string | null) => (id ? (map.get(id) ?? '—') : '—')
   }, [branches])
 
-  const columns: Column<FinancialAccount>[] = [
-    { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
-    { header: 'Tipo', cell: (r) => ACCOUNT_TYPE_LABELS[r.accountType] ?? r.accountType },
-    { header: 'Moneda', cell: (r) => r.currency, className: 'nums' },
-    {
-      header: 'Saldo inicial',
-      cell: (r) => formatAmount(r.openingBalance, r.currency),
-      className: 'nums text-right',
-      headClassName: 'text-right',
-    },
-    { header: 'Sede', cell: (r) => branchName(r.branchId), className: 'text-muted-foreground' },
-  ]
+  /*
+    Memorizada, y no por comodidad: «Sede» cierra sobre `branchName`, que cambia
+    cuando llegan las sedes. `MasterCrud` memoriza las columnas por su identidad,
+    así que una lista nueva en cada render la haría reconstruir la tabla entera —
+    y una lista congelada dejaría «Sede» enseñando el «—» del primer render.
+  */
+  const columns: Column<FinancialAccount>[] = useMemo(
+    () => [
+      { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
+      { header: 'Tipo', cell: (r) => ACCOUNT_TYPE_LABELS[r.accountType] ?? r.accountType },
+      { header: 'Moneda', cell: (r) => r.currency, className: 'nums' },
+      {
+        header: 'Saldo inicial',
+        cell: (r) => formatAmount(r.openingBalance, r.currency),
+        className: 'nums text-right',
+        headClassName: 'text-right',
+      },
+      { header: 'Sede', cell: (r) => branchName(r.branchId), className: 'text-muted-foreground' },
+    ],
+    [branchName],
+  )
 
   return (
     <>

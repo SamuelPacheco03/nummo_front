@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
 import { Banknote, Plus } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
@@ -6,7 +6,8 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
-import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
+import { DataList, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
+import { listColumns } from '@/components/ui/list-columns'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ErrorState } from '@/components/ui/error-state'
@@ -71,7 +72,12 @@ export function PaymentsListPage() {
 
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
   const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
-  const payerName = (id?: string | null) => (id ? (contactMap.get(id) ?? '—') : '—')
+  // Estable mientras el mapa de contactos no cambie: lo usan las columnas y la
+  // ficha de filtro activo, así que no puede vivir dentro del memo.
+  const payerName = useCallback(
+    (id?: string | null) => (id ? (contactMap.get(id) ?? '—') : '—'),
+    [contactMap],
+  )
 
   const columns = useMemo(
     () =>
@@ -121,8 +127,7 @@ export function PaymentsListPage() {
           cell: () => <RowChevron />,
         }),
       ]),
-    // `payerName` depende del mapa de contactos, que sí cambia.
-    [contactMap],
+    [payerName],
   )
 
   const activeFilters = [

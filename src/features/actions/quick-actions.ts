@@ -29,7 +29,7 @@ export type QuickAction = {
  * Dos acciones abren un diálogo que vive dentro de una lista, así que se piden
  * por URL (`?nueva=1`, `?transferir=1`) y la página los abre al llegar.
  */
-export const QUICK_ACTIONS: QuickAction[] = [
+const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/cartera/pagos/nuevo',
     label: 'Registrar pago',
