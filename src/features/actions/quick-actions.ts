@@ -12,6 +12,8 @@ import { canEditContacts, canManageAgreements, type AnyRole } from '@/features/o
 export type QuickAction = {
   to: string
   label: string
+  /** Verbo suelto para la rejilla del Panel, donde el espacio manda. */
+  short?: string
   description: string
   Icon: LucideIcon
   allowed: (role: AnyRole | undefined) => boolean
@@ -31,6 +33,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/cartera/pagos/nuevo',
     label: 'Registrar pago',
+    short: 'Pago',
     description: 'Alguien te pagó',
     Icon: Banknote,
     allowed: canEditContacts,
@@ -38,6 +41,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/gastos/egresos/nuevo',
     label: 'Registrar egreso',
+    short: 'Egreso',
     description: 'Pagaste algo',
     Icon: HandCoins,
     allowed: canEditContacts,
@@ -45,6 +49,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/cartera/cxc?nueva=1',
     label: 'Nueva cuenta por cobrar',
+    short: 'Cobro',
     description: 'Registrar algo que te deben',
     Icon: Coins,
     allowed: canEditContacts,
@@ -52,6 +57,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/contactos/nuevo',
     label: 'Nuevo contacto',
+    short: 'Contacto',
     description: 'Un pagador o un proveedor',
     Icon: UserPlus,
     allowed: canEditContacts,
@@ -59,6 +65,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/cartera/acuerdos/nuevo',
     label: 'Nuevo acuerdo',
+    short: 'Acuerdo',
     description: 'Un cobro que se repite cada mes',
     Icon: FileText,
     allowed: canManageAgreements,
@@ -66,6 +73,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     to: '/caja/cuentas?transferir=1',
     label: 'Transferencia',
+    short: 'Transferir',
     description: 'Mover dinero entre tus cuentas',
     Icon: ArrowLeftRight,
     allowed: canEditContacts,

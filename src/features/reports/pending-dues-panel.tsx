@@ -7,7 +7,7 @@ import { DataList, listColumns } from '@/components/ui/data-list'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { downloadCsv } from '@/lib/csv'
-import { formatAmount, formatDateHuman } from '@/lib/format'
+import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 
 export type DueRow = {
   id: string
@@ -136,8 +136,8 @@ export function PendingDuesPanel({
       {filtered.length > 0 && (
         <div className="flex items-center justify-between gap-2 px-1 text-sm">
           <span className="text-muted-foreground">
-            {filtered.length} cuenta(s)
-            {filter === 'all' && overdueCount > 0 ? ` · ${overdueCount} vencida(s)` : ''}
+            {plural(filtered.length, 'cuenta', 'cuentas')}
+            {filter === 'all' && overdueCount > 0 ? ` · ${plural(overdueCount, 'vencida', 'vencidas')}` : ''}
           </span>
           <span className="nums font-medium">Total: {formatAmount(total.toFixed(2), currency)}</span>
         </div>

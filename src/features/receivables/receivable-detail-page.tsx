@@ -13,7 +13,7 @@ import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
-import { formatAmount, formatDateHuman } from '@/lib/format'
+import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 import { AddAdjustmentDialog } from './add-adjustment-dialog'
@@ -206,7 +206,7 @@ export function ReceivableDetailPage() {
                   <div className="min-w-0 flex-1">
                     <div className="nums">{a.accrualDate}</div>
                     <div className="nums text-xs text-muted-foreground">
-                      {a.daysOverdue} día(s) · base {formatAmount(a.baseAmount, r.currency)} · {a.rateValue}%
+                      {plural(a.daysOverdue, 'día', 'días')} · base {formatAmount(a.baseAmount, r.currency)} · {a.rateValue}%
                     </div>
                   </div>
                   <span className="nums font-medium">{formatAmount(a.amount, r.currency)}</span>

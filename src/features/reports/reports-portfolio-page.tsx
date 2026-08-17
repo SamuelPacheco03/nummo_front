@@ -12,7 +12,7 @@ import { useReceivables } from '@/features/receivables/hooks'
 import { useExpenses } from '@/features/expenses/hooks'
 import { RECEIVABLE_STATUS_LABELS, receivableStatusTone } from '@/features/receivables/labels'
 import { EXPENSE_STATUS_LABELS, expenseStatusTone } from '@/features/expenses/labels'
-import { formatMoney } from '@/lib/format'
+import { formatMoney, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { PendingDuesPanel, type DueRow } from './pending-dues-panel'
 import {
@@ -160,7 +160,7 @@ export function ReportsPortfolioPage() {
             <KpiTile
               label="Ingresos/mes esperados"
               value={formatMoney(monthlyIncome.toFixed(2), currency)}
-              sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
+              sub={plural(activeAgreements.length, 'acuerdo activo', 'acuerdos activos')}
             />
           </div>
           <Panel title="Top deudores">
@@ -197,7 +197,7 @@ export function ReportsPortfolioPage() {
             <KpiTile
               label="Egresos/mes esperados"
               value={formatMoney(monthlyExpense.toFixed(2), currency)}
-              sub={`${activeSchedules.length} recurrente(s) activo(s)`}
+              sub={plural(activeSchedules.length, 'recurrente activo', 'recurrentes activos')}
             />
           </div>
           <Panel title="Top acreedores">

@@ -45,7 +45,7 @@ describe('buildInsight', () => {
 
     expect(insight?.text).toContain('$2.120.000')
     expect(insight?.text).toContain('27%') // 2.120.000 / 7.830.000
-    expect(insight?.text).toContain('8 cuenta(s)')
+    expect(insight?.text).toContain('8 cuentas')
     expect(insight?.to).toBe('/cartera/cxc')
   })
 
@@ -56,7 +56,7 @@ describe('buildInsight', () => {
       currency: 'COP',
     })
 
-    expect(insight?.text).toContain('2 cuenta(s) por pagar vencida(s)')
+    expect(insight?.text).toContain('2 cuentas por pagar vencidas')
     expect(insight?.to).toBe('/gastos/cxp')
   })
 

@@ -5,6 +5,7 @@ import { PageLoader } from '@/components/ui/loader'
 import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
 import { NumiWidget } from '@/features/assistant/numi-widget'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
@@ -68,7 +69,7 @@ export function AppShell() {
 
   return (
     <div className="bg-background flex min-h-dvh">
-      <aside className="bg-sidebar sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r lg:flex">
+      <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r lg:flex">
         <SidebarBody />
       </aside>
 
@@ -78,18 +79,23 @@ export function AppShell() {
           el punto de entrada universal de §36 —buscar, ir, registrar o preguntar
           desde el mismo sitio—, y necesita estar siempre a la vista.
         */}
-        <header className="bg-background/90 sticky top-0 z-30 hidden h-14 items-center border-b px-8 backdrop-blur lg:flex">
+        <header className="bg-background/85 sticky top-0 z-30 hidden h-16 items-center gap-3 border-b px-8 backdrop-blur lg:flex">
           <button
             type="button"
             onClick={openCommand}
-            className="text-muted-foreground hover:border-brand/40 hover:text-foreground focus-visible:ring-ring/50 bg-card flex h-9 w-full max-w-md items-center gap-2 rounded-md border px-3 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+            className="text-muted-foreground hover:border-brand/40 hover:text-foreground focus-visible:ring-ring/50 bg-card flex h-10 w-full max-w-lg items-center gap-2.5 rounded-lg border px-3.5 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
           >
             <Search aria-hidden className="size-4 shrink-0" />
             <span className="flex-1 text-left">Buscar o preguntarle algo a Numi…</span>
-            <kbd className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 font-sans text-[0.68rem]">
+            <kbd className="bg-secondary text-muted-foreground rounded border px-1.5 py-0.5 font-sans text-[0.68rem]">
               ⌘K
             </kbd>
           </button>
+          {/* Preferencia y cuenta: arriba a la derecha, fuera de la navegación. */}
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <UserMenu />
+          </div>
         </header>
 
         {/*

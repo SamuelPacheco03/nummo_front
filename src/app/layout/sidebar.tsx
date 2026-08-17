@@ -1,8 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router'
 import { Activity, HelpCircle } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { UserMenu } from '@/features/auth/user-menu'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { isSettingsPath } from '@/features/config/settings-nav'
 import { SECTIONS } from '@/features/navigation/sections'
@@ -26,7 +24,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       {SECTIONS.map((section, i) => (
         <div key={section.title ?? i} className="flex flex-col gap-0.5">
           {section.title && (
-            <div className="text-muted-foreground px-2 pb-1 text-[0.68rem] font-medium tracking-wider uppercase">
+            <div className="text-sidebar-muted-foreground px-3 pb-1.5 text-[0.66rem] font-semibold tracking-[0.09em] uppercase">
               {section.title}
             </div>
           )}
@@ -44,9 +42,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                 aria-current={forceActive ? 'page' : undefined}
                 className={({ isActive }) =>
                   cn(
-                    'text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors',
-                    'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
-                    (isActive || forceActive) && 'bg-secondary text-foreground font-medium',
+                    'text-sidebar-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground relative flex items-center gap-2.5 rounded-md py-2 pr-2 pl-3 text-sm transition-colors',
+                    'focus-visible:ring-sidebar-ring/60 focus-visible:ring-[3px] focus-visible:outline-none',
+                    // El activo no solo se tiñe: lleva una barra de marca a la
+                    // izquierda. Sobre superficie oscura un simple cambio de fondo
+                    // se pierde, y §7 pide no fiarlo todo al color.
+                    (isActive || forceActive) &&
+                      'bg-sidebar-accent text-sidebar-foreground font-medium before:bg-sidebar-primary before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[3px] before:rounded-full before:content-[""]',
                   )
                 }
               >
@@ -54,7 +56,10 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                   <>
                     <item.Icon
                       aria-hidden
-                      className={cn('size-4 shrink-0', (isActive || forceActive) && 'text-brand')}
+                      className={cn(
+                        'size-4 shrink-0',
+                        (isActive || forceActive) && 'text-sidebar-primary',
+                      )}
                     />
                     <span className="truncate">{item.label}</span>
                   </>
@@ -75,23 +80,23 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
-      <div className="flex h-14 items-center border-b px-4">
+      <div className="border-sidebar-border flex h-16 items-center border-b px-4">
         <Brand />
       </div>
-      <div className="border-b p-3">
+      <div className="p-3">
         <OrgSwitcher />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <NavLinks onNavigate={onNavigate} />
       </div>
-      <div className="space-y-3 border-t p-3">
+      <div className="border-sidebar-border space-y-3 border-t p-3">
         <NavLink
           to="/ayuda"
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'text-muted-foreground hover:text-foreground flex items-center gap-2 px-2 text-xs',
-              isActive && 'text-foreground',
+              'text-sidebar-muted-foreground hover:text-sidebar-foreground flex items-center gap-2 px-3 text-xs transition-colors',
+              isActive && 'text-sidebar-foreground',
             )
           }
         >
@@ -103,20 +108,16 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'text-muted-foreground hover:text-foreground flex items-center gap-2 px-2 text-xs',
-              isActive && 'text-foreground',
+              'text-sidebar-muted-foreground hover:text-sidebar-foreground flex items-center gap-2 px-3 text-xs transition-colors',
+              isActive && 'text-sidebar-foreground',
             )
           }
         >
           <Activity aria-hidden className="size-3.5" />
           Estado del sistema
         </NavLink>
-        <InstallAppButton />
+        <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
-        <div className="flex items-center justify-between gap-2">
-          <ThemeToggle />
-          <UserMenu />
-        </div>
       </div>
     </>
   )

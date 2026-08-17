@@ -7,6 +7,7 @@ import {
   formatMonthLabel,
   groupAmountDisplay,
   parseAmountInput,
+  plural,
 } from './format'
 
 describe('formatMoney', () => {
@@ -175,5 +176,18 @@ describe('parseAmountInput', () => {
     const raw = parseAmountInput('2.500.000,75')
     expect(raw).toBe('2500000.75')
     expect(groupAmountDisplay(raw)).toBe('2.500.000,75')
+  })
+})
+
+describe('plural', () => {
+  it('concuerda el sustantivo con la cantidad', () => {
+    expect(plural(1, 'cuenta', 'cuentas')).toBe('1 cuenta')
+    expect(plural(8, 'cuenta', 'cuentas')).toBe('8 cuentas')
+    expect(plural(0, 'cuenta', 'cuentas')).toBe('0 cuentas')
+  })
+
+  it('sirve para frases enteras, no solo para sustantivos sueltos', () => {
+    expect(plural(1, 'cuenta vencida', 'cuentas vencidas')).toBe('1 cuenta vencida')
+    expect(plural(3, 'cuenta vencida', 'cuentas vencidas')).toBe('3 cuentas vencidas')
   })
 })

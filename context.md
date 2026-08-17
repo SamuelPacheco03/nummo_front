@@ -681,15 +681,15 @@ Tailwind, nunca con un valor suelto:
 
 | Utilidad | Valor | Dónde |
 | --- | --- | --- |
-| `rounded-sm` | 4 px | detalles diminutos, esquinas internas |
-| `rounded-md` | 6 px | **inputs, botones, selects** |
-| `rounded-lg` | 8 px | **cards, paneles, tablas, contenedores de lista** |
-| `rounded-xl` | 12 px | cajón de detalle y superficies de Numi |
+| `rounded-sm` | 6 px | detalles diminutos, esquinas internas |
+| `rounded-md` | 8 px | **inputs, botones, selects** |
+| `rounded-lg` | 10 px | **cards, paneles, tablas, contenedores de lista** |
+| `rounded-xl` | 14 px | cajón de detalle y superficies de Numi |
 | `rounded-full` | — | chips, avatares, puntos de estado |
 
-Nummo es una consola densa: esquinas contenidas, superficies planas. Los 14–18 px que pedía
-una versión previa de este documento infantilizan una tarjeta de cifras y roban altura útil.
-**Aquí manda el código.**
+La escala sale de `--radius: 0.625rem` (10 px). Nummo es una consola densa: esquinas contenidas,
+superficies planas. Los 14–18 px que pedía una versión previa de este documento infantilizan una
+tarjeta de cifras y roban altura útil.
 
 Numi puede ir un punto más redondeada (`rounded-xl` en su panel, `rounded-2xl` en el
 compositor del chat): es la diferenciación deliberada que permite §31, no una excepción libre.
@@ -697,6 +697,30 @@ compositor del chat): es la diferenciación deliberada que permite §31, no una 
 No usar `border-radius: 24px` en todo.
 
 No convertir la interfaz en una colección de píldoras.
+
+---
+
+# 11.1. Cómo NO parecer una plantilla
+
+Cuatro patrones que hacen que una pantalla se lea como generada, y que en Nummo están
+**prohibidos**. Salieron de mirar con ojo crítico una primera versión del Panel:
+
+1. **Sopa de tarjetas.** Catorce rectángulos con borde de 1 px flotando sobre gris, todos con el
+   mismo radio. Si varias cifras son un mismo resumen, van en **una** superficie con separadores
+   (`KpiStrip`), no en cuatro tarjetas sueltas. Agrupar es diseñar; repetir la tarjeta, no.
+2. **El icono dentro del cuadradito tintado**, repetido en cada fila y cada acción. Es el patrón
+   de plantilla por excelencia. El icono va al tamaño del texto y el color lo lleva él, sin
+   pastilla detrás.
+3. **Micro-etiquetas en MAYÚSCULAS con letter-spacing en cada sección.** Cuando todo grita, nada
+   jerarquiza. Los títulos de sección van en sentence case con `font-display` (`Panel`). Las
+   versalitas se reservan a metadatos de verdad, como los grupos del sidebar.
+4. **Rejillas perfectamente uniformes para lo secundario.** Seis acciones en seis columnas iguales
+   pesan lo mismo que las cifras y encima truncan el texto. Lo secundario va compacto —una fila de
+   fichas que fluye— y lo importante se queda con el espacio.
+
+La regla detrás de las cuatro: **la jerarquía se hace con tamaño, agrupación y espacio, no
+añadiendo bordes, fondos y pastillas.** Si algo destaca solo porque se le puso un recuadro,
+todavía no está jerarquizado.
 
 ---
 

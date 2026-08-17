@@ -1,4 +1,4 @@
-import { formatMoney } from '@/lib/format'
+import { formatMoney, plural } from '@/lib/format'
 
 /**
  * Suma de saldos, por moneda.
@@ -43,7 +43,7 @@ export function buildInsight({
       outstanding > 0 ? Math.round((Number(cxc.overdueAmount) / outstanding) * 100) : null
     const shareText = share === null ? '' : ` el ${share}% de todo lo que te deben,`
     return {
-      text: `${formatMoney(cxc.overdueAmount, currency)} de tu cartera está vencida:${shareText} repartido en ${cxc.overdueCount} cuenta(s).`,
+      text: `${formatMoney(cxc.overdueAmount, currency)} de tu cartera está vencida:${shareText} repartido en ${plural(cxc.overdueCount, 'cuenta', 'cuentas')}.`,
       cta: 'Ver cartera vencida',
       to: '/cartera/cxc',
     }
@@ -51,7 +51,7 @@ export function buildInsight({
 
   if (cxp && cxp.overdueCount > 0) {
     return {
-      text: `Tienes ${cxp.overdueCount} cuenta(s) por pagar vencida(s) por ${formatMoney(cxp.overdueAmount, currency)}.`,
+      text: `Tienes ${plural(cxp.overdueCount, 'cuenta por pagar vencida', 'cuentas por pagar vencidas')} por ${formatMoney(cxp.overdueAmount, currency)}.`,
       cta: 'Ver cuentas por pagar',
       to: '/gastos/cxp',
     }

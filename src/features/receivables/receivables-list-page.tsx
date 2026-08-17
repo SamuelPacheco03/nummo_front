@@ -18,7 +18,7 @@ import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
-import { formatAmount, formatDateHuman } from '@/lib/format'
+import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type {
   AccrueInterestResult,
@@ -166,7 +166,7 @@ export function ReceivablesListPage() {
     try {
       const res = await accrue.mutateAsync({ orgId: orgId ?? '' })
       const r = res.data as AccrueInterestResult
-      toast.success(`Mora causada: ${r.charged} cargo(s) · ${formatAmount(r.chargedAmount)}`)
+      toast.success(`Mora causada: ${plural(r.charged, 'cargo', 'cargos')} · ${formatAmount(r.chargedAmount)}`)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo causar la mora'))
     }

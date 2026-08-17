@@ -38,10 +38,14 @@ export function OrgSwitcher() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full justify-between gap-2">
-            <Building2 className="size-4 shrink-0" />
-            <span className="truncate">{organization?.name}</span>
-            <ChevronsUpDown className="size-4 shrink-0 opacity-60" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground h-auto w-full justify-between gap-2 border px-3 py-2"
+          >
+            <Building2 className="text-sidebar-muted-foreground size-4 shrink-0" />
+            <span className="truncate font-medium">{organization?.name}</span>
+            <ChevronsUpDown className="text-sidebar-muted-foreground size-4 shrink-0" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">

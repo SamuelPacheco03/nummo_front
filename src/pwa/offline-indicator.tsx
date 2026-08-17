@@ -26,7 +26,9 @@ export function OfflineIndicator() {
   return (
     <div
       role="status"
-      className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs text-foreground"
+      // Hereda el color de su superficie: vive en el sidebar, que va oscuro incluso
+      // en tema claro, y un `text-foreground` fijo ahí es texto invisible.
+      className="border-warning/40 bg-warning/10 flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs text-current"
     >
       <WifiOff className="size-3.5 shrink-0 text-warning" />
       Sin conexión

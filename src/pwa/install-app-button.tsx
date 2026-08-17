@@ -37,7 +37,7 @@ export function InstallAppButton({ className }: { className?: string }) {
         type="button"
         onClick={onClick}
         className={cn(
-          'flex w-full items-center gap-2 px-2 text-xs text-muted-foreground hover:text-foreground',
+          'text-muted-foreground hover:text-foreground flex w-full items-center gap-2 px-2 text-xs',
           className,
         )}
       >

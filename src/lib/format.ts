@@ -181,3 +181,14 @@ export function parseAmountInput(input: string, opts?: { allowNegative?: boolean
   raw = raw.replace(/^0+(?=\d)/, '') // sin ceros a la izquierda
   return (neg ? '-' : '') + raw
 }
+
+/**
+ * Plural en español, con la cantidad delante: `plural(1, 'cuenta', 'cuentas')`
+ * → "1 cuenta"; con 8 → "8 cuentas".
+ *
+ * Existe para desterrar el "cuenta(s)", que es cómodo de escribir y delata que
+ * nadie leyó la frase (§73: la voz de Nummo es clara, no de plantilla).
+ */
+export function plural(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`
+}
