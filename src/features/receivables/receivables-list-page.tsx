@@ -1,15 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
-import { Coins, Percent, Plus, RefreshCw } from 'lucide-react'
-import type { SortingState } from '@tanstack/react-table'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { ChevronDown, Coins, Download, Percent, Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
+import { KpiStrip, KpiTile } from '@/components/kpi-tile'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { FilterChips, type FilterChoice } from '@/components/ui/filter-chips'
+import { FilterField, FilterSheet, FilterSheetTrigger } from '@/components/ui/filter-sheet'
+import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
+import { SearchInput } from '@/components/search-input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -17,9 +29,12 @@ import { useContacts } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { useReceivablesSummary } from '@/features/reports/hooks'
+import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatAmount, formatDateHuman, plural } from '@/lib/format'
+import { formatAmount, formatDateHuman, formatMoney, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { useListFilters } from '@/lib/use-list-filters'
 import type {
   AccrueInterestResult,
   GenerateReceivablesResult,
@@ -27,12 +42,22 @@ import type {
   GetApiV1OrganizationsOrgIdReceivablesSort,
   ReceivableBalance,
 } from '@/api/generated/model'
-import { receivableStatus } from './labels'
+import { RECEIVABLE_STATUS_LABELS, receivableStatus } from './labels'
 import { CreateReceivableDialog } from './create-receivable-dialog'
 import { useAccrueInterest, useGenerateReceivables, useReceivables } from './hooks'
 
-type StatusFilter = '' | 'PENDING' | 'PARTIAL' | 'OVERDUE' | 'PAID' | 'CANCELLED' | 'WRITTEN_OFF'
-const PAGE_SIZE = 20
+/** Diez caben en una pantalla sin scroll infinito y bajan lo que pesa cada carga. */
+const PAGE_SIZE = 10
+
+/**
+ * Criterios que viven en la URL. Los nombres van en español, como las rutas
+ * (§87.5): la URL es interfaz de usuario y alguien la va a leer al compartirla.
+ */
+const FILTER_KEYS = ['estado', 'pagador', 'concepto', 'desde', 'hasta', 'orden', 'dir', 'pagina'] as const
+type FilterKey = (typeof FILTER_KEYS)[number]
+
+/** Criterios que cuentan para el contador del botón «Filtros». */
+const ADVANCED_KEYS: FilterKey[] = ['pagador', 'concepto', 'desde', 'hasta']
 
 /** Columnas ordenables que acepta el endpoint (contrato: ListReceivablesQuery). */
 const SORT_OPTIONS = [
@@ -43,65 +68,70 @@ const SORT_OPTIONS = [
 
 const column = listColumns<ReceivableBalance>()
 
-/**
- * Abre un diálogo de la página cuando la URL lo pide (`?nueva=1`, `?transferir=1`).
- * Así la acción es enlazable: la barra de acciones rápidas de móvil navega aquí
- * y el formulario aparece solo, sin obligar a buscar el botón. El parámetro se
- * consume al abrir para que recargar o volver atrás no lo reabra.
- */
-function useOpenFromUrl(param: string, open: (value: true) => void) {
-  const [params, setParams] = useSearchParams()
-  const requested = params.get(param) === '1'
-  useEffect(() => {
-    if (!requested) return
-    open(true)
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.delete(param)
-        return next
-      },
-      { replace: true },
-    )
-  }, [requested, param, open, setParams])
-}
-
 export function ReceivablesListPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId, organization, role } = useCurrentOrg()
+  const currency = organization?.defaultCurrency
   const canGenerate = canManageAgreements(role)
   const canCreate = canEditContacts(role)
   const navigate = useNavigate()
 
+  const { values, set, clear } = useListFilters<FilterKey>('nummo:cxc:filtros', FILTER_KEYS)
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'dueDate', desc: false }])
-  const [status, setStatus] = useState<StatusFilter>('')
-  const [payerId, setPayerId] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
-  useOpenFromUrl('nueva', setCreateOpen)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Cualquier cambio de criterio devuelve a la primera página.
-  useEffect(() => {
-    setPage(1)
-  }, [q, status, payerId, sorting])
+  const page = Number(values.pagina) || 1
+  const sortField = values.orden || 'dueDate'
+  const desc = values.dir === 'desc'
 
-  const active = sorting[0]
+  /** Cambiar cualquier criterio devuelve a la primera página. */
+  const filter = (patch: Partial<Record<FilterKey, string>>) => set({ ...patch, pagina: '' })
+
   const params: GetApiV1OrganizationsOrgIdReceivablesParams = {
     page,
     pageSize: PAGE_SIZE,
     q: q || undefined,
-    sort: active?.id as GetApiV1OrganizationsOrgIdReceivablesSort | undefined,
-    order: active?.desc ? 'desc' : 'asc',
-    displayStatus: status || undefined,
-    payerContactId: payerId || undefined,
+    sort: sortField as GetApiV1OrganizationsOrgIdReceivablesSort,
+    order: desc ? 'desc' : 'asc',
+    displayStatus: (values.estado ||
+      undefined) as GetApiV1OrganizationsOrgIdReceivablesParams['displayStatus'],
+    payerContactId: values.pagador || undefined,
+    billingConceptId: values.concepto || undefined,
+    dueAfter: values.desde || undefined,
+    dueBefore: values.hasta || undefined,
   }
-  const { items, total, totalPages, isPending, isError, error, isFetching } = useReceivables(orgId, params)
+  const { items, total, totalPages, isPending, isError, error, isFetching } = useReceivables(
+    orgId,
+    params,
+  )
+  const { summary, isPending: summaryLoading } = useReceivablesSummary(orgId)
 
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
-  const { items: concepts } = useBillingConcepts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const { items: concepts } = useBillingConcepts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
   const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
   const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])
+
+  /*
+   * Los contadores salen del resumen del API. «Todas» va sin número a propósito:
+   * sumar los tres estados daría un total que el backend no firma —y que puede
+   * no cuadrar, porque una cuenta parcial y vencida cuenta en uno solo—. §70:
+   * cuando falta un dato, no se inventa.
+   */
+  const statusChoices: FilterChoice[] = [
+    { value: '', label: 'Todas' },
+    { value: 'OVERDUE', label: 'Vencidas', count: summary?.overdueCount },
+    { value: 'PENDING', label: 'Pendientes', count: summary?.pendingCount },
+    { value: 'PARTIAL', label: 'Parciales', count: summary?.partialCount },
+    { value: 'PAID', label: 'Pagadas' },
+    { value: 'CANCELLED', label: 'Canceladas' },
+    { value: 'WRITTEN_OFF', label: 'Castigadas' },
+  ]
 
   const columns = useMemo(
     () =>
@@ -172,37 +202,80 @@ export function ReceivablesListPage() {
     }
   }
 
-  const activeFilters = [
-    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
-    status && { id: 'status', label: receivableStatus(status).label, onRemove: () => setStatus('') },
-    payerId && {
-      id: 'payer',
-      label: `Pagador: ${contactMap.get(payerId) ?? '—'}`,
-      onRemove: () => setPayerId(null),
-    },
-  ].filter(Boolean) as ActiveFilter[]
-
-  const hasFilters = Boolean(q) || status !== '' || payerId !== null
-  const clearFilters = () => {
-    setSearch('')
-    setStatus('')
-    setPayerId(null)
+  /** Exporta lo que se está viendo, con los filtros puestos. */
+  const onExport = () => {
+    downloadCsv(
+      `cuentas-por-cobrar_${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Pagador', 'Concepto', 'Vence', 'Estado', 'Saldo'],
+      items.map((r) => [
+        contactMap.get(r.payerContactId) ?? '',
+        conceptMap.get(r.billingConceptId) ?? '',
+        r.dueDate,
+        RECEIVABLE_STATUS_LABELS[r.displayStatus] ?? r.displayStatus,
+        r.balance,
+      ]),
+    )
   }
 
+  const advancedCount = ADVANCED_KEYS.filter((k) => values[k]).length
+  const hasFilters = Boolean(q) || FILTER_KEYS.some((k) => k !== 'pagina' && values[k])
+  const clearAll = () => {
+    setSearch('')
+    clear()
+  }
+
+  const outstanding = Number(summary?.totalOutstanding ?? 0)
+  const overdue = Number(summary?.overdueAmount ?? 0)
+  const openCount = (summary?.pendingCount ?? 0) + (summary?.partialCount ?? 0)
+  const overdueShare = outstanding > 0 ? Math.round((overdue / outstanding) * 100) : null
+
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader title="Cuentas por cobrar" description="Obligaciones de los pagadores.">
         {canGenerate && (
-          <Button variant="outline" size="sm" onClick={onGenerate} disabled={generate.isPending}>
-            {generate.isPending ? <Loader size="sm" /> : <RefreshCw className="size-4" />}
-            Generar mensualidades
-          </Button>
-        )}
-        {canGenerate && (
-          <Button variant="outline" size="sm" onClick={onAccrue} disabled={accrue.isPending}>
-            {accrue.isPending ? <Loader size="sm" /> : <Percent className="size-4" />}
-            Causar mora
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Acciones
+                <ChevronDown aria-hidden className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            {/*
+              Generar y causar mora son operaciones periódicas con impacto
+              financiero, no trabajo de todos los días: salen del primer nivel y
+              ganan una línea que explica qué provocan (§38, §74).
+            */}
+            <DropdownMenuContent align="end" className="w-72">
+              <DropdownMenuItem onClick={onGenerate} disabled={generate.isPending}>
+                {generate.isPending ? <Loader size="sm" /> : <RefreshCw className="size-4" />}
+                <span className="min-w-0">
+                  <span className="block font-medium">Generar mensualidades</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Crea las cuentas del período desde los acuerdos activos
+                  </span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onAccrue} disabled={accrue.isPending}>
+                {accrue.isPending ? <Loader size="sm" /> : <Percent className="size-4" />}
+                <span className="min-w-0">
+                  <span className="block font-medium">Causar mora</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Aplica los intereses a las cuentas vencidas
+                  </span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onExport} disabled={items.length === 0}>
+                <Download className="size-4" />
+                <span className="min-w-0">
+                  <span className="block font-medium">Exportar a CSV</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Lo que estás viendo, con los filtros puestos
+                  </span>
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         {canCreate && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -212,21 +285,75 @@ export function ReceivablesListPage() {
         )}
       </PageHeader>
 
+      {summaryLoading ? (
+        <Skeleton className="h-[6.5rem]" />
+      ) : (
+        <KpiStrip
+          featured={
+            <KpiTile
+              featured
+              label="Por cobrar"
+              value={formatMoney(summary?.totalOutstanding ?? '0', currency)}
+              sub={plural(openCount, 'cuenta abierta', 'cuentas abiertas')}
+            />
+          }
+        >
+          <KpiTile
+            label="Vencido"
+            value={formatMoney(summary?.overdueAmount ?? '0', currency)}
+            sub={
+              overdueShare === null
+                ? plural(summary?.overdueCount ?? 0, 'cuenta', 'cuentas')
+                : `${summary?.overdueCount ?? 0} · ${overdueShare}% de la cartera`
+            }
+          />
+          {/*
+            «Al día» es `total − vencido`, calculado aquí. Son dos cifras que el
+            API sí devuelve, no un saldo inventado (§88.4), y responde la pregunta
+            que las otras dos dejan a medias: cuánto de lo que me deben va bien.
+          */}
+          <KpiTile
+            label="Al día"
+            value={formatMoney(outstanding - overdue, currency)}
+            sub={plural(Math.max(openCount - (summary?.overdueCount ?? 0), 0), 'cuenta', 'cuentas')}
+          />
+        </KpiStrip>
+      )}
+
       {isError ? (
         <ErrorState error={error} fallback="No se pudieron cargar las cuentas por cobrar." />
       ) : (
         <>
+          <div className="space-y-3">
+            <FilterChips
+              label="Estado"
+              choices={statusChoices}
+              value={values.estado}
+              onChange={(estado) => filter({ estado })}
+            />
+
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1 sm:max-w-72">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Buscar por pagador…"
+                />
+              </div>
+              <FilterSheetTrigger count={advancedCount} onClick={() => setSheetOpen(true)} />
+            </div>
+          </div>
+
           <DataList
             columns={columns}
             rows={items}
             getRowId={(r) => r.receivableId}
             onRowClick={(r) => navigate(`/cartera/cxc/${r.receivableId}`)}
             isLoading={isPending}
-            activeFilters={activeFilters}
-            onClearFilters={clearFilters}
+            skeletonRows={PAGE_SIZE}
             emptyText={
               hasFilters ? (
-                <NoResults entity="cuentas por cobrar" onClear={clearFilters} />
+                <NoResults entity="cuentas por cobrar" onClear={clearAll} />
               ) : (
                 <EmptyState
                   Icon={Coins}
@@ -243,35 +370,6 @@ export function ReceivablesListPage() {
                 />
               )
             }
-            search={{ value: search, onChange: setSearch, placeholder: 'Buscar por pagador…' }}
-            sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
-            filters={
-              <>
-                <div className="w-full sm:w-56">
-                  <ContactPicker
-                    orgId={orgId ?? ''}
-                    value={payerId}
-                    onChange={setPayerId}
-                    allowClear
-                    placeholder="Pagador…"
-                  />
-                </div>
-                <NativeSelect
-                  className="w-44"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                  aria-label="Estado"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value="PENDING">Pendiente</option>
-                  <option value="PARTIAL">Parcial</option>
-                  <option value="OVERDUE">Vencida</option>
-                  <option value="PAID">Pagada</option>
-                  <option value="CANCELLED">Cancelada</option>
-                  <option value="WRITTEN_OFF">Castigada</option>
-                </NativeSelect>
-              </>
-            }
           />
 
           {!isPending && total > 0 && (
@@ -281,13 +379,91 @@ export function ReceivablesListPage() {
               total={total}
               totalPages={totalPages}
               isFetching={isFetching}
-              onPage={setPage}
+              onPage={(next) => set({ pagina: next > 1 ? String(next) : '' })}
             />
           )}
         </>
       )}
 
-      {orgId && <CreateReceivableDialog orgId={orgId} open={createOpen} onOpenChange={setCreateOpen} />}
+      <FilterSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onClear={clearAll}
+        canClear={hasFilters}
+        resultLabel={`Ver ${plural(total, 'cuenta', 'cuentas')}`}
+      >
+        <FilterField label="Pagador">
+          <ContactPicker
+            orgId={orgId ?? ''}
+            value={values.pagador || null}
+            onChange={(pagador) => filter({ pagador: pagador ?? '' })}
+            allowClear
+            placeholder="Cualquiera"
+          />
+        </FilterField>
+
+        <FilterField label="Concepto de cobro">
+          <NativeSelect
+            value={values.concepto}
+            onChange={(e) => filter({ concepto: e.target.value })}
+            aria-label="Concepto de cobro"
+          >
+            <option value="">Todos</option>
+            {concepts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </FilterField>
+
+        <FilterField label="Vence entre">
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={values.desde}
+              max={values.hasta || undefined}
+              onChange={(e) => filter({ desde: e.target.value })}
+              aria-label="Vence desde"
+            />
+            <Input
+              type="date"
+              value={values.hasta}
+              min={values.desde || undefined}
+              onChange={(e) => filter({ hasta: e.target.value })}
+              aria-label="Vence hasta"
+            />
+          </div>
+        </FilterField>
+
+        <FilterField label="Ordenar por">
+          <div className="flex flex-wrap gap-2">
+            {SORT_OPTIONS.map((option) => (
+              <Button
+                key={option.field}
+                type="button"
+                size="sm"
+                variant={sortField === option.field ? 'default' : 'outline'}
+                onClick={() => filter({ orden: option.field })}
+              >
+                {option.label}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => filter({ dir: desc ? '' : 'desc' })}
+            >
+              {desc ? 'Descendente' : 'Ascendente'}
+            </Button>
+          </div>
+        </FilterField>
+      </FilterSheet>
+
+      {orgId && (
+        <CreateReceivableDialog orgId={orgId} open={createOpen} onOpenChange={setCreateOpen} />
+      )}
     </div>
   )
 }

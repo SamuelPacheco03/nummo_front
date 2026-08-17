@@ -752,6 +752,40 @@ declarar dos versiones (§11.2).
 
 ---
 
+## 21.1. Filtros que sobreviven a la navegación
+
+**La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
+No es un capricho técnico: es lo que hace que el botón «atrás» funcione, que se pueda mandar
+«mira estas cuentas» por chat y que recargar no devuelva al principio. El estado de React no
+duplica nada — se deriva de los parámetros en cada render.
+
+Las claves van **en español**, como las rutas (§87.5):
+`/cartera/cxc?estado=OVERDUE&pagador=abc&orden=saldo&pagina=2`.
+
+`sessionStorage` solo cubre volver a la sección sin enlace, con esta precedencia:
+
+1. ¿La URL trae criterios? **Mandan ellos** — es un enlace deliberado.
+2. ¿Se llega sin ninguno? Se restaura lo último **y se escribe en la URL**, para que lo que se ve
+   y lo que dice la barra de direcciones no cuenten cosas distintas.
+3. ¿«Limpiar»? Se borran los dos.
+
+**Sesión y no `localStorage`, a propósito:** un filtro de cartera es contexto de un rato, no una
+preferencia. Que dentro de una semana la lista abra filtrada por algo elegido hoy desorienta más
+de lo que ayuda.
+
+### Cómo se reparten los filtros en la pantalla
+
+| | Dónde |
+| --- | --- |
+| El filtro principal (estado) | `FilterChips`, siempre visible, con su contador |
+| Buscar | Siempre visible, junto a las fichas |
+| El resto (pagador, concepto, fechas, orden) | `FilterSheet`, tras un botón con el número de criterios puestos |
+
+El contador del botón es lo que evita el **filtro fantasma**: sin él, una lista filtrada por algo
+que vive dentro de una hoja cerrada parece una lista vacía sin motivo.
+
+---
+
 ## 11.2. Los componentes heredan su superficie
 
 Desde que el sidebar va oscuro también en tema claro (§4), la aplicación tiene **dos superficies
@@ -2732,6 +2766,10 @@ Todos son parte del sistema y deben reutilizarse:
 | `InfoHint` | `components/ui/info-hint.tsx` | Ayuda contextual breve |
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
 | `MasterCrud` | `features/masters/master-crud.tsx` | CRUD genérico de maestros |
+| `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
+| `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
+| `FilterSheet` · `FilterSheetTrigger` · `FilterField` | `components/ui/filter-sheet.tsx` | Filtros avanzados en hoja inferior |
+| `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 
 ---
 

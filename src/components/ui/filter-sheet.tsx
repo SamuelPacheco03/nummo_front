@@ -1,0 +1,103 @@
+import { type ReactNode } from 'react'
+import { SlidersHorizontal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+
+/**
+ * Botón que abre los filtros avanzados, con el número de criterios puestos.
+ *
+ * El contador es lo que evita el filtro fantasma: sin él, una lista filtrada por
+ * algo que está dentro de una hoja cerrada parece una lista vacía sin motivo.
+ */
+export function FilterSheetTrigger({
+  count,
+  onClick,
+  className,
+}: {
+  count: number
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onClick}
+      className={cn('shrink-0 gap-2', count > 0 && 'border-brand/50 text-brand', className)}
+    >
+      <SlidersHorizontal aria-hidden className="size-4" />
+      Filtros
+      {count > 0 && (
+        <span className="bg-brand text-brand-foreground nums grid size-5 place-items-center rounded-full text-[0.7rem] font-semibold">
+          {count}
+        </span>
+      )}
+    </Button>
+  )
+}
+
+/**
+ * Filtros avanzados en hoja inferior (§2.3, §44).
+ *
+ * Lo frecuente —buscar y el estado— se queda fuera, siempre a la vista. Aquí
+ * dentro va lo que se usa de vez en cuando: pagador, concepto, rango de fechas y
+ * orden.
+ *
+ * Los cambios se aplican **al instante**, no al pulsar «Aplicar»: la lista de
+ * detrás ya se actualiza, y el botón de cierre dice cuántos registros vas a
+ * encontrar. Un botón «Aplicar» obligaría a mantener un borrador y a decidir qué
+ * pasa si cierras sin pulsarlo — complejidad que aquí no compra nada.
+ */
+export function FilterSheet({
+  open,
+  onOpenChange,
+  children,
+  resultLabel,
+  onClear,
+  canClear,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  children: ReactNode
+  /** Lo que se va a ver al cerrar: «Ver 8 cuentas». */
+  resultLabel: string
+  onClear: () => void
+  canClear: boolean
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="gap-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+      >
+        <SheetTitle className="pb-3 text-base">Filtros</SheetTitle>
+
+        <div className="scrollbar-slim -mx-1 flex flex-col gap-4 overflow-y-auto px-1 pb-4">
+          {children}
+        </div>
+
+        <div className="flex gap-2 border-t pt-3">
+          <Button variant="ghost" onClick={onClear} disabled={!canClear} className="flex-1">
+            Limpiar todo
+          </Button>
+          <Button onClick={() => onOpenChange(false)} className="flex-1">
+            {resultLabel}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+/** Un criterio dentro de la hoja: etiqueta arriba, control debajo. */
+export function FilterField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        {label}
+      </span>
+      {children}
+    </div>
+  )
+}
