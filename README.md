@@ -3,6 +3,11 @@
 Administración financiera y cartera multiempresa (React). Consume la API de `nummo-api`
 mediante un contrato OpenAPI. Ver `START-HERE.md` y `contract/HANDOFF-fase-*.md`.
 
+> **Antes de tocar código, lee [`context.md`](./context.md).** Es la fuente de verdad del
+> proyecto: producto, UX, sistema visual, stack, arquitectura, convenciones de código,
+> inventario de componentes y el plan de rediseño por fases. `CLAUDE.md` resume el protocolo
+> para sesiones de Claude Code.
+
 ## Stack
 
 React 19 · Vite 8 · TypeScript strict · React Router 8 · Tailwind CSS 4 · shadcn/ui ·
