@@ -1,75 +1,14 @@
 import { Link, NavLink, useLocation } from 'react-router'
-import {
-  Activity,
-  ArrowLeftRight,
-  Banknote,
-  BarChart3,
-  Coins,
-  FileText,
-  HelpCircle,
-  Landmark,
-  LayoutDashboard,
-  PieChart,
-  Settings,
-  Users,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Activity, HelpCircle } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/features/auth/user-menu'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { isSettingsPath } from '@/features/config/settings-nav'
+import { SECTIONS } from '@/features/navigation/sections'
 import { InstallAppButton } from '@/pwa/install-app-button'
 import { OfflineIndicator } from '@/pwa/offline-indicator'
 import { cn } from '@/lib/utils'
-
-type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean }
-type NavSection = { title?: string; items: NavItem[] }
-
-const SECTIONS: NavSection[] = [
-  {
-    items: [
-      { to: '/', label: 'Panel', Icon: LayoutDashboard, end: true },
-      { to: '/contactos', label: 'Contactos', Icon: Users },
-    ],
-  },
-  {
-    title: 'Cartera',
-    items: [
-      { to: '/cartera/cxc', label: 'Cuentas por cobrar', Icon: Coins },
-      { to: '/cartera/pagos', label: 'Pagos', Icon: Banknote },
-      { to: '/cartera/acuerdos', label: 'Acuerdos', Icon: FileText },
-    ],
-  },
-  {
-    title: 'Gastos',
-    items: [
-      { to: '/gastos/cxp', label: 'Cuentas por pagar', Icon: Coins },
-      { to: '/gastos/egresos', label: 'Egresos', Icon: Banknote },
-      { to: '/gastos/recurrentes', label: 'Recurrentes', Icon: FileText },
-    ],
-  },
-  {
-    title: 'Caja',
-    items: [
-      { to: '/caja/cuentas', label: 'Cuentas', Icon: Landmark },
-      { to: '/caja/movimientos', label: 'Movimientos', Icon: ArrowLeftRight },
-    ],
-  },
-  {
-    title: 'Informes',
-    items: [
-      { to: '/informes/resultados', label: 'Resultados', Icon: BarChart3 },
-      { to: '/informes/cartera', label: 'Cobros y pagos', Icon: PieChart },
-    ],
-  },
-  {
-    // Configuración entra como un único enlace: sus once pantallas viven en la
-    // sub-navegación de SettingsLayout. Volcarlas aquí sería exponer el modelo
-    // de datos en la navegación principal, que es justo lo que §14 prohíbe.
-    items: [{ to: '/config', label: 'Configuración', Icon: Settings }],
-  },
-]
 
 export function Brand() {
   return (

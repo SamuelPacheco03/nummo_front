@@ -2750,13 +2750,18 @@ No hubo cambio de código: ya era coherente.
 **Resuelto (fase 1):** `PageHeader` pasa a `text-2xl lg:text-3xl` (24/30 px), dentro del rango
 que pide §8 en ambos tamaños.
 
-### 95.8. Command bar global — **media**
+### 95.8. Command bar global — ✅ **cerrada (fase 6)**
 
-§36 describe una barra superior universal ("Buscar o preguntarle algo a Numi…").
-En escritorio **no existe header**: el `<header>` del shell es `lg:hidden`. No hay búsqueda
-global ni entrada de acciones.
+En escritorio **no existía header**: el del shell era `lg:hidden`. No había búsqueda global ni
+entrada de acciones.
 
-**Resolución: gana el documento**, pero es la pieza más cara: se hace al final. Ver fase 6.
+**Resuelto (fase 6):** `features/search/command-bar.tsx`, abierta con ⌘K / Ctrl+K o desde la
+cabecera (nueva en escritorio, botón de lupa en móvil). Resuelve las tres cosas de §36 —buscar
+contactos, ir a cualquier sección, registrar una operación— y deja a Numi como última opción,
+**siempre presente**: es el destino de lo que la aplicación no sabe resolver, y §35 exige que sea
+el usuario quien decida preguntar, no un fallback silencioso.
+
+Sin dependencias nuevas: se construyó sobre el `Dialog` que ya existía (§63).
 
 ### 95.9. Indicador de estado duplicado — ✅ **cerrada (fase 1)**
 
@@ -2998,20 +3003,36 @@ deuda del frontend.
 
 ---
 
-## Fase 6 — Command bar y pulido
+## Fase 6 — Command bar y pulido ✅ **completada**
 
 **Por qué última:** es la pieza más cara y la que más depende de que todo lo demás esté en su
-sitio.
+sitio — y se notó: la paleta se pudo componer entera reutilizando catálogos que ya existían.
 
-**Alcance**
+**Lo que se hizo**
 
-1. Header de escritorio con barra universal: buscar · preguntar a Numi · ejecutar acciones
-   (§36). → brecha 95.8
-2. Atajos de teclado y navegación completa por teclado (§46).
-3. Pulido final: animaciones (§41), microinteracciones, revisión de contraste en ambos temas.
-4. Repaso completo del checklist §81 pantalla por pantalla.
+1. `features/search/command-bar.tsx`: punto de entrada universal (§36), con cabecera nueva en
+   escritorio y botón de lupa en móvil. → 95.8
+2. **No duplica nada.** Las acciones salen del catálogo de la fase 4, los destinos de
+   `features/navigation/sections.ts` (extraído del sidebar) y de `settings-nav.ts` de la fase 2,
+   y los contactos de la búsqueda del servidor con rebote. Añadir una sección al sidebar la
+   añade a la paleta sin tocarla.
+3. **Teclado** (§46): ⌘K / Ctrl+K desde cualquier pantalla —salvo mientras se escribe en un
+   campo, donde estorbaría—, ↑/↓ con envolvente, Enter para ejecutar, Esc para cerrar, y
+   `role="listbox"`/`role="option"` con `aria-selected` para que un lector de pantalla siga la
+   selección.
+4. Sin dependencias nuevas (§63): sobre el `Dialog` que ya existía.
 
-**Riesgo:** medio-alto. **Tamaño:** grande.
+**Verificación:** typecheck limpio, 0 errores de lint, 10 warnings (= base), 105 tests en verde
+(7 nuevos: agrupación, filtrado sin acentos, permisos, teclado y apertura de Numi), build OK.
+
+**Dos correcciones de camino, encontradas por los tests:**
+
+- `scrollIntoView` no existe en jsdom y tumbaba el árbol entero al renderizar. En navegador no
+  fallaba, pero el componente era imposible de probar: se rellena en `test/setup.ts`, junto a
+  `matchMedia`.
+- Un test propio estaba mal planteado: afirmaba que el filtro funcionaba comprobando que
+  **aparecía** lo que coincide, cuando sin filtro la lista ya lo muestra todo. Ahora espera a que
+  **desaparezca** lo que no coincide, que es lo único que prueba algo.
 
 ---
 
@@ -3024,7 +3045,7 @@ sitio.
 | ✅ 3 | Experiencia móvil | medio | 1, 2 |
 | ✅ 4 | Dashboard | medio | 1, 2 |
 | ✅ 5 | Listados, detalles y Numi | medio | 1, 4 |
-| 6 | Command bar y pulido | medio-alto | todas |
+| ✅ 6 | Command bar y pulido | medio-alto | todas |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

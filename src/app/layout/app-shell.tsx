@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router'
+import { Search } from 'lucide-react'
 import { PageLoader } from '@/components/ui/loader'
 import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,8 @@ import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
 import { toast } from 'sonner'
+import { CommandBar } from '@/features/search/command-bar'
+import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
 import { BottomNav } from './bottom-nav'
 import { Brand, SidebarBody } from './sidebar'
 
@@ -56,6 +59,9 @@ function NoOrgOnboarding() {
 
 export function AppShell() {
   const { isLoading, hasNoOrgs } = useCurrentOrg()
+  const [commandOpen, setCommandOpen] = useState(false)
+  const openCommand = useCallback(() => setCommandOpen(true), [])
+  useCommandBarShortcut(openCommand)
 
   if (isLoading) return <PageLoader />
   if (hasNoOrgs) return <NoOrgOnboarding />
@@ -68,6 +74,25 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/*
+          Escritorio: hasta la fase 6 no había cabecera. La barra de comandos es
+          el punto de entrada universal de §36 —buscar, ir, registrar o preguntar
+          desde el mismo sitio—, y necesita estar siempre a la vista.
+        */}
+        <header className="bg-background/90 sticky top-0 z-30 hidden h-14 items-center border-b px-8 backdrop-blur lg:flex">
+          <button
+            type="button"
+            onClick={openCommand}
+            className="text-muted-foreground hover:border-brand/40 hover:text-foreground focus-visible:ring-ring/50 bg-card flex h-9 w-full max-w-md items-center gap-2 rounded-md border px-3 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            <Search aria-hidden className="size-4 shrink-0" />
+            <span className="flex-1 text-left">Buscar o preguntarle algo a Numi…</span>
+            <kbd className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 font-sans text-[0.68rem]">
+              ⌘K
+            </kbd>
+          </button>
+        </header>
+
+        {/*
           En móvil la cabecera ya no navega: de eso se encarga la barra inferior.
           Se queda con lo que identifica el contexto —marca, organización activa
           y usuario—, que es justo lo que §49 pide tener siempre a la vista.
@@ -75,9 +100,17 @@ export function AppShell() {
         <header className="bg-background/90 sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4 backdrop-blur lg:hidden">
           <Brand />
           <div className="ml-auto flex min-w-0 items-center gap-2">
-            <div className="w-36 min-w-0">
+            <div className="w-32 min-w-0">
               <OrgSwitcher />
             </div>
+            <button
+              type="button"
+              onClick={openCommand}
+              aria-label="Buscar o preguntarle algo a Numi"
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 grid size-9 shrink-0 place-items-center rounded-md focus-visible:ring-[3px] focus-visible:outline-none"
+            >
+              <Search aria-hidden className="size-5" />
+            </button>
             <UserMenu />
           </div>
         </header>
@@ -95,6 +128,8 @@ export function AppShell() {
       </div>
 
       <BottomNav />
+
+      <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />
 
       {/* Numi: botón flotante en escritorio; en móvil su sitio es la barra. */}
       <NumiWidget />

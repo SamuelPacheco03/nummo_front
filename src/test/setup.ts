@@ -13,3 +13,9 @@ if (!window.matchMedia) {
     dispatchEvent: () => false,
   })) as typeof window.matchMedia
 }
+
+// jsdom tampoco implementa scrollIntoView; lo usa la paleta de comandos para
+// mantener a la vista la opción seleccionada con las flechas.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}
