@@ -260,7 +260,7 @@
   */
   .scrollbar-slim {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklab, currentColor 20%, transparent) transparent;
+    scrollbar-color: color-mix(in oklab, currentColor 35%, transparent) transparent;
   }
   .scrollbar-slim::-webkit-scrollbar {
     width: 6px;
@@ -271,10 +271,29 @@
   }
   .scrollbar-slim::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background-color: color-mix(in oklab, currentColor 20%, transparent);
+    background-color: color-mix(in oklab, currentColor 35%, transparent);
   }
   .scrollbar-slim:hover::-webkit-scrollbar-thumb {
-    background-color: color-mix(in oklab, currentColor 32%, transparent);
+    background-color: color-mix(in oklab, currentColor 55%, transparent);
+  }
+
+  /*
+    Desvanece los bordes de un contenedor que scrollea en vertical.
+
+    Es lo que convierte un corte en una señal: sin esto, una fila cortada a media
+    altura se lee como un fallo de render, no como «hay más abajo». La barra sola
+    no basta — es discreta a propósito, y en escritorio con ratón ni siquiera
+    aparece hasta que se pasa por encima.
+  */
+  .scroll-fade-y {
+    --fade: 1.25rem;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--fade),
+      #000 calc(100% - var(--fade)),
+      transparent 100%
+    );
   }
 
   /*

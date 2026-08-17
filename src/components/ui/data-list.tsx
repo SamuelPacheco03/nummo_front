@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Filter, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, X } from 'lucide-react'
 import {
   createColumnHelper,
   flexRender,
@@ -11,7 +11,6 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { NativeSelect } from '@/components/ui/native-select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { SearchInput } from '@/components/search-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -50,19 +49,6 @@ export interface ListColumnMeta {
   align?: 'right'
   /** Fuera del apilado de móvil: chevrons y adornos que ahí no aportan. */
   hideOnStack?: boolean
-  /**
-   * Control de filtro de esta columna, en un popover bajo su cabecera.
-   *
-   * Solo existe en escritorio, donde la lista **es** una tabla y filtrar desde la
-   * columna es el gesto que se espera. En móvil no hay cabeceras: ahí el mismo
-   * criterio se pide desde el cajón de filtros.
-   *
-   * No guarda estado propio: escribe en el mismo sitio que el cajón. Dos entradas
-   * al mismo dato, un solo dato — si no, se contradicen.
-   */
-  filter?: ReactNode
-  /** Pinta el embudo como activo. Sin esto, un filtro puesto no se ve. */
-  filterActive?: boolean
 }
 
 declare module '@tanstack/react-table' {
@@ -86,8 +72,20 @@ export interface DataListProps<TData extends RowData> {
   emptyText?: ReactNode
   /** Buscador. Se omite si el endpoint no acepta `q`. */
   search?: { value: string; onChange: (value: string) => void; placeholder?: string }
-  /** Orden por columna. Se omite si el endpoint no acepta `sort`. */
-  sort?: { value: SortingState; onChange: (value: SortingState) => void; options: SortOption[] }
+  /**
+   * Orden por columna. Se omite si el endpoint no acepta `sort`.
+   *
+   * Dibuja dos cosas: las cabeceras clicables de la tabla y el control suelto de
+   * la barra. `showSortControl: false` deja solo las cabeceras, para las
+   * pantallas que ya ofrecen el orden desde su cajón de filtros — el control
+   * suelto ahí sería una tercera puerta al mismo dato.
+   */
+  sort?: {
+    value: SortingState
+    onChange: (value: SortingState) => void
+    options: SortOption[]
+    showSortControl?: boolean
+  }
   /** Filtros propios de la lista, a la derecha de la barra. */
   filters?: ReactNode
   /**
@@ -157,7 +155,7 @@ export function DataList<TData extends RowData>({
 
   return (
     <div className={className}>
-      {(search || sort || filters) && (
+      {(search || filters || (sort && sort.showSortControl !== false)) && (
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
           {search && (
             <div className="sm:w-72">
@@ -170,7 +168,7 @@ export function DataList<TData extends RowData>({
           )}
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
             {filters}
-            {sort && (
+            {sort && sort.showSortControl !== false && (
               <SortControl
                 options={sort.options}
                 value={activeSort}
@@ -223,7 +221,6 @@ export function DataList<TData extends RowData>({
                 // Ordenable = la columna está entre las que acepta el endpoint.
                 const option = sort?.options.find((o) => o.field === col.id)
                 const isActive = activeSort?.id === col.id
-                const columnFilter = col.columnDef.meta?.filter
                 return (
                   <TableHead
                     key={col.id}
@@ -232,12 +229,6 @@ export function DataList<TData extends RowData>({
                       isActive ? (activeSort?.desc ? 'descending' : 'ascending') : undefined
                     }
                   >
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1',
-                        alignRight && 'flex-row-reverse',
-                      )}
-                    >
                     {option && sort ? (
                       <button
                         type="button"
@@ -264,28 +255,6 @@ export function DataList<TData extends RowData>({
                     ) : (
                       label
                     )}
-                    {columnFilter && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label={`Filtrar por ${typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id}`}
-                            className={cn(
-                              'hover:text-foreground focus-visible:ring-ring/50 grid size-5 shrink-0 place-items-center rounded transition-colors focus-visible:ring-[3px] focus-visible:outline-none',
-                              col.columnDef.meta?.filterActive
-                                ? 'text-brand'
-                                : 'text-muted-foreground opacity-50',
-                            )}
-                          >
-                            <Filter aria-hidden className="size-3.5" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent align={alignRight ? 'end' : 'start'} className="w-64">
-                          {columnFilter}
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                    </span>
                   </TableHead>
                 )
               })}

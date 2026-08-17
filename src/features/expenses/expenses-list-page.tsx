@@ -1,15 +1,28 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router'
-import { Coins, Plus, RefreshCw } from 'lucide-react'
-import type { SortingState } from '@tanstack/react-table'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { ChevronDown, Coins, Download, MoreHorizontal, Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
+import { BalanceKpis } from '@/components/balance-kpis'
+import { SectionSwitch } from '@/components/section-switch'
+import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { FilterChips, type FilterChoice } from '@/components/ui/filter-chips'
+import { FilterField, FilterSheet, FilterSheetTrigger } from '@/components/ui/filter-sheet'
+import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
+import { SearchInput } from '@/components/search-input'
+import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -17,21 +30,37 @@ import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { usePayablesSummary } from '@/features/reports/hooks'
+import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatAmount, formatDateHuman } from '@/lib/format'
+import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { useListFilters } from '@/lib/use-list-filters'
 import type {
-  ExpenseBalance,
   GenerateExpensesResult,
   GetApiV1OrganizationsOrgIdExpensesParams,
   GetApiV1OrganizationsOrgIdExpensesSort,
+  ExpenseBalance,
 } from '@/api/generated/model'
-import { expenseStatus } from './labels'
+import { EXPENSE_STATUS_LABELS, expenseStatus } from './labels'
 import { CreateExpenseDialog } from './create-expense-dialog'
 import { useExpenses, useGenerateExpenses } from './hooks'
 
-type StatusFilter = '' | 'PENDING' | 'PARTIAL' | 'OVERDUE' | 'PAID' | 'CANCELLED' | 'WRITTEN_OFF'
-const PAGE_SIZE = 20
+/** Diez caben en una pantalla sin scroll infinito y bajan lo que pesa cada carga. */
+const PAGE_SIZE = 10
+
+/**
+ * Criterios que viven en la URL. Los nombres van en español, como las rutas
+ * (§87.5): la URL es interfaz de usuario y alguien la va a leer al compartirla.
+ */
+const FILTER_KEYS = ['estado', 'proveedor', 'categoria', 'desde', 'hasta', 'orden', 'dir', 'pagina'] as const
+type FilterKey = (typeof FILTER_KEYS)[number]
+
+/** Criterios que cuentan para el contador del botón «Filtros». */
+const ADVANCED_KEYS: FilterKey[] = ['proveedor', 'categoria', 'desde', 'hasta']
+
+/** Todos los estados del contrato, para el desplegable de los avanzados. */
+const ALL_STATUSES = ['PENDING', 'PARTIAL', 'OVERDUE', 'PAID', 'CANCELLED', 'WRITTEN_OFF']
 
 /** Columnas ordenables que acepta el endpoint (contrato: ListExpensesQuery). */
 const SORT_OPTIONS = [
@@ -43,40 +72,79 @@ const SORT_OPTIONS = [
 const column = listColumns<ExpenseBalance>()
 
 export function ExpensesListPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId, organization, role } = useCurrentOrg()
+  const currency = organization?.defaultCurrency
   const canGenerate = canManageAgreements(role)
   const canCreate = canEditContacts(role)
   const navigate = useNavigate()
 
+  const { values, set, clear } = useListFilters<FilterKey>('nummo:cxp:filtros', FILTER_KEYS)
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'dueDate', desc: false }])
-  const [status, setStatus] = useState<StatusFilter>('')
-  const [supplierId, setSupplierId] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Cualquier cambio de criterio devuelve a la primera página.
-  useEffect(() => {
-    setPage(1)
-  }, [q, status, supplierId, sorting])
+  const page = Number(values.pagina) || 1
+  const sortField = values.orden || 'dueDate'
+  const desc = values.dir === 'desc'
 
-  const active = sorting[0]
+  /** Cambiar cualquier criterio devuelve a la primera página. */
+  const filter = (patch: Partial<Record<FilterKey, string>>) => set({ ...patch, pagina: '' })
+
   const params: GetApiV1OrganizationsOrgIdExpensesParams = {
     page,
     pageSize: PAGE_SIZE,
     q: q || undefined,
-    sort: active?.id as GetApiV1OrganizationsOrgIdExpensesSort | undefined,
-    order: active?.desc ? 'desc' : 'asc',
-    displayStatus: status || undefined,
-    supplierContactId: supplierId || undefined,
+    sort: sortField as GetApiV1OrganizationsOrgIdExpensesSort,
+    order: desc ? 'desc' : 'asc',
+    displayStatus: (values.estado ||
+      undefined) as GetApiV1OrganizationsOrgIdExpensesParams['displayStatus'],
+    supplierContactId: values.proveedor || undefined,
+    expenseCategoryId: values.categoria || undefined,
+    dueAfter: values.desde || undefined,
+    dueBefore: values.hasta || undefined,
   }
-  const { items, total, totalPages, isPending, isError, error, isFetching } = useExpenses(orgId, params)
+  const { items, total, totalPages, isPending, isError, error, isFetching } = useExpenses(
+    orgId,
+    params,
+  )
+  const { summary, isPending: summaryLoading } = usePayablesSummary(orgId)
 
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
-  const { items: categories } = useExpenseCategories(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const { items: concepts } = useExpenseCategories(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
   const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
-  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
+  const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])
+
+  /*
+   * Solo los estados de trabajo diario van a la vista. Pagadas, canceladas y
+   * castigadas son consulta ocasional y viven en los filtros avanzados: sacarlas
+   * de aquí es lo que permite que las fichas quepan en dos líneas sin desplazarse
+   * en horizontal (§21).
+   *
+   * Los contadores salen del resumen del API. «Todas» va sin número a propósito:
+   * sumar los tres estados daría un total que el backend no firma —y que puede
+   * no cuadrar, porque una cuenta parcial y vencida cuenta en uno solo—. §70:
+   * cuando falta un dato, no se inventa.
+   */
+  const statusChoices: FilterChoice[] = [
+    { value: '', label: 'Todas' },
+    { value: 'OVERDUE', label: 'Vencidas', count: summary?.overdueCount },
+    { value: 'PENDING', label: 'Pendientes' },
+    { value: 'PARTIAL', label: 'Parciales' },
+  ]
+  // Si el estado activo salió de los avanzados, se muestra igualmente: si no, el
+  // usuario vería la lista filtrada y ninguna ficha marcada.
+  if (values.estado && !statusChoices.some((c) => c.value === values.estado)) {
+    statusChoices.push({
+      value: values.estado,
+      label: EXPENSE_STATUS_LABELS[values.estado] ?? values.estado,
+    })
+  }
 
   const columns = useMemo(
     () =>
@@ -90,7 +158,7 @@ export function ExpensesListPage() {
                 {contactMap.get(row.original.supplierContactId) ?? '—'}
               </p>
               <p className="text-muted-foreground truncate text-xs">
-                {categoryMap.get(row.original.expenseCategoryId) ?? '—'}
+                {conceptMap.get(row.original.expenseCategoryId) ?? '—'}
               </p>
             </div>
           ),
@@ -122,7 +190,10 @@ export function ExpensesListPage() {
           cell: () => <RowChevron />,
         }),
       ]),
-    [contactMap, categoryMap],
+    // `filter` es una función estable por render; lo que cambia de verdad son
+    // los valores, y de eso ya avisa `values`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [contactMap, conceptMap, values, orgId],
   )
 
   const generate = useGenerateExpenses(orgId ?? '')
@@ -130,106 +201,289 @@ export function ExpensesListPage() {
     try {
       const res = await generate.mutateAsync({ orgId: orgId ?? '' })
       const r = res.data as GenerateExpensesResult
-      toast.success(`${r.created} generados · ${r.skipped} ya existían`)
+      toast.success(`${r.created} generadas · ${r.skipped} ya existían`)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudieron generar'))
     }
   }
 
-  const activeFilters = [
-    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
-    status && { id: 'status', label: expenseStatus(status).label, onRemove: () => setStatus('') },
-    supplierId && { id: 'supplier', label: 'Proveedor filtrado', onRemove: () => setSupplierId(null) },
-  ].filter(Boolean) as ActiveFilter[]
 
-  const hasFilters = Boolean(q) || status !== '' || supplierId !== null
-  const clearFilters = () => {
-    setSearch('')
-    setStatus('')
-    setSupplierId(null)
+  /** Exporta lo que se está viendo, con los filtros puestos. */
+  const onExport = () => {
+    downloadCsv(
+      `cuentas-por-pagar_${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Proveedor', 'Categoría', 'Vence', 'Estado', 'Saldo'],
+      items.map((r) => [
+        contactMap.get(r.supplierContactId) ?? '',
+        conceptMap.get(r.expenseCategoryId) ?? '',
+        r.dueDate,
+        EXPENSE_STATUS_LABELS[r.displayStatus] ?? r.displayStatus,
+        r.balance,
+      ]),
+    )
   }
 
+  const advancedCount = ADVANCED_KEYS.filter((k) => values[k]).length
+  const hasFilters = Boolean(q) || FILTER_KEYS.some((k) => k !== 'pagina' && values[k])
+  const clearAll = () => {
+    setSearch('')
+    clear()
+  }
+
+
   return (
-    <div>
-      <PageHeader title="Cuentas por pagar" description="Gastos y obligaciones con proveedores.">
+    <div className="space-y-5">
+      <PageHeader title="Cuentas por pagar" description="Lo que le debes a tus proveedores.">
         {canGenerate && (
-          <Button variant="outline" size="sm" onClick={onGenerate} disabled={generate.isPending}>
-            {generate.isPending ? <Loader size="sm" /> : <RefreshCw className="size-4" />}
-            Generar gastos
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              {/* En móvil el título ya ocupa la fila: las acciones se reducen a
+                  su icono para no empujar la lista una línea entera hacia abajo. */}
+              <Button variant="outline" size="sm" aria-label="Acciones">
+                <MoreHorizontal aria-hidden className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">Acciones</span>
+                <ChevronDown aria-hidden className="hidden size-4 sm:inline" />
+              </Button>
+            </DropdownMenuTrigger>
+            {/*
+              Generar y causar mora son operaciones periódicas con impacto
+              financiero, no trabajo de todos los días: salen del primer nivel y
+              ganan una línea que explica qué provocan (§38, §74).
+            */}
+            <DropdownMenuContent align="end" className="w-72">
+              <DropdownMenuItem onClick={onGenerate} disabled={generate.isPending}>
+                {generate.isPending ? <Loader size="sm" /> : <RefreshCw className="size-4" />}
+                <span className="min-w-0">
+                  <span className="block font-medium">Generar mensualidades</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Crea las cuentas del período desde los gastos recurrentes activos
+                  </span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onExport} disabled={items.length === 0}>
+                <Download className="size-4" />
+                <span className="min-w-0">
+                  <span className="block font-medium">Exportar a CSV</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Lo que estás viendo, con los filtros puestos
+                  </span>
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         {canCreate && (
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" />
-            Nuevo gasto
+          <Button size="sm" onClick={() => setCreateOpen(true)} aria-label="Nueva cuenta">
+            <Plus aria-hidden className="size-4" />
+            <span className="hidden sm:inline">Nueva cuenta</span>
           </Button>
         )}
       </PageHeader>
 
+      <SectionSwitch options={PORTFOLIO_SECTIONS} />
+
+      <BalanceKpis
+        label="Por pagar"
+        totalOutstanding={summary?.totalOutstanding}
+        overdueAmount={summary?.overdueAmount}
+        overdueCount={summary?.overdueCount ?? 0}
+        currency={currency}
+        isLoading={summaryLoading}
+      />
+
       {isError ? (
-        <ErrorState error={error} fallback="No se pudieron cargar los gastos." />
+        <ErrorState error={error} fallback="No se pudieron cargar las cuentas por pagar." />
       ) : (
         <>
+          <div className="space-y-3">
+            {/*
+              Móvil y tablet: fichas. El dedo agradece un objetivo grande y
+              siempre visible. Desde `lg` la lista es una tabla de verdad, con su
+              propia fila de controles, y una rejilla de fichas ahí compite con
+              las cabeceras: el estado vuelve a un desplegable junto al buscador.
+            */}
+            <FilterChips
+              className="lg:hidden"
+              label="Estado"
+              choices={statusChoices}
+              value={values.estado}
+              onChange={(estado) => filter({ estado })}
+            />
+
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1 sm:max-w-72">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Buscar por proveedor…"
+                />
+              </div>
+              <NativeSelect
+                className="hidden w-44 lg:block"
+                value={values.estado}
+                onChange={(e) => filter({ estado: e.target.value })}
+                aria-label="Estado"
+              >
+                <option value="">Todos los estados</option>
+                {ALL_STATUSES.map((value) => (
+                  <option key={value} value={value}>
+                    {EXPENSE_STATUS_LABELS[value] ?? value}
+                  </option>
+                ))}
+              </NativeSelect>
+              {/* A la derecha del todo: es el cajón, no un criterio más. */}
+              <FilterSheetTrigger
+                className="ml-auto"
+                count={advancedCount}
+                onClick={() => setSheetOpen(true)}
+              />
+            </div>
+          </div>
+
           <DataList
             columns={columns}
             rows={items}
-            getRowId={(e) => e.expenseId}
-            onRowClick={(e) => navigate(`/gastos/cxp/${e.expenseId}`)}
+            getRowId={(r) => r.expenseId}
+            onRowClick={(r) => navigate(`/gastos/cxp/${r.expenseId}`)}
+            sort={{
+              value: [{ id: sortField, desc }],
+              onChange: (next) =>
+                filter({ orden: next[0]?.id ?? '', dir: next[0]?.desc ? 'desc' : '' }),
+              options: SORT_OPTIONS,
+              // El orden ya vive en el cajón, que es la única vía en móvil.
+              showSortControl: false,
+            }}
             isLoading={isPending}
-            activeFilters={activeFilters}
-            onClearFilters={clearFilters}
+            skeletonRows={PAGE_SIZE}
             emptyText={
               hasFilters ? (
-                <NoResults entity="gastos" onClear={clearFilters} />
+                <NoResults entity="cuentas por pagar" onClear={clearAll} />
               ) : (
                 <EmptyState
                   Icon={Coins}
                   title="Todavía no tienes cuentas por pagar"
-                  description="Aquí verás lo que debes a tus proveedores, con su vencimiento y su saldo."
+                  description="Aquí verás lo que debes a tus proveedores. Créalas una a una, o define un gasto recurrente para que Nummo las genere solas cada período."
+                  action={
+                    canCreate && (
+                      <Button size="sm" onClick={() => setCreateOpen(true)}>
+                        <Plus className="size-4" />
+                        Nueva cuenta
+                      </Button>
+                    )
+                  }
                 />
               )
-            }
-            search={{ value: search, onChange: setSearch, placeholder: 'Buscar por proveedor…' }}
-            sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
-            filters={
-              <>
-                <div className="w-full sm:w-56">
-                  <ContactPicker
-                    orgId={orgId ?? ''}
-                    value={supplierId}
-                    onChange={setSupplierId}
-                    allowClear
-                    placeholder="Proveedor…"
-                  />
-                </div>
-                <NativeSelect
-                  className="w-44"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                  aria-label="Estado"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value="PENDING">Pendiente</option>
-                  <option value="PARTIAL">Parcial</option>
-                  <option value="OVERDUE">Vencido</option>
-                  <option value="PAID">Pagado</option>
-                  <option value="CANCELLED">Cancelado</option>
-                  <option value="WRITTEN_OFF">Castigado</option>
-                </NativeSelect>
-              </>
             }
           />
 
           {!isPending && total > 0 && (
-            <Pagination page={page} pageSize={PAGE_SIZE} total={total} totalPages={totalPages} isFetching={isFetching} onPage={setPage} />
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              totalPages={totalPages}
+              isFetching={isFetching}
+              onPage={(next) => set({ pagina: next > 1 ? String(next) : '' })}
+            />
           )}
         </>
       )}
 
-      {orgId && <CreateExpenseDialog orgId={orgId} open={createOpen} onOpenChange={setCreateOpen} />}
+      <FilterSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onClear={clearAll}
+        canClear={hasFilters}
+        resultLabel={`Ver ${plural(total, 'cuenta', 'cuentas')}`}
+      >
+        <FilterField label="Estado">
+          <NativeSelect
+            value={values.estado}
+            onChange={(e) => filter({ estado: e.target.value })}
+            aria-label="Estado"
+          >
+            <option value="">Todos</option>
+            {ALL_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {EXPENSE_STATUS_LABELS[value] ?? value}
+              </option>
+            ))}
+          </NativeSelect>
+        </FilterField>
 
-      {/* Detalle en cajón: ruta hija, la lista se queda montada detrás. */}
-      <Outlet />
+        <FilterField label="Proveedor">
+          <ContactPicker
+            orgId={orgId ?? ''}
+            value={values.proveedor || null}
+            onChange={(pagador) => filter({ proveedor: pagador ?? '' })}
+            allowClear
+            placeholder="Cualquiera"
+          />
+        </FilterField>
+
+        <FilterField label="Categoría de gasto">
+          <NativeSelect
+            value={values.categoria}
+            onChange={(e) => filter({ categoria: e.target.value })}
+            aria-label="Categoría de gasto"
+          >
+            <option value="">Todos</option>
+            {concepts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </FilterField>
+
+        <FilterField label="Vence entre">
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={values.desde}
+              max={values.hasta || undefined}
+              onChange={(e) => filter({ desde: e.target.value })}
+              aria-label="Vence desde"
+            />
+            <Input
+              type="date"
+              value={values.hasta}
+              min={values.desde || undefined}
+              onChange={(e) => filter({ hasta: e.target.value })}
+              aria-label="Vence hasta"
+            />
+          </div>
+        </FilterField>
+
+        <FilterField label="Ordenar por">
+          <div className="flex flex-wrap gap-2">
+            {SORT_OPTIONS.map((option) => (
+              <Button
+                key={option.field}
+                type="button"
+                size="sm"
+                variant={sortField === option.field ? 'default' : 'outline'}
+                onClick={() => filter({ orden: option.field })}
+              >
+                {option.label}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => filter({ dir: desc ? '' : 'desc' })}
+            >
+              {desc ? 'Descendente' : 'Ascendente'}
+            </Button>
+          </div>
+        </FilterField>
+      </FilterSheet>
+
+      {orgId && (
+        <CreateExpenseDialog orgId={orgId} open={createOpen} onOpenChange={setCreateOpen} />
+      )}
     </div>
   )
 }

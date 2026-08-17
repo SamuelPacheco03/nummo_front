@@ -5,7 +5,9 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
-import { KpiStrip, KpiTile } from '@/components/kpi-tile'
+import { BalanceKpis } from '@/components/balance-kpis'
+import { SectionSwitch } from '@/components/section-switch'
+import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -20,7 +22,6 @@ import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { SearchInput } from '@/components/search-input'
-import { Skeleton } from '@/components/ui/skeleton'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
@@ -32,7 +33,7 @@ import { canEditContacts, canManageAgreements } from '@/features/organizations/r
 import { useReceivablesSummary } from '@/features/reports/hooks'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatAmount, formatDateHuman, formatMoney, plural } from '@/lib/format'
+import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { useListFilters } from '@/lib/use-list-filters'
 import type {
@@ -152,18 +153,6 @@ export function ReceivablesListPage() {
         column.display({
           id: 'payer',
           header: 'Pagador',
-          meta: {
-            filterActive: Boolean(values.pagador),
-            filter: (
-              <ContactPicker
-                orgId={orgId ?? ''}
-                value={values.pagador || null}
-                onChange={(pagador) => filter({ pagador: pagador ?? '' })}
-                allowClear
-                placeholder="Cualquiera"
-              />
-            ),
-          },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
@@ -178,27 +167,6 @@ export function ReceivablesListPage() {
         column.display({
           id: 'dueDate',
           header: 'Vence',
-          meta: {
-            filterActive: Boolean(values.desde || values.hasta),
-            filter: (
-              <div className="space-y-2">
-                <Input
-                  type="date"
-                  value={values.desde}
-                  max={values.hasta || undefined}
-                  onChange={(e) => filter({ desde: e.target.value })}
-                  aria-label="Vence desde"
-                />
-                <Input
-                  type="date"
-                  value={values.hasta}
-                  min={values.desde || undefined}
-                  onChange={(e) => filter({ hasta: e.target.value })}
-                  aria-label="Vence hasta"
-                />
-              </div>
-            ),
-          },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
               {formatDateHuman(row.original.dueDate)}
@@ -208,23 +176,6 @@ export function ReceivablesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          meta: {
-            filterActive: Boolean(values.estado),
-            filter: (
-              <NativeSelect
-                value={values.estado}
-                onChange={(e) => filter({ estado: e.target.value })}
-                aria-label="Estado"
-              >
-                <option value="">Todos los estados</option>
-                {ALL_STATUSES.map((value) => (
-                  <option key={value} value={value}>
-                    {RECEIVABLE_STATUS_LABELS[value] ?? value}
-                  </option>
-                ))}
-              </NativeSelect>
-            ),
-          },
           cell: ({ row }) => <StatusBadge {...receivableStatus(row.original.displayStatus)} />,
         }),
         column.display({
@@ -290,10 +241,7 @@ export function ReceivablesListPage() {
     clear()
   }
 
-  const outstanding = Number(summary?.totalOutstanding ?? 0)
-  const overdue = Number(summary?.overdueAmount ?? 0)
   const openCount = (summary?.pendingCount ?? 0) + (summary?.partialCount ?? 0)
-  const overdueShare = outstanding > 0 ? Math.round((overdue / outstanding) * 100) : null
 
   return (
     <div className="space-y-5">
@@ -354,40 +302,17 @@ export function ReceivablesListPage() {
         )}
       </PageHeader>
 
-      {summaryLoading ? (
-        <Skeleton className="h-[6.5rem]" />
-      ) : (
-        <KpiStrip
-          featured={
-            <KpiTile
-              featured
-              label="Por cobrar"
-              value={formatMoney(summary?.totalOutstanding ?? '0', currency)}
-              sub={plural(openCount, 'cuenta abierta', 'cuentas abiertas')}
-            />
-          }
-        >
-          <KpiTile
-            label="Vencido"
-            value={formatMoney(summary?.overdueAmount ?? '0', currency)}
-            sub={
-              overdueShare === null
-                ? plural(summary?.overdueCount ?? 0, 'cuenta', 'cuentas')
-                : `${summary?.overdueCount ?? 0} · ${overdueShare}% de la cartera`
-            }
-          />
-          {/*
-            «Al día» es `total − vencido`, calculado aquí. Son dos cifras que el
-            API sí devuelve, no un saldo inventado (§88.4), y responde la pregunta
-            que las otras dos dejan a medias: cuánto de lo que me deben va bien.
-          */}
-          <KpiTile
-            label="Al día"
-            value={formatMoney(outstanding - overdue, currency)}
-            sub={plural(Math.max(openCount - (summary?.overdueCount ?? 0), 0), 'cuenta', 'cuentas')}
-          />
-        </KpiStrip>
-      )}
+      <SectionSwitch options={PORTFOLIO_SECTIONS} />
+
+      <BalanceKpis
+        label="Por cobrar"
+        totalOutstanding={summary?.totalOutstanding}
+        overdueAmount={summary?.overdueAmount}
+        overdueCount={summary?.overdueCount ?? 0}
+          openCount={openCount}
+        currency={currency}
+        isLoading={summaryLoading}
+      />
 
       {isError ? (
         <ErrorState error={error} fallback="No se pudieron cargar las cuentas por cobrar." />
@@ -443,6 +368,14 @@ export function ReceivablesListPage() {
             rows={items}
             getRowId={(r) => r.receivableId}
             onRowClick={(r) => navigate(`/cartera/cxc/${r.receivableId}`)}
+            sort={{
+              value: [{ id: sortField, desc }],
+              onChange: (next) =>
+                filter({ orden: next[0]?.id ?? '', dir: next[0]?.desc ? 'desc' : '' }),
+              options: SORT_OPTIONS,
+              // El orden ya vive en el cajón, que es la única vía en móvil.
+              showSortControl: false,
+            }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}
             emptyText={

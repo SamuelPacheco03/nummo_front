@@ -86,7 +86,7 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       <div className="p-3">
         <OrgSwitcher />
       </div>
-      <div className="scrollbar-slim min-h-0 flex-1 overflow-y-auto">
+      <div className="scrollbar-slim scroll-fade-y min-h-0 flex-1 overflow-y-auto">
         <NavLinks onNavigate={onNavigate} />
       </div>
       <div className="border-sidebar-border space-y-3 border-t p-3">

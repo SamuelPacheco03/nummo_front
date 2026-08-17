@@ -59,3 +59,14 @@ export const SECTIONS: NavSection[] = [
     items: [{ to: '/config', label: 'Configuración', Icon: Settings }],
   },
 ]
+
+/**
+ * Las dos caras de la cartera, para el `SectionSwitch` de móvil.
+ *
+ * Se declara aquí, junto al resto de la navegación, y no en el componente: son
+ * rutas, y las rutas viven en un solo sitio.
+ */
+export const PORTFOLIO_SECTIONS = [
+  { to: '/cartera/cxc', label: 'Por cobrar' },
+  { to: '/gastos/cxp', label: 'Por pagar' },
+]
