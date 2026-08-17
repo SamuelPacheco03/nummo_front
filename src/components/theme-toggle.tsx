@@ -20,7 +20,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label="Tema"
       // Hereda su superficie: se monta en el sidebar (oscuro) y en Apariencia
       // (clara), y fijar color dejaría uno de los dos ilegible (§11.2).
-      className={cn('inline-flex items-center gap-0.5 rounded-lg border border-current/15 p-0.5', className)}
+      className={cn('bg-card inline-flex items-center gap-0.5 rounded-lg border p-0.5', className)}
     >
       {OPTIONS.map(({ mode: m, label, Icon }) => (
         <button
@@ -32,8 +32,8 @@ export function ThemeToggle({ className }: { className?: string }) {
           title={label}
           onClick={() => setMode(m)}
           className={cn(
-            'inline-flex size-8 items-center justify-center rounded-md opacity-60 transition-opacity hover:opacity-100',
-            mode === m && 'bg-current/10 opacity-100',
+            'text-muted-foreground hover:text-foreground inline-flex size-8 items-center justify-center rounded-md transition-colors',
+            mode === m && 'bg-secondary text-foreground shadow-xs',
           )}
         >
           <Icon className="size-4" />

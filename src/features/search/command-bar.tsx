@@ -186,7 +186,7 @@ export function CommandBar({ open, onOpenChange }: { open: boolean; onOpenChange
           {isFetching && <Loader size="sm" label="Buscando" />}
         </div>
 
-        <div id="command-results" ref={listRef} role="listbox" className="max-h-80 overflow-y-auto p-2">
+        <div id="command-results" ref={listRef} role="listbox" className="scrollbar-slim max-h-80 overflow-y-auto p-2">
           {groups.map((group) => (
             <div key={group.title} className="mb-1">
               <div className="text-muted-foreground px-2 py-1 text-[0.68rem] font-medium tracking-wider uppercase">

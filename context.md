@@ -730,12 +730,25 @@ todavía no está jerarquizado.
 
 ## 11.1.1. Dónde va cada cosa del shell
 
-La **cabecera** es para trabajar: la ocupa la barra de comandos y nada más. Nombre de usuario,
-tema y selector de organización **no** son herramientas, son contexto, y viven en el **sidebar**
-—donde además hay sitio de sobra—. Cerrar sesión va junto al nombre, que es donde se busca.
+| Zona | Qué lleva |
+| --- | --- |
+| **Cabecera** | La barra de comandos (ocupa el ancho útil), el selector de tema y el menú de perfil —que incluye cerrar sesión— |
+| **Sidebar** | La organización activa, la navegación, y al pie: ayuda, estado del sistema e instalar app |
 
-Llenar la barra superior de iconos es otra forma de la sopa de tarjetas: cada uno pide atención y
-ninguno la merece más que la búsqueda.
+El **selector de organización va en el sidebar, no en la cabecera**: es contexto permanente, no
+una herramienta, y en la cabecera de móvil competía con la búsqueda y se veía apretado.
+
+Llenar la barra superior de iconos es otra forma de la sopa de tarjetas. Dos controles a la
+derecha es el techo; el resto vive donde le corresponde.
+
+## 11.1.2. Barras de desplazamiento
+
+Los contenedores que scrollean por dentro —sidebar, paleta de comandos, hilo de Numi, cajón de
+detalle, sub-navegación de ajustes— llevan `.scrollbar-slim`. La del sistema pinta una pista
+ancha y clara que sobre el sidebar oscuro se ve como una cicatriz.
+
+El pulgar va en `currentColor` a baja opacidad, así que **hereda la superficie** y no hace falta
+declarar dos versiones (§11.2).
 
 ---
 

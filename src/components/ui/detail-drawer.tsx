@@ -110,7 +110,7 @@ export function DetailDrawer({
 
           <div
             className={cn(
-              'flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6',
+              'scrollbar-slim flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6',
               // Sin pie, el respiro de abajo lo pone el propio cuerpo; con pie,
               // lo pone el pie, que es quien toca el borde de la pantalla.
               !footer && 'pb-[max(1.25rem,env(safe-area-inset-bottom))]',

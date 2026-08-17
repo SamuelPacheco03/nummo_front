@@ -84,7 +84,7 @@ function QuickActionsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="gap-1 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <SheetTitle className="px-3 pt-1 pb-2 text-base">Registrar</SheetTitle>
-        <div className="overflow-y-auto">
+        <div className="scrollbar-slim overflow-y-auto">
           {actions.map((action) => (
             <button
               key={action.to}

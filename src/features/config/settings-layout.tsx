@@ -62,7 +62,7 @@ export function SettingsLayout() {
       */}
       <nav
         aria-label="Configuración"
-        className="-mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-2 lg:hidden"
+        className="scrollbar-slim -mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-2 lg:hidden"
       >
         {GROUPS.flatMap((g) => g.items).map((item) => (
           <SettingsLink key={item.to} item={item} />

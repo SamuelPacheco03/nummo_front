@@ -1,63 +1,12 @@
-import { Link, NavLink, useLocation, useNavigate } from 'react-router'
-import { toast } from 'sonner'
-import { Activity, HelpCircle, LogOut } from 'lucide-react'
+import { Link, NavLink, useLocation } from 'react-router'
+import { Activity, HelpCircle } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { useAuth, useLogout } from '@/features/auth/hooks'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { isSettingsPath } from '@/features/config/settings-nav'
 import { SECTIONS } from '@/features/navigation/sections'
 import { InstallAppButton } from '@/pwa/install-app-button'
 import { OfflineIndicator } from '@/pwa/offline-indicator'
-import { getErrorMessage } from '@/lib/errors'
-import { initials } from '@/lib/format'
 import { cn } from '@/lib/utils'
-
-/**
- * Identidad y salida, al pie del sidebar.
- *
- * Aquí y no en la cabecera: la cabecera es para trabajar —la barra de comandos
- * ocupa todo su ancho— y el nombre de quien está dentro es contexto, no una
- * herramienta. Cerrar sesión vive junto a él, que es donde se busca.
- */
-function SidebarAccount() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const logout = useLogout()
-
-  if (!user) return null
-
-  const onLogout = async () => {
-    try {
-      await logout.mutateAsync()
-      navigate('/login', { replace: true })
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo cerrar sesión'))
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-2.5 px-1">
-      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-current/10 text-xs font-semibold">
-        {initials(user.fullName)}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{user.fullName}</span>
-        <span className="text-sidebar-muted-foreground block truncate text-xs">{user.email}</span>
-      </span>
-      <button
-        type="button"
-        onClick={onLogout}
-        disabled={logout.isPending}
-        aria-label="Cerrar sesión"
-        title="Cerrar sesión"
-        className="text-sidebar-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-sidebar-ring/60 grid size-8 shrink-0 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none disabled:opacity-50"
-      >
-        <LogOut aria-hidden className="size-4" />
-      </button>
-    </div>
-  )
-}
 
 export function Brand() {
   return (
@@ -137,7 +86,7 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       <div className="p-3">
         <OrgSwitcher />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="scrollbar-slim min-h-0 flex-1 overflow-y-auto">
         <NavLinks onNavigate={onNavigate} />
       </div>
       <div className="border-sidebar-border space-y-3 border-t p-3">
@@ -169,8 +118,6 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         </NavLink>
         <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
-        <ThemeToggle className="w-full justify-between border-current/15 bg-current/[0.04]" />
-        <SidebarAccount />
       </div>
     </>
   )

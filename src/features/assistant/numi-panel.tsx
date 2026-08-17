@@ -125,7 +125,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         role="log"
         aria-live="polite"
         aria-label="Conversación con Numi"
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
+        className="scrollbar-slim min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
       >
         {isHydrating ? (
           <div className="flex h-full items-center justify-center">

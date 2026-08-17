@@ -248,6 +248,36 @@
 
 @layer utilities {
   /*
+    Barra de desplazamiento discreta para los contenedores internos.
+
+    La del sistema pinta una pista clara y ancha que sobre el sidebar oscuro se
+    ve como una cicatriz. El pulgar va en `currentColor` a baja opacidad, así que
+    **hereda la superficie**: se ve gris sobre claro y claro sobre oscuro, sin
+    tener que declarar dos versiones (§11.2).
+
+    `scrollbar-width`/`scrollbar-color` cubren Firefox y Chromium modernos; el
+    bloque `::-webkit-scrollbar` cubre Safari, que aún no los soporta.
+  */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, currentColor 20%, transparent) transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background-color: color-mix(in oklab, currentColor 20%, transparent);
+  }
+  .scrollbar-slim:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, currentColor 32%, transparent);
+  }
+
+  /*
     Superficie de marca. La base va azul → índigo porque encima hay texto
     blanco (5.2:1 y 6.3:1); el teal y el cian del isotipo entran como resplandor
     en la esquina inferior derecha, donde no cae ningún texto.
