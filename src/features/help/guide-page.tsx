@@ -20,16 +20,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { KnowledgeSearch } from './knowledge-search'
-
-type Tone = 'success' | 'warning' | 'destructive' | 'muted'
-const DOT: Record<Tone, string> = {
-  success: 'bg-success',
-  warning: 'bg-warning',
-  destructive: 'bg-destructive',
-  muted: 'bg-muted-foreground/40',
-}
 
 /* ── Índice ───────────────────────────────────────────────────────────── */
 const TOC: { id: string; label: string }[] = [
@@ -110,7 +102,7 @@ const EXPENSE_KINDS: { term: string; def: string }[] = [
 ]
 
 /* ── Estados ──────────────────────────────────────────────────────────── */
-type State = { label: string; tone: Tone; def: string }
+type State = { label: string; tone: StatusTone; def: string }
 
 const CUENTA_STATES: State[] = [
   { label: 'Pendiente', tone: 'muted', def: 'Creada y todavía no vencida; aún no tiene abonos.' },
@@ -299,10 +291,7 @@ function StateList({ title, states }: { title: string; states: State[] }) {
       <ul className="divide-y rounded-lg border">
         {states.map((s) => (
           <li key={s.label} className="grid gap-1 p-3 sm:grid-cols-[10rem_1fr] sm:items-baseline sm:gap-4">
-            <span className="flex items-center gap-2 font-medium">
-              <span className={cn('size-2 shrink-0 rounded-full', DOT[s.tone])} />
-              {s.label}
-            </span>
+            <StatusBadge tone={s.tone} label={s.label} className="font-medium" />
             <span className="text-sm leading-relaxed text-muted-foreground">{s.def}</span>
           </li>
         ))}

@@ -7,6 +7,7 @@ import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useContacts } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -20,7 +21,7 @@ import type {
   GetApiV1OrganizationsOrgIdPaymentsSort,
   Payment,
 } from '@/api/generated/model'
-import { PAYMENT_PURPOSE_LABELS, PAYMENT_STATUS_LABELS } from './labels'
+import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
 import { usePayments } from './hooks'
 
 type StatusFilter = '' | 'POSTED' | 'REVERSED'
@@ -34,20 +35,6 @@ const SORT_OPTIONS = [
 ]
 
 const column = listColumns<Payment>()
-
-function StatusChip({ status }: { status: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap">
-      <span
-        className={cn(
-          'size-1.5 rounded-full',
-          status === 'REVERSED' ? 'bg-muted-foreground/40' : 'bg-success',
-        )}
-      />
-      {PAYMENT_STATUS_LABELS[status] ?? status}
-    </span>
-  )
-}
 
 export function PaymentsListPage() {
   const { orgId, role } = useCurrentOrg()
@@ -112,7 +99,7 @@ export function PaymentsListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          cell: ({ row }) => <StatusChip status={row.original.status} />,
+          cell: ({ row }) => <StatusBadge {...paymentStatus(row.original.status)} />,
         }),
         column.display({
           id: 'amount',

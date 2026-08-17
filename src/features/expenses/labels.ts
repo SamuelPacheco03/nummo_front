@@ -1,3 +1,5 @@
+import type { StatusTone } from '@/components/ui/status-badge'
+
 export const EXPENSE_STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendiente',
   PARTIAL: 'Parcial',
@@ -27,8 +29,6 @@ export const DISBURSEMENT_PURPOSE_LABELS: Record<string, string> = {
 
 export const RECURRENCE_LABELS: Record<string, string> = { MONTHLY: 'Mensual' }
 
-export type StatusTone = 'success' | 'warning' | 'destructive' | 'muted'
-
 export function expenseStatusTone(status: string): StatusTone {
   switch (status) {
     case 'PAID':
@@ -48,9 +48,19 @@ export function scheduleStatusTone(status: string): StatusTone {
   return 'muted'
 }
 
-export const TONE_DOT: Record<StatusTone, string> = {
-  success: 'bg-success',
-  warning: 'bg-warning',
-  destructive: 'bg-destructive',
-  muted: 'bg-muted-foreground/40',
+/** Pares tono/etiqueta listos para `<StatusBadge {...expenseStatus(s)} />`. */
+export function expenseStatus(status: string): { tone: StatusTone; label: string } {
+  return { tone: expenseStatusTone(status), label: EXPENSE_STATUS_LABELS[status] ?? status }
+}
+
+export function scheduleStatus(status: string): { tone: StatusTone; label: string } {
+  return { tone: scheduleStatusTone(status), label: SCHEDULE_STATUS_LABELS[status] ?? status }
+}
+
+/** Un egreso reversado deja de contar: se apaga, no se marca en rojo. */
+export function disbursementStatus(status: string): { tone: StatusTone; label: string } {
+  return {
+    tone: status === 'REVERSED' ? 'muted' : 'success',
+    label: DISBURSEMENT_STATUS_LABELS[status] ?? status,
+  }
 }

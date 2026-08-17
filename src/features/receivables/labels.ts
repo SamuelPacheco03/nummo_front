@@ -1,3 +1,5 @@
+import type { StatusTone } from '@/components/ui/status-badge'
+
 export const RECEIVABLE_STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendiente',
   PARTIAL: 'Parcial',
@@ -6,8 +8,6 @@ export const RECEIVABLE_STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelada',
   WRITTEN_OFF: 'Castigada',
 }
-
-export type StatusTone = 'success' | 'warning' | 'destructive' | 'muted'
 
 export function receivableStatusTone(status: string): StatusTone {
   switch (status) {
@@ -22,11 +22,9 @@ export function receivableStatusTone(status: string): StatusTone {
   }
 }
 
-export const TONE_DOT: Record<StatusTone, string> = {
-  success: 'bg-success',
-  warning: 'bg-warning',
-  destructive: 'bg-destructive',
-  muted: 'bg-muted-foreground/40',
+/** Par tono/etiqueta listo para `<StatusBadge {...receivableStatus(s)} />`. */
+export function receivableStatus(status: string): { tone: StatusTone; label: string } {
+  return { tone: receivableStatusTone(status), label: RECEIVABLE_STATUS_LABELS[status] ?? status }
 }
 
 export const ADJUSTMENT_TYPE_LABELS: Record<string, string> = {

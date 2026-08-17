@@ -5,14 +5,14 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
-import { RECURRENCE_LABELS } from './labels'
-import { ScheduleStatusPill } from './schedules-list-page'
+import { RECURRENCE_LABELS, scheduleStatus } from './labels'
 import { useEndSchedule, useExpenseSchedule, usePauseSchedule, useResumeSchedule } from './hooks'
 
 const LIST = '/gastos/recurrentes'
@@ -68,7 +68,7 @@ export function ScheduleDetailPage() {
       <DetailDrawer
         closeTo={LIST}
         title={supplier?.displayName ?? s.name ?? 'Gasto recurrente'}
-        meta={<ScheduleStatusPill status={s.status} />}
+        meta={<StatusBadge {...scheduleStatus(s.status)} />}
         amount={formatAmount(s.agreedAmount, s.currency)}
         actions={
           canManage && (

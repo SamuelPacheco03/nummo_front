@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -17,8 +18,7 @@ import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 import { AddAdjustmentDialog } from './add-adjustment-dialog'
 import { WaiveInterestDialog } from './waive-interest-dialog'
-import { StatusPill } from './receivables-list-page'
-import { ADJUSTMENT_TYPE_LABELS } from './labels'
+import { ADJUSTMENT_TYPE_LABELS, receivableStatus } from './labels'
 import {
   useAccruals,
   useCancelReceivable,
@@ -132,7 +132,7 @@ export function ReceivableDetailPage() {
             <span className="flex items-center gap-2">
               {conceptName ?? '—'}
               <span className="text-border">·</span>
-              <StatusPill status={status} />
+              <StatusBadge {...receivableStatus(status)} />
             </span>
           }
         >

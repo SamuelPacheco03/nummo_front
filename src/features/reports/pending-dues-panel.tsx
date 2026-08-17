@@ -5,17 +5,9 @@ import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { DataList, listColumns } from '@/components/ui/data-list'
 import { NativeSelect } from '@/components/ui/native-select'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { downloadCsv } from '@/lib/csv'
 import { formatAmount, formatDateHuman } from '@/lib/format'
-import { cn } from '@/lib/utils'
-
-type Tone = 'success' | 'warning' | 'destructive' | 'muted'
-const DOT: Record<Tone, string> = {
-  success: 'bg-success',
-  warning: 'bg-warning',
-  destructive: 'bg-destructive',
-  muted: 'bg-muted-foreground/40',
-}
 
 export type DueRow = {
   id: string
@@ -25,22 +17,13 @@ export type DueRow = {
   currency?: string
   isOverdue: boolean
   statusLabel: string
-  tone: Tone
+  tone: StatusTone
   href: string
 }
 
 type Filter = 'all' | 'overdue' | 'upcoming'
 
 const PAGE_SIZE = 8
-
-function StatusChip({ row }: { row: DueRow }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-      <span className={cn('size-1.5 rounded-full', DOT[row.tone])} />
-      {row.statusLabel}
-    </span>
-  )
-}
 
 /**
  * Panel de cuentas pendientes (por cobrar o por pagar): tabla/tarjetas ordenadas
@@ -108,7 +91,7 @@ export function PendingDuesPanel({
         column.display({
           id: 'status',
           header: 'Estado',
-          cell: ({ row }) => <StatusChip row={row.original} />,
+          cell: ({ row }) => <StatusBadge tone={row.original.tone} label={row.original.statusLabel} />,
         }),
         column.display({
           id: 'balance',

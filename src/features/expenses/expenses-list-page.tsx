@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -17,14 +18,13 @@ import { canEditContacts, canManageAgreements } from '@/features/organizations/r
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { cn } from '@/lib/utils'
 import type {
   ExpenseBalance,
   GenerateExpensesResult,
   GetApiV1OrganizationsOrgIdExpensesParams,
   GetApiV1OrganizationsOrgIdExpensesSort,
 } from '@/api/generated/model'
-import { EXPENSE_STATUS_LABELS, TONE_DOT, expenseStatusTone } from './labels'
+import { expenseStatus } from './labels'
 import { CreateExpenseDialog } from './create-expense-dialog'
 import { useExpenses, useGenerateExpenses } from './hooks'
 
@@ -39,16 +39,6 @@ const SORT_OPTIONS = [
 ]
 
 const column = listColumns<ExpenseBalance>()
-
-export function ExpenseStatusPill({ status }: { status: string }) {
-  const tone = expenseStatusTone(status)
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-      <span className={cn('size-1.5 rounded-full', TONE_DOT[tone])} />
-      {EXPENSE_STATUS_LABELS[status] ?? status}
-    </span>
-  )
-}
 
 export function ExpensesListPage() {
   const { orgId, role } = useCurrentOrg()
@@ -115,7 +105,7 @@ export function ExpensesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          cell: ({ row }) => <ExpenseStatusPill status={row.original.displayStatus} />,
+          cell: ({ row }) => <StatusBadge {...expenseStatus(row.original.displayStatus)} />,
         }),
         column.display({
           id: 'balance',

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -17,7 +18,6 @@ import { canEditContacts, canManageAgreements } from '@/features/organizations/r
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { cn } from '@/lib/utils'
 import type {
   AccrueInterestResult,
   GenerateReceivablesResult,
@@ -25,7 +25,7 @@ import type {
   GetApiV1OrganizationsOrgIdReceivablesSort,
   ReceivableBalance,
 } from '@/api/generated/model'
-import { RECEIVABLE_STATUS_LABELS, TONE_DOT, receivableStatusTone } from './labels'
+import { receivableStatus } from './labels'
 import { CreateReceivableDialog } from './create-receivable-dialog'
 import { useAccrueInterest, useGenerateReceivables, useReceivables } from './hooks'
 
@@ -40,16 +40,6 @@ const SORT_OPTIONS = [
 ]
 
 const column = listColumns<ReceivableBalance>()
-
-export function StatusPill({ status }: { status: string }) {
-  const tone = receivableStatusTone(status)
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-      <span className={cn('size-1.5 rounded-full', TONE_DOT[tone])} />
-      {RECEIVABLE_STATUS_LABELS[status] ?? status}
-    </span>
-  )
-}
 
 export function ReceivablesListPage() {
   const { orgId, role } = useCurrentOrg()
@@ -116,7 +106,7 @@ export function ReceivablesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          cell: ({ row }) => <StatusPill status={row.original.displayStatus} />,
+          cell: ({ row }) => <StatusBadge {...receivableStatus(row.original.displayStatus)} />,
         }),
         column.display({
           id: 'balance',

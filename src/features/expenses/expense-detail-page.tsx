@@ -5,13 +5,14 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
-import { ExpenseStatusPill } from './expenses-list-page'
+import { expenseStatus } from './labels'
 import { useCancelExpense, useExpense, useWriteOffExpense } from './hooks'
 
 const LIST = '/gastos/cxp'
@@ -77,7 +78,7 @@ export function ExpenseDetailPage() {
           <span className="flex items-center gap-2">
             {categoryName ?? '—'}
             <span className="text-border">·</span>
-            <ExpenseStatusPill status={status} />
+            <StatusBadge {...expenseStatus(status)} />
           </span>
         }
         // La cifra que se viene a consultar es el saldo, no el valor original.

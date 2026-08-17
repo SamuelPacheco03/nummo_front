@@ -7,6 +7,7 @@ import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -14,13 +15,12 @@ import { canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { cn } from '@/lib/utils'
 import type {
   BillingAgreement,
   GetApiV1OrganizationsOrgIdBillingAgreementsParams,
   GetApiV1OrganizationsOrgIdBillingAgreementsSort,
 } from '@/api/generated/model'
-import { AGREEMENT_STATUS_LABELS, RECURRENCE_LABELS, agreementStatusTone } from './labels'
+import { RECURRENCE_LABELS, agreementStatus } from './labels'
 import { useAgreements } from './hooks'
 
 type StatusFilter = '' | 'ACTIVE' | 'PAUSED' | 'ENDED' | 'CANCELLED'
@@ -33,17 +33,6 @@ const SORT_OPTIONS = [
 ]
 
 const column = listColumns<BillingAgreement>()
-const TONE_CLASS = { success: 'bg-success', warning: 'bg-warning', muted: 'bg-muted-foreground/40' }
-
-function StatusPill({ status }: { status: string }) {
-  const tone = agreementStatusTone(status)
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-      <span className={cn('size-1.5 rounded-full', TONE_CLASS[tone])} />
-      {AGREEMENT_STATUS_LABELS[status] ?? status}
-    </span>
-  )
-}
 
 export function AgreementsListPage() {
   const { orgId, role } = useCurrentOrg()
@@ -108,7 +97,7 @@ export function AgreementsListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          cell: ({ row }) => <StatusPill status={row.original.status} />,
+          cell: ({ row }) => <StatusBadge {...agreementStatus(row.original.status)} />,
         }),
         column.display({
           id: 'amount',

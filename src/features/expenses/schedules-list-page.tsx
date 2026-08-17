@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useMasterListState } from '@/features/masters/master-crud'
@@ -12,8 +13,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { RECURRENCE_LABELS, SCHEDULE_STATUS_LABELS, TONE_DOT, scheduleStatusTone } from './labels'
+import { RECURRENCE_LABELS, scheduleStatus } from './labels'
 import type { ExpenseSchedule } from '@/api/generated/model'
 import { useExpenseSchedules } from './hooks'
 
@@ -24,16 +24,6 @@ const SORT_OPTIONS = [
 ]
 
 const column = listColumns<ExpenseSchedule>()
-
-export function ScheduleStatusPill({ status }: { status: string }) {
-  const tone = scheduleStatusTone(status)
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-      <span className={cn('size-1.5 rounded-full', TONE_DOT[tone])} />
-      {SCHEDULE_STATUS_LABELS[status] ?? status}
-    </span>
-  )
-}
 
 export function SchedulesListPage() {
   const { orgId, role } = useCurrentOrg()
@@ -84,7 +74,7 @@ export function SchedulesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
-          cell: ({ row }) => <ScheduleStatusPill status={row.original.status} />,
+          cell: ({ row }) => <StatusBadge {...scheduleStatus(row.original.status)} />,
         }),
         column.display({
           id: 'amount',

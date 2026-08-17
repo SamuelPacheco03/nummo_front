@@ -1,3 +1,5 @@
+import type { StatusTone } from '@/components/ui/status-badge'
+
 export const AGREEMENT_STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Activo',
   PAUSED: 'Pausado',
@@ -30,9 +32,13 @@ export const BASE_TYPE_LABELS: Record<string, string> = {
 
 export const BASE_TYPES = ['ORIGINAL_AMOUNT', 'OUTSTANDING_NON_INTEREST'] as const
 
-/** Color de estado del acuerdo (para el punto de estado). */
-export function agreementStatusTone(status: string): 'success' | 'warning' | 'muted' {
+export function agreementStatusTone(status: string): StatusTone {
   if (status === 'ACTIVE') return 'success'
   if (status === 'PAUSED') return 'warning'
   return 'muted'
+}
+
+/** Par tono/etiqueta listo para `<StatusBadge {...agreementStatus(s)} />`. */
+export function agreementStatus(status: string): { tone: StatusTone; label: string } {
+  return { tone: agreementStatusTone(status), label: AGREEMENT_STATUS_LABELS[status] ?? status }
 }

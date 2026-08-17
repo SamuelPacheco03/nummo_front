@@ -4,6 +4,7 @@ import { Undo2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { StatusBadge } from '@/components/ui/status-badge'
 import {
   DetailDrawer,
   DetailEmpty,
@@ -18,7 +19,7 @@ import { canEditContacts, canManageAgreements } from '@/features/organizations/r
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { DISBURSEMENT_PURPOSE_LABELS, DISBURSEMENT_STATUS_LABELS } from './labels'
+import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
 import { ApplySupplierAdvanceDialog } from './apply-supplier-advance-dialog'
 import { useDisbursement, useReverseDisbursement } from './hooks'
 
@@ -77,13 +78,7 @@ export function DisbursementDetailPage() {
         title={supplier?.displayName ?? 'Egreso directo'}
         meta={
           <span className="inline-flex items-center gap-1.5">
-            <span
-              className={cn(
-                'size-1.5 rounded-full',
-                reversed ? 'bg-muted-foreground/40' : 'bg-success',
-              )}
-            />
-            {DISBURSEMENT_STATUS_LABELS[d.status] ?? d.status} ·{' '}
+            <StatusBadge {...disbursementStatus(d.status)} />·{' '}
             {DISBURSEMENT_PURPOSE_LABELS[d.purpose] ?? d.purpose}
           </span>
         }

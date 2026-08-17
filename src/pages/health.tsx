@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StatusDot } from '@/components/ui/status-dot'
+import { StatusDot } from '@/components/ui/status-badge'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 

@@ -8,6 +8,7 @@ import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { NativeSelect } from '@/components/ui/native-select'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts } from '@/features/organizations/roles'
@@ -20,7 +21,7 @@ import type {
   GetApiV1OrganizationsOrgIdDisbursementsParams,
   GetApiV1OrganizationsOrgIdDisbursementsSort,
 } from '@/api/generated/model'
-import { DISBURSEMENT_PURPOSE_LABELS, DISBURSEMENT_STATUS_LABELS } from './labels'
+import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
 import { useDisbursements } from './hooks'
 
 type StatusFilter = '' | 'POSTED' | 'REVERSED'
@@ -34,20 +35,6 @@ const SORT_OPTIONS = [
 ]
 
 const column = listColumns<Disbursement>()
-
-function StatusChip({ status }: { status: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap">
-      <span
-        className={cn(
-          'size-1.5 rounded-full',
-          status === 'REVERSED' ? 'bg-muted-foreground/40' : 'bg-success',
-        )}
-      />
-      {DISBURSEMENT_STATUS_LABELS[status] ?? status}
-    </span>
-  )
-}
 
 export function DisbursementsListPage() {
   const { orgId, role } = useCurrentOrg()
@@ -114,7 +101,7 @@ export function DisbursementsListPage() {
       column.display({
         id: 'status',
         header: 'Estado',
-        cell: ({ row }) => <StatusChip status={row.original.status} />,
+        cell: ({ row }) => <StatusBadge {...disbursementStatus(row.original.status)} />,
       }),
       column.display({
         id: 'amount',

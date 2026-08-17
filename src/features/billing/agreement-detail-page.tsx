@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
@@ -14,13 +15,8 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
-import {
-  AGREEMENT_STATUS_LABELS,
-  RECURRENCE_LABELS,
-  agreementStatusTone,
-} from './labels'
+import { RECURRENCE_LABELS, agreementStatus } from './labels'
 import {
   useAgreement,
   useEndAgreement,
@@ -29,7 +25,6 @@ import {
   useResumeAgreement,
 } from './hooks'
 
-const TONE_CLASS = { success: 'bg-success', warning: 'bg-warning', muted: 'bg-muted-foreground/40' }
 
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   if (children == null || children === '') return null
@@ -93,7 +88,6 @@ export function AgreementDetailPage() {
     )
   }
 
-  const tone = agreementStatusTone(agreement.status)
   const busy = pause.isPending || resume.isPending || end.isPending
 
   const runLifecycle = async (
@@ -121,10 +115,7 @@ export function AgreementDetailPage() {
         <PageHeader
           title={payer?.displayName ?? agreement.name ?? 'Acuerdo'}
           description={
-            <span className="inline-flex items-center gap-1.5">
-              <span className={cn('size-1.5 rounded-full', TONE_CLASS[tone])} />
-              {AGREEMENT_STATUS_LABELS[agreement.status] ?? agreement.status}
-            </span>
+            <StatusBadge {...agreementStatus(agreement.status)} />
           }
         >
           {canManage && (
