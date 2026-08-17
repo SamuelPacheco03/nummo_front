@@ -152,6 +152,18 @@ export function ReceivablesListPage() {
         column.display({
           id: 'payer',
           header: 'Pagador',
+          meta: {
+            filterActive: Boolean(values.pagador),
+            filter: (
+              <ContactPicker
+                orgId={orgId ?? ''}
+                value={values.pagador || null}
+                onChange={(pagador) => filter({ pagador: pagador ?? '' })}
+                allowClear
+                placeholder="Cualquiera"
+              />
+            ),
+          },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
@@ -166,6 +178,27 @@ export function ReceivablesListPage() {
         column.display({
           id: 'dueDate',
           header: 'Vence',
+          meta: {
+            filterActive: Boolean(values.desde || values.hasta),
+            filter: (
+              <div className="space-y-2">
+                <Input
+                  type="date"
+                  value={values.desde}
+                  max={values.hasta || undefined}
+                  onChange={(e) => filter({ desde: e.target.value })}
+                  aria-label="Vence desde"
+                />
+                <Input
+                  type="date"
+                  value={values.hasta}
+                  min={values.desde || undefined}
+                  onChange={(e) => filter({ hasta: e.target.value })}
+                  aria-label="Vence hasta"
+                />
+              </div>
+            ),
+          },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
               {formatDateHuman(row.original.dueDate)}
@@ -175,6 +208,23 @@ export function ReceivablesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
+          meta: {
+            filterActive: Boolean(values.estado),
+            filter: (
+              <NativeSelect
+                value={values.estado}
+                onChange={(e) => filter({ estado: e.target.value })}
+                aria-label="Estado"
+              >
+                <option value="">Todos los estados</option>
+                {ALL_STATUSES.map((value) => (
+                  <option key={value} value={value}>
+                    {RECEIVABLE_STATUS_LABELS[value] ?? value}
+                  </option>
+                ))}
+              </NativeSelect>
+            ),
+          },
           cell: ({ row }) => <StatusBadge {...receivableStatus(row.original.displayStatus)} />,
         }),
         column.display({
@@ -190,7 +240,10 @@ export function ReceivablesListPage() {
           cell: () => <RowChevron />,
         }),
       ]),
-    [contactMap, conceptMap],
+    // `filter` es una función estable por render; lo que cambia de verdad son
+    // los valores, y de eso ya avisa `values`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [contactMap, conceptMap, values, orgId],
   )
 
   const generate = useGenerateReceivables(orgId ?? '')
@@ -341,7 +394,14 @@ export function ReceivablesListPage() {
       ) : (
         <>
           <div className="space-y-3">
+            {/*
+              Móvil y tablet: fichas. El dedo agradece un objetivo grande y
+              siempre visible. Desde `lg` la lista es una tabla de verdad, con su
+              propia fila de controles, y una rejilla de fichas ahí compite con
+              las cabeceras: el estado vuelve a un desplegable junto al buscador.
+            */}
             <FilterChips
+              className="lg:hidden"
               label="Estado"
               choices={statusChoices}
               value={values.estado}
@@ -356,7 +416,25 @@ export function ReceivablesListPage() {
                   placeholder="Buscar por pagador…"
                 />
               </div>
-              <FilterSheetTrigger count={advancedCount} onClick={() => setSheetOpen(true)} />
+              <NativeSelect
+                className="hidden w-44 lg:block"
+                value={values.estado}
+                onChange={(e) => filter({ estado: e.target.value })}
+                aria-label="Estado"
+              >
+                <option value="">Todos los estados</option>
+                {ALL_STATUSES.map((value) => (
+                  <option key={value} value={value}>
+                    {RECEIVABLE_STATUS_LABELS[value] ?? value}
+                  </option>
+                ))}
+              </NativeSelect>
+              {/* A la derecha del todo: es el cajón, no un criterio más. */}
+              <FilterSheetTrigger
+                className="ml-auto"
+                count={advancedCount}
+                onClick={() => setSheetOpen(true)}
+              />
             </div>
           </div>
 

@@ -775,11 +775,26 @@ de lo que ayuda.
 
 ### Cómo se reparten los filtros en la pantalla
 
-| | Dónde |
-| --- | --- |
-| El filtro principal (estado) | `FilterChips`, siempre visible, con su contador |
-| Buscar | Siempre visible, junto a las fichas |
-| El resto (pagador, concepto, fechas, orden) | `FilterSheet`, tras un botón con el número de criterios puestos |
+| | Móvil y tablet | Escritorio (`lg`+) |
+| --- | --- | --- |
+| Buscar | Siempre visible | Siempre visible, a la izquierda |
+| El filtro principal (estado) | `FilterChips`, rejilla 2×2 | Desplegable junto al buscador |
+| El resto | `FilterSheet`, tras un botón con el contador | El mismo botón, **a la derecha del todo** |
+| Por columna | — | Embudo en la cabecera, con `meta.filter` |
+
+**Por qué el estado cambia de forma con el breakpoint:** en móvil el dedo agradece un objetivo
+grande y siempre visible. Desde `lg` la lista **es** una tabla, con su propia fila de cabeceras y
+sus embudos, y una rejilla de fichas ahí compite con ellas.
+
+**El cajón de filtros cambia de eje, no de contenido:** hoja inferior en móvil (el gesto del
+pulgar) y cajón por la derecha en escritorio, donde un panel pegado al borde inferior taparía la
+tabla justo donde se está mirando el resultado. Lo resuelve `side="drawer"` de `Sheet`, que
+reutiliza `.animate-drawer` — la única forma de cambiar el eje de entrada con el breakpoint sin
+que el panel entre en diagonal.
+
+**Los filtros por columna no guardan estado propio.** Escriben en el mismo sitio que el cajón y
+que el desplegable: tres puertas, un solo dato. Si cada entrada tuviera su estado, se
+contradirían en cuanto se usaran dos.
 
 El contador del botón es lo que evita el **filtro fantasma**: sin él, una lista filtrada por algo
 que vive dentro de una hoja cerrada parece una lista vacía sin motivo.

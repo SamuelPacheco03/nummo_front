@@ -38,7 +38,12 @@ export function FilterSheetTrigger({
 }
 
 /**
- * Filtros avanzados en hoja inferior (§2.3, §44).
+ * Filtros avanzados: hoja inferior en móvil, cajón por la derecha en escritorio
+ * (§2.3, §44).
+ *
+ * El eje cambia con el breakpoint a propósito: abajo es el gesto natural del
+ * pulgar, y en una pantalla ancha un panel que ocupa el borde inferior deja la
+ * tabla tapada justo donde se está mirando el resultado.
  *
  * Lo frecuente —buscar y el estado— se queda fuera, siempre a la vista. Aquí
  * dentro va lo que se usa de vez en cuando: pagador, concepto, rango de fechas y
@@ -67,10 +72,7 @@ export function FilterSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="gap-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-      >
+      <SheetContent side="drawer" className="gap-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <SheetTitle className="pb-3 text-base">Filtros</SheetTitle>
 
         <div className="scrollbar-slim -mx-1 flex flex-col gap-4 overflow-y-auto px-1 pb-4">

@@ -16,7 +16,7 @@ function SheetContent({
   children,
   side = 'left',
   ...props
-}: ComponentProps<typeof SheetPrimitive.Content> & { side?: 'left' | 'right' | 'bottom' }) {
+}: ComponentProps<typeof SheetPrimitive.Content> & { side?: 'left' | 'right' | 'bottom' | 'drawer' }) {
   return (
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50" />
@@ -28,9 +28,18 @@ function SheetContent({
           // del sidebar. La hoja inferior es CONTENIDO —acciones, formularios— y
           // por eso usa la superficie de capa: heredar el sidebar la dejaba
           // oscura en tema claro, que es exactamente lo que no debe pasar.
-          side !== 'bottom' &&
+          side !== 'bottom' && side !== 'drawer' &&
             'bg-sidebar text-sidebar-foreground border-sidebar-border h-full w-72 max-w-[85vw]',
-          side === 'bottom' && 'bg-popover text-popover-foreground',
+          (side === 'bottom' || side === 'drawer') && 'bg-popover text-popover-foreground',
+          /*
+            `drawer`: hoja inferior en móvil y cajón por la derecha desde `sm`.
+            Reutiliza `.animate-drawer` (index.css), que es la única forma de
+            cambiar el EJE de entrada con el breakpoint — mezclar
+            `slide-in-from-bottom` con `sm:slide-in-from-right` deja las dos
+            traslaciones activas y el panel entra en diagonal.
+          */
+          side === 'drawer' &&
+            'animate-drawer inset-x-0 bottom-0 max-h-[88vh] rounded-t-xl border-t sm:inset-y-0 sm:right-0 sm:left-auto sm:h-full sm:w-[26rem] sm:max-h-none sm:max-w-[calc(100%-2rem)] sm:rounded-none sm:border-t-0 sm:border-l',
           side === 'left' &&
             'inset-y-0 left-0 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
           side === 'right' &&
