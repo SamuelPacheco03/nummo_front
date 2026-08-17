@@ -256,22 +256,54 @@ No reemplazarlos arbitrariamente por violetas, rosas, negros puros u otros color
 
 Nunca depender directamente del color físico dentro de componentes cuando puede utilizarse un token semántico.
 
-Ejemplo conceptual:
+Estos son los tokens **reales** del proyecto, declarados en `src/index.css`. Se nombran según el
+juego de shadcn/ui, que es el que consumen todos los componentes de `components/ui/`:
 
 ```css
---background
---surface
---surface-subtle
+/* Superficies */
+--background        /* fondo general de la página */
+--card              /* tarjetas y paneles */
+--popover           /* popovers, dropdowns, sheets */
+--secondary         /* superficie sutil: chips, fondos de sección */
+--muted             /* superficie apagada */
+
+/* Texto */
 --foreground
+--card-foreground
 --muted-foreground
---border
---primary
+
+/* Marca y acción */
+--primary           /* relleno de la acción principal */
+--primary-hover     /* hover explícito: la marca pide azul MÁS profundo, no más claro */
 --primary-foreground
---accent
---success
+--brand             /* enlaces, foco y estados activos */
+--accent            /* hover sutil de UI (rol shadcn), NO el teal de marca */
+
+/* Estados */
+--success           /* teal de marca: vale como RELLENO (puntos, barras) */
+--success-strong    /* la versión legible como TEXTO sobre fondo claro (AA) */
 --warning
---danger
+--destructive
+
+/* Estructura */
+--border · --input · --ring
+
+/* Gráficas */
+--chart-1 … --chart-5
+
+/* Shell */
+--sidebar · --sidebar-foreground · --sidebar-primary · --sidebar-accent · --sidebar-border · --sidebar-ring
+
+/* Isotipo — NO se re-tematizan: son la marca */
+--logo-teal · --logo-cyan · --logo-blue · --logo-indigo
 ```
+
+> Los nombres `--surface` / `--surface-subtle` / `--danger` que aparecían en versiones previas de
+> este documento **no existen**: sus equivalentes son `--card`, `--secondary` y `--destructive`.
+> Renombrarlos rompería todos los componentes de `ui/` sin ganar nada.
+
+Un token nuevo se declara en **los tres bloques** de `src/index.css`: `:root`, `.dark` y
+`@theme inline`. Un token que solo existe en claro es un bug de modo oscuro.
 
 Los componentes deben consumir tokens semánticos.
 
@@ -295,25 +327,34 @@ Esto facilita:
 
 # 4. Tema claro
 
-Base recomendada:
+Valores reales (`:root` en `src/index.css`):
 
 ```css
---background: #F8FAFC;
---surface: #FFFFFF;
---surface-subtle: #F1F5F9;
+--background: #f8fafc;   /* fondo general */
+--card: #ffffff;         /* tarjetas y paneles */
+--popover: #ffffff;
+--secondary: #f1f5f9;    /* superficie sutil */
+--muted: #f1f5f9;
 
---foreground: #0F172A;
+--foreground: #0f172a;
 --muted-foreground: #475569;
 
---border: #E2E8F0;
+--border: #e2e8f0;
+--input: #e2e8f0;
+--ring: #2563eb;
 
---primary: #2563EB;
---secondary: #4F46E5;
---accent: #14B8A6;
---accent-secondary: #22C7D6;
+--primary: #2563eb;
+--primary-hover: #1d4ed8;
+--brand: #2563eb;
+--accent: #f1f5f9;       /* hover de UI, NO el teal de marca */
+
+--success: #14b8a6;      /* relleno */
+--success-strong: #0f766e; /* texto AA sobre fondo claro */
+--warning: #f59e0b;
+--destructive: #dc2626;
 ```
 
-El fondo general debe ser ligeramente diferente al fondo de cards/paneles.
+El fondo general (`--background`) es deliberadamente distinto del de las tarjetas (`--card`).
 
 Evitar páginas completamente blancas sin separación visual.
 
@@ -321,23 +362,42 @@ Evitar páginas completamente blancas sin separación visual.
 
 # 5. Tema oscuro
 
-Base oficial:
+Valores reales (`.dark` en `src/index.css`):
 
 ```css
---background: #0B1220;
---surface: #111827;
---surface-subtle: #0F172A;
+--background: #0b1220;
+--card: #111827;
+--popover: #111827;
+--secondary: #1f2937;
+--muted: #1f2937;
 
---foreground: #F8FAFC;
---muted-foreground: #94A3B8;
+--foreground: #f8fafc;
+--muted-foreground: #94a3b8;
 
---border: #1F2937;
+--border: #1f2937;
+--input: #273244;
+--ring: #3b82f6;
 
---primary: #3B82F6;
---secondary: #6366F1;
---accent: #2DD4BF;
---accent-secondary: #22D3EE;
+--primary: #2563eb;      /* ojo: NO se aclara — ver abajo */
+--primary-hover: #1d4ed8;
+--brand: #3b82f6;
+--accent: #1f2937;
+
+--success: #14b8a6;
+--success-strong: #2dd4bf;
+--warning: #f59e0b;
+--destructive: #ef4444;
 ```
+
+## 5.1. Por qué `--primary` no se aclara en oscuro
+
+Es la pregunta que surge cada vez que alguien compara los dos temas, así que queda escrita:
+en oscuro el azul del **relleno del botón** se mantiene en `#2563EB`, porque con texto blanco
+encima da 5.2:1 (AA). El `#3B82F6` más claro se reserva a `--brand`: enlaces, foco y estados
+activos, donde el color es el que lleva el peso.
+
+Aclarar `--primary` en oscuro rompería el contraste del botón primario, que es la acción más
+usada del producto. **No cambiar sin volver a medir contraste.**
 
 El modo oscuro NO debe ser una inversión automática del claro.
 
@@ -539,7 +599,7 @@ En dashboards compactos puede utilizarse:
 
 ```text
 $18,4 M
-$820 mil
+$820 k
 ```
 
 pero solo cuando la reducción ayude a leer la interfaz.
@@ -552,6 +612,31 @@ Nunca perder precisión en:
 - detalles;
 - confirmaciones;
 - tablas contables.
+
+## 9.1. Las tres funciones de `lib/format.ts`
+
+Todo importe pasa por una de estas tres. **Ninguna se reimplementa en un componente** (§67).
+
+| Función | Salida | Cuándo |
+| --- | --- | --- |
+| `formatMoney` | `$350.000` · `$350.000,50` | **Por defecto.** KPIs, gráficas, paneles, listas de resumen |
+| `formatAmount` | `$350.000,00` | Columnas que se suman, detalles, comprobantes, confirmaciones, formularios |
+| `formatCompactAmount` | `$1,5 M` · `$900 k` | Solo ejes y etiquetas de gráficas |
+
+`formatMoney` **no pierde precisión**: imprime los centavos cuando existen y se los ahorra
+cuando no, que en COP es casi siempre. Lo que distingue a `formatAmount` no es la precisión
+sino la **alineación**: dos decimales fijos son lo que mantiene cuadrada una columna que el
+usuario va a sumar con la vista.
+
+`formatCompactAmount` sí redondea, así que solo se admite donde la cifra no se cuadra.
+
+## 9.2. Moneda
+
+COP es la moneda base y se muestra con `$` pegado a la cifra. Cualquier otra moneda se
+prefija con su **código ISO** (`USD 1.200,00`), nunca con `$`: en un producto multiempresa,
+dos "pesos" distintos con el mismo símbolo son un error de lectura esperando a ocurrir.
+
+El signo negativo va **antes** del símbolo: `-$350.000`.
 
 ---
 
@@ -591,35 +676,23 @@ No compactar excesivamente las pantallas con la intención de “mostrar más”
 
 # 11. Bordes y radios
 
-## Cards principales
+La escala sale de `--radius: 0.5rem` en `src/index.css` y se consume con las utilidades de
+Tailwind, nunca con un valor suelto:
 
-```text
-14–18 px
-```
+| Utilidad | Valor | Dónde |
+| --- | --- | --- |
+| `rounded-sm` | 4 px | detalles diminutos, esquinas internas |
+| `rounded-md` | 6 px | **inputs, botones, selects** |
+| `rounded-lg` | 8 px | **cards, paneles, tablas, contenedores de lista** |
+| `rounded-xl` | 12 px | cajón de detalle y superficies de Numi |
+| `rounded-full` | — | chips, avatares, puntos de estado |
 
-## Inputs
+Nummo es una consola densa: esquinas contenidas, superficies planas. Los 14–18 px que pedía
+una versión previa de este documento infantilizan una tarjeta de cifras y roban altura útil.
+**Aquí manda el código.**
 
-```text
-10–12 px
-```
-
-## Botones
-
-```text
-10–12 px
-```
-
-## Chips
-
-```text
-999 px
-```
-
-## Paneles especiales de Numi
-
-```text
-14–18 px
-```
+Numi puede ir un punto más redondeada (`rounded-xl` en su panel, `rounded-2xl` en el
+compositor del chat): es la diferenciación deliberada que permite §31, no una excepción libre.
 
 No usar `border-radius: 24px` en todo.
 
@@ -2558,16 +2631,17 @@ Los nombres de la izquierda son los que propone la sección 64 de este documento
 | --- | --- | --- |
 | `PageHeader` | ✅ `PageHeader` | `components/page-header.tsx` |
 | `MetricCard` | ✅ `KpiTile` | `components/kpi-tile.tsx` |
-| `StatusBadge` | ⚠️ `StatusDot` + 4 copias por feature | `components/ui/status-dot.tsx` (+ brecha 95.9) |
-| `Money` | ❌ no existe como componente | función `formatAmount` en `lib/format.ts` |
+| `StatusBadge` | ✅ `StatusBadge` (+ atajo `StatusDot`) | `components/ui/status-badge.tsx` |
+| `Money` | ✅ como función, no como componente | `formatMoney` / `formatAmount` en `lib/format.ts` (§9.1) |
 | `DateDisplay` | ❌ no existe como componente | función `formatDateHuman` en `lib/format.ts` |
 | `DataTable` | ✅ `DataList` (tabla + tarjetas apiladas) | `components/ui/data-list.tsx` |
-| `EmptyState` | ❌ no existe | texto suelto en cada pantalla (brecha 95.4) |
+| `EmptyState` | ✅ `EmptyState` + `NoResults` | `components/ui/empty-state.tsx` |
 | `NumiLoader` | ✅ `NumiLoader` | `components/ui/loader.tsx` |
 | `NumiInlineLoader` | ✅ `NumiLoader compact` / `Loader` | `components/ui/loader.tsx` |
 | `NumiPanel` | ✅ `NumiPanel` + `NumiWidget` | `features/assistant/` |
 | `ConfirmOperation` | ✅ `ConfirmDialog` | `components/ui/confirm-dialog.tsx` |
 | `AccountCard` | ❌ no existe | lista inline en `features/finances/accounts-page.tsx` |
+| — | ✅ `ErrorState` + `InlineError` | `components/ui/error-state.tsx` |
 | `QuickAction` | ❌ no existe | — (brecha 95.3) |
 
 ## 94.1. Componentes existentes que el documento no nombraba
@@ -2632,43 +2706,45 @@ explícitamente "dashboards con 20 KPIs".
 **Resolución: gana el documento**, conservando la idea buena del código (las tres lentes
 Realizado/Pendiente/Esperado) pero reducida y con jerarquía. Ver fase 4.
 
-### 95.4. Estados vacíos — **alta**
+### 95.4. Estados vacíos — ✅ **cerrada (fase 1)**
 
 El documento (§27, §75) pide un empty state que explique la funcionalidad y ofrezca el
 siguiente paso. El código muestra frases sueltas: `"Sin datos."`, `"No hay pagos con estos
 filtros."`, `"Sin cuentas."` — sin componente compartido y sin CTA.
 
-**Resolución: gana el documento.** Crear `EmptyState` y distinguir dos casos: *sin datos
-todavía* (explica + CTA) vs *sin resultados para el filtro* (ofrece limpiar filtros).
-Ver fase 1.
+**Resuelto (fase 1):** `EmptyState` y `NoResults` en `components/ui/empty-state.tsx`. Las
+listas eligen entre los dos según su propio estado de filtros; `MasterCrud` lo resuelve para
+los cuatro maestros componiendo el vacío desde el título y la descripción que ya recibía.
 
-### 95.5. Formato monetario — **media-alta**
+Los `emptyLabel` de los paneles pequeños del panel e informes se conservan a propósito: un
+`EmptyState` completo dentro de una tarjeta de 200 px estorba más de lo que ayuda.
+
+### 95.5. Formato monetario — ✅ **cerrada (fase 1)**
 
 El documento (§9) pide `$350.000`. `formatAmount` produce `COP 350.000,00`: prefijo ISO y
 siempre dos decimales, también en listados y KPIs.
 
-**Resolución: gana el documento, con matiz.** Símbolo `$` y sin decimales en listados, KPIs y
-gráficas; **precisión completa** en formularios, comprobantes, detalles y confirmaciones
-(§9 lo exige). Requiere separar `formatAmount` (preciso) de `formatMoney` (de lectura) en
-`lib/format.ts`. Ver fase 1.
+**Resuelto (fase 1):** `formatMoney` (lectura) y `formatAmount` (contable) en `lib/format.ts`,
+con el reparto documentado en §9.1. `formatMoney` no pierde precisión —imprime centavos solo
+cuando existen—, así que la diferencia real entre ambas es la alineación de columnas.
 
-### 95.6. Radios — **media**
+### 95.6. Radios — ✅ **cerrada (fase 1)**
 
 El documento (§11) pide 14–18px en cards y 10–12px en inputs y botones.
 El código usa `--radius: 0.5rem` → cards a 8px, con el comentario explícito *"consola densa:
 esquinas nítidas, superficies planas"*.
 
-**Resolución: gana el código, se corrige el documento.** Una consola financiera densa se lee
-mejor con esquinas contenidas; 16px en cada card la infantiliza. La escala oficial pasa a ser
-**cards 8–12px · inputs y botones 6–8px · chips 999px**. Actualizar §11 al cerrar la fase 1.
+**Resuelto (fase 1):** ganó el código. §11 ya documenta la escala real (`rounded-md` 6 px en
+inputs y botones, `rounded-lg` 8 px en cards, `rounded-xl` 12 px en superficies de Numi).
+No hubo cambio de código: ya era coherente.
 
-### 95.7. Escala tipográfica — **media**
+### 95.7. Escala tipográfica — ✅ **cerrada (fase 1)**
 
 §8 pide títulos de página de 28–32px en escritorio; `PageHeader` usa `text-xl sm:text-2xl`
 (20/24px).
 
-**Resolución: punto medio.** Subir a `text-2xl lg:text-3xl` (24/30px) mantiene la jerarquía
-que pide el documento sin romper la densidad. Ver fase 1.
+**Resuelto (fase 1):** `PageHeader` pasa a `text-2xl lg:text-3xl` (24/30 px), dentro del rango
+que pide §8 en ambos tamaños.
 
 ### 95.8. Command bar global — **media**
 
@@ -2678,7 +2754,7 @@ global ni entrada de acciones.
 
 **Resolución: gana el documento**, pero es la pieza más cara: se hace al final. Ver fase 6.
 
-### 95.9. `StatusPill` duplicado — **media-alta (deuda de clean code)**
+### 95.9. Indicador de estado duplicado — ✅ **cerrada (fase 1)**
 
 Hay **cuatro** implementaciones casi idénticas del mismo indicador de estado:
 
@@ -2692,32 +2768,36 @@ Peor: las páginas de **detalle importan el pill desde la página de lista**
 arrastra la lista entera al bundle del detalle. Además `TONE_DOT` está duplicado en
 `features/receivables/labels.ts` y `features/expenses/labels.ts`.
 
-**Resolución: refactor.** Un único `StatusBadge` en `components/ui/`, que recibe `tone` y
-`label`; `StatusTone` y `TONE_DOT` suben a `lib/` o a `components/ui/`. Ver fase 1.
+**Resuelto (fase 1):** al migrar aparecieron **ocho** copias, no cuatro (también en pagos, en
+`pending-dues-panel` y en la guía). Todas caen en `components/ui/status-badge.tsx`, que
+concentra `StatusTone`, el mapa de tonos, `StatusBadge` y el atajo booleano `StatusDot`
+(`status-dot.tsx` desaparece). Cada `labels.ts` expone el par tono/etiqueta de su dominio, así
+que ninguna página de detalle importa ya de su página de lista.
 
-### 95.10. Estado de error sin componente — **media**
+### 95.10. Estado de error sin componente — ✅ **cerrada (fase 1)**
 
 §45 exige estado de error en toda pantalla. Existe, pero como **bloque rojo copiado en 15
 archivos** (`border-destructive/40 bg-destructive/5 …`).
 
-**Resolución: refactor.** Un `ErrorState` compartido, hermano de `EmptyState`. Ver fase 1.
+**Resuelto (fase 1):** `ErrorState` (bloque de sección, `role="alert"`, reintento opcional) e
+`InlineError` (mensaje breve de formulario) en `components/ui/error-state.tsx`.
 
-### 95.11. Modo oscuro: `--primary` — **baja**
+### 95.11. Modo oscuro: `--primary` — ✅ **cerrada (fase 1)**
 
 §5 fija `--primary: #3B82F6` en oscuro. El código mantiene `#2563EB` para el relleno del
 botón (blanco encima da 5.2:1) y reserva `#3B82F6` para enlaces, foco y estados activos vía
 `--brand`.
 
-**Resolución: gana el código, se corrige el documento.** La decisión está razonada por
-contraste. §5 debe documentar el par `--primary` / `--brand`.
+**Resuelto (fase 1):** §5.1 documenta el par `--primary` / `--brand` y por qué el relleno del
+botón no se aclara en oscuro.
 
-### 95.12. Nomenclatura de tokens — **baja**
+### 95.12. Nomenclatura de tokens — ✅ **cerrada (fase 1)**
 
 §3.2 y §4 hablan de `--surface` y `--surface-subtle`; el código usa el juego de shadcn:
 `--card`, `--popover`, `--secondary`, `--muted`.
 
-**Resolución: gana el código, se corrige el documento.** Renombrar tokens rompería todos los
-componentes de `ui/` sin ganar nada. §3.2/§4/§5 deben listar los nombres reales.
+**Resuelto (fase 1):** §3.2, §4 y §5 listan los tokens reales, con una nota explícita de que
+`--surface` / `--surface-subtle` / `--danger` no existen.
 
 ### 95.13. Confirmación de operaciones de Numi — **media**
 
@@ -2757,28 +2837,31 @@ actualización de este documento.
 
 ---
 
-## Fase 1 — Cimientos del sistema visual
+## Fase 1 — Cimientos del sistema visual ✅ **completada**
 
 **Por qué primero:** todo lo demás se apoya aquí. Rediseñar el dashboard antes de tener
 `EmptyState` significa rediseñarlo dos veces.
 
-**Alcance**
+**Lo que se hizo**
 
-1. `lib/format.ts`: separar `formatMoney` (lectura: `$350.000`) de `formatAmount`
-   (precisión: `$350.000,00`). Documentar cuál va en cada contexto. Tests. → brecha 95.5
-2. `components/ui/status-badge.tsx`: un único `StatusBadge`. Migrar las 4 copias. Subir
-   `StatusTone` y `TONE_DOT` a un solo sitio. Borrar los exports desde páginas de lista.
-   → brecha 95.9
-3. `components/ui/empty-state.tsx`: icono + título + explicación + CTA, con variante
-   *sin resultados de filtro*. Migrar los ~15 textos sueltos. → brecha 95.4
-4. `components/ui/error-state.tsx`: sustituir el bloque rojo repetido en 15 archivos.
-   → brecha 95.10
-5. Ajustar `--radius` y `PageHeader` a la escala acordada (95.6, 95.7).
-6. Corregir en este documento §3.2, §4, §5 y §11 con los nombres y valores reales
-   (95.6, 95.11, 95.12).
+1. `lib/format.ts`: `formatMoney` (lectura) separado de `formatAmount` (contable), con `$`
+   para COP y código ISO para el resto. Ambas con tests; `formatAmount` no tenía. → 95.5
+2. `components/ui/status-badge.tsx`: `StatusBadge` único + atajo `StatusDot`. **Ocho** copias
+   eliminadas, `status-dot.tsx` borrado, y ningún detalle importa ya de su lista. → 95.9
+3. `components/ui/empty-state.tsx`: `EmptyState` y `NoResults`, aplicados en las listas según
+   su estado de filtros. → 95.4
+4. `components/ui/error-state.tsx`: `ErrorState` e `InlineError` sustituyen el bloque rojo
+   repetido en 15 archivos. → 95.10
+5. `PageHeader` a `text-2xl lg:text-3xl`. Los radios ya eran coherentes: no hubo cambio de
+   código, se corrigió el documento. → 95.6, 95.7
+6. §3.2, §4, §5, §9 y §11 reescritas con los tokens, valores y funciones reales.
+   → 95.11, 95.12
 
-**Se nota en:** todas las pantallas, sin cambiar ninguna estructura.
-**Riesgo:** bajo. **Tamaño:** mediano.
+**Verificación:** `pnpm typecheck` limpio, `pnpm lint` sin errores (solo warnings previos),
+`pnpm test` 75 en verde (19 nuevos: 10 de formato, 9 de los componentes de estado).
+
+**Pendiente que la fase 1 dejó anotado:** los dos vacíos en línea del dashboard
+(`Sin cuentas.`, `Sin movimientos.`) se atienden en la fase 4, cuando esa pantalla se rehace.
 
 ---
 
@@ -2875,7 +2958,7 @@ sitio.
 
 | Fase | Tema | Riesgo | Depende de |
 | --- | --- | --- | --- |
-| 1 | Cimientos del sistema visual | bajo | — |
+| ✅ 1 | Cimientos del sistema visual | bajo | — |
 | 2 | Navegación de escritorio | medio | 1 |
 | 3 | Experiencia móvil | medio | 1, 2 |
 | 4 | Dashboard | medio | 1, 2 |
