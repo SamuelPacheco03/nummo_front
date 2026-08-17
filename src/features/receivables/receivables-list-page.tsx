@@ -169,22 +169,35 @@ export function ReceivablesListPage() {
         column.display({
           id: 'payer',
           header: 'Pagador',
+          meta: { card: 'title' },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
                 {contactMap.get(row.original.payerContactId) ?? '—'}
               </p>
-              <p className="text-muted-foreground truncate text-xs">
+              {/* En la tarjeta el concepto va en su propia línea de contexto,
+                  así que aquí solo estorbaría: `lg:block` lo deja para la tabla. */}
+              <p className="text-muted-foreground hidden truncate text-xs lg:block">
                 {conceptMap.get(row.original.billingConceptId) ?? '—'}
               </p>
             </div>
           ),
         }),
         column.display({
+          id: 'concept',
+          header: 'Concepto',
+          meta: { hideOnTable: true, card: 'meta' },
+          cell: ({ row }) => conceptMap.get(row.original.billingConceptId) ?? 'Sin concepto',
+        }),
+        column.display({
           id: 'dueDate',
           header: 'Vence',
+          meta: { card: 'meta' },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
+              {/* «Vence» es la cabecera en la tabla; en la línea de la tarjeta,
+                  que no tiene cabeceras, la fecha sola no diría de qué. */}
+              <span className="lg:hidden">Vence </span>
               {formatDateHuman(row.original.dueDate)}
             </span>
           ),
@@ -192,12 +205,13 @@ export function ReceivablesListPage() {
         column.display({
           id: 'status',
           header: 'Estado',
+          meta: { card: 'status' },
           cell: ({ row }) => <StatusBadge {...receivableStatus(row.original.displayStatus)} />,
         }),
         column.display({
           id: 'balance',
           header: 'Saldo',
-          meta: { align: 'right' },
+          meta: { align: 'right', card: 'amount' },
           cell: ({ row }) => formatAmount(row.original.balance, row.original.currency),
         }),
         column.display({
@@ -358,6 +372,9 @@ export function ReceivablesListPage() {
             rows={items}
             getRowId={(r) => r.receivableId}
             onRowClick={(r) => navigate(`/cartera/cxc/${r.receivableId}`)}
+            // Un icono fijo mientras los conceptos de cobro no traigan el suyo:
+            // el hueco ya está, y el día que lo traigan se cambia solo esta línea.
+            rowIcon={() => ({ Icon: Coins })}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),

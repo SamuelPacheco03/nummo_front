@@ -80,13 +80,16 @@ export function PendingDuesPanel({
         column.display({
           id: 'name',
           header: nameHeader,
+          meta: { card: 'title' },
           cell: ({ row }) => <span className="truncate font-medium">{row.original.name}</span>,
         }),
         column.display({
           id: 'dueDate',
           header: 'Vence',
+          meta: { card: 'meta' },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground whitespace-nowrap">
+              <span className="lg:hidden">Vence </span>
               {formatDateHuman(row.original.dueDate)}
             </span>
           ),
@@ -94,12 +97,13 @@ export function PendingDuesPanel({
         column.display({
           id: 'status',
           header: 'Estado',
+          meta: { card: 'status' },
           cell: ({ row }) => <StatusBadge tone={row.original.tone} label={row.original.statusLabel} />,
         }),
         column.display({
           id: 'balance',
           header: 'Saldo',
-          meta: { align: 'right' },
+          meta: { align: 'right', card: 'amount' },
           cell: ({ row }) => formatAmount(row.original.balance, row.original.currency ?? currency),
         }),
       ]),

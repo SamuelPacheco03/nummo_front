@@ -825,6 +825,46 @@ igual que en escritorio.
 
 La regla que deja: **una navegación larga no se aplana en horizontal; se mete en el cajón.**
 
+## 11.1.3b. La tarjeta de una fila en móvil
+
+En escritorio todas las columnas valen lo mismo: son columnas. En una tarjeta de 360 px no, y
+durante un tiempo lo fueron — seis pares etiqueta-valor del mismo tamaño donde el nombre del
+proveedor pesaba igual que la referencia, y había que leerlos todos para saber de qué iba la fila.
+
+Ahora la tarjeta tiene forma:
+
+```
+[icono]  Nombre principal                          ›
+         dato · dato
+         ● Estado                        $1.840.000
+```
+
+Cada columna dice **qué papel tiene ahí** con `meta.card` (§94, `list-columns.ts`): `title`,
+`meta`, `status`, `amount` y `sub`. Lo que no declara papel **no desaparece**: cae a un bloque de
+pares al pie de la tarjeta, que es el formato de antes usado ya solo para lo secundario. Por eso
+una lista sin papeles declarados se sigue viendo como siempre, y se migran de una en una.
+
+Tres reglas que salieron de verlo funcionando:
+
+1. **A `meta` solo lo que siempre tiene valor.** Un «—» en una columna mantiene legible la rejilla
+   de escritorio; en la línea de contexto de la tarjeta se lee como un dato roto, y dos seguidos
+   dejan separadores sueltos («— · —»). Lo que puede venir vacío va al pie, o se compone en una
+   sola columna `hideOnTable` que une lo que hay y se calla lo que no (contactos).
+2. **Cada presentación puede ocultar lo que a la otra le sobra**: `hideOnStack` para lo que solo
+   tiene sentido en la tabla —el chevron—, `hideOnTable` para lo que solo tiene sentido en la
+   tarjeta. Y para un matiz dentro de una misma celda basta `lg:block` / `lg:hidden`: así la
+   categoría sigue bajo el nombre del proveedor en la tabla y en la tarjeta va en su línea, sin
+   duplicar la columna.
+3. **La cabecera no está en la tarjeta.** «15 jul» bajo la columna VENCE se entiende; suelto en una
+   línea, no. De ahí los prefijos que solo aparecen por debajo de `lg` («Vence 15 jul»).
+
+**El icono es de la tarjeta, no de la tabla** (`rowIcon` → `RowIconBadge`). Un icono por fila en
+una rejilla densa es ruido, y en escritorio la columna ya dice de qué categoría es. Hoy lo rellena
+cada pantalla con uno fijo, o con las iniciales cuando la fila es una persona; **está preparado
+para lo que viene**: cuando las categorías de gasto y los conceptos de cobro tengan icono y color
+propios, la lista los pasa desde la fila y la tarjeta no cambia una línea. Los tonos son
+semánticos (`neutral`, `brand`, `success`, `warning`, `destructive`), no colores sueltos.
+
 **El ancho lo pone el layout, no cada página.** Unas iban a `max-w-2xl` y otras a todo lo ancho,
 así que saltar de Empresa a Sedes cambiaba el tamaño de la columna y parecía otra pantalla. Hoy
 es un `max-w-3xl` en `SectionedLayout` y ninguna página declara el suyo: deja respirar las filas
@@ -3092,7 +3132,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
-| `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
+| `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList`, con su papel en la tarjeta |
+| `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
 | `ListToolbar` | `components/ui/list-toolbar.tsx` | La fila de controles de un listado |
@@ -3276,8 +3317,8 @@ Vale la pena dejarlo escrito para no "arreglarlo":
 - Cero `any` en el código propio ✅
 - `nums` (`tabular-nums`) aplicado a todos los importes ✅
 - `prefers-reduced-motion` respetado en todas las animaciones ✅
-- Listas: tabla densa en escritorio → tarjetas apiladas en móvil, desde un solo modelo de
-  columnas ✅
+- Listas: tabla densa en escritorio → tarjetas con jerarquía en móvil (§11.1.3b), desde un solo
+  modelo de columnas ✅
 - Esqueletos de carga en listas; `NumiLoader` reservado a esperas significativas ✅
 - Permisos aplicados en UI (`roles.ts`) antes de mostrar acciones ✅
 - Fechas en lenguaje natural con fallback exacto ✅

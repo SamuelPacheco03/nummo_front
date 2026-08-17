@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Pencil, Plus } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
@@ -12,7 +13,7 @@ import {
   FilterSortField,
   type SortChoice,
 } from '@/components/ui/filter-sheet'
-import { listColumns } from '@/components/ui/list-columns'
+import { listColumns, type CardRole } from '@/components/ui/list-columns'
 import { ListToolbar } from '@/components/ui/list-toolbar'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusDot } from '@/components/ui/status-badge'
@@ -53,6 +54,26 @@ export interface Column<T> {
   cell: (row: T) => ReactNode
   className?: string
   headClassName?: string
+  /**
+   * Qué papel tiene en la tarjeta de móvil.
+   *
+   * Lo dice el maestro y no se adivina por posición: la primera columna de un
+   * catálogo suele ser el código, que casi siempre está vacío, y un título «—»
+   * con el nombre debajo no es una tarjeta, es un error de lectura.
+   *
+   * **A `meta` solo columnas que siempre tienen valor.** Lo que puede venir
+   * vacío se deja sin papel y cae al pie de la tarjeta, donde un «—» no rompe
+   * ninguna frase.
+   */
+  card?: CardRole
+  /**
+   * Fuera de la tarjeta de móvil.
+   *
+   * Para lo que casi siempre viene vacío —el código, la descripción—: en la
+   * tabla un «—» mantiene la rejilla, pero apilar tres «—» bajo cada tarjeta es
+   * ruido con forma de dato.
+   */
+  hideOnCard?: boolean
 }
 
 /**
@@ -76,6 +97,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
   description,
   storageKey,
   canManage,
+  Icon,
   newLabel = 'Nuevo',
   searchPlaceholder = 'Buscar…',
   entity,
@@ -89,6 +111,14 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
   /** Clave de `sessionStorage` para recordar los filtros de la sesión. */
   storageKey: string
   canManage: boolean
+  /**
+   * Icono de la fila en la tarjeta de móvil.
+   *
+   * Uno por maestro mientras cada registro no traiga el suyo. Cuando conceptos
+   * de cobro y categorías de gasto tengan icono propio, esto pasa a leerse de la
+   * fila y la tarjeta no cambia.
+   */
+  Icon?: LucideIcon
   newLabel?: string
   searchPlaceholder?: string
   /** Cómo se cuenta: `['concepto', 'conceptos']`. */
@@ -147,6 +177,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
           column.display({
             id: `col-${i}`,
             header: c.header,
+            meta: { card: c.card, hideOnStack: c.hideOnCard },
             cell: ({ row }) =>
               i === 0 ? (
                 <span className="font-medium">{c.cell(row.original)}</span>
@@ -158,6 +189,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
         column.display({
           id: 'status',
           header: 'Estado',
+          meta: { card: 'status' },
           cell: ({ row }) => <StatusDot active={row.original.isActive} />,
         }),
         ...(canManage
@@ -231,6 +263,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
             columns={allColumns}
             rows={items}
             getRowId={(row) => row.id}
+            rowIcon={Icon ? () => ({ Icon }) : undefined}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),

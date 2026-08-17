@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ReceiptText } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -43,13 +44,19 @@ type Values = z.infer<typeof schema>
 const nn = (v?: string) => (v ? v : null)
 
 const COLUMNS: Column<BillingConcept>[] = [
-  { header: 'Código', cell: (r) => r.code ?? '—', className: 'nums text-muted-foreground' },
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
+  {
+    header: 'Código',
+    cell: (r) => r.code ?? '—',
+    className: 'nums text-muted-foreground',
+    hideOnCard: true,
+  },
+  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
   {
     header: 'Monto por defecto',
     cell: (r) => formatAmount(r.defaultAmount),
     className: 'nums text-right',
     headClassName: 'text-right',
+    card: 'amount',
   },
 ]
 
@@ -171,6 +178,7 @@ export function BillingConceptsPage() {
   return (
     <>
       <MasterCrud
+        Icon={ReceiptText}
         title="Conceptos de cobro"
         description="Ítems facturables: matrícula, mensualidad, etc."
         canManage={canManage}

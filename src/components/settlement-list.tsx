@@ -150,18 +150,28 @@ export function SettlementList({
     column.display({
       id: 'party',
       header: copy.party,
+      meta: { card: 'title' },
       cell: ({ row }) => (
         <div className="min-w-0">
           <p className="truncate font-medium">{contactName(row.original.contactId)}</p>
-          <p className="text-muted-foreground truncate text-xs">
+          {/* En la tarjeta el propósito va en su línea de contexto; aquí solo
+              estorbaría, así que `lg:block` lo deja para la tabla. */}
+          <p className="text-muted-foreground hidden truncate text-xs lg:block">
             {purposeLabels[row.original.purpose] ?? row.original.purpose}
           </p>
         </div>
       ),
     }),
     column.display({
+      id: 'purpose',
+      header: 'Tipo',
+      meta: { hideOnTable: true, card: 'meta' },
+      cell: ({ row }) => purposeLabels[row.original.purpose] ?? row.original.purpose,
+    }),
+    column.display({
       id: 'date',
       header: 'Fecha',
+      meta: { card: 'meta' },
       cell: ({ row }) => (
         <span className="nums text-muted-foreground">{formatDateHuman(row.original.date)}</span>
       ),
@@ -169,12 +179,13 @@ export function SettlementList({
     column.display({
       id: 'status',
       header: 'Estado',
+      meta: { card: 'status' },
       cell: ({ row }) => <StatusBadge {...statusOf(row.original.status)} />,
     }),
     column.display({
       id: 'amount',
       header: 'Monto',
-      meta: { align: 'right' },
+      meta: { align: 'right', card: 'amount' },
       cell: ({ row }) => (
         <span
           className={cn(
@@ -242,6 +253,7 @@ export function SettlementList({
             rows={items}
             getRowId={(row) => row.id}
             onRowClick={(row) => navigate(detailTo(row.id))}
+            rowIcon={() => ({ Icon: Banknote })}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? defaultSort, next[0]?.desc !== false),

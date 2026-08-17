@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeftRight } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { DataList } from '@/components/ui/data-list'
@@ -107,20 +107,30 @@ export function MovementsPage() {
         column.display({
           id: 'account',
           header: 'Cuenta',
+          meta: { card: 'title' },
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
                 {accountName.get(row.original.financialAccountId) ?? '—'}
               </p>
-              <p className="text-muted-foreground truncate text-xs">
+              {/* En la tarjeta el tipo va en su línea de contexto. */}
+              <p className="text-muted-foreground hidden truncate text-xs lg:block">
                 {MOVEMENT_TYPE_LABELS[row.original.movementType] ?? row.original.movementType}
               </p>
             </div>
           ),
         }),
         column.display({
+          id: 'movementType',
+          header: 'Tipo',
+          meta: { hideOnTable: true, card: 'meta' },
+          cell: ({ row }) =>
+            MOVEMENT_TYPE_LABELS[row.original.movementType] ?? row.original.movementType,
+        }),
+        column.display({
           id: 'occurredAt',
           header: 'Fecha',
+          meta: { card: 'meta' },
           cell: ({ row }) => (
             <span className="nums text-muted-foreground">
               {formatDateHuman(row.original.occurredAt)}
@@ -130,7 +140,7 @@ export function MovementsPage() {
         column.display({
           id: 'amount',
           header: 'Monto',
-          meta: { align: 'right' },
+          meta: { align: 'right', card: 'amount' },
           cell: ({ row }) => (
             <span
               className={cn(
@@ -179,6 +189,12 @@ export function MovementsPage() {
             columns={columns}
             rows={items}
             getRowId={(m) => m.id}
+            // Entra o sale: el tono ya lo dice el signo del monto, así que aquí
+            // basta con la dirección.
+            rowIcon={(m) => ({
+              Icon: m.direction === 'IN' ? ArrowDownLeft : ArrowUpRight,
+              tone: m.direction === 'IN' ? 'success' : 'destructive',
+            })}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, next[0]?.desc !== false),

@@ -19,7 +19,7 @@ import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts } from '@/features/organizations/roles'
-import { plural } from '@/lib/format'
+import { initials, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { useListFilters } from '@/lib/use-list-filters'
 import type {
@@ -75,9 +75,14 @@ const columns = column.columns([
   column.display({
     id: 'name',
     header: 'Nombre',
+    meta: { card: 'title' },
     cell: ({ row }) => (
       <div className="flex min-w-0 items-center gap-2">
-        <ContactIcon contact={row.original} />
+        {/* En la tarjeta el icono ya está a la izquierda, con las iniciales:
+            aquí sería el mismo dato dos veces. */}
+        <span className="hidden lg:inline-flex">
+          <ContactIcon contact={row.original} />
+        </span>
         <span className="truncate font-medium">{row.original.displayName}</span>
       </div>
     ),
@@ -85,6 +90,7 @@ const columns = column.columns([
   column.display({
     id: 'document',
     header: 'Documento',
+    meta: { hideOnStack: true },
     cell: ({ row }) => (
       <span className="nums text-muted-foreground">{documentText(row.original)}</span>
     ),
@@ -92,11 +98,28 @@ const columns = column.columns([
   column.display({
     id: 'contact',
     header: 'Contacto',
+    meta: { hideOnStack: true },
     cell: ({ row }) => <span className="text-muted-foreground">{contactText(row.original)}</span>,
+  }),
+  /*
+    En la tabla, documento y contacto son dos columnas y un «—» mantiene la
+    rejilla legible. En la línea de la tarjeta ese mismo «—» se lee como un dato
+    que no existe: aquí se unen y lo vacío se cae, así que un contacto sin
+    documento no arrastra un guion ni un separador suelto.
+  */
+  column.display({
+    id: 'summary',
+    header: 'Contacto',
+    meta: { hideOnTable: true, card: 'meta' },
+    cell: ({ row }) =>
+      [documentText(row.original), contactText(row.original)]
+        .filter((part) => part && part !== '—')
+        .join(' · ') || 'Sin datos de contacto',
   }),
   column.display({
     id: 'status',
     header: 'Estado',
+    meta: { card: 'status' },
     cell: ({ row }) => <StatusDot active={row.original.isActive} inactiveLabel="Archivado" />,
   }),
   column.display({
@@ -197,6 +220,8 @@ export function ContactsListPage() {
             rows={contacts}
             getRowId={(c) => c.id}
             onRowClick={(c) => navigate(`/contactos/${c.id}`)}
+            // Una persona se reconoce por su nombre, no por un icono de persona.
+            rowIcon={(c) => ({ initials: initials(c.displayName), shape: 'round' })}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),

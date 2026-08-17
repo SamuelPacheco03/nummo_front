@@ -136,16 +136,28 @@ export function RecurringList({
     column.display({
       id: 'party',
       header: copy.party,
+      meta: { card: 'title' },
       cell: ({ row }) => (
         <div className="min-w-0">
           <p className="truncate font-medium">{contactName(row.original.contactId)}</p>
-          <p className="text-muted-foreground truncate text-xs">{row.original.subtitle}</p>
+          {/* En la tarjeta el subtítulo va en su línea de contexto; `lg:block`
+              lo deja solo para la tabla. */}
+          <p className="text-muted-foreground hidden truncate text-xs lg:block">
+            {row.original.subtitle}
+          </p>
         </div>
       ),
     }),
     column.display({
+      id: 'subtitle',
+      header: 'Concepto',
+      meta: { hideOnTable: true, card: 'meta' },
+      cell: ({ row }) => row.original.subtitle,
+    }),
+    column.display({
       id: 'recurrence',
       header: 'Recurrencia',
+      meta: { card: 'meta' },
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {recurrenceLabels[row.original.recurrenceType] ?? row.original.recurrenceType} · día{' '}
@@ -156,12 +168,13 @@ export function RecurringList({
     column.display({
       id: 'status',
       header: 'Estado',
+      meta: { card: 'status' },
       cell: ({ row }) => <StatusBadge {...statusOf(row.original.status)} />,
     }),
     column.display({
       id: 'amount',
       header: 'Monto',
-      meta: { align: 'right' },
+      meta: { align: 'right', card: 'amount' },
       cell: ({ row }) => formatAmount(row.original.agreedAmount, row.original.currency),
     }),
     column.display({
@@ -224,6 +237,7 @@ export function RecurringList({
             rows={items}
             getRowId={(row) => row.id}
             onRowClick={(row) => navigate(detailTo(row.id))}
+            rowIcon={() => ({ Icon: FileText })}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, next[0]?.desc !== false),

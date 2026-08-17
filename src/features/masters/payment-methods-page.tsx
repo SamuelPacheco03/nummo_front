@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CreditCard } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -33,8 +34,12 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 const COLUMNS: Column<PaymentMethod>[] = [
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
-  { header: 'Tipo', cell: (r) => METHOD_TYPE_LABELS[r.methodType] ?? r.methodType },
+  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  {
+    header: 'Tipo',
+    cell: (r) => METHOD_TYPE_LABELS[r.methodType] ?? r.methodType,
+    card: 'meta',
+  },
 ]
 
 function MethodDialog({
@@ -142,6 +147,7 @@ export function PaymentMethodsPage() {
   return (
     <>
       <MasterCrud
+        Icon={CreditCard}
         title="Métodos de pago"
         description="Formas en que la organización recibe o realiza pagos."
         canManage={canManage}

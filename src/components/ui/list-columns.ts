@@ -15,6 +15,29 @@ export function listColumns<TData extends RowData>() {
 }
 
 /**
+ * Papel de una columna **dentro de la tarjeta de móvil**.
+ *
+ * En escritorio todas las columnas valen lo mismo: son columnas. En una tarjeta
+ * de 360 px no —hay un nombre, un par de datos de contexto, un estado y una
+ * cifra—, y sin decir cuál es cuál se acaba pintando seis filas etiqueta-valor
+ * del mismo tamaño donde el nombre del proveedor pesa igual que la referencia.
+ *
+ * Una columna sin papel **no desaparece**: cae al bloque secundario, al pie de la
+ * tarjeta. Por eso una lista que no declare ninguno se sigue viendo como siempre.
+ */
+export type CardRole =
+  /** El nombre. Es lo que convierte el apilado en tarjeta: sin él no hay tarjeta. */
+  | 'title'
+  /** Contexto bajo el título, unido por `·`: categoría, fecha, tipo. */
+  | 'meta'
+  /** La insignia de estado, sola a la izquierda del pie. */
+  | 'status'
+  /** La cifra protagonista, a la derecha. */
+  | 'amount'
+  /** La cifra pequeña bajo la protagonista: casi siempre el saldo. */
+  | 'sub'
+
+/**
  * Pistas de presentación que viajan con la columna. Son lo que permite que un
  * único modelo de columnas dibuje la rejilla de escritorio y el apilado de
  * móvil sin duplicar la definición en dos sitios.
@@ -24,8 +47,20 @@ interface ListColumnMeta {
   label?: string
   /** Alineación del valor. Los importes van a la derecha. */
   align?: 'right'
-  /** Fuera del apilado de móvil: chevrons y adornos que ahí no aportan. */
+  /** Fuera de la tarjeta de móvil: chevrons y adornos que ahí no aportan. */
   hideOnStack?: boolean
+  /**
+   * Fuera de la tabla de escritorio.
+   *
+   * El simétrico de `hideOnStack`, y hace falta por lo mismo: la tarjeta y la
+   * tabla son dos presentaciones del mismo dato, y cada una puede necesitar algo
+   * que a la otra le sobra. La categoría de un gasto es contexto en la línea de
+   * la tarjeta, pero en escritorio ya va bajo el nombre del proveedor; repetirla
+   * en su propia columna sería decir lo mismo dos veces.
+   */
+  hideOnTable?: boolean
+  /** Qué es esta columna en la tarjeta de móvil. */
+  card?: CardRole
 }
 
 declare module '@tanstack/react-table' {

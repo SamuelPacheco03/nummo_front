@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Tags } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -43,13 +44,24 @@ const SCOPE_LABELS: Record<Values['scope'], string> = {
 const nn = (v?: string) => (v ? v : null)
 
 const COLUMNS: Column<ExpenseCategory>[] = [
-  { header: 'Código', cell: (r) => r.code ?? '—', className: 'nums text-muted-foreground' },
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
-  { header: 'Ámbito', cell: (r) => SCOPE_LABELS[r.scope] ?? r.scope, className: 'text-muted-foreground' },
+  {
+    header: 'Código',
+    cell: (r) => r.code ?? '—',
+    className: 'nums text-muted-foreground',
+    hideOnCard: true,
+  },
+  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  {
+    header: 'Ámbito',
+    cell: (r) => SCOPE_LABELS[r.scope] ?? r.scope,
+    className: 'text-muted-foreground',
+    card: 'meta',
+  },
   {
     header: 'Descripción',
     cell: (r) => r.description ?? '—',
     className: 'max-w-xs truncate text-muted-foreground',
+    hideOnCard: true,
   },
 ]
 
@@ -170,6 +182,7 @@ export function ExpenseCategoriesPage() {
   return (
     <>
       <MasterCrud
+        Icon={Tags}
         title="Categorías de gasto"
         description="Clasifica los egresos de la organización."
         canManage={canManage}

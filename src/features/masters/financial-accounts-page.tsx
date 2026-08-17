@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Wallet } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -198,14 +199,19 @@ export function FinancialAccountsPage() {
   */
   const columns: Column<FinancialAccount>[] = useMemo(
     () => [
-      { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
-      { header: 'Tipo', cell: (r) => ACCOUNT_TYPE_LABELS[r.accountType] ?? r.accountType },
-      { header: 'Moneda', cell: (r) => r.currency, className: 'nums' },
+      { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+      {
+        header: 'Tipo',
+        cell: (r) => ACCOUNT_TYPE_LABELS[r.accountType] ?? r.accountType,
+        card: 'meta',
+      },
+      { header: 'Moneda', cell: (r) => r.currency, className: 'nums', card: 'meta' },
       {
         header: 'Saldo inicial',
         cell: (r) => formatAmount(r.openingBalance, r.currency),
         className: 'nums text-right',
         headClassName: 'text-right',
+        card: 'amount',
       },
       { header: 'Sede', cell: (r) => branchName(r.branchId), className: 'text-muted-foreground' },
     ],
@@ -215,6 +221,7 @@ export function FinancialAccountsPage() {
   return (
     <>
       <MasterCrud
+        Icon={Wallet}
         title="Cuentas"
         description="Caja, bancos y billeteras. Los saldos reales se calculan desde los movimientos."
         canManage={canManage}

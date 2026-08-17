@@ -19,6 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { listFeatures, type ListFeatures } from '@/components/ui/list-columns'
+import { RowIconBadge, type RowIcon } from '@/components/ui/row-icon'
 import { cn } from '@/lib/utils'
 
 
@@ -54,6 +55,13 @@ interface DataListProps<TData extends RowData> {
   }
   /** Filtros propios de la lista, a la derecha de la barra. */
   filters?: ReactNode
+  /**
+   * Qué pinta cada fila en el hueco de la izquierda de su **tarjeta de móvil**.
+   *
+   * No existe en escritorio: la tabla ya tiene una columna para eso y un icono
+   * por fila en una rejilla densa es ruido. Ver `RowIcon`.
+   */
+  rowIcon?: (row: TData) => RowIcon | undefined
   className?: string
 }
 
@@ -80,6 +88,7 @@ export function DataList<TData extends RowData>({
   search,
   sort,
   filters,
+  rowIcon,
   className,
 }: DataListProps<TData>) {
   const table = useTable({
@@ -97,7 +106,7 @@ export function DataList<TData extends RowData>({
       : undefined,
   })
 
-  const visible = table.getAllLeafColumns()
+  const visible = table.getAllLeafColumns().filter((c) => !c.columnDef.meta?.hideOnTable)
 
   const isEmpty = !isLoading && rows.length === 0
   const activeSort = sort?.value[0]
@@ -207,16 +216,20 @@ export function DataList<TData extends RowData>({
                   className={onRowClick ? 'cursor-pointer' : undefined}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 >
-                  {row.getAllCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        cell.column.columnDef.meta?.align === 'right' && 'nums text-right font-medium',
-                      )}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row
+                    .getAllCells()
+                    .filter((cell) => !cell.column.columnDef.meta?.hideOnTable)
+                    .map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          cell.column.columnDef.meta?.align === 'right' &&
+                            'nums text-right font-medium',
+                        )}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
                 </TableRow>
               ))
             )}
@@ -224,7 +237,7 @@ export function DataList<TData extends RowData>({
         </Table>
       </div>
 
-      {/* Móvil y tablet: cada fila es una tarjeta apilada. */}
+      {/* Móvil y tablet: cada fila es una tarjeta. */}
       <div className="space-y-2 lg:hidden">
         {isLoading ? (
           Array.from({ length: Math.min(skeletonRows, 5) }).map((_, i) => (
@@ -236,32 +249,104 @@ export function DataList<TData extends RowData>({
           </p>
         ) : (
           table.getRowModel().rows.map((row) => {
-            const stack = (
+            const cells = row
+              .getAllCells()
+              .filter((cell) => !cell.column.columnDef.meta?.hideOnStack)
+            const roleOf = (cell: (typeof cells)[number]) => cell.column.columnDef.meta?.card
+            const render = (cell: (typeof cells)[number]) =>
+              flexRender(cell.column.columnDef.cell, cell.getContext())
+
+            const title = cells.find((c) => roleOf(c) === 'title')
+            const metas = cells.filter((c) => roleOf(c) === 'meta')
+            const status = cells.filter((c) => roleOf(c) === 'status')
+            const amount = cells.find((c) => roleOf(c) === 'amount')
+            const sub = cells.find((c) => roleOf(c) === 'sub')
+            /* Sin papel no es «sin sitio»: van al pie, como pares etiqueta-valor. */
+            const rest = cells.filter((c) => !roleOf(c))
+
+            const pairs = (list: typeof cells) => (
               <dl className="space-y-1.5">
-                {row
-                  .getAllCells()
-                  .filter((cell) => !cell.column.columnDef.meta?.hideOnStack)
-                  .map((cell) => {
-                    const meta = cell.column.columnDef.meta
-                    const header = cell.column.columnDef.header
-                    return (
-                      <div key={cell.id} className="flex items-baseline justify-between gap-3">
-                        <dt className="text-muted-foreground shrink-0 text-xs">
-                          {meta?.label ?? (typeof header === 'string' ? header : '')}
-                        </dt>
-                        <dd
-                          className={cn(
-                            'min-w-0 text-right text-sm',
-                            meta?.align === 'right' && 'nums font-medium',
-                          )}
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </dd>
-                      </div>
-                    )
-                  })}
+                {list.map((cell) => {
+                  const meta = cell.column.columnDef.meta
+                  const header = cell.column.columnDef.header
+                  return (
+                    <div key={cell.id} className="flex items-baseline justify-between gap-3">
+                      <dt className="text-muted-foreground shrink-0 text-xs">
+                        {meta?.label ?? (typeof header === 'string' ? header : '')}
+                      </dt>
+                      <dd
+                        className={cn(
+                          'min-w-0 text-right text-sm',
+                          meta?.align === 'right' && 'nums font-medium',
+                        )}
+                      >
+                        {render(cell)}
+                      </dd>
+                    </div>
+                  )
+                })}
               </dl>
             )
+
+            const icon = rowIcon?.(row.original)
+
+            /*
+              Sin columna `title` no hay tarjeta que armar, así que se cae al
+              apilado de siempre. Es lo que permite migrar las listas de una en
+              una sin que ninguna se rompa por el camino.
+            */
+            const body = !title ? (
+              pairs(cells)
+            ) : (
+              <div className="flex items-start gap-3">
+                {icon && <RowIconBadge {...icon} />}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-2">
+                    <span className="min-w-0 flex-1 truncate font-medium">{render(title)}</span>
+                    {onRowClick && (
+                      <ChevronRight
+                        aria-hidden
+                        className="text-muted-foreground mt-1 size-4 shrink-0"
+                      />
+                    )}
+                  </div>
+
+                  {metas.length > 0 && (
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                      {metas.map((cell, i) => (
+                        <span key={cell.id}>
+                          {i > 0 && <span className="px-1">·</span>}
+                          {render(cell)}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+
+                  {(status.length > 0 || amount) && (
+                    <div className="mt-2 flex items-end justify-between gap-3">
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        {status.map((cell) => (
+                          <span key={cell.id}>{render(cell)}</span>
+                        ))}
+                      </div>
+                      {amount && (
+                        <div className="shrink-0 text-right">
+                          <div className="nums text-base leading-tight font-semibold tracking-tight">
+                            {render(amount)}
+                          </div>
+                          {sub && (
+                            <div className="text-muted-foreground nums text-xs">{render(sub)}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {rest.length > 0 && <div className="mt-2.5 border-t pt-2.5">{pairs(rest)}</div>}
+                </div>
+              </div>
+            )
+
             return onRowClick ? (
               <button
                 key={row.id}
@@ -269,11 +354,11 @@ export function DataList<TData extends RowData>({
                 onClick={() => onRowClick(row.original)}
                 className="bg-card hover:bg-muted/50 focus-visible:ring-ring/50 block w-full rounded-lg border p-3 text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
               >
-                {stack}
+                {body}
               </button>
             ) : (
               <div key={row.id} className="bg-card rounded-lg border p-3">
-                {stack}
+                {body}
               </div>
             )
           })

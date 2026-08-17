@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Percent } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -61,8 +62,12 @@ type Values = z.infer<typeof schema>
 const nn = (v?: string) => (v ? v : null)
 
 const COLUMNS: Column<InterestPolicy>[] = [
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium' },
-  { header: 'Método', cell: (r) => CALC_METHOD_LABELS[r.calculationMethod] ?? r.calculationMethod },
+  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  {
+    header: 'Método',
+    cell: (r) => CALC_METHOD_LABELS[r.calculationMethod] ?? r.calculationMethod,
+    card: 'meta',
+  },
   { header: 'Tasa', cell: (r) => r.rateValue, className: 'nums text-right', headClassName: 'text-right' },
   {
     header: 'Gracia',
@@ -238,6 +243,7 @@ export function InterestPoliciesPage() {
   return (
     <>
       <MasterCrud
+        Icon={Percent}
         title="Políticas de interés"
         description="Reglas de mora aplicables a los acuerdos."
         canManage={canManage}
