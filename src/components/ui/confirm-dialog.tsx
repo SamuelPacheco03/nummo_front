@@ -1,5 +1,5 @@
-import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import {
   Dialog,
   DialogContent,
@@ -47,7 +47,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading && <Loader2 className="size-4 animate-spin" />}
+            {loading && <Loader size="sm" />}
             {confirmLabel}
           </Button>
         </DialogFooter>
