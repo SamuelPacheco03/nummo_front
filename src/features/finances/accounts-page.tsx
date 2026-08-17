@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeftRight } from 'lucide-react'
+import { Link } from 'react-router'
+import { ArrowLeftRight, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { DataList, listColumns } from '@/components/ui/data-list'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { TransferDialog } from './transfer-dialog'
@@ -82,9 +84,7 @@ export function AccountsPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudieron cargar los saldos.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar los saldos." />
       ) : (
         <DataList
           columns={columns}
@@ -92,7 +92,18 @@ export function AccountsPage() {
           getRowId={(b) => b.accountId}
           isLoading={isPending}
           skeletonRows={4}
-          emptyText="No hay cuentas. Créalas en Maestros → Cuentas."
+          emptyText={
+            <EmptyState
+              Icon={Wallet}
+              title="Todavía no tienes cuentas"
+              description="Las cuentas son donde vive tu dinero: caja, bancos, billeteras. Cada pago y cada egreso mueve el saldo de una."
+              action={
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/maestros/cuentas">Crear cuentas</Link>
+                </Button>
+              }
+            />
+          }
         />
       )}
 

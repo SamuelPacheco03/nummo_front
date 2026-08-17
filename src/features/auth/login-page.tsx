@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { InlineError } from '@/components/ui/error-state'
 import { getErrorMessage } from '@/lib/errors'
 import { AuthLayout } from './auth-layout'
 import { useAuth, useLogin } from './hooks'
@@ -107,9 +108,7 @@ export function LoginPage() {
         </Field>
 
         {login.isError && (
-          <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {getErrorMessage(login.error, 'Credenciales inválidas')}
-          </p>
+          <InlineError>{getErrorMessage(login.error, 'Credenciales inválidas')}</InlineError>
         )}
 
         <Button type="submit" className="w-full" disabled={busy}>

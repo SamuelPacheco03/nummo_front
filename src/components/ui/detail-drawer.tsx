@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { InlineError } from '@/components/ui/error-state'
 import { cn } from '@/lib/utils'
 
 /**
@@ -121,9 +122,7 @@ export function DetailDrawer({
                 <Skeleton className="h-32 w-full" />
               </>
             ) : error ? (
-              <p className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border p-4 text-sm">
-                {error}
-              </p>
+              <InlineError>{error}</InlineError>
             ) : (
               children
             )}

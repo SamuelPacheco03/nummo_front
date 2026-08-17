@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { InlineError } from '@/components/ui/error-state'
 import { getErrorMessage } from '@/lib/errors'
 import { AuthLayout } from './auth-layout'
 import { useAuth, useRegister } from './hooks'
@@ -105,9 +106,7 @@ export function RegisterPage() {
         </Field>
 
         {signup.isError && (
-          <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {getErrorMessage(signup.error, 'No se pudo crear la cuenta')}
-          </p>
+          <InlineError>{getErrorMessage(signup.error, 'No se pudo crear la cuenta')}</InlineError>
         )}
 
         <Button type="submit" className="w-full" disabled={busy}>

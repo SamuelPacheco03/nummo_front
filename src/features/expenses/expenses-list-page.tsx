@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Coins, Plus, RefreshCw } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -11,6 +11,8 @@ import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -134,6 +136,13 @@ export function ExpensesListPage() {
     }
   }
 
+  const hasFilters = Boolean(q) || status !== '' || supplierId !== null
+  const clearFilters = () => {
+    setSearch('')
+    setStatus('')
+    setSupplierId(null)
+  }
+
   return (
     <div>
       <PageHeader title="Cuentas por pagar" description="Gastos y obligaciones con proveedores.">
@@ -152,9 +161,7 @@ export function ExpensesListPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudieron cargar los gastos.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar los gastos." />
       ) : (
         <>
           <DataList
@@ -163,7 +170,17 @@ export function ExpensesListPage() {
             getRowId={(e) => e.expenseId}
             onRowClick={(e) => navigate(`/gastos/cxp/${e.expenseId}`)}
             isLoading={isPending}
-            emptyText="No hay gastos con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="gastos" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={Coins}
+                  title="Todavía no tienes cuentas por pagar"
+                  description="Aquí verás lo que debes a tus proveedores, con su vencimiento y su saldo."
+                />
+              )
+            }
             search={{ value: search, onChange: setSearch, placeholder: 'Buscar por proveedor…' }}
             sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
             filters={

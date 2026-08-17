@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SortingState } from '@tanstack/react-table'
 import { Link, Outlet, useNavigate } from 'react-router'
-import { Building2, Plus, User } from 'lucide-react'
+import { Building2, Plus, User, Users } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusDot } from '@/components/ui/status-badge'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type {
   Contact,
@@ -111,6 +112,13 @@ export function ContactsListPage() {
     [],
   )
 
+  const hasFilters = Boolean(q) || contactType !== '' || active !== 'true'
+  const clearFilters = () => {
+    setSearch('')
+    setContactType('')
+    setActive('true')
+  }
+
   return (
     <div>
       <PageHeader title="Contactos" description="Personas y empresas de la organización.">
@@ -125,9 +133,7 @@ export function ContactsListPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border p-4 text-sm">
-          {getErrorMessage(error, 'No se pudieron cargar los contactos.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar los contactos." />
       ) : (
         <>
           <DataList
@@ -136,7 +142,25 @@ export function ContactsListPage() {
             getRowId={(c) => c.id}
             onRowClick={(c) => navigate(`/contactos/${c.id}`)}
             isLoading={isPending}
-            emptyText="No hay contactos con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="contactos" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={Users}
+                  title="Todavía no tienes contactos"
+                  description="Los contactos son las personas y empresas con las que tienes movimientos: quienes te pagan y quienes te cobran."
+                  action={
+                    canEdit && (
+                      <Button size="sm" onClick={() => navigate('/contactos/nuevo')}>
+                        <Plus className="size-4" />
+                        Nuevo contacto
+                      </Button>
+                    )
+                  }
+                />
+              )
+            }
             search={{
               value: search,
               onChange: setSearch,

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeftRight } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns } from '@/components/ui/data-list'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
@@ -106,14 +108,20 @@ export function MovementsPage() {
     [accountName],
   )
 
+  const hasFilters = Boolean(q) || accountId !== '' || direction !== '' || movementType !== ''
+  const clearFilters = () => {
+    setSearch('')
+    setAccountId('')
+    setDirection('')
+    setMovementType('')
+  }
+
   return (
     <div>
       <PageHeader title="Movimientos" description="Libro de todos los movimientos de caja." />
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudieron cargar los movimientos.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar los movimientos." />
       ) : (
         <>
           <DataList
@@ -121,7 +129,17 @@ export function MovementsPage() {
             rows={items}
             getRowId={(m) => m.id}
             isLoading={isPending}
-            emptyText="No hay movimientos con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="movimientos" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={ArrowLeftRight}
+                  title="Todavía no hay movimientos"
+                  description="Cada pago, egreso o transferencia que registres aparecerá aquí, con su efecto en la cuenta."
+                />
+              )
+            }
             search={{
               value: search,
               onChange: setSearch,

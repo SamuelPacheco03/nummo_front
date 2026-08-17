@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns } from '@/components/ui/data-list'
 import { StatusDot } from '@/components/ui/status-badge'
-import { getErrorMessage } from '@/lib/errors'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type { MasterParams } from './hooks'
 
@@ -136,6 +137,12 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
     [columns.length, canManage],
   )
 
+  const hasFilters = Boolean(state.search) || state.active !== 'true'
+  const clearFilters = () => {
+    state.setSearch('')
+    state.setActive('true')
+  }
+
   return (
     <div>
       <PageHeader title={title} description={description}>
@@ -148,9 +155,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
       </PageHeader>
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudo cargar la información.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudo cargar la información." />
       ) : (
         <>
           <DataList
@@ -159,7 +164,24 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
             getRowId={(row) => row.id}
             isLoading={isPending}
             skeletonRows={6}
-            emptyText="No hay registros con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity={title.toLowerCase()} onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  title={`Todavía no tienes ${title.toLowerCase()}`}
+                  description={description}
+                  action={
+                    canManage && (
+                      <Button size="sm" onClick={onNew}>
+                        <Plus className="size-4" />
+                        {newLabel}
+                      </Button>
+                    )
+                  }
+                />
+              )
+            }
             search={{ value: state.search, onChange: state.setSearch, placeholder: searchPlaceholder }}
             sort={{ value: state.sorting, onChange: state.setSorting, options: SORT_OPTIONS }}
             filters={

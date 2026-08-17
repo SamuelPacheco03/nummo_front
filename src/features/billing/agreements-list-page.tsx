@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
-import { Plus } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useContacts } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type {
@@ -115,6 +116,12 @@ export function AgreementsListPage() {
     [contactMap, conceptMap],
   )
 
+  const hasFilters = Boolean(q) || status !== ''
+  const clearFilters = () => {
+    setSearch('')
+    setStatus('')
+  }
+
   return (
     <div>
       <PageHeader title="Acuerdos" description="Cobros recurrentes por concepto y pagador.">
@@ -129,9 +136,7 @@ export function AgreementsListPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudieron cargar los acuerdos.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar los acuerdos." />
       ) : (
         <>
           <DataList
@@ -140,7 +145,17 @@ export function AgreementsListPage() {
             getRowId={(a) => a.id}
             onRowClick={(a) => navigate(`/cartera/acuerdos/${a.id}`)}
             isLoading={isPending}
-            emptyText="No hay acuerdos con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="acuerdos" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={FileText}
+                  title="Todavía no tienes acuerdos"
+                  description="Un acuerdo es una plantilla de cobro recurrente: Nummo genera solo la cuenta por cobrar de cada período."
+                />
+              )
+            }
             search={{ value: search, onChange: setSearch, placeholder: 'Buscar acuerdo…' }}
             sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
             filters={

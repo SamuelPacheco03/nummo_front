@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
-import { Plus } from 'lucide-react'
+import { Banknote, Plus } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useContacts } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
@@ -126,6 +127,14 @@ export function DisbursementsListPage() {
     ])
   }, [contactMap])
 
+  const hasFilters = Boolean(q) || supplierId !== null || status !== '' || purpose !== ''
+  const clearFilters = () => {
+    setSearch('')
+    setSupplierId(null)
+    setStatus('')
+    setPurpose('')
+  }
+
   return (
     <div>
       <PageHeader title="Egresos" description="Salidas de dinero y su aplicación a los gastos.">
@@ -140,9 +149,7 @@ export function DisbursementsListPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border p-4 text-sm">
-          {getErrorMessage(error, 'No se pudieron cargar los egresos.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar los egresos." />
       ) : (
         <>
           <DataList
@@ -151,7 +158,17 @@ export function DisbursementsListPage() {
             getRowId={(d) => d.id}
             onRowClick={(d) => navigate(`/gastos/egresos/${d.id}`)}
             isLoading={isPending}
-            emptyText="No hay egresos con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="egresos" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={Banknote}
+                  title="Todavía no has registrado egresos"
+                  description="Un egreso es dinero que sale: el pago de un gasto, un anticipo a un proveedor o un gasto directo."
+                />
+              )
+            }
             search={{
               value: search,
               onChange: setSearch,

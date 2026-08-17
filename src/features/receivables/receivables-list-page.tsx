@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Percent, Plus, RefreshCw } from 'lucide-react'
+import { Coins, Percent, Plus, RefreshCw } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -11,6 +11,8 @@ import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useContacts } from '@/features/contacts/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -146,6 +148,13 @@ export function ReceivablesListPage() {
     }
   }
 
+  const hasFilters = Boolean(q) || status !== '' || payerId !== null
+  const clearFilters = () => {
+    setSearch('')
+    setStatus('')
+    setPayerId(null)
+  }
+
   return (
     <div>
       <PageHeader title="Cuentas por cobrar" description="Obligaciones de los pagadores.">
@@ -170,9 +179,7 @@ export function ReceivablesListPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudieron cargar las cuentas por cobrar.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar las cuentas por cobrar." />
       ) : (
         <>
           <DataList
@@ -181,7 +188,25 @@ export function ReceivablesListPage() {
             getRowId={(r) => r.receivableId}
             onRowClick={(r) => navigate(`/cartera/cxc/${r.receivableId}`)}
             isLoading={isPending}
-            emptyText="No hay cuentas por cobrar con estos filtros."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="cuentas por cobrar" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={Coins}
+                  title="Todavía no tienes cuentas por cobrar"
+                  description="Aquí verás lo que te deben. Créalas una a una, o define un acuerdo para que Nummo las genere solas cada período."
+                  action={
+                    canCreate && (
+                      <Button size="sm" onClick={() => setCreateOpen(true)}>
+                        <Plus className="size-4" />
+                        Nueva cuenta
+                      </Button>
+                    )
+                  }
+                />
+              )
+            }
             search={{ value: search, onChange: setSearch, placeholder: 'Buscar por pagador…' }}
             sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
             filters={

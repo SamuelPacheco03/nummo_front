@@ -1,17 +1,18 @@
 import { useMemo } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
-import { Plus } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useMasterListState } from '@/features/masters/master-crud'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
 import { formatAmount } from '@/lib/format'
 import { RECURRENCE_LABELS, scheduleStatus } from './labels'
 import type { ExpenseSchedule } from '@/api/generated/model'
@@ -92,6 +93,12 @@ export function SchedulesListPage() {
     [contactMap, categoryMap],
   )
 
+  const hasFilters = Boolean(state.search) || state.active !== 'true'
+  const clearFilters = () => {
+    state.setSearch('')
+    state.setActive('true')
+  }
+
   return (
     <div>
       <PageHeader title="Gastos recurrentes" description="Pagos periódicos a proveedores por categoría.">
@@ -106,9 +113,7 @@ export function SchedulesListPage() {
       </PageHeader>
 
       {isError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {getErrorMessage(error, 'No se pudieron cargar.')}
-        </div>
+        <ErrorState error={error} fallback="No se pudieron cargar." />
       ) : (
         <>
           <DataList
@@ -118,7 +123,25 @@ export function SchedulesListPage() {
             onRowClick={(s) => navigate(`/gastos/recurrentes/${s.id}`)}
             isLoading={isPending}
             skeletonRows={6}
-            emptyText="No hay gastos recurrentes."
+            emptyText={
+              hasFilters ? (
+                <NoResults entity="gastos recurrentes" onClear={clearFilters} />
+              ) : (
+                <EmptyState
+                  Icon={FileText}
+                  title="Todavía no tienes gastos recurrentes"
+                  description="Crea uno para que Nummo genere solo la cuenta por pagar de cada período: arriendo, servicios, nómina…"
+                  action={
+                    canManage && (
+                      <Button size="sm" onClick={() => navigate('/gastos/recurrentes/nuevo')}>
+                        <Plus className="size-4" />
+                        Nuevo recurrente
+                      </Button>
+                    )
+                  }
+                />
+              )
+            }
             search={{ value: state.search, onChange: state.setSearch, placeholder: 'Buscar recurrente…' }}
             sort={{ value: state.sorting, onChange: state.setSorting, options: SORT_OPTIONS }}
           />
