@@ -3,52 +3,37 @@ import { Pause, Play, RotateCcw } from 'lucide-react'
 import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { formatDuration } from './use-audio-recorder'
+import { extractPeaks, FLAT_PEAKS } from './waveform'
 import { formatTime } from './utils'
 
-const BARS = 32
+const FLAT = [...FLAT_PEAKS]
 
-/** Decodifica el audio y saca `BARS` picos (RMS normalizado) para la onda. */
-async function extractPeaks(url: string, buckets: number): Promise<number[]> {
-  const res = await fetch(url)
-  const arrayBuffer = await res.arrayBuffer()
-  const ctx = new AudioContext()
-  try {
-    const audio = await ctx.decodeAudioData(arrayBuffer)
-    const data = audio.getChannelData(0)
-    const size = Math.floor(data.length / buckets) || 1
-    const peaks: number[] = []
-    for (let i = 0; i < buckets; i++) {
-      let sum = 0
-      const start = i * size
-      for (let j = 0; j < size; j++) sum += (data[start + j] ?? 0) ** 2
-      peaks.push(Math.sqrt(sum / size))
-    }
-    const max = Math.max(...peaks, 1e-4)
-    return peaks.map((p) => Math.min(p / max, 1))
-  } finally {
-    void ctx.close()
-  }
-}
+/**
+ * La onda que se dibuja.
+ *
+ * Si el mensaje ya la trae —grabada aquí, o guardada por el servidor— se usa y
+ * no se toca el audio: se ven las subidas y bajadas **sin descargar nada**, que
+ * es de lo que se trata en el historial. Solo cuando no hay onda y sí hay audio
+ * se decodifica para sacarla.
+ */
+function useWaveform(src: string | undefined, given: number[] | undefined): number[] {
+  const [decoded, setDecoded] = useState<number[] | null>(null)
 
-const FLAT = Array<number>(BARS).fill(0.35)
-
-/** Onda del audio; sin audio todavía (o si falla la decodificación), barras planas. */
-function useWaveform(src: string | undefined): number[] {
-  const [peaks, setPeaks] = useState<number[]>(FLAT)
   useEffect(() => {
-    if (!src) {
-      setPeaks(FLAT)
+    if (given || !src) {
+      setDecoded(null)
       return
     }
     let alive = true
-    extractPeaks(src, BARS)
-      .then((p) => alive && setPeaks(p))
+    extractPeaks(src)
+      .then((p) => alive && setDecoded(p))
       .catch(() => {})
     return () => {
       alive = false
     }
-  }, [src])
-  return peaks
+  }, [src, given])
+
+  return given ?? decoded ?? FLAT
 }
 
 /**
@@ -58,18 +43,28 @@ function useWaveform(src: string | undefined): number[] {
  *
  * **El audio puede no estar todavía.** Los de esta sesión llegan como `src` —un
  * blob local, listo—; los del historial hay que pedirlos, y entonces llega
- * `load`: se llama al pulsar play, y hasta ahí la onda va plana. Es lo que hace
- * cualquier app de mensajería con una nota que aún no ha descargado, y evita
- * firmar treinta URLs temporales al abrir un hilo largo.
+ * `load`, que se llama al pulsar play. Así se evita firmar treinta URLs
+ * temporales al abrir un hilo largo.
+ *
+ * Que el audio no esté no significa que la nota se vea vacía: `peaks` y
+ * `seconds` vienen guardados con el mensaje, así que la onda y la duración se
+ * dibujan **sin descargar nada** (§32.1). Solo si faltan hay que decodificar,
+ * y entonces sí: barras planas hasta que suene.
  */
 export function AudioPlayer({
   src,
   load,
+  peaks: given,
+  seconds,
   at,
 }: {
   src?: string
   /** Trae la URL del audio. Se invoca al pulsar play; `force` salta la caché. */
   load?: (force?: boolean) => Promise<string>
+  /** Onda ya conocida. Con ella, la nota se dibuja sin descargar el audio. */
+  peaks?: number[]
+  /** Duración conocida en segundos, para no enseñar 0:00 antes de reproducir. */
+  seconds?: number
   at: string
 }) {
   const ref = useRef<HTMLAudioElement>(null)
@@ -78,10 +73,10 @@ export function AudioPlayer({
   const [failed, setFailed] = useState(false)
   // Play pedido antes de tener el audio: se cumple en cuanto llega.
   const wanted = useRef(false)
-  const peaks = useWaveform(resolved)
+  const peaks = useWaveform(resolved, given)
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
-  const [duration, setDuration] = useState(0)
+  const [duration, setDuration] = useState(seconds ?? 0)
 
   useEffect(() => setResolved(src), [src])
 

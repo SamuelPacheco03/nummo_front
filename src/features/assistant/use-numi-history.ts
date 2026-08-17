@@ -7,6 +7,18 @@ import {
 } from '@/api/generated/endpoints/assistant/assistant'
 import type { AudioUrl, Conversation, MessageList } from '@/api/generated/model'
 import type { ChatMessage } from './types'
+import { sanitizePeaks } from './waveform'
+
+/**
+ * Lo que el backend va a mandar con cada mensaje dictado y el contrato todavía
+ * no declara: la onda de la voz y su duración
+ * (`contract/HANDOFF-audio-historial.md`).
+ *
+ * Se lee así, con un puente, y no con un `any`: el día que `pnpm api:gen` traiga
+ * los campos, este tipo sobra y `flattenMessagePages` los lee directo. Hasta
+ * entonces la nota se dibuja plana, que es exactamente lo de hoy.
+ */
+type PendingAudioFields = { waveform?: unknown; audioSeconds?: unknown }
 
 const CONVERSATIONS_PAGE = 20
 const MESSAGES_PAGE = 30
@@ -24,14 +36,19 @@ const AUDIO_URL_TTL = 5 * 60 * 1000
  */
 export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
   return [...pages].reverse().flatMap((page) =>
-    [...page.items].reverse().map((m) => ({
-      id: m.id,
-      role: m.role,
-      content: m.content,
-      at: m.createdAt,
-      dictated: m.source === 'audio',
-      hasAudio: m.hasAudio,
-    })),
+    [...page.items].reverse().map((m) => {
+      const pending = m as typeof m & PendingAudioFields
+      return {
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        at: m.createdAt,
+        dictated: m.source === 'audio',
+        hasAudio: m.hasAudio,
+        waveform: sanitizePeaks(pending.waveform),
+        audioSeconds: typeof pending.audioSeconds === 'number' ? pending.audioSeconds : undefined,
+      }
+    }),
   )
 }
 

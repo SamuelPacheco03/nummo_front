@@ -9,6 +9,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage, isApiStatus } from '@/lib/errors'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
+import { describeRecording } from './waveform'
 import { useMessageAudioLoader, useNumiConversations, useNumiMessages } from './use-numi-history'
 import { shouldRefreshData } from './utils'
 
@@ -105,8 +106,19 @@ export function useNumiChat() {
     async (blob: Blob) => {
       if (!orgId || audioChat.isPending || isPending) return
       const store = useNumiStore.getState()
-      store.appendAudio(URL.createObjectURL(blob))
+      store.appendAudio({ audioUrl: URL.createObjectURL(blob) })
       const id = useNumiStore.getState().messages.at(-1)?.id
+      /*
+        La onda se saca del blob recién grabado —el único momento en que el
+        audio está en la mano sin costar una petición— y **sin hacer esperar a
+        la burbuja**: decodificar tarda poco, pero una nota de voz que aparece
+        medio segundo tarde se nota. Llega cuando llega (§32.1).
+      */
+      if (id) {
+        void describeRecording(blob).then(([waveform, audioSeconds]) => {
+          if (waveform) useNumiStore.getState().setWaveform(id, waveform, audioSeconds)
+        })
+      }
       store.setError(null)
       try {
         const { sessionId } = useNumiStore.getState()

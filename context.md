@@ -1754,6 +1754,8 @@ El contrato lo dice todo en dos campos de `ChatMessage`:
 | --- | --- | --- |
 | `source: 'audio'` | Se dictó | Micrófono junto al texto |
 | `hasAudio: true` | El servidor todavía guarda el audio | Reproductor |
+| `waveform` | Las subidas y bajadas de la voz | La onda, sin descargar nada |
+| `audioSeconds` | Cuánto dura | `0:03` antes de reproducir |
 
 Los dos juntos no son lo mismo que cada uno: **dictado sin audio guardado** —almacenamiento de
 objetos sin configurar, o audio purgado— se lee como lo que queda de él, su transcripción con el
@@ -1761,12 +1763,32 @@ micrófono delante. Inventar un botón de play que no puede sonar sería peor qu
 
 **El audio se pide al pulsar play, no al pintar el hilo.** La URL que devuelve
 `…/messages/{messageId}/audio` es **temporal y firmada**, así que pedirla por adelantado para
-treinta mensajes es firmar treinta enlaces que caducan sin que nadie los use. Hasta esa primera
-pulsación la onda va plana, igual que una nota que aún no se ha descargado.
+treinta mensajes es firmar treinta enlaces que caducan sin que nadie los use.
 
 Como la URL caduca, hay dos redes debajo: se reutiliza cinco minutos (`fetchQuery`, así que dos
 pulsaciones seguidas comparten petición) y, si al reproducir ya no vale, el botón se convierte en
 un «reintentar» que tira la guardada y pide otra.
+
+**La onda no se saca del audio: viaja con el mensaje.** Las subidas y bajadas de la voz son lo
+único que distingue una nota de otra de un vistazo, y sacarlas exige decodificar el audio — así que
+descargarlo para dibujarlas anularía todo lo anterior. Se calculan **una vez, al grabar**
+(`waveform.ts`: 32 valores de 0 a 1, el volumen medio de cada tramo), viajan al servidor con el
+mensaje y vuelven con él. `AudioPlayer` recibe `peaks` y `seconds` y pinta la nota **sin tocar el
+audio**; solo cuando faltan decodifica, y hasta entonces la onda va plana.
+
+RMS por tramo y no el máximo: un golpe de mesa dispara el pico y deja el resto de la onda
+aplastada, mientras que la media cuadrática dibuja el volumen que de verdad se oye. Dos decimales,
+porque a ojo se ven idénticos y la onda entera cabe en 130 bytes.
+
+**El backend todavía no los guarda** (`contract/HANDOFF-audio-historial.md`). El front ya calcula,
+guarda en el hilo y lee lo que llegue; sin esos campos la nota se ve como antes, plana hasta que
+suene.
+
+**La transcripción no sale sola: hay que pedir «Transcribir».** Una nota de voz con su texto debajo
+se lee dos veces y ocupa el doble — si mandaste un audio fue porque no querías escribir, y verlo
+transcrito de vuelta sobra. El texto ya está en el cliente, así que el botón no pide nada: solo lo
+enseña. La excepción es el mensaje dictado **sin** audio guardado: ahí la transcripción es todo lo
+que queda, y esconderla dejaría una burbuja vacía.
 
 ---
 
@@ -3370,6 +3392,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
 | `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
+| `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |

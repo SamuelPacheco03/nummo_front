@@ -23,6 +23,14 @@ export interface ChatMessage {
    * caduca y pedir una por mensaje al abrir el hilo sería una ráfaga inútil.
    */
   hasAudio?: boolean
+  /**
+   * Subidas y bajadas de la voz, de 0 a 1. Se calcula al grabar y el servidor
+   * la guarda con el mensaje, así que el historial dibuja la nota **sin
+   * descargar el audio**. Sin ella, la onda sale plana hasta que se reproduce.
+   */
+  waveform?: number[]
+  /** Duración en segundos, para enseñarla antes de reproducir nada. */
+  audioSeconds?: number
 }
 
 /**

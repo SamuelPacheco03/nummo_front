@@ -1,5 +1,5 @@
-import { type ReactNode } from 'react'
-import { Mic } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { Captions, Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
@@ -68,6 +68,7 @@ export function ChatMessageItem({
 }) {
   const isUser = message.role === 'user'
   const spacer = <span aria-hidden className={TIME_SLOT} />
+  const [showTranscript, setShowTranscript] = useState(false)
 
   /*
     Suena si el audio está aquí (recién grabado) o si el servidor lo guarda y
@@ -86,12 +87,32 @@ export function ChatMessageItem({
           <AudioPlayer
             src={message.audioUrl}
             load={loadAudio && ((force) => loadAudio(message.id, force))}
+            peaks={message.waveform}
+            seconds={message.audioSeconds}
             at={message.at}
           />
+          {/*
+            La transcripción **no sale sola**. Una nota de voz con su texto
+            debajo se lee dos veces y ocupa el doble: si mandaste un audio es
+            porque no querías escribir, y verlo transcrito de vuelta sobra
+            —salvo cuando hace falta, y entonces está a un toque—.
+          */}
           {message.content && (
-            <p className="mt-1.5 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
-              {message.content}
-            </p>
+            <>
+              {showTranscript && (
+                <p className="mt-1.5 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
+                  {message.content}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowTranscript((v) => !v)}
+                className="mt-1.5 flex items-center gap-1 text-[0.7rem] font-medium opacity-70 transition-opacity hover:opacity-100"
+              >
+                <Captions aria-hidden className="size-3.5" />
+                {showTranscript ? 'Ocultar transcripción' : 'Transcribir'}
+              </button>
+            </>
           )}
         </>
       ) : isUser ? (

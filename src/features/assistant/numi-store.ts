@@ -34,9 +34,11 @@ interface NumiState {
   close: () => void
   appendMessage: (role: ChatRole, content: string) => void
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
-  appendAudio: (audioUrl: string) => void
+  appendAudio: (audio: { audioUrl: string; waveform?: number[]; audioSeconds?: number }) => void
   /** Rellena la transcripción de una nota de voz cuando el backend responde. */
   setTranscript: (id: string, transcript: string) => void
+  /** Pinta la onda de una nota en cuanto se termina de decodificar. */
+  setWaveform: (id: string, waveform: number[], audioSeconds?: number) => void
   /** Guarda la respuesta y el `sessionId` con el que continuar. */
   appendReply: (sessionId: string, reply: string) => void
   setError: (error: NumiError | null) => void
@@ -62,13 +64,21 @@ export const useNumiStore = create<NumiState>()((set) => ({
   appendMessage: (role, content) =>
     set((s) => ({ messages: [...s.messages, message(role, content)] })),
 
-  appendAudio: (audioUrl) =>
+  appendAudio: (audio) =>
     set((s) => ({
-      messages: [...s.messages, { id: nextId(), role: 'user', content: '', at: new Date().toISOString(), audioUrl }],
+      messages: [
+        ...s.messages,
+        { id: nextId(), role: 'user', content: '', at: new Date().toISOString(), dictated: true, ...audio },
+      ],
     })),
 
   setTranscript: (id, transcript) =>
     set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, content: transcript } : m)) })),
+
+  setWaveform: (id, waveform, audioSeconds) =>
+    set((s) => ({
+      messages: s.messages.map((m) => (m.id === id ? { ...m, waveform, audioSeconds } : m)),
+    })),
 
   appendReply: (sessionId, reply) =>
     set((s) => ({
