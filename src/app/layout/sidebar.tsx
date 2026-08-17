@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router'
-import { Activity, HelpCircle, Settings } from 'lucide-react'
+import { HelpCircle, Settings } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -65,7 +65,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /**
- * Enlace del pie: mismo peso menor para los tres, que es lo que los agrupa como
+ * Enlace del pie: mismo peso menor para todos, que es lo que los agrupa como
  * «esto no es una sección de trabajo».
  */
 function FooterLink({
@@ -122,9 +122,9 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         El pie de lo que no es una sección de trabajo.
 
         **Configuración va aquí y no en la navegación**, aunque sea el destino
-        más importante de los tres: en el pie está siempre a la vista al abrir el
-        sidebar, mientras que al final de la lista obligaba a desplazarse —y
-        además quedaba como un ítem suelto sin grupo—.
+        más importante del pie: aquí está siempre a la vista al abrir el sidebar,
+        mientras que al final de la lista obligaba a desplazarse —y además
+        quedaba como un ítem suelto sin grupo—.
       */}
       <div className="border-sidebar-border space-y-3 border-t p-3">
         <FooterLink
@@ -138,12 +138,13 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           forceActive={isSettingsPath(pathname)}
         />
         <FooterLink to="/ayuda" label="Ayuda" Icon={HelpCircle} onNavigate={onNavigate} />
-        <FooterLink
-          to="/estado"
-          label="Estado del sistema"
-          Icon={Activity}
-          onNavigate={onNavigate}
-        />
+        {/*
+          «Estado del sistema» (`/estado`) **no se enlaza**: la salud del backend
+          es cosa de quien lo opera, no de quien lleva las cuentas de un jardín
+          infantil. Su sitio será el rol de superadministrador, que todavía no
+          existe. La ruta sigue viva y se llega por URL, así que soporte puede
+          pedirla; cuando llegue el rol, el enlace vuelve aquí tras su permiso.
+        */}
         <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
         {/*

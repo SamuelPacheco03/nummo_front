@@ -733,7 +733,7 @@ todavía no está jerarquizado.
 | Zona | Qué lleva |
 | --- | --- |
 | **Cabecera** | La barra de comandos (ocupa el ancho útil), el selector de tema y el menú de perfil —que incluye cerrar sesión— |
-| **Sidebar** | La organización activa, la navegación del negocio y, al pie, lo que no es negocio: configuración, ayuda, estado, instalar app |
+| **Sidebar** | La organización activa, la navegación del negocio y, al pie, lo que no es negocio: configuración, ayuda, instalar app |
 
 El **selector de organización va en el sidebar, no en la cabecera**: es contexto permanente, no
 una herramienta, y en la cabecera de móvil competía con la búsqueda y se veía apretado.
@@ -742,11 +742,16 @@ una herramienta, y en la cabecera de móvil competía con la búsqueda y se veí
 de la lista —sin título de grupo, con un hueco encima— y se leía como un resto; agruparla ahí con
 ayuda y estado tampoco funcionó, porque quedaba por debajo de cinco grupos y en móvil había que
 desplazarse para verla. **El pie no se desplaza**: se ve entera en cuanto se abre el sidebar. Va
-la primera de los tres, con el mismo peso menor —12 px— que ayuda y estado del sistema, que es
-justo lo que los agrupa como «esto no es una sección de trabajo».
+la primera, con el mismo peso menor —12 px— que ayuda, que es justo lo que las agrupa como «esto
+no es una sección de trabajo».
 
 Como `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que también cuelgan de ella,
 el enlace se marca activo con `isSettingsPath` y no solo con el `NavLink`.
+
+**«Estado del sistema» (`/estado`) ya no se enlaza.** La salud del backend es cosa de quien lo
+opera, no de quien lleva las cuentas de un jardín infantil: su sitio es el rol de
+superadministrador, que todavía no existe. La ruta sigue viva —soporte puede pedirla por URL— y
+el enlace volverá al pie detrás de ese permiso cuando el rol llegue.
 
 El resto del pie es lo del **dispositivo y la sesión**: instalar la app, el aviso de sin conexión,
 el tema y la cuenta.
