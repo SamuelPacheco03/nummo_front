@@ -23,9 +23,17 @@ export function ReportsResultsPage() {
   const [period, setPeriod] = useState<Period>(() => defaultPeriod())
 
   const { report: cashflow, isPending } = useCashflow(orgId, period)
-  const { items: monthly } = useCashflowMonthly(orgId, 6)
-  const { items: income } = useIncomeByConcept(orgId, period)
-  const { items: expenses } = useExpensesByCategory(orgId, period)
+  const { items: monthly, isPending: monthlyLoading } = useCashflowMonthly(orgId, 6)
+  const { items: income, isPending: incomeLoading } = useIncomeByConcept(orgId, period)
+  const { items: expenses, isPending: expensesLoading } = useExpensesByCategory(orgId, period)
+
+  /*
+    Entero o nada (§45.1). Las tres gráficas llegaban por separado y el informe
+    se leía primero como un período sin actividad. `!cashflow` mantiene a la vista
+    el informe anterior mientras se recalcula al cambiar de fechas: ahí sí hay
+    algo cierto que enseñar, y parpadear a esqueleto en cada tecla sería peor.
+  */
+  const isLoading = (isPending || monthlyLoading || incomeLoading || expensesLoading) && !cashflow
 
   return (
     <div className="space-y-6">
@@ -54,56 +62,74 @@ export function ReportsResultsPage() {
         </div>
       </PageHeader>
 
-      {isPending && !cashflow ? (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
+      {isLoading ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </div>
+          <Skeleton className="h-72" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-80" />
+            <Skeleton className="h-80" />
+          </div>
+        </>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <KpiTile
-            label="Ingresos"
-            value={formatMoney(cashflow?.current?.income ?? '0', currency)}
-            delta={{ pct: pctChange(cashflow?.current?.income, cashflow?.previous?.income), higherIsGood: true }}
-          />
-          <KpiTile
-            label="Egresos"
-            value={formatMoney(cashflow?.current?.expense ?? '0', currency)}
-            delta={{ pct: pctChange(cashflow?.current?.expense, cashflow?.previous?.expense), higherIsGood: false }}
-          />
-          <KpiTile
-            label="Neto"
-            value={formatMoney(cashflow?.current?.net ?? '0', currency)}
-            delta={{ pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net), higherIsGood: true }}
-          />
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <KpiTile
+              label="Ingresos"
+              value={formatMoney(cashflow?.current?.income ?? '0', currency)}
+              delta={{
+                pct: pctChange(cashflow?.current?.income, cashflow?.previous?.income),
+                higherIsGood: true,
+              }}
+            />
+            <KpiTile
+              label="Egresos"
+              value={formatMoney(cashflow?.current?.expense ?? '0', currency)}
+              delta={{
+                pct: pctChange(cashflow?.current?.expense, cashflow?.previous?.expense),
+                higherIsGood: false,
+              }}
+            />
+            <KpiTile
+              label="Neto"
+              value={formatMoney(cashflow?.current?.net ?? '0', currency)}
+              delta={{
+                pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net),
+                higherIsGood: true,
+              }}
+            />
+          </div>
+
+          <Panel title="Flujo mensual · últimos 6 meses">
+            <MonthlyFlowChart items={monthly} currency={currency} />
+          </Panel>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ReportBreakdown
+              title="Ingresos por concepto"
+              nameHeader="Concepto"
+              items={income}
+              tone="bg-chart-2"
+              currency={currency}
+              csvFile={`ingresos-por-concepto_${period.from}_a_${period.to}.csv`}
+              emptyLabel="Sin ingresos en el período."
+            />
+            <ReportBreakdown
+              title="Egresos por categoría"
+              nameHeader="Categoría"
+              items={expenses}
+              tone="bg-chart-4"
+              currency={currency}
+              csvFile={`egresos-por-categoria_${period.from}_a_${period.to}.csv`}
+              emptyLabel="Sin egresos en el período."
+            />
+          </div>
+        </>
       )}
-
-      <Panel title="Flujo mensual · últimos 6 meses">
-        <MonthlyFlowChart items={monthly} currency={currency} />
-      </Panel>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ReportBreakdown
-          title="Ingresos por concepto"
-          nameHeader="Concepto"
-          items={income}
-          tone="bg-chart-2"
-          currency={currency}
-          csvFile={`ingresos-por-concepto_${period.from}_a_${period.to}.csv`}
-          emptyLabel="Sin ingresos en el período."
-        />
-        <ReportBreakdown
-          title="Egresos por categoría"
-          nameHeader="Categoría"
-          items={expenses}
-          tone="bg-chart-4"
-          currency={currency}
-          csvFile={`egresos-por-categoria_${period.from}_a_${period.to}.csv`}
-          emptyLabel="Sin egresos en el período."
-        />
-      </div>
     </div>
   )
 }

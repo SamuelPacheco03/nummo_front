@@ -123,9 +123,20 @@ export function useExpensesByCategory(orgId: string | undefined, period: Period)
  * y por Cobros y pagos para no duplicar el armado.
  */
 export function useRecurringCommitment(orgId: string | undefined) {
-  const { items: agreements } = useAgreements(orgId, { page: 1, pageSize: 100 })
-  const { items: schedules } = useExpenseSchedules(orgId, { page: 1, pageSize: 100 })
-  const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const { items: agreements, isPending: agreementsLoading } = useAgreements(orgId, {
+    page: 1,
+    pageSize: 100,
+  })
+  const { items: schedules, isPending: schedulesLoading } = useExpenseSchedules(orgId, {
+    page: 1,
+    pageSize: 100,
+  })
+  const { contacts, isPending: contactsLoading } = useContacts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
   const nameOf = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
 
   const activeAgreements = useMemo(() => agreements.filter((a) => a.status === 'ACTIVE'), [agreements])
@@ -149,6 +160,9 @@ export function useRecurringCommitment(orgId: string | undefined) {
   const monthlyIncome = activeAgreements.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
   const monthlyExpense = activeSchedules.reduce((s, a) => s + (Number(a.agreedAmount) || 0), 0)
   return {
+    // Quien lo pinta necesita saber si ya llegó todo: un compromiso mensual de
+    // cero mientras carga se lee como «no tienes nada configurado».
+    isPending: agreementsLoading || schedulesLoading || contactsLoading,
     activeAgreements,
     activeSchedules,
     incomeItems,

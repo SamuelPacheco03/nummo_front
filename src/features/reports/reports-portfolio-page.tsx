@@ -6,6 +6,7 @@ import { BarList } from '@/components/bar-list'
 import { AgingChart } from '@/components/aging-chart'
 import { ContactAmountList } from '@/components/contact-amount-list'
 import { SegmentedControl } from '@/components/ui/segmented-control'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useContacts } from '@/features/contacts/hooks'
 import { useReceivables } from '@/features/receivables/hooks'
@@ -66,22 +67,43 @@ export function ReportsPortfolioPage() {
   const currency = organization?.defaultCurrency
   const [tab, setTab] = useState<'cobros' | 'pagos'>('cobros')
 
-  const { summary: cxc } = useReceivablesSummary(orgId)
-  const { summary: cxp } = usePayablesSummary(orgId)
-  const { buckets: cxcAging } = useReceivablesAging(orgId)
-  const { buckets: cxpAging } = usePayablesAging(orgId)
-  const { debtors } = useTopDebtors(orgId, 5)
-  const { creditors } = useTopCreditors(orgId, 5)
+  const { summary: cxc, isPending: cxcLoading } = useReceivablesSummary(orgId)
+  const { summary: cxp, isPending: cxpLoading } = usePayablesSummary(orgId)
+  const { buckets: cxcAging, isPending: cxcAgingLoading } = useReceivablesAging(orgId)
+  const { buckets: cxpAging, isPending: cxpAgingLoading } = usePayablesAging(orgId)
+  const { debtors, isPending: debtorsLoading } = useTopDebtors(orgId, 5)
+  const { creditors, isPending: creditorsLoading } = useTopCreditors(orgId, 5)
 
-  const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const { contacts, isPending: contactsLoading } = useContacts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
   const nameOf = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
 
-  const { items: receivables } = useReceivables(orgId, { page: 1, pageSize: 100, order: 'asc' })
-  const { items: expenses } = useExpenses(orgId, { page: 1, pageSize: 100, order: 'asc' })
+  const { items: receivables, isPending: receivablesLoading } = useReceivables(orgId, {
+    page: 1,
+    pageSize: 100,
+    order: 'asc',
+  })
+  const { items: expenses, isPending: expensesLoading } = useExpenses(orgId, {
+    page: 1,
+    pageSize: 100,
+    order: 'asc',
+  })
 
   // ── Compromiso recurrente configurado (acuerdos y recurrentes ACTIVOS) ──
-  const { activeAgreements, activeSchedules, incomeItems, expenseItems, monthlyIncome, monthlyExpense, netMonthly } =
-    useRecurringCommitment(orgId)
+  const {
+    activeAgreements,
+    activeSchedules,
+    incomeItems,
+    expenseItems,
+    monthlyIncome,
+    monthlyExpense,
+    netMonthly,
+    isPending: recurringLoading,
+  } = useRecurringCommitment(orgId)
 
   // ── Pendiente ahora (cuentas abiertas por cobrar / por pagar) ──
   const receivableRows: DueRow[] = useMemo(
@@ -118,6 +140,46 @@ export function ReportsPortfolioPage() {
         })),
     [expenses, nameOf],
   )
+
+  /*
+    Entero o nada (§45.1). Este informe no tenía ningún estado de carga: sus
+    nueve consultas llegaban por separado y la pantalla se leía primero como una
+    cartera vacía —cero por cobrar, ningún deudor, ninguna barra— y se rehacía
+    entera medio segundo después.
+  */
+  const isLoading =
+    cxcLoading ||
+    cxpLoading ||
+    cxcAgingLoading ||
+    cxpAgingLoading ||
+    debtorsLoading ||
+    creditorsLoading ||
+    contactsLoading ||
+    receivablesLoading ||
+    expensesLoading ||
+    recurringLoading
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5">
+        <PageHeader
+          title="Cobros y pagos"
+          description="Lo que hay que cobrar y pagar, y lo que esperas cada mes según lo configurado."
+        />
+        <Skeleton className="h-9 w-56" />
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">

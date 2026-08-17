@@ -1951,6 +1951,37 @@ Toda sección nueva debe considerar:
 
 No diseñar únicamente el happy path.
 
+## 45.1. Una pantalla se enseña entera, no por partes
+
+**El estado de carga es de la pantalla, no de cada consulta.** Si una vista se alimenta de varias
+consultas, se espera a todas: mientras alguna esté en vuelo se pinta el esqueleto, y el contenido
+aparece de una vez.
+
+Es lo que faltaba en el Panel y en los dos informes. El Panel vive de ocho consultas y llegaban
+por separado: la gráfica vacía, la lista de atención vacía, los KPI en cero, y todo recolocándose
+a medida que respondía el servidor. Un tablero a medio llenar **no se lee como «cargando»: se lee
+como un negocio sin datos**, que es lo contrario de lo que dice medio segundo después. El informe
+de cartera era peor todavía —nueve consultas y ningún estado de carga—.
+
+**La excepción son los listados**, y por un motivo concreto: su esqueleto tiene la forma de sus
+filas, así que nada cambia de sitio al llegar los datos. Ahí sí puede cargar por bloques, y de
+hecho conviene. La regla real detrás de las dos: **lo que se pinta mientras carga tiene que ocupar
+el mismo sitio que lo que va a llegar.** Cuando el esqueleto no puede prometer eso, se espera.
+
+Al **recargar con datos ya en pantalla** —cambiar el período de un informe— no se vuelve al
+esqueleto: se deja lo anterior a la vista (`isPending && !report`). Parpadear a gris en cada tecla
+es peor que un dato un segundo viejo.
+
+## 45.2. La puerta de entrada no parpadea
+
+Mientras `GET /auth/me` está en vuelo **no se sabe** si hay sesión, y `isAuthenticated` todavía es
+`false`. Pintar el formulario de login mientras tanto hacía que quien ya tenía sesión lo viera un
+instante antes de que la respuesta lo mandara al panel — un parpadeo que hace dudar de si la
+sesión se cayó.
+
+`ProtectedRoute` ya esperaba; login y registro no. **Las dos caras de la puerta esperan igual**,
+con el mismo `PageLoader`.
+
 ---
 
 # 46. Accesibilidad

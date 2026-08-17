@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { InlineError } from '@/components/ui/error-state'
 import { getErrorMessage } from '@/lib/errors'
 import { AuthLayout } from './auth-layout'
+import { PageLoader } from '@/components/ui/loader'
 import { useAuth, useRegister } from './hooks'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -30,7 +31,7 @@ type RegisterValues = z.infer<typeof registerSchema>
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: checkingSession } = useAuth()
   const signup = useRegister()
   const [showPassword, setShowPassword] = useState(false)
 
@@ -43,6 +44,16 @@ export function RegisterPage() {
     defaultValues: { fullName: '', email: '', password: '' },
   })
 
+  /*
+    Mientras `/auth/me` está en vuelo no se sabe si hay sesión, y `isAuthenticated`
+    todavía es `false`. Pintar el formulario mientras tanto hacía que quien ya
+    tenía sesión viera el login un instante antes de que la respuesta lo mandara
+    al panel: un parpadeo que hace dudar de si la sesión se cayó.
+
+    El mismo loader que usa `ProtectedRoute`, para que las dos caras de la puerta
+    esperen igual.
+  */
+  if (checkingSession) return <PageLoader label="Verificando sesión…" />
   if (isAuthenticated) return <Navigate to="/" replace />
 
   const onSubmit = handleSubmit(async (values) => {

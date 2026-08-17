@@ -174,10 +174,14 @@ export function DashboardPage() {
   const { summary: cxc, isPending: cxcLoading } = useReceivablesSummary(orgId)
   const { summary: cxp, isPending: cxpLoading } = usePayablesSummary(orgId)
   const { balances, isPending: balancesLoading } = useAccountBalances(orgId)
-  const { items: monthly } = useCashflowMonthly(orgId, 6)
-  const { debtors } = useTopDebtors(orgId, 1)
-  const { upcoming } = useUpcomingReceivables(orgId, 14, ATTENTION_LIMIT)
-  const { upcoming: upcomingPay } = useUpcomingPayables(orgId, 14, ATTENTION_LIMIT)
+  const { items: monthly, isPending: monthlyLoading } = useCashflowMonthly(orgId, 6)
+  const { debtors, isPending: debtorsLoading } = useTopDebtors(orgId, 1)
+  const { upcoming, isPending: upcomingLoading } = useUpcomingReceivables(orgId, 14, ATTENTION_LIMIT)
+  const { upcoming: upcomingPay, isPending: upcomingPayLoading } = useUpcomingPayables(
+    orgId,
+    14,
+    ATTENTION_LIMIT,
+  )
   const { items: movements, isPending: movementsLoading } = useMovements(orgId, {
     page: 1,
     pageSize: 6,
@@ -193,7 +197,42 @@ export function DashboardPage() {
 
   const openNumi = useNumiStore((s) => s.open)
   const insight = buildInsight({ cxc, cxp, currency })
-  const kpisLoading = cxcLoading || cxpLoading || balancesLoading
+
+  /*
+    El Panel se enseña **entero o nada**.
+
+    Ocho consultas lo alimentan y llegaban por separado: la gráfica aparecía
+    vacía, la lista de atención vacía, los KPI en cero, y todo se recolocaba a
+    medida que respondía el servidor. Un tablero a medio llenar no es «cargando»:
+    parece un negocio sin datos, que es justo lo contrario de lo que dice medio
+    segundo después.
+
+    Un listado sí puede ir por partes, porque su esqueleto tiene la forma de sus
+    filas y nada se mueve de sitio. Aquí no la tiene.
+  */
+  const isLoading =
+    cxcLoading ||
+    cxpLoading ||
+    balancesLoading ||
+    monthlyLoading ||
+    debtorsLoading ||
+    upcomingLoading ||
+    upcomingPayLoading ||
+    movementsLoading
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <PageHeader title={greeting(userName)} description="Así se mueven tus finanzas hoy." />
+        <Skeleton className="h-[7.5rem]" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -204,42 +243,38 @@ export function DashboardPage() {
         <h2 id="resumen" className="sr-only">
           Resumen financiero
         </h2>
-        {kpisLoading ? (
-          <Skeleton className="h-[7.5rem]" />
-        ) : (
-          <KpiStrip
-            featured={
-              <KpiTile
-                featured
-                label="Saldo disponible"
-                value={formatMoney(available, baseCurrency)}
-                sub={
-                  otherCurrencies.length > 0
-                    ? `+ saldos en ${otherCurrencies.join(', ')}`
-                    : plural(balances.length, 'cuenta', 'cuentas')
-                }
-              />
-            }
-          >
-            {/* Subtítulos cortos: estas tres celdas miden un tercio de pantalla
-                en móvil, y una frase larga ahí se corta y no dice nada. */}
+        <KpiStrip
+          featured={
             <KpiTile
-              label="Por cobrar"
-              value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
-              sub={plural((cxc?.pendingCount ?? 0) + (cxc?.partialCount ?? 0), 'abierta', 'abiertas')}
+              featured
+              label="Saldo disponible"
+              value={formatMoney(available, baseCurrency)}
+              sub={
+                otherCurrencies.length > 0
+                  ? `+ saldos en ${otherCurrencies.join(', ')}`
+                  : plural(balances.length, 'cuenta', 'cuentas')
+              }
             />
-            <KpiTile
-              label="Vencido"
-              value={formatMoney(cxc?.overdueAmount ?? '0', currency)}
-              sub={plural(cxc?.overdueCount ?? 0, 'en mora', 'en mora')}
-            />
-            <KpiTile
-              label="Por pagar"
-              value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
-              sub={plural(cxp?.overdueCount ?? 0, 'vencida', 'vencidas')}
-            />
-          </KpiStrip>
-        )}
+          }
+        >
+          {/* Subtítulos cortos: estas tres celdas miden un tercio de pantalla
+              en móvil, y una frase larga ahí se corta y no dice nada. */}
+          <KpiTile
+            label="Por cobrar"
+            value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
+            sub={plural((cxc?.pendingCount ?? 0) + (cxc?.partialCount ?? 0), 'abierta', 'abiertas')}
+          />
+          <KpiTile
+            label="Vencido"
+            value={formatMoney(cxc?.overdueAmount ?? '0', currency)}
+            sub={plural(cxc?.overdueCount ?? 0, 'en mora', 'en mora')}
+          />
+          <KpiTile
+            label="Por pagar"
+            value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
+            sub={plural(cxp?.overdueCount ?? 0, 'vencida', 'vencidas')}
+          />
+        </KpiStrip>
       </section>
 
 
@@ -300,13 +335,7 @@ export function DashboardPage() {
           </Link>
         }
       >
-        {movementsLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-9" />
-            ))}
-          </div>
-        ) : movements.length === 0 ? (
+        {movements.length === 0 ? (
           <EmptyState
             Icon={Wallet}
             title="Todavía no hay movimientos"
