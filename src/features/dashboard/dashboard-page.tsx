@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useAccountBalances, useMovements } from '@/features/finances/hooks'
 import { MOVEMENT_TYPE_LABELS } from '@/features/finances/labels'
-import { formatAmount, formatDateHuman, todayISODate } from '@/lib/format'
+import { formatMoney, formatDateHuman, todayISODate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   useCashflow,
@@ -109,17 +109,17 @@ export function DashboardPage() {
       <KpiGroup label="Realizado · flujo del período">
         <KpiTile
           label="Ingresos"
-          value={formatAmount(cashflow?.current.income ?? '0', currency)}
+          value={formatMoney(cashflow?.current.income ?? '0', currency)}
           delta={{ pct: pctChange(cashflow?.current.income, cashflow?.previous.income), higherIsGood: true }}
         />
         <KpiTile
           label="Egresos"
-          value={formatAmount(cashflow?.current.expense ?? '0', currency)}
+          value={formatMoney(cashflow?.current.expense ?? '0', currency)}
           delta={{ pct: pctChange(cashflow?.current.expense, cashflow?.previous.expense), higherIsGood: false }}
         />
         <KpiTile
           label="Neto"
-          value={formatAmount(cashflow?.current.net ?? '0', currency)}
+          value={formatMoney(cashflow?.current.net ?? '0', currency)}
           delta={{ pct: pctChange(cashflow?.current.net, cashflow?.previous.net), higherIsGood: true }}
         />
       </KpiGroup>
@@ -128,17 +128,17 @@ export function DashboardPage() {
       <KpiGroup label="Pendiente · a hoy">
         <KpiTile
           label="Por cobrar"
-          value={formatAmount(cxc?.totalOutstanding ?? '0', currency)}
-          sub={`${formatAmount(cxc?.overdueAmount ?? '0', currency)} vencido`}
+          value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
+          sub={`${formatMoney(cxc?.overdueAmount ?? '0', currency)} vencido`}
         />
         <KpiTile
           label="Por pagar"
-          value={formatAmount(cxp?.totalOutstanding ?? '0', currency)}
-          sub={`${formatAmount(cxp?.overdueAmount ?? '0', currency)} vencido`}
+          value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
+          sub={`${formatMoney(cxp?.overdueAmount ?? '0', currency)} vencido`}
         />
         <KpiTile
           label="Posición neta"
-          value={formatAmount(netPosition.toFixed(2), currency)}
+          value={formatMoney(netPosition.toFixed(2), currency)}
           sub="por cobrar − por pagar"
         />
       </KpiGroup>
@@ -147,17 +147,17 @@ export function DashboardPage() {
       <KpiGroup label="Esperado · recurrente/mes">
         <KpiTile
           label="Ingreso/mes"
-          value={formatAmount(monthlyIncome.toFixed(2), currency)}
+          value={formatMoney(monthlyIncome.toFixed(2), currency)}
           sub={`${activeAgreements.length} acuerdo(s)`}
         />
         <KpiTile
           label="Egreso/mes"
-          value={formatAmount(monthlyExpense.toFixed(2), currency)}
+          value={formatMoney(monthlyExpense.toFixed(2), currency)}
           sub={`${activeSchedules.length} recurrente(s)`}
         />
         <KpiTile
           label="Neto/mes"
-          value={formatAmount(netMonthly.toFixed(2), currency)}
+          value={formatMoney(netMonthly.toFixed(2), currency)}
           sub="según lo configurado"
         />
       </KpiGroup>
@@ -195,7 +195,7 @@ export function DashboardPage() {
                 <li key={b.accountId} className="flex items-center justify-between gap-2 py-2 text-sm">
                   <span className="truncate">{b.name}</span>
                   <span className={cn('nums font-medium', Number(b.balance) < 0 && 'text-destructive')}>
-                    {formatAmount(b.balance, b.currency)}
+                    {formatMoney(b.balance, b.currency)}
                   </span>
                 </li>
               ))}
@@ -307,7 +307,7 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <span className={cn('nums shrink-0 font-medium', isIn ? 'text-success-strong' : 'text-destructive')}>
-                    {isIn ? '+' : '−'} {formatAmount(m.amount)}
+                    {isIn ? '+' : '−'} {formatMoney(m.amount)}
                   </span>
                 </li>
               )

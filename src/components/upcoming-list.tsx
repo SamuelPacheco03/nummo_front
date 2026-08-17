@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { formatAmount, formatDateHuman } from '@/lib/format'
+import { formatMoney, formatDateHuman } from '@/lib/format'
 
 /**
  * Lista compacta de próximos vencimientos: nombre → fecha → monto. Usada por
@@ -25,7 +25,7 @@ export function UpcomingList({
             {u.name}
           </Link>
           <span className="nums shrink-0 text-xs text-muted-foreground">{formatDateHuman(u.dueDate)}</span>
-          <span className="nums shrink-0 font-medium">{formatAmount(u.amount, currency)}</span>
+          <span className="nums shrink-0 font-medium">{formatMoney(u.amount, currency)}</span>
         </li>
       ))}
     </ul>

@@ -1,4 +1,4 @@
-import { formatAmount } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /**
@@ -26,10 +26,10 @@ export function BarList({
       {items.map((i) => {
         const pct = ((Number(i.amount) || 0) / max) * 100
         return (
-          <li key={i.id} className="space-y-1.5" title={`${i.name}: ${formatAmount(i.amount, currency)}`}>
+          <li key={i.id} className="space-y-1.5" title={`${i.name}: ${formatMoney(i.amount, currency)}`}>
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="truncate">{i.name}</span>
-              <span className="nums shrink-0 font-medium">{formatAmount(i.amount, currency)}</span>
+              <span className="nums shrink-0 font-medium">{formatMoney(i.amount, currency)}</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div className={cn('h-2 rounded-full transition-[width]', tone)} style={{ width: `${Math.max(pct, 2)}%` }} />

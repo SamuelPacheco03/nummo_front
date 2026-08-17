@@ -1,13 +1,57 @@
 /**
- * Formatea un monto que llega como string decimal del backend, SOLO para mostrar.
- * Nunca se usa como fuente de verdad ni para calcular saldos.
+ * Prefijo de moneda. COP es la moneda base del producto y se muestra con `$`
+ * pegado a la cifra (`$350.000`); cualquier otra moneda se prefija con su código
+ * ISO (`USD 1.200,00`) para que dos "pesos" distintos nunca se confundan.
+ * Sin moneda explícita se asume la base.
+ */
+function moneyPrefix(currency?: string): string {
+  if (!currency || currency === 'COP') return '$'
+  return `${currency} `
+}
+
+/** Agrupa con es-CO (miles con `.`, decimales con `,`) y saca el signo delante del símbolo. */
+function withPrefix(n: number, currency: string | undefined, minFrac: number, maxFrac: number): string {
+  const body = Math.abs(n).toLocaleString('es-CO', {
+    minimumFractionDigits: minFrac,
+    maximumFractionDigits: maxFrac,
+  })
+  // El signo va antes del símbolo: `-$350.000`, no `$-350.000`.
+  return `${n < 0 ? '-' : ''}${moneyPrefix(currency)}${body}`
+}
+
+/**
+ * Formato de dinero POR DEFECTO, para leer: `$350.000`.
+ *
+ * Muestra decimales solo cuando existen (`$350.000,50`), así que no pierde
+ * precisión: simplemente no imprime el `,00` que en COP es ruido en casi todas
+ * las cifras. Es el que va en KPIs, gráficas, listas de resumen y paneles.
+ *
+ * Para columnas que se suman —tablas contables, comprobantes, confirmaciones y
+ * formularios— usa `formatAmount`, que alinea siempre a dos decimales (§9).
+ */
+export function formatMoney(value: string | number | null | undefined, currency?: string): string {
+  if (value == null || value === '') return '—'
+  const n = typeof value === 'number' ? value : Number(value)
+  if (Number.isNaN(n)) return String(value)
+  const hasCents = Math.round(Math.abs(n) * 100) % 100 !== 0
+  return withPrefix(n, currency, hasCents ? 2 : 0, 2)
+}
+
+/**
+ * Formato de dinero con PRECISIÓN CONTABLE: `$350.000,00`, siempre dos decimales.
+ *
+ * Reservado a los contextos donde §9 exige no perder precisión: detalles,
+ * movimientos, comprobantes, confirmaciones, formularios y tablas que se suman
+ * —los dos decimales fijos son lo que mantiene la columna alineada—.
+ *
+ * El monto llega como string decimal del backend y esto es SOLO presentación:
+ * nunca es fuente de verdad ni sirve para calcular saldos.
  */
 export function formatAmount(value: string | null | undefined, currency?: string): string {
   if (value == null || value === '') return '—'
   const n = Number(value)
   if (Number.isNaN(n)) return value
-  const s = n.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return currency ? `${currency} ${s}` : s
+  return withPrefix(n, currency, 2, 2)
 }
 
 /** Fecha de hoy en formato YYYY-MM-DD (para inputs date). */
@@ -64,21 +108,20 @@ export function formatMonthLabel(ym: string, today: Date = new Date()): string {
 }
 
 /**
- * Monto compacto para etiquetas de gráficos (es-CO): "1,5 M" · "900 k" · "850".
- * Redondea a 1 decimal en miles/millones. Puramente visual.
+ * Monto compacto para etiquetas y ejes de gráficos (es-CO): "$1,5 M" · "$900 k" · "$850".
+ * Redondea a 1 decimal en miles/millones, así que es puramente visual: §9 solo lo
+ * admite donde la reducción ayuda a leer, nunca en cifras que el usuario deba cuadrar.
  */
 export function formatCompactAmount(value: string | number | null | undefined, currency?: string): string {
   if (value == null || value === '') return '—'
   const n = typeof value === 'number' ? value : Number(value)
   if (Number.isNaN(n)) return String(value)
   const abs = Math.abs(n)
-  const sign = n < 0 ? '-' : ''
   let body: string
   if (abs >= 1_000_000) body = `${(abs / 1_000_000).toLocaleString('es-CO', { maximumFractionDigits: 1 })} M`
   else if (abs >= 1_000) body = `${(abs / 1_000).toLocaleString('es-CO', { maximumFractionDigits: 1 })} k`
   else body = abs.toLocaleString('es-CO', { maximumFractionDigits: 0 })
-  const out = `${sign}${body}`
-  return currency ? `${currency} ${out}` : out
+  return `${n < 0 ? '-' : ''}${moneyPrefix(currency)}${body}`
 }
 
 /** Iniciales de un nombre (para avatares). */

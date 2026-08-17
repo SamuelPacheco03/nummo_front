@@ -1,4 +1,4 @@
-import { formatAmount, formatCompactAmount, formatMonthLabel } from '@/lib/format'
+import { formatMoney, formatCompactAmount, formatMonthLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { MonthlyCashflow } from '@/api/generated/model'
 
@@ -47,7 +47,7 @@ export function MonthlyFlowChart({
             <div
               key={m.month}
               className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
-              title={`${formatMonthLabel(m.month)} · Ingresos ${formatAmount(m.income, currency)} · Egresos ${formatAmount(m.expense, currency)} · Neto ${formatAmount(m.net, currency)}`}
+              title={`${formatMonthLabel(m.month)} · Ingresos ${formatMoney(m.income, currency)} · Egresos ${formatMoney(m.expense, currency)} · Neto ${formatMoney(m.net, currency)}`}
             >
               <div className="flex h-28 w-full items-end justify-center gap-1">
                 <div className="w-1/2 max-w-4 rounded-t bg-chart-2" style={{ height: barHeight(m.income, max) }} />

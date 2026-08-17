@@ -2,7 +2,7 @@ import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { downloadCsv } from '@/lib/csv'
-import { formatAmount } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { NamedAmount } from '@/api/generated/model'
 
@@ -60,7 +60,7 @@ export function ReportBreakdown({
                   <li key={i.id} className="space-y-1">
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <span className="truncate">{i.name}</span>
-                      <span className="nums shrink-0 font-medium">{formatAmount(i.amount, currency)}</span>
+                      <span className="nums shrink-0 font-medium">{formatMoney(i.amount, currency)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
@@ -79,7 +79,7 @@ export function ReportBreakdown({
             </ul>
             <div className="mt-4 flex items-center justify-between border-t pt-3 text-sm font-medium">
               <span>Total</span>
-              <span className="nums">{formatAmount(String(total), currency)}</span>
+              <span className="nums">{formatMoney(String(total), currency)}</span>
             </div>
           </>
         )}

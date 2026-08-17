@@ -12,7 +12,7 @@ import { useReceivables } from '@/features/receivables/hooks'
 import { useExpenses } from '@/features/expenses/hooks'
 import { RECEIVABLE_STATUS_LABELS, receivableStatusTone } from '@/features/receivables/labels'
 import { EXPENSE_STATUS_LABELS, expenseStatusTone } from '@/features/expenses/labels'
-import { formatAmount } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { PendingDuesPanel, type DueRow } from './pending-dues-panel'
 import {
@@ -139,7 +139,7 @@ export function ReportsPortfolioPage() {
         <span className="text-sm text-muted-foreground">
           Neto recurrente:{' '}
           <span className={cn('nums font-medium', netMonthly < 0 ? 'text-destructive' : 'text-foreground')}>
-            {formatAmount(netMonthly.toFixed(2), currency)}/mes
+            {formatMoney(netMonthly.toFixed(2), currency)}/mes
           </span>
         </span>
       </div>
@@ -149,17 +149,17 @@ export function ReportsPortfolioPage() {
           <div className="grid gap-3 sm:grid-cols-3">
             <KpiTile
               label="Por cobrar"
-              value={formatAmount(cxc?.totalOutstanding ?? '0', currency)}
+              value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
               sub={`${cxc?.pendingCount ?? 0} pend. · ${cxc?.partialCount ?? 0} parc.`}
             />
             <KpiTile
               label="Cartera vencida"
-              value={formatAmount(cxc?.overdueAmount ?? '0', currency)}
+              value={formatMoney(cxc?.overdueAmount ?? '0', currency)}
               sub={`${cxc?.overdueCount ?? 0} vencidas`}
             />
             <KpiTile
               label="Ingresos/mes esperados"
-              value={formatAmount(monthlyIncome.toFixed(2), currency)}
+              value={formatMoney(monthlyIncome.toFixed(2), currency)}
               sub={`${activeAgreements.length} acuerdo(s) activo(s)`}
             />
           </div>
@@ -188,15 +188,15 @@ export function ReportsPortfolioPage() {
       ) : (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
-            <KpiTile label="Por pagar" value={formatAmount(cxp?.totalOutstanding ?? '0', currency)} />
+            <KpiTile label="Por pagar" value={formatMoney(cxp?.totalOutstanding ?? '0', currency)} />
             <KpiTile
               label="Por pagar vencido"
-              value={formatAmount(cxp?.overdueAmount ?? '0', currency)}
+              value={formatMoney(cxp?.overdueAmount ?? '0', currency)}
               sub={`${cxp?.overdueCount ?? 0} vencidas`}
             />
             <KpiTile
               label="Egresos/mes esperados"
-              value={formatAmount(monthlyExpense.toFixed(2), currency)}
+              value={formatMoney(monthlyExpense.toFixed(2), currency)}
               sub={`${activeSchedules.length} recurrente(s) activo(s)`}
             />
           </div>

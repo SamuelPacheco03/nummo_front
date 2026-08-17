@@ -6,7 +6,7 @@ import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { formatAmount, todayISODate } from '@/lib/format'
+import { formatMoney, todayISODate } from '@/lib/format'
 import { ReportBreakdown } from './report-breakdown'
 import {
   defaultPeriod,
@@ -71,17 +71,17 @@ export function ReportsResultsPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <KpiTile
             label="Ingresos"
-            value={formatAmount(cashflow?.current.income ?? '0', currency)}
+            value={formatMoney(cashflow?.current.income ?? '0', currency)}
             delta={{ pct: pctChange(cashflow?.current.income, cashflow?.previous.income), higherIsGood: true }}
           />
           <KpiTile
             label="Egresos"
-            value={formatAmount(cashflow?.current.expense ?? '0', currency)}
+            value={formatMoney(cashflow?.current.expense ?? '0', currency)}
             delta={{ pct: pctChange(cashflow?.current.expense, cashflow?.previous.expense), higherIsGood: false }}
           />
           <KpiTile
             label="Neto"
-            value={formatAmount(cashflow?.current.net ?? '0', currency)}
+            value={formatMoney(cashflow?.current.net ?? '0', currency)}
             delta={{ pct: pctChange(cashflow?.current.net, cashflow?.previous.net), higherIsGood: true }}
           />
         </div>

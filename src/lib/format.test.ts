@@ -1,11 +1,73 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatAmount,
   formatCompactAmount,
   formatDateHuman,
+  formatMoney,
   formatMonthLabel,
   groupAmountDisplay,
   parseAmountInput,
 } from './format'
+
+describe('formatMoney', () => {
+  it('formato de lectura: símbolo pegado y sin decimales cuando no los hay', () => {
+    expect(formatMoney('350000')).toBe('$350.000')
+    expect(formatMoney('1250000')).toBe('$1.250.000')
+    expect(formatMoney('18450000')).toBe('$18.450.000')
+    expect(formatMoney('0')).toBe('$0')
+  })
+
+  it('no pierde precisión: si hay centavos, los muestra', () => {
+    expect(formatMoney('350000.50')).toBe('$350.000,50')
+    expect(formatMoney('350000.05')).toBe('$350.000,05')
+    expect(formatMoney('350000.00')).toBe('$350.000')
+  })
+
+  it('el signo va antes del símbolo', () => {
+    expect(formatMoney('-350000')).toBe('-$350.000')
+    expect(formatMoney('-350000.50')).toBe('-$350.000,50')
+  })
+
+  it('COP usa $; cualquier otra moneda se prefija con su código ISO', () => {
+    expect(formatMoney('350000', 'COP')).toBe('$350.000')
+    expect(formatMoney('1200', 'USD')).toBe('USD 1.200')
+    expect(formatMoney('1200', 'EUR')).toBe('EUR 1.200')
+  })
+
+  it('acepta número además de string, y vacío → guion', () => {
+    expect(formatMoney(350000)).toBe('$350.000')
+    expect(formatMoney('')).toBe('—')
+    expect(formatMoney(null)).toBe('—')
+    expect(formatMoney(undefined)).toBe('—')
+  })
+
+  it('devuelve el crudo si no es un número', () => {
+    expect(formatMoney('n/d')).toBe('n/d')
+  })
+})
+
+describe('formatAmount', () => {
+  it('precisión contable: siempre dos decimales', () => {
+    expect(formatAmount('350000')).toBe('$350.000,00')
+    expect(formatAmount('350000.5')).toBe('$350.000,50')
+    expect(formatAmount('350000.05')).toBe('$350.000,05')
+  })
+
+  it('el signo va antes del símbolo', () => {
+    expect(formatAmount('-350000')).toBe('-$350.000,00')
+  })
+
+  it('COP usa $; otra moneda se prefija con su código ISO', () => {
+    expect(formatAmount('350000', 'COP')).toBe('$350.000,00')
+    expect(formatAmount('1200', 'USD')).toBe('USD 1.200,00')
+  })
+
+  it('vacío → guion; crudo si no es número', () => {
+    expect(formatAmount('')).toBe('—')
+    expect(formatAmount(null)).toBe('—')
+    expect(formatAmount('n/d')).toBe('n/d')
+  })
+})
 
 describe('formatDateHuman', () => {
   const today = new Date(2026, 7, 14) // viernes 14 ago 2026
@@ -54,15 +116,16 @@ describe('formatMonthLabel', () => {
 
 describe('formatCompactAmount', () => {
   it('compacta miles (k) y millones (M) con coma decimal es-CO', () => {
-    expect(formatCompactAmount('900000')).toBe('900 k')
-    expect(formatCompactAmount('1465775')).toBe('1,5 M')
-    expect(formatCompactAmount('12500')).toBe('12,5 k')
-    expect(formatCompactAmount('850')).toBe('850')
+    expect(formatCompactAmount('900000')).toBe('$900 k')
+    expect(formatCompactAmount('1465775')).toBe('$1,5 M')
+    expect(formatCompactAmount('12500')).toBe('$12,5 k')
+    expect(formatCompactAmount('850')).toBe('$850')
   })
 
-  it('conserva el signo y admite prefijo de moneda', () => {
-    expect(formatCompactAmount('-1465775')).toBe('-1,5 M')
-    expect(formatCompactAmount('900000', 'COP')).toBe('COP 900 k')
+  it('el signo va antes del símbolo y otra moneda usa su código ISO', () => {
+    expect(formatCompactAmount('-1465775')).toBe('-$1,5 M')
+    expect(formatCompactAmount('900000', 'COP')).toBe('$900 k')
+    expect(formatCompactAmount('900000', 'USD')).toBe('USD 900 k')
   })
 
   it('vacío → guion', () => {

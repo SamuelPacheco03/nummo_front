@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { formatAmount } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 
 /**
  * Lista compacta contacto → monto vencido (en rojo). Usada por "Top deudores"
@@ -24,7 +24,7 @@ export function ContactAmountList({
           <Link to={`/contactos/${i.id}`} className="truncate hover:underline">
             {i.name}
           </Link>
-          <span className="nums font-medium text-destructive">{formatAmount(i.amount, currency)}</span>
+          <span className="nums font-medium text-destructive">{formatMoney(i.amount, currency)}</span>
         </li>
       ))}
     </ul>

@@ -1,4 +1,4 @@
-import { formatAmount } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AgingBucketBucket, type AgingBucket } from '@/api/generated/model'
 
@@ -39,7 +39,7 @@ export function AgingChart({
               key={b.bucket}
               className={cn('h-full', META[b.bucket].tone)}
               style={{ width: `${pct}%` }}
-              title={`${META[b.bucket].label}: ${formatAmount(b.amount, currency)}`}
+              title={`${META[b.bucket].label}: ${formatMoney(b.amount, currency)}`}
             />
           )
         })}
@@ -53,7 +53,7 @@ export function AgingChart({
             <span className="nums shrink-0 text-xs text-muted-foreground">
               {b.count} {b.count === 1 ? 'cuenta' : 'cuentas'}
             </span>
-            <span className="nums w-32 shrink-0 text-right font-medium">{formatAmount(b.amount, currency)}</span>
+            <span className="nums w-32 shrink-0 text-right font-medium">{formatMoney(b.amount, currency)}</span>
           </li>
         ))}
       </ul>
