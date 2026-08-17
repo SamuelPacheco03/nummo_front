@@ -2,7 +2,13 @@ import { type ComponentProps } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-/** Select nativo estilizado (accesible y fácil de registrar con RHF). */
+/**
+ * Select nativo estilizado (accesible y fácil de registrar con RHF).
+ *
+ * `className` llega al `<select>`, no a la envoltura: para **ocultar o colocar**
+ * el control entero hay que envolverlo, o el chevron —que va posicionado fuera
+ * del select— se queda flotando solo.
+ */
 function NativeSelect({ className, children, ...props }: ComponentProps<'select'>) {
   return (
     <div className="relative">

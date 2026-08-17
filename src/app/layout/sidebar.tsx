@@ -125,8 +125,14 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           Ambos heredan la superficie con `border-current` (§11.2): el sidebar va
           oscuro también en tema claro, así que fijar color dejaría uno de los dos
           ilegible.
+
+          **Solo por debajo de `lg`.** En escritorio los dos ya viven en la barra
+          superior, siempre a la vista; repetirlos aquí abajo era ofrecer el mismo
+          control dos veces en la misma pantalla. En móvil y tablet no hay barra
+          superior —este cuerpo es la hoja de «Más»—, así que aquí es su único
+          sitio.
         */}
-        <div className="flex items-center justify-between gap-2 pt-1">
+        <div className="flex items-center justify-between gap-2 pt-1 lg:hidden">
           <ThemeToggle className="border-current/15 bg-transparent" />
           <UserMenu />
         </div>

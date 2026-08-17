@@ -738,6 +738,11 @@ todavía no está jerarquizado.
 El **selector de organización va en el sidebar, no en la cabecera**: es contexto permanente, no
 una herramienta, y en la cabecera de móvil competía con la búsqueda y se veía apretado.
 
+**Tema y perfil solo aparecen una vez por pantalla.** En escritorio viven en la cabecera, siempre
+a la vista, y el pie del sidebar los oculta (`lg:hidden`). Por debajo de `lg` no hay cabecera de
+escritorio y ese mismo cuerpo es la hoja de «Más», así que ahí es su único sitio. `SidebarBody`
+se usa en las dos, de modo que **la decisión es del breakpoint, no del componente que lo monta**.
+
 Llenar la barra superior de iconos es otra forma de la sopa de tarjetas. Dos controles a la
 derecha es el techo; el resto vive donde le corresponde.
 
@@ -780,11 +785,16 @@ de lo que ayuda.
 | Buscar | Siempre visible | Siempre visible, a la izquierda |
 | El filtro principal (estado) | `FilterChips`, rejilla 2×2 | Desplegable junto al buscador |
 | El resto | `FilterSheet`, tras un botón con el contador | El mismo botón, **a la derecha del todo** |
-| Por columna | — | Embudo en la cabecera, con `meta.filter` |
+| Ordenar | Dentro del cajón, `FilterSortField` | Pulsando la cabecera de la columna |
 
 **Por qué el estado cambia de forma con el breakpoint:** en móvil el dedo agradece un objetivo
-grande y siempre visible. Desde `lg` la lista **es** una tabla, con su propia fila de cabeceras y
-sus embudos, y una rejilla de fichas ahí compite con ellas.
+grande y siempre visible. Desde `lg` la lista **es** una tabla, con su propia fila de cabeceras, y
+una rejilla de fichas ahí compite con ellas.
+
+**Sin embudos por columna.** Se probaron y se quitaron: en una fila de cabeceras que ya ordena, un
+segundo icono por columna es ruido, y repartir el mismo criterio entre tres puertas —cabecera,
+desplegable y cajón— no añade nada. La cabecera **ordena**; filtrar es cosa del desplegable y del
+cajón.
 
 **El cajón de filtros cambia de eje, no de contenido:** hoja inferior en móvil (el gesto del
 pulgar) y cajón por la derecha en escritorio, donde un panel pegado al borde inferior taparía la
@@ -792,12 +802,34 @@ tabla justo donde se está mirando el resultado. Lo resuelve `side="drawer"` de 
 reutiliza `.animate-drawer` — la única forma de cambiar el eje de entrada con el breakpoint sin
 que el panel entre en diagonal.
 
-**Los filtros por columna no guardan estado propio.** Escriben en el mismo sitio que el cajón y
-que el desplegable: tres puertas, un solo dato. Si cada entrada tuviera su estado, se
+**Ninguna entrada guarda estado propio.** La cabecera, el desplegable y el cajón escriben en el
+mismo sitio —la URL—: varias puertas, un solo dato. Si cada entrada tuviera su estado, se
 contradirían en cuanto se usaran dos.
 
 El contador del botón es lo que evita el **filtro fantasma**: sin él, una lista filtrada por algo
 que vive dentro de una hoja cerrada parece una lista vacía sin motivo.
+
+### Qué se escribe dentro del cajón
+
+Un filtro que hay que descifrar no es un filtro. Reglas del contenido de `FilterSheet`:
+
+1. **Etiquetas en frase, del color del texto.** En versaditas y gris quedaban por debajo del
+   control que nombran —se leía antes el desplegable que su propio título—, y es el tic de
+   plantilla que §11.1 prohíbe.
+2. **Ni «ascendente» ni «descendente».** No dicen nada de una fecha de vencimiento ni de un saldo:
+   hay que traducirlas mentalmente cada vez. `FilterSortField` ofrece **una opción por
+   combinación** de columna y dirección, dicha por su resultado —«Las que vencen antes», «Mayor
+   saldo primero»—, agrupadas con `<optgroup>` bajo el nombre de la columna. Un botón suelto de
+   dirección, sin etiqueta, era peor todavía: no se sabía si era un estado o una acción.
+3. **Ordenar no es filtrar.** Va al final, separado por una línea, y no cuenta para el contador
+   del botón: no esconde registros, solo los recoloca.
+4. **Un rango lleva sus dos palabras.** Dos campos de fecha sin más son un acertijo hasta que
+   abres el calendario: cada uno lleva «Desde» y «Hasta» encima, y una línea de ayuda dice lo que
+   no es evidente —que se puede acotar por un solo lado—.
+5. **El vacío se nombra entero.** «Todos los estados», no «Todos»; la opción se lee sola cuando el
+   desplegable está cerrado y la etiqueta queda arriba.
+6. **Una línea de ayuda solo donde falta.** `FilterField` acepta `hint`, pero explicarlo todo es
+   otra forma de no explicar nada.
 
 ---
 
@@ -934,6 +966,31 @@ Puede abrir:
 - transferencia.
 
 No intentar colocar todas las secciones del sidebar en la barra inferior.
+
+## 15.1. Un destino puede cubrir varias rutas
+
+`Cartera` apunta a cuentas por cobrar, pero **también se queda encendido en cuentas por pagar y
+en los detalles de ambas**: son la misma sección mirada desde los dos lados. Apagarse al saltar de
+una a la otra hace creer que te has salido de la sección.
+
+Por eso `BottomLink` calcula él mismo si está activo (`to` + `also[]`, prefijo de ruta) en vez de
+delegarlo a `NavLink`, que solo entiende una ruta por enlace. Las rutas del par viven en
+`PORTFOLIO_SECTIONS` (`features/navigation/sections.ts`), un único sitio que sirve a la barra y al
+enlace espejo de §15.2.
+
+## 15.2. Salto entre pantallas espejo
+
+Por cobrar y por pagar se consultan a la vez. En móvil la navegación vive detrás de «Más», a dos
+toques, así que las dos pantallas llevan un `MirrorLink`: **un** enlace, debajo de la cabecera,
+que anuncia solo la que **no** estás viendo — «Ver cuentas por pagar →».
+
+**Un enlace, no dos pestañas.** Un par de botones al estilo pestaña prometía que las dos vistas
+son hermanas dentro de una misma pantalla, y no lo son: son secciones distintas del menú, cada una
+con su cabecera y sus acciones. Además dibujaba en pantalla la que ya estás mirando. Así pesa una
+línea de texto en vez de una barra.
+
+Solo por debajo de `lg`: en escritorio el sidebar ya tiene las dos a la vista y esto sería una
+tercera forma de navegar a lo mismo.
 
 ---
 
@@ -2783,7 +2840,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `MasterCrud` | `features/masters/master-crud.tsx` | CRUD genérico de maestros |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
-| `FilterSheet` · `FilterSheetTrigger` · `FilterField` | `components/ui/filter-sheet.tsx` | Filtros avanzados en hoja inferior |
+| `FilterSheet` · `FilterSheetTrigger` · `FilterField` · `FilterSortField` | `components/ui/filter-sheet.tsx` | Filtros avanzados y orden, en hoja inferior / cajón |
+| `BalanceKpis` | `components/balance-kpis.tsx` | Total, vencido y al día de una cartera |
+| `MirrorLink` | `components/mirror-link.tsx` | Salto a la pantalla espejo, solo en móvil |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 
 ---

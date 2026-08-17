@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
@@ -92,14 +93,86 @@ export function FilterSheet({
   )
 }
 
-/** Un criterio dentro de la hoja: etiqueta arriba, control debajo. */
-export function FilterField({ label, children }: { label: string; children: ReactNode }) {
+/**
+ * Un criterio dentro de la hoja: etiqueta arriba, control debajo.
+ *
+ * La etiqueta va en frase, del color del texto normal. En versaditas y gris
+ * quedaba por debajo del control que nombra —se leía antes el desplegable que su
+ * propio título— y es justo el tic de plantilla que §11.1 prohíbe.
+ */
+export function FilterField({
+  label,
+  hint,
+  className,
+  children,
+}: {
+  label: string
+  /** Una línea de ayuda cuando el control no se explica solo. */
+  hint?: string
+  className?: string
+  children: ReactNode
+}) {
   return (
-    <div className="space-y-1.5">
-      <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-        {label}
-      </span>
+    <div className={cn('space-y-2', className)}>
+      <div className="space-y-0.5">
+        <span className="block text-sm font-medium">{label}</span>
+        {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
+      </div>
       {children}
     </div>
+  )
+}
+
+/** Una columna ordenable, con las dos direcciones dichas en cristiano. */
+export interface SortChoice {
+  /** Valor de `sort` que acepta el endpoint. */
+  field: string
+  /** Cómo se llama la columna en la tabla. */
+  label: string
+  /** Qué queda primero de menor a mayor: «Las que vencen antes». */
+  asc: string
+  /** Y de mayor a menor: «Mayor saldo primero». */
+  desc: string
+}
+
+/**
+ * El orden de la lista, dentro de la hoja de filtros.
+ *
+ * Una sola opción por combinación de columna y dirección. «Ascendente» y
+ * «descendente» no dicen nada de una fecha de vencimiento ni de un saldo: hay
+ * que traducirlas mentalmente cada vez, y antes vivían en un botón suelto sin
+ * etiqueta que no se sabía si era un estado o una acción. Aquí cada opción dice
+ * el resultado, y las dos direcciones van agrupadas bajo el nombre de la
+ * columna para que se vea que son la misma decisión.
+ */
+export function FilterSortField({
+  choices,
+  field,
+  desc,
+  onChange,
+}: {
+  choices: SortChoice[]
+  field: string
+  desc: boolean
+  onChange: (field: string, desc: boolean) => void
+}) {
+  return (
+    <FilterField label="Ordenar" className="border-t pt-4">
+      <NativeSelect
+        value={`${field}:${desc ? 'desc' : 'asc'}`}
+        onChange={(e) => {
+          const [next = '', dir = ''] = e.target.value.split(':')
+          onChange(next, dir === 'desc')
+        }}
+        aria-label="Ordenar la lista"
+      >
+        {choices.map((choice) => (
+          <optgroup key={choice.field} label={choice.label}>
+            <option value={`${choice.field}:asc`}>{choice.asc}</option>
+            <option value={`${choice.field}:desc`}>{choice.desc}</option>
+          </optgroup>
+        ))}
+      </NativeSelect>
+    </FilterField>
   )
 }

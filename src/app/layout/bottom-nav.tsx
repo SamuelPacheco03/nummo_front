@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { Coins, LayoutDashboard, Menu, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { NumiAppMark } from '@/features/assistant/numi-avatar'
 import { useNumiStore } from '@/features/assistant/numi-store'
 import { allowedQuickActions } from '@/features/actions/quick-actions'
+import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { cn } from '@/lib/utils'
 import { SidebarBody } from './sidebar'
@@ -13,28 +14,46 @@ import { SidebarBody } from './sidebar'
 const itemClass =
   'flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.68rem] transition-colors focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none'
 
+/**
+ * Destino de la barra inferior.
+ *
+ * Calcula él mismo si está activo en vez de dejárselo a `NavLink` porque un
+ * destino puede cubrir más de una ruta: «Cartera» apunta a lo que te deben, pero
+ * lo que debes es la misma sección mirada desde el otro lado, y apagarse al
+ * saltar de una a la otra hace creer que te has salido de la sección.
+ */
 function BottomLink({
   to,
   label,
   Icon,
   end,
+  also = [],
 }: {
   to: string
   label: string
   Icon: LucideIcon
+  /** Solo la ruta exacta cuenta como activa (para «/»). */
   end?: boolean
+  /** Otras rutas que este destino también representa. */
+  also?: string[]
 }) {
+  const { pathname } = useLocation()
+  const isActive = end
+    ? pathname === to
+    : [to, ...also].some((route) => pathname === route || pathname.startsWith(`${route}/`))
+
   return (
-    <NavLink
+    <Link
       to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(itemClass, isActive ? 'text-brand' : 'text-muted-foreground hover:text-foreground')
-      }
+      aria-current={isActive ? 'page' : undefined}
+      className={cn(
+        itemClass,
+        isActive ? 'text-brand' : 'text-muted-foreground hover:text-foreground',
+      )}
     >
       <Icon aria-hidden className="size-5" />
       {label}
-    </NavLink>
+    </Link>
   )
 }
 
@@ -136,7 +155,12 @@ export function BottomNav() {
         )}
       >
         <BottomLink to="/" label="Inicio" Icon={LayoutDashboard} end />
-        <BottomLink to="/cartera/cxc" label="Cartera" Icon={Coins} />
+        <BottomLink
+          to="/cartera/cxc"
+          label="Cartera"
+          Icon={Coins}
+          also={PORTFOLIO_SECTIONS.map((section) => section.to)}
+        />
 
         {canCreate && (
           <BottomButton label="Nuevo" onClick={() => setQuickOpen(true)}>

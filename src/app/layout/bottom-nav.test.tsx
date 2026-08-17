@@ -98,3 +98,30 @@ test('marca el destino actual', () => {
   )
   expect(within(nav).getByRole('link', { name: /inicio/i })).not.toHaveAttribute('aria-current')
 })
+
+test('"Cartera" sigue encendida en cuentas por pagar, que es la misma sección', () => {
+  renderNav('/gastos/cxp')
+  const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
+
+  expect(within(nav).getByRole('link', { name: /cartera/i })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+})
+
+test('"Cartera" también en el detalle de una cuenta, no solo en la lista', () => {
+  renderNav('/gastos/cxp/exp-1')
+  const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
+
+  expect(within(nav).getByRole('link', { name: /cartera/i })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+})
+
+test('"Inicio" solo se enciende en la raíz', () => {
+  renderNav('/cartera/cxc')
+  const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
+
+  expect(within(nav).getByRole('link', { name: /inicio/i })).not.toHaveAttribute('aria-current')
+})

@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { BalanceKpis } from '@/components/balance-kpis'
-import { SectionSwitch } from '@/components/section-switch'
+import { MirrorLink } from '@/components/mirror-link'
 import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,7 +17,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { FilterChips, type FilterChoice } from '@/components/ui/filter-chips'
-import { FilterField, FilterSheet, FilterSheetTrigger } from '@/components/ui/filter-sheet'
+import {
+  FilterField,
+  FilterSheet,
+  FilterSheetTrigger,
+  FilterSortField,
+  type SortChoice,
+} from '@/components/ui/filter-sheet'
 import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -63,11 +69,27 @@ const ADVANCED_KEYS: FilterKey[] = ['proveedor', 'categoria', 'desde', 'hasta']
 const ALL_STATUSES = ['PENDING', 'PARTIAL', 'OVERDUE', 'PAID', 'CANCELLED', 'WRITTEN_OFF']
 
 /** Columnas ordenables que acepta el endpoint (contrato: ListExpensesQuery). */
-const SORT_OPTIONS = [
-  { field: 'dueDate', label: 'Vencimiento' },
-  { field: 'balance', label: 'Saldo' },
-  { field: 'originalAmount', label: 'Valor original' },
+const SORT_CHOICES: SortChoice[] = [
+  {
+    field: 'dueDate',
+    label: 'Vencimiento',
+    asc: 'Las que vencen antes',
+    desc: 'Las que vencen después',
+  },
+  { field: 'balance', label: 'Saldo', asc: 'Menor saldo primero', desc: 'Mayor saldo primero' },
+  {
+    field: 'originalAmount',
+    label: 'Valor original',
+    asc: 'Menor valor primero',
+    desc: 'Mayor valor primero',
+  },
 ]
+
+/** Lo que necesitan las cabeceras de la tabla: solo la columna y su nombre. */
+const SORT_OPTIONS = SORT_CHOICES.map(({ field, label }) => ({ field, label }))
+
+/** Lo primero que se quiere ver de una cartera: lo que vence antes. */
+const DEFAULT_SORT = 'dueDate'
 
 const column = listColumns<ExpenseBalance>()
 
@@ -85,11 +107,15 @@ export function ExpensesListPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const page = Number(values.pagina) || 1
-  const sortField = values.orden || 'dueDate'
+  const sortField = values.orden || DEFAULT_SORT
   const desc = values.dir === 'desc'
 
   /** Cambiar cualquier criterio devuelve a la primera página. */
   const filter = (patch: Partial<Record<FilterKey, string>>) => set({ ...patch, pagina: '' })
+
+  /** El orden por defecto se calla en la URL: solo estorba al compartirla. */
+  const sortBy = (field: string, descending: boolean) =>
+    filter({ orden: field === DEFAULT_SORT ? '' : field, dir: descending ? 'desc' : '' })
 
   const params: GetApiV1OrganizationsOrgIdExpensesParams = {
     page,
@@ -281,7 +307,7 @@ export function ExpensesListPage() {
         )}
       </PageHeader>
 
-      <SectionSwitch options={PORTFOLIO_SECTIONS} />
+      <MirrorLink options={PORTFOLIO_SECTIONS} />
 
       <BalanceKpis
         label="Por pagar"
@@ -319,19 +345,23 @@ export function ExpensesListPage() {
                   placeholder="Buscar por proveedor…"
                 />
               </div>
-              <NativeSelect
-                className="hidden w-44 lg:block"
-                value={values.estado}
-                onChange={(e) => filter({ estado: e.target.value })}
-                aria-label="Estado"
-              >
-                <option value="">Todos los estados</option>
-                {ALL_STATUSES.map((value) => (
-                  <option key={value} value={value}>
-                    {EXPENSE_STATUS_LABELS[value] ?? value}
-                  </option>
-                ))}
-              </NativeSelect>
+              {/* Ocultar va en la envoltura: `className` llega al `select`, y el
+                  chevron vive fuera de él. */}
+              <div className="hidden lg:block">
+                <NativeSelect
+                  className="w-44"
+                  value={values.estado}
+                  onChange={(e) => filter({ estado: e.target.value })}
+                  aria-label="Estado"
+                >
+                  <option value="">Todos los estados</option>
+                  {ALL_STATUSES.map((value) => (
+                    <option key={value} value={value}>
+                      {EXPENSE_STATUS_LABELS[value] ?? value}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
               {/* A la derecha del todo: es el cajón, no un criterio más. */}
               <FilterSheetTrigger
                 className="ml-auto"
@@ -348,8 +378,7 @@ export function ExpensesListPage() {
             onRowClick={(r) => navigate(`/gastos/cxp/${r.expenseId}`)}
             sort={{
               value: [{ id: sortField, desc }],
-              onChange: (next) =>
-                filter({ orden: next[0]?.id ?? '', dir: next[0]?.desc ? 'desc' : '' }),
+              onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),
               options: SORT_OPTIONS,
               // El orden ya vive en el cajón, que es la única vía en móvil.
               showSortControl: false,
@@ -397,13 +426,13 @@ export function ExpensesListPage() {
         canClear={hasFilters}
         resultLabel={`Ver ${plural(total, 'cuenta', 'cuentas')}`}
       >
-        <FilterField label="Estado">
+        <FilterField label="Estado" hint="Aquí están también las pagadas y las canceladas.">
           <NativeSelect
             value={values.estado}
             onChange={(e) => filter({ estado: e.target.value })}
             aria-label="Estado"
           >
-            <option value="">Todos</option>
+            <option value="">Todos los estados</option>
             {ALL_STATUSES.map((value) => (
               <option key={value} value={value}>
                 {EXPENSE_STATUS_LABELS[value] ?? value}
@@ -428,7 +457,7 @@ export function ExpensesListPage() {
             onChange={(e) => filter({ categoria: e.target.value })}
             aria-label="Categoría de gasto"
           >
-            <option value="">Todos</option>
+            <option value="">Todas las categorías</option>
             {concepts.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -437,48 +466,37 @@ export function ExpensesListPage() {
           </NativeSelect>
         </FilterField>
 
-        <FilterField label="Vence entre">
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={values.desde}
-              max={values.hasta || undefined}
-              onChange={(e) => filter({ desde: e.target.value })}
-              aria-label="Vence desde"
-            />
-            <Input
-              type="date"
-              value={values.hasta}
-              min={values.desde || undefined}
-              onChange={(e) => filter({ hasta: e.target.value })}
-              aria-label="Vence hasta"
-            />
+        {/*
+          Dos campos de fecha sin más son un acertijo: no se sabe cuál es cuál
+          hasta abrir el calendario. Cada uno lleva su palabra encima, y la ayuda
+          dice lo que no es evidente — que se puede acotar por un solo lado.
+        */}
+        <FilterField label="Fecha de vencimiento" hint="Puedes acotar solo un extremo.">
+          <div className="flex items-end gap-2">
+            <label className="min-w-0 flex-1 space-y-1">
+              <span className="text-muted-foreground block text-xs">Desde</span>
+              <Input
+                type="date"
+                value={values.desde}
+                max={values.hasta || undefined}
+                onChange={(e) => filter({ desde: e.target.value })}
+                aria-label="Vence desde"
+              />
+            </label>
+            <label className="min-w-0 flex-1 space-y-1">
+              <span className="text-muted-foreground block text-xs">Hasta</span>
+              <Input
+                type="date"
+                value={values.hasta}
+                min={values.desde || undefined}
+                onChange={(e) => filter({ hasta: e.target.value })}
+                aria-label="Vence hasta"
+              />
+            </label>
           </div>
         </FilterField>
 
-        <FilterField label="Ordenar por">
-          <div className="flex flex-wrap gap-2">
-            {SORT_OPTIONS.map((option) => (
-              <Button
-                key={option.field}
-                type="button"
-                size="sm"
-                variant={sortField === option.field ? 'default' : 'outline'}
-                onClick={() => filter({ orden: option.field })}
-              >
-                {option.label}
-              </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => filter({ dir: desc ? '' : 'desc' })}
-            >
-              {desc ? 'Descendente' : 'Ascendente'}
-            </Button>
-          </div>
-        </FilterField>
+        <FilterSortField choices={SORT_CHOICES} field={sortField} desc={desc} onChange={sortBy} />
       </FilterSheet>
 
       {orgId && (
