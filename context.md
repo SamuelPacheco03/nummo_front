@@ -728,6 +728,17 @@ La regla detrás de las cuatro: **la jerarquía se hace con tamaño, agrupación
 añadiendo bordes, fondos y pastillas.** Si algo destaca solo porque se le puso un recuadro,
 todavía no está jerarquizado.
 
+## 11.1.1. Dónde va cada cosa del shell
+
+La **cabecera** es para trabajar: la ocupa la barra de comandos y nada más. Nombre de usuario,
+tema y selector de organización **no** son herramientas, son contexto, y viven en el **sidebar**
+—donde además hay sitio de sobra—. Cerrar sesión va junto al nombre, que es donde se busca.
+
+Llenar la barra superior de iconos es otra forma de la sopa de tarjetas: cada uno pide atención y
+ninguno la merece más que la búsqueda.
+
+---
+
 ## 11.2. Los componentes heredan su superficie
 
 Desde que el sidebar va oscuro también en tema claro (§4), la aplicación tiene **dos superficies
@@ -3006,6 +3017,18 @@ navegación definitiva; el Panel pudo componerse sin inventar piezas.
    atender, lo dice como la buena noticia que es en lugar de mostrar una tarjeta vacía.
 5. Un único insight, calculado **solo con cifras del API** (§35), elegido por prioridad —lo que
    duele antes que lo que informa— y **omitido si no hay nada que decir**.
+
+**Corrección posterior — la fila de acciones rápidas se quitó.** §16 la pide, pero en la práctica
+sobraba en los dos tamaños: en móvil duplicaba el botón central de la barra inferior y en
+escritorio la barra de comandos (⌘K) llega antes y a más sitios. Seis atajos ocupando el primer
+pantallazo para algo que ya está a un toque es ruido. **El catálogo sigue vivo**
+(`features/actions/quick-actions.ts`) y lo consume la hoja de "Nuevo"; lo que desapareció es la
+rejilla del Panel.
+
+**El gráfico de flujo se puede ver en línea o en barras**, con el selector sobre él y **línea por
+defecto**: la pregunta del Panel es de tendencia, y una línea la responde de un vistazo. Las
+barras siguen a un toque para comparar meses concretos. Sin librería de gráficos (§63): la línea
+es un `<path>` de SVG.
 6. El saldo disponible se agrega **por moneda**: el API no devuelve un total, y sumar pesos con
    dólares daría una cifra sin significado (§88.4).
 

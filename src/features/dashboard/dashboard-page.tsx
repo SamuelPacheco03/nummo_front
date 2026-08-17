@@ -10,8 +10,6 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NumiAppMark } from '@/features/assistant/numi-avatar'
 import { useNumiStore } from '@/features/assistant/numi-store'
-import { allowedQuickActions } from '@/features/actions/quick-actions'
-import { QuickActionTile } from '@/features/actions/quick-action-tile'
 import { useAuth } from '@/features/auth/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useAccountBalances, useMovements } from '@/features/finances/hooks'
@@ -143,8 +141,13 @@ function AttentionList({
 /**
  * Panel de inicio.
  *
- * Responde las seis preguntas de §16 y en ese orden: cuánto tengo, qué puedo
- * hacer, cómo va el flujo, qué requiere atención, qué observa Numi y qué pasó.
+ * Responde en orden: cuánto tengo, cómo va el flujo, qué requiere atención, qué
+ * observa Numi y qué pasó.
+ *
+ * **Sin fila de acciones rápidas.** Las tenía (§16 las pide) y sobraban: en móvil
+ * duplicaban el botón central de la barra inferior, y en escritorio la barra de
+ * comandos (⌘K) llega antes y a más sitios. Seis atajos ocupando el primer
+ * pantallazo para algo que ya está a un toque es ruido, no ayuda.
  *
  * Deliberadamente **no** es un índice de informes: los desgloses por concepto,
  * el aging, los top deudores y los recurrentes viven en Informes, que es donde
@@ -159,7 +162,7 @@ function greeting(name?: string): string {
 }
 
 export function DashboardPage() {
-  const { orgId, organization, role } = useCurrentOrg()
+  const { orgId, organization } = useCurrentOrg()
   const { user } = useAuth()
   const userName = user?.fullName
   const currency = organization?.defaultCurrency
@@ -180,7 +183,6 @@ export function DashboardPage() {
   const accountName = useMemo(() => new Map(balances.map((b) => [b.accountId, b.name])), [balances])
   const totals = useMemo(() => balanceByCurrency(balances), [balances])
 
-  const actions = allowedQuickActions(role)
   const baseCurrency = currency ?? balances[0]?.currency
   const available = baseCurrency ? (totals.get(baseCurrency) ?? 0) : 0
   const otherCurrencies = [...totals.keys()].filter((c) => c !== baseCurrency)
@@ -236,21 +238,8 @@ export function DashboardPage() {
         )}
       </section>
 
-      {/* 2 · Acciones rápidas — lo que se viene a hacer, no a mirar. */}
-      {actions.length > 0 && (
-        <section aria-labelledby="acciones" className="-mt-2 space-y-2.5">
-          <h2 id="acciones" className="sr-only">
-            Acciones rápidas
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {actions.map((action) => (
-              <QuickActionTile key={action.to} action={action} />
-            ))}
-          </div>
-        </section>
-      )}
 
-      {/* 3 y 4 · Flujo y atención, lado a lado: en una pantalla ancha, leer la
+      {/* 2 y 3 · Flujo y atención, lado a lado: en una pantalla ancha, leer la
           tendencia y lo que urge de un mismo vistazo es el trabajo del Panel. */}
       <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Panel
@@ -276,7 +265,7 @@ export function DashboardPage() {
         </Panel>
       </div>
 
-      {/* 5 · Insight de Numi — uno, y solo si dice algo. */}
+      {/* 4 · Insight de Numi — uno, y solo si dice algo. */}
       {insight && (
         <div className="bg-card border-l-brand flex items-start gap-3 rounded-lg border border-l-2 px-5 py-4">
           <NumiAppMark className="mt-0.5 size-5 shrink-0 rounded-[28%]" />
@@ -298,7 +287,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* 6 · Actividad reciente */}
+      {/* 5 · Actividad reciente */}
       <Panel
         title="Actividad reciente"
         action={

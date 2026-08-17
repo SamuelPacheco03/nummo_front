@@ -10,7 +10,7 @@ const OPTIONS: { mode: ThemeMode; label: string; Icon: LucideIcon }[] = [
 ]
 
 /** Selector segmentado Claro / Sistema / Oscuro. */
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const mode = useThemeStore((s) => s.mode)
   const setMode = useThemeStore((s) => s.setMode)
 
@@ -18,7 +18,9 @@ export function ThemeToggle() {
     <div
       role="radiogroup"
       aria-label="Tema"
-      className="inline-flex items-center gap-0.5 rounded-lg border bg-card p-0.5"
+      // Hereda su superficie: se monta en el sidebar (oscuro) y en Apariencia
+      // (clara), y fijar color dejaría uno de los dos ilegible (§11.2).
+      className={cn('inline-flex items-center gap-0.5 rounded-lg border border-current/15 p-0.5', className)}
     >
       {OPTIONS.map(({ mode: m, label, Icon }) => (
         <button
@@ -30,8 +32,8 @@ export function ThemeToggle() {
           title={label}
           onClick={() => setMode(m)}
           className={cn(
-            'inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
-            mode === m && 'bg-secondary text-foreground shadow-xs',
+            'inline-flex size-8 items-center justify-center rounded-md opacity-60 transition-opacity hover:opacity-100',
+            mode === m && 'bg-current/10 opacity-100',
           )}
         >
           <Icon className="size-4" />

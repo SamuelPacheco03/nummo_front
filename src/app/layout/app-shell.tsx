@@ -5,10 +5,7 @@ import { PageLoader } from '@/components/ui/loader'
 import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
 import { NumiWidget } from '@/features/assistant/numi-widget'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
-import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
@@ -79,7 +76,7 @@ export function AppShell() {
           el punto de entrada universal de §36 —buscar, ir, registrar o preguntar
           desde el mismo sitio—, y necesita estar siempre a la vista.
         */}
-        <header className="bg-background/85 sticky top-0 z-30 hidden h-16 items-center gap-3 border-b px-8 backdrop-blur lg:flex">
+        <header className="bg-background/85 sticky top-0 z-30 hidden h-16 items-center border-b px-8 backdrop-blur lg:flex">
           <button
             type="button"
             onClick={openCommand}
@@ -91,11 +88,6 @@ export function AppShell() {
               ⌘K
             </kbd>
           </button>
-          {/* Preferencia y cuenta: arriba a la derecha, fuera de la navegación. */}
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <ThemeToggle />
-            <UserMenu />
-          </div>
         </header>
 
         {/*
@@ -105,20 +97,14 @@ export function AppShell() {
         */}
         <header className="bg-background/90 sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4 backdrop-blur lg:hidden">
           <Brand />
-          <div className="ml-auto flex min-w-0 items-center gap-2">
-            <div className="w-32 min-w-0">
-              <OrgSwitcher />
-            </div>
-            <button
-              type="button"
-              onClick={openCommand}
-              aria-label="Buscar o preguntarle algo a Numi"
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 grid size-9 shrink-0 place-items-center rounded-md focus-visible:ring-[3px] focus-visible:outline-none"
-            >
-              <Search aria-hidden className="size-5" />
-            </button>
-            <UserMenu />
-          </div>
+          <button
+            type="button"
+            onClick={openCommand}
+            aria-label="Buscar o preguntarle algo a Numi"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 ml-auto grid size-9 shrink-0 place-items-center rounded-md focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            <Search aria-hidden className="size-5" />
+          </button>
         </header>
 
         {/*
