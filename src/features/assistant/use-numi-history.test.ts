@@ -7,6 +7,7 @@ const msg = (id: string): MessageList['items'][number] => ({
   role: 'user',
   content: id,
   source: 'text',
+  hasAudio: false,
   createdAt: '2026-08-16T00:00:00.000Z',
 })
 

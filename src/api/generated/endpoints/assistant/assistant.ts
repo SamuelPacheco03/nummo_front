@@ -34,6 +34,7 @@ import type {
   AssistantSettings,
   AssistantTranscribeForm,
   AssistantTranscription,
+  AudioUrl,
   ConversationList,
   ErrorResponse,
   GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesParams,
@@ -1092,6 +1093,142 @@ export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessages<TD
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesQueryOptions(orgId,id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse200 = {
+  data: AudioUrl
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponseSuccess = (getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponseError = (getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse = (getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponseSuccess | getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponseError)
+
+export const getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioUrl = (orgId: string,
+    id: string,
+    messageId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/conversations/${id}/messages/${messageId}/audio`
+}
+
+/**
+ * Devuelve una URL temporal (firmada) para reproducir el audio archivado de un mensaje de voz propio. Requiere que el almacenamiento de objetos esté configurado y que el mensaje tenga audio (`hasAudio: true`).
+ * @summary URL firmada para reproducir el audio de un mensaje dictado
+ */
+export const getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio = async (orgId: string,
+    id: string,
+    messageId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse>(getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioUrl(orgId,id,messageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioQueryKey = (orgId: string,
+    id: string,
+    messageId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/assistant/conversations/${id}/messages/${messageId}/audio`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError = ErrorResponse>(orgId: string,
+    id: string,
+    messageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioQueryKey(orgId,id,messageId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>> = ({ signal }) => getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio(orgId,id,messageId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined && id !== null && id !== undefined && messageId !== null && messageId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>>
+export type GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError = ErrorResponse>(
+ orgId: string,
+    id: string,
+    messageId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError = ErrorResponse>(
+ orgId: string,
+    id: string,
+    messageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError = ErrorResponse>(
+ orgId: string,
+    id: string,
+    messageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary URL firmada para reproducir el audio de un mensaje dictado
+ */
+
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError = ErrorResponse>(
+ orgId: string,
+    id: string,
+    messageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioQueryOptions(orgId,id,messageId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

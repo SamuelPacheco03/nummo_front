@@ -12,7 +12,7 @@ import {
 import { getGetApiV1OrganizationsOrgIdReceivablesQueryKey } from '@/api/generated/endpoints/receivables/receivables'
 import type {
   GetApiV1OrganizationsOrgIdPaymentsParams,
-  Payment,
+  PaymentListItem,
   PaymentDetail,
 } from '@/api/generated/model'
 import type { ListResult } from '@/lib/list-result'
@@ -30,12 +30,12 @@ function invalidateAll(qc: QueryClient, orgId: string, paymentId?: string) {
 export function usePayments(
   orgId: string | undefined,
   params: GetApiV1OrganizationsOrgIdPaymentsParams,
-): ListResult<Payment> {
+): ListResult<PaymentListItem> {
   const query = useGetApiV1OrganizationsOrgIdPayments(orgId ?? '', params, {
     query: { enabled: !!orgId, placeholderData: keepPreviousData },
   })
   const page = query.data?.data as
-    | { data: Payment[]; total: number; totalPages: number }
+    | { data: PaymentListItem[]; total: number; totalPages: number }
     | undefined
   return {
     items: page?.data ?? [],

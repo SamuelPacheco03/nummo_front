@@ -29,7 +29,7 @@ import {
   usePostApiV1OrganizationsOrgIdDisbursementsIdReverse,
 } from '@/api/generated/endpoints/disbursements/disbursements'
 import type {
-  Disbursement,
+  DisbursementListItem,
   DisbursementDetail,
   ExpenseBalance,
   ExpenseDetail,
@@ -174,8 +174,8 @@ export function useWriteOffExpense(orgId: string) {
 export function useDisbursements(
   orgId: string | undefined,
   params: GetApiV1OrganizationsOrgIdDisbursementsParams,
-): ListResult<Disbursement> {
-  return listOf<Disbursement>(
+): ListResult<DisbursementListItem> {
+  return listOf<DisbursementListItem>(
     useGetApiV1OrganizationsOrgIdDisbursements(orgId ?? '', params, {
       query: { enabled: !!orgId, placeholderData: keepPreviousData },
     }),

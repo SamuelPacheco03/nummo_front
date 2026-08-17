@@ -1,18 +1,12 @@
 import { useMemo } from 'react'
+import { keepPreviousData } from '@tanstack/react-query'
 import { Banknote, Coins, HandCoins, Users, type LucideIcon } from 'lucide-react'
-import { useContacts } from '@/features/contacts/hooks'
-import { useReceivables } from '@/features/receivables/hooks'
-import { useExpenses } from '@/features/expenses/hooks'
-import { usePayments } from '@/features/payments/hooks'
-import { useDisbursements } from '@/features/expenses/hooks'
+import { useGetApiV1OrganizationsOrgIdSearch } from '@/api/generated/endpoints/search/search'
+import type { SearchHit as ApiHit, SearchResults } from '@/api/generated/model'
 import { receivableStatus } from '@/features/receivables/labels'
 import { expenseStatus } from '@/features/expenses/labels'
 import { formatDateHuman, formatMoney } from '@/lib/format'
 import type { StatusTone } from '@/components/ui/status-badge'
-
-/** Documento legible de un contacto: «CC 1.020.334». */
-const documentText = (c: { documentType: string | null; documentNumber: string | null }) =>
-  [c.documentType, c.documentNumber].filter(Boolean).join(' ')
 
 /** Cuántos resultados por tipo. Tres caben sin que un tipo tape a los demás. */
 const PER_TYPE = 3
@@ -43,182 +37,139 @@ export interface SearchGroup {
   items: SearchHit[]
 }
 
+const GROUP_TITLE: Record<ResultKind, string> = {
+  contact: 'Contactos',
+  receivable: 'Cuentas por cobrar',
+  expense: 'Cuentas por pagar',
+  payment: 'Pagos',
+  disbursement: 'Egresos',
+}
+
+const ICON: Record<ResultKind, LucideIcon> = {
+  contact: Users,
+  receivable: Coins,
+  expense: Coins,
+  payment: Banknote,
+  disbursement: HandCoins,
+}
+
+const HREF: Record<ResultKind, (id: string) => string> = {
+  contact: (id) => `/contactos/${id}`,
+  receivable: (id) => `/cartera/cxc/${id}`,
+  expense: (id) => `/gastos/cxp/${id}`,
+  payment: (id) => `/cartera/pagos/${id}`,
+  disbursement: (id) => `/gastos/egresos/${id}`,
+}
+
+/** Ficha de un contacto: lo que es, cómo se le encuentra y cuánto debe. */
+function contactDetails(hit: ApiHit): { label: string; value: string }[] {
+  const c = hit.contact
+  if (!c) return []
+  return [
+    { label: 'Tipo', value: c.contactType === 'COMPANY' ? 'Empresa' : 'Persona' },
+    { label: 'Documento', value: c.documentLabel ?? '—' },
+    { label: 'Correo', value: c.email ?? '—' },
+    { label: 'Teléfono', value: c.phone ?? '—' },
+    { label: 'Estado', value: c.isActive ? 'Activo' : 'Archivado' },
+    { label: 'Debe', value: formatMoney(c.summary.receivableBalance) },
+    { label: 'Vencido', value: formatMoney(c.summary.receivableOverdue) },
+    { label: 'Cuentas abiertas', value: String(c.summary.openReceivables) },
+    { label: 'Último pago', value: formatDateHuman(c.summary.lastPaymentAt) || '—' },
+  ]
+}
+
+function toHit(hit: ApiHit): SearchHit {
+  const kind = hit.type as ResultKind
+  const base = {
+    id: `${kind}:${hit.id}`,
+    kind,
+    label: hit.title,
+    to: HREF[kind](hit.id),
+    Icon: ICON[kind],
+  }
+
+  switch (kind) {
+    case 'contact':
+      return {
+        ...base,
+        meta: hit.subtitle ?? undefined,
+        details: contactDetails(hit),
+        action: { label: 'Registrar pago', to: '/cartera/pagos/nuevo' },
+      }
+    case 'receivable':
+    case 'expense': {
+      const label = kind === 'receivable' ? receivableStatus : expenseStatus
+      const money = formatMoney(hit.amount, hit.currency ?? undefined)
+      return {
+        ...base,
+        meta: `Vence ${formatDateHuman(hit.date)}`,
+        amount: money,
+        status: hit.status ? label(hit.status) : undefined,
+        details: [
+          { label: 'Saldo', value: money },
+          { label: 'Vence', value: formatDateHuman(hit.date) },
+          { label: 'Estado', value: hit.status ? label(hit.status).label : '—' },
+        ],
+        action:
+          kind === 'receivable'
+            ? { label: 'Registrar pago', to: '/cartera/pagos/nuevo' }
+            : { label: 'Registrar egreso', to: '/gastos/egresos/nuevo' },
+      }
+    }
+    default: {
+      const money = formatMoney(hit.amount)
+      return {
+        ...base,
+        meta: formatDateHuman(hit.date),
+        amount: money,
+        details: [
+          { label: 'Monto', value: money },
+          { label: kind === 'payment' ? 'Recibido' : 'Pagado', value: formatDateHuman(hit.date) },
+          { label: 'Referencia', value: hit.subtitle ?? '—' },
+        ],
+      }
+    }
+  }
+}
+
 /**
- * **La búsqueda global**, contra todo lo que se busca de verdad.
+ * **La búsqueda global**, en una sola consulta.
  *
- * Antes solo consultaba `/contacts`: no se podía encontrar una cuenta por
- * cobrar, un pago ni un egreso, que es justo lo que uno teclea cuando teclea. Se
- * lanzan cinco consultas en paralelo, tres resultados cada una y con el mismo
- * `q` ya rebotado que usa la paleta.
+ * Antes eran cinco peticiones en paralelo más un directorio de cien contactos
+ * para poner nombres donde el API mandaba identificadores — y una fila cuyo
+ * contacto cayera fuera de esa página se quedaba sin nombre. Ahora el backend
+ * devuelve los tipos mezclados, con el nombre de la contraparte dentro y **ya
+ * ordenados por relevancia real**: exacto, prefijo, parcial, y al final lo que
+ * casó por referencia, notas o monto.
  *
- * **Los nombres de contacto se resuelven en el cliente** porque las listas de
- * cartera y pagos solo traen `payerContactId`. La consulta que los trae es la
- * misma que usan las páginas de lista, así que en la práctica ya está en caché.
- * Está anotado en `contract/HANDOFF-buscador.md`: con un `payerName` en la
- * respuesta esto sobraría.
+ * Los grupos se mantienen porque la paleta se lee mejor por secciones, pero su
+ * orden ya no es fijo: **manda el mejor resultado de cada uno**. Tecleando una
+ * referencia, Pagos encabeza; tecleando un nombre, Contactos.
  */
 export function useGlobalSearch(orgId: string | undefined, q: string) {
   const on = q ? orgId : undefined
-
-  const { contacts, isFetching: contactsFetching } = useContacts(on, {
-    page: 1,
-    pageSize: PER_TYPE,
-    q,
-    sort: 'name',
-    order: 'asc',
-  })
-  const { items: receivables, isFetching: cxcFetching } = useReceivables(on, {
-    page: 1,
-    pageSize: PER_TYPE,
-    q,
-  })
-  const { items: expenses, isFetching: cxpFetching } = useExpenses(on, {
-    page: 1,
-    pageSize: PER_TYPE,
-    q,
-  })
-  const { items: payments, isFetching: paymentsFetching } = usePayments(on, {
-    page: 1,
-    pageSize: PER_TYPE,
-    q,
-  })
-  const { items: disbursements, isFetching: disbFetching } = useDisbursements(on, {
-    page: 1,
-    pageSize: PER_TYPE,
-    q,
-  })
-
-  /* Directorio para poner nombres donde el API manda identificadores. */
-  const { contacts: directory } = useContacts(orgId, {
-    page: 1,
-    pageSize: 100,
-    sort: 'name',
-    order: 'asc',
-  })
-  const nameOf = useMemo(
-    () => new Map(directory.map((c) => [c.id, c.displayName])),
-    [directory],
+  const query = useGetApiV1OrganizationsOrgIdSearch(
+    on ?? '',
+    { q, limit: PER_TYPE },
+    { query: { enabled: !!on, placeholderData: keepPreviousData } },
   )
 
+  const hits = (query.data?.data as SearchResults | undefined)?.hits
+
   const groups = useMemo<SearchGroup[]>(() => {
-    const result: SearchGroup[] = []
-    const name = (id: string) => nameOf.get(id) ?? 'Contacto'
+    if (!hits?.length) return []
 
-    if (contacts.length > 0) {
-      result.push({
-        title: 'Contactos',
-        items: contacts.map((c) => ({
-          id: `contact:${c.id}`,
-          kind: 'contact',
-          label: c.displayName,
-          meta:
-            [documentText(c), c.email ?? c.phone].filter(Boolean).join(' · ') || undefined,
-          to: `/contactos/${c.id}`,
-          Icon: Users,
-          details: [
-            { label: 'Tipo', value: c.contactType === 'COMPANY' ? 'Empresa' : 'Persona' },
-            { label: 'Documento', value: documentText(c) || '—' },
-            { label: 'Correo', value: c.email ?? '—' },
-            { label: 'Teléfono', value: c.phone ?? '—' },
-            { label: 'Estado', value: c.isActive ? 'Activo' : 'Archivado' },
-          ],
-          action: { label: 'Registrar pago', to: '/cartera/pagos/nuevo' },
-        })),
-      })
+    const byKind = new Map<ResultKind, SearchHit[]>()
+    for (const hit of hits) {
+      const kind = hit.type as ResultKind
+      const items = byKind.get(kind)
+      if (items) items.push(toHit(hit))
+      else byKind.set(kind, [toHit(hit)])
     }
+    // El servidor ya vino ordenado, así que el primero de cada tipo es el mejor
+    // de ese tipo y el orden de inserción es el orden de los grupos.
+    return [...byKind].map(([kind, items]) => ({ title: GROUP_TITLE[kind], items }))
+  }, [hits])
 
-    if (receivables.length > 0) {
-      result.push({
-        title: 'Cuentas por cobrar',
-        items: receivables.map((r) => ({
-          id: `receivable:${r.receivableId}`,
-          kind: 'receivable',
-          label: name(r.payerContactId),
-          meta: `Vence ${formatDateHuman(r.dueDate)}`,
-          amount: formatMoney(r.balance, r.currency),
-          status: receivableStatus(r.displayStatus),
-          to: `/cartera/cxc/${r.receivableId}`,
-          Icon: Coins,
-          details: [
-            { label: 'Saldo', value: formatMoney(r.balance, r.currency) },
-            { label: 'Total', value: formatMoney(r.originalAmount, r.currency) },
-            { label: 'Vence', value: formatDateHuman(r.dueDate) },
-            { label: 'Estado', value: receivableStatus(r.displayStatus).label },
-          ],
-          action: { label: 'Registrar pago', to: '/cartera/pagos/nuevo' },
-        })),
-      })
-    }
-
-    if (expenses.length > 0) {
-      result.push({
-        title: 'Cuentas por pagar',
-        items: expenses.map((e) => ({
-          id: `expense:${e.expenseId}`,
-          kind: 'expense',
-          label: name(e.supplierContactId),
-          meta: `Vence ${formatDateHuman(e.dueDate)}`,
-          amount: formatMoney(e.balance, e.currency),
-          status: expenseStatus(e.displayStatus),
-          to: `/gastos/cxp/${e.expenseId}`,
-          Icon: Coins,
-          details: [
-            { label: 'Saldo', value: formatMoney(e.balance, e.currency) },
-            { label: 'Total', value: formatMoney(e.originalAmount, e.currency) },
-            { label: 'Vence', value: formatDateHuman(e.dueDate) },
-            { label: 'Estado', value: expenseStatus(e.displayStatus).label },
-          ],
-          action: { label: 'Registrar egreso', to: '/gastos/egresos/nuevo' },
-        })),
-      })
-    }
-
-    if (payments.length > 0) {
-      result.push({
-        title: 'Pagos',
-        items: payments.map((p) => ({
-          id: `payment:${p.id}`,
-          kind: 'payment',
-          label: name(p.payerContactId ?? ''),
-          meta: formatDateHuman(p.receivedAt),
-          amount: formatMoney(p.amount),
-          to: `/cartera/pagos/${p.id}`,
-          Icon: Banknote,
-          details: [
-            { label: 'Monto', value: formatMoney(p.amount) },
-            { label: 'Recibido', value: formatDateHuman(p.receivedAt) },
-            { label: 'Referencia', value: p.reference ?? '—' },
-          ],
-        })),
-      })
-    }
-
-    if (disbursements.length > 0) {
-      result.push({
-        title: 'Egresos',
-        items: disbursements.map((d) => ({
-          id: `disbursement:${d.id}`,
-          kind: 'disbursement',
-          label: name(d.supplierContactId ?? ''),
-          meta: formatDateHuman(d.disbursedAt),
-          amount: formatMoney(d.amount),
-          to: `/gastos/egresos/${d.id}`,
-          Icon: HandCoins,
-          details: [
-            { label: 'Monto', value: formatMoney(d.amount) },
-            { label: 'Pagado', value: formatDateHuman(d.disbursedAt) },
-            { label: 'Referencia', value: d.reference ?? '—' },
-          ],
-        })),
-      })
-    }
-
-    return result
-  }, [contacts, receivables, expenses, payments, disbursements, nameOf])
-
-  return {
-    groups,
-    isFetching:
-      contactsFetching || cxcFetching || cxpFetching || paymentsFetching || disbFetching,
-  }
+  return { groups, isFetching: query.isFetching }
 }

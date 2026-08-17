@@ -32,7 +32,6 @@ import { ListToolbar } from '@/components/ui/list-toolbar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
-import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
@@ -126,14 +125,12 @@ export function ExpensesListPage() {
   )
   const { summary, isPending: summaryLoading } = usePayablesSummary(orgId)
 
-  const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
   const { items: concepts } = useExpenseCategories(orgId, {
     page: 1,
     pageSize: 100,
     sort: 'name',
     order: 'asc',
   })
-  const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
   const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])
 
   /*
@@ -172,7 +169,7 @@ export function ExpensesListPage() {
           cell: ({ row }) => (
             <div className="min-w-0">
               <p className="truncate font-medium">
-                {contactMap.get(row.original.supplierContactId) ?? '—'}
+                {row.original.supplierName}
               </p>
               {/* En la tarjeta la categoría va en su propia línea de contexto,
                   así que aquí solo estorbaría: `lg:block` la deja para la tabla. */}
@@ -223,7 +220,7 @@ export function ExpensesListPage() {
     // `filter` es una función estable por render; lo que cambia de verdad son
     // los valores, y de eso ya avisa `values`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [contactMap, conceptMap, values, orgId],
+    [conceptMap, values, orgId],
   )
 
   const generate = useGenerateExpenses(orgId ?? '')
@@ -244,7 +241,7 @@ export function ExpensesListPage() {
       `cuentas-por-pagar_${new Date().toISOString().slice(0, 10)}.csv`,
       ['Proveedor', 'Categoría', 'Vence', 'Estado', 'Saldo'],
       items.map((r) => [
-        contactMap.get(r.supplierContactId) ?? '',
+        r.supplierName,
         conceptMap.get(r.expenseCategoryId) ?? '',
         r.dueDate,
         EXPENSE_STATUS_LABELS[r.displayStatus] ?? r.displayStatus,

@@ -64,6 +64,7 @@ function usePaymentRows(params: SettlementQuery): SettlementListResult {
     items: list.items.map((p) => ({
       id: p.id,
       contactId: p.payerContactId,
+      contactName: p.payerName ?? "—",
       date: p.receivedAt,
       amount: p.amount,
       status: p.status,

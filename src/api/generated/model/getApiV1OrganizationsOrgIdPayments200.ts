@@ -5,10 +5,10 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { Payment } from './payment';
+import type { PaymentListItem } from './paymentListItem';
 
 export type GetApiV1OrganizationsOrgIdPayments200 = {
-  data: Payment[];
+  data: PaymentListItem[];
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991

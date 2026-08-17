@@ -1,6 +1,50 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-16 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz.**
+**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global.**
+
+## 🆕 Buscador global en un solo endpoint — regenera con `pnpm api:gen`
+
+Responde al `contract/HANDOFF-buscador.md`. Los tres puntos que pedía están, y también
+el endpoint único del §4.
+
+- **`GET /api/v1/organizations/:orgId/search?q=&limit=`** → `{ q, hits: SearchHit[] }`.
+  Una llamada en vez de cinco. `limit` es **por tipo** (por defecto 3, máximo 10), así
+  que una lista ruidosa no tapa a las demás, y vienen **ya ordenados por relevancia**:
+  `score` 3 exacto · 2 prefijo · 1 parcial · 0 casó por referencia, notas o monto.
+  Desempata por tipo (el contacto antes que sus papeles) y luego por fecha. Cualquier
+  miembro autenticado.
+- Cada `SearchHit` trae `type`, `id`, `title`, `subtitle`, `contactId`, `amount`,
+  `currency`, `date`, `status` y `score`: una fila se pinta sin pedir nada más.
+- Los hits de contacto llevan además un bloque `contact` con `contactType`,
+  `documentLabel`, `email`, `phone`, `isActive` y un `summary` con
+  `receivableBalance`, `receivableOverdue`, `openReceivables` y `lastPaymentAt`. Eso es
+  el §3: la ficha ya responde «¿cuánto me debe?» sin abrir nada. Un contacto sin
+  movimiento reporta ceros, no ausencia.
+
+### §2 — las listas de dinero ya traen el nombre
+
+`receivables` y `expenses` incorporan `payerName` / `supplierName` a `ReceivableBalance`
+y `ExpenseBalance`. `payments` y `disbursements` estrenan `PaymentListItem` y
+`DisbursementListItem` (el mismo objeto de siempre + `payerName` / `supplierName`,
+nullable porque el pago puede no tener contraparte). **El directorio de 100 contactos
+sobra**, y con él el bug de la fila sin nombre cuando la organización pasa de 100.
+
+Ojo: el cambio es solo en las **listas**. `POST` y el detalle siguen devolviendo
+`Payment` / `Disbursement` sin nombre, que no lo necesitan.
+
+### §1 — qué busca `q`
+
+Ya buscaba por nombre de la contraparte en las cuatro listas (era la parte que
+preocupaba). Se le añadió:
+
+- **Monto exacto** cuando el término son solo dígitos: `180000` encuentra las cuentas de
+  $180.000. En cartera y cuentas por pagar mira el importe original y el saldo; en pagos
+  y egresos, el monto.
+- **Notas** en cartera y cuentas por pagar (referencia y notas ya funcionaban en pagos y
+  egresos).
+- Y un arreglo: buscar **el nombre completo** (`Marilyn Bazán`) no encontraba al
+  contacto, porque `/contacts` comparaba campo por campo y el nombre completo no es ni el
+  nombre ni el apellido. Encontraba sus cuotas pero no a ella.
 
 ## 🆕 Mensajes de voz de Numi (audio → texto) — regenera con `pnpm api:gen`
 

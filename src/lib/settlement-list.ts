@@ -43,6 +43,8 @@ export interface SettlementQuery {
 export interface SettlementRow {
   id: string
   contactId?: string | null
+  /** Nombre de la contraparte, tal como lo manda el API. */
+  contactName: string
   /** ISO. Recibido o desembolsado, según el lado. */
   date: string
   amount: string

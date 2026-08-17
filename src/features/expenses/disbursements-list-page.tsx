@@ -64,6 +64,7 @@ function useDisbursementRows(params: SettlementQuery): SettlementListResult {
     items: list.items.map((d) => ({
       id: d.id,
       contactId: d.supplierContactId,
+      contactName: d.supplierName ?? "—",
       date: d.disbursedAt,
       amount: d.amount,
       status: d.status,

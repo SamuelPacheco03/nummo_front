@@ -21,7 +21,6 @@ import { listColumns } from '@/components/ui/list-columns'
 import { ListToolbar } from '@/components/ui/list-toolbar'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
-import { useContacts } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import {
@@ -132,10 +131,6 @@ export function SettlementList({
   })
   const { items, total, totalPages, isPending, isError, error, isFetching } = list
 
-  const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
-  const contactName = (id?: string | null) =>
-    (id ? contacts.find((c) => c.id === id)?.displayName : undefined) ?? '—'
-
   /*
     Solo dos estados, y ninguno lleva contador: el API no publica un resumen de
     pagos por estado y sumarlo desde la página visible daría una cifra que el
@@ -153,7 +148,7 @@ export function SettlementList({
       meta: { card: 'title' },
       cell: ({ row }) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{contactName(row.original.contactId)}</p>
+          <p className="truncate font-medium">{row.original.contactName}</p>
           {/* En la tarjeta el propósito va en su línea de contexto; aquí solo
               estorbaría, así que `lg:block` lo deja para la tabla. */}
           <p className="text-muted-foreground hidden truncate text-xs lg:block">
