@@ -1,6 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { ChatMessageItem } from './chat-message-item'
 import type { ChatMessage } from './types'
 
@@ -13,18 +12,13 @@ const BASE: ChatMessage = {
 
 afterEach(cleanup)
 
-test('una nota de voz no enseña su transcripción hasta que se pide', async () => {
+test('una nota de voz se escucha, no se lee', () => {
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
   render(<ChatMessageItem message={{ ...BASE, audioUrl: 'blob:local', dictated: true }} />)
 
-  // Mandaste un audio porque no querías escribir: el texto no se cuela solo.
+  // Mandaste un audio porque no querías escribir: el texto no se cuela debajo.
   expect(screen.queryByText('cuánto me debe Ana Torres')).not.toBeInTheDocument()
-
-  await userEvent.click(screen.getByRole('button', { name: 'Transcribir' }))
-  expect(screen.getByText('cuánto me debe Ana Torres')).toBeInTheDocument()
-
-  await userEvent.click(screen.getByRole('button', { name: 'Ocultar transcripción' }))
-  expect(screen.queryByText('cuánto me debe Ana Torres')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reproducir la nota de voz' })).toBeInTheDocument()
 })
 
 test('un mensaje dictado sin audio guardado se lee tal cual', () => {
@@ -32,13 +26,5 @@ test('un mensaje dictado sin audio guardado se lee tal cual', () => {
 
   // No hay nada que reproducir: esconder el texto dejaría la burbuja vacía.
   expect(screen.getByText('cuánto me debe Ana Torres')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Transcribir' })).not.toBeInTheDocument()
   expect(screen.getByLabelText('Mensaje dictado')).toBeInTheDocument()
-})
-
-test('mientras Numi transcribe no hay nada que ofrecer', () => {
-  vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
-  render(<ChatMessageItem message={{ ...BASE, content: '', audioUrl: 'blob:local' }} />)
-
-  expect(screen.queryByRole('button', { name: 'Transcribir' })).not.toBeInTheDocument()
 })

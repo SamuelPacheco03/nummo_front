@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { Captions, Mic } from 'lucide-react'
+import { type ReactNode } from 'react'
+import { Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
@@ -68,7 +68,6 @@ export function ChatMessageItem({
 }) {
   const isUser = message.role === 'user'
   const spacer = <span aria-hidden className={TIME_SLOT} />
-  const [showTranscript, setShowTranscript] = useState(false)
 
   /*
     Suena si el audio está aquí (recién grabado) o si el servidor lo guarda y
@@ -82,39 +81,20 @@ export function ChatMessageItem({
     <ChatBubble role={message.role} className="animate-in fade-in-0 slide-in-from-bottom-1">
       <span className="sr-only">{isUser ? 'Tú' : 'Numi'}: </span>
       {playable ? (
-        <>
-          {/* La nota de voz muestra su propia duración y hora bajo la onda. */}
-          <AudioPlayer
-            src={message.audioUrl}
-            load={loadAudio && ((force) => loadAudio(message.id, force))}
-            peaks={message.waveform}
-            seconds={message.audioSeconds}
-            at={message.at}
-          />
-          {/*
-            La transcripción **no sale sola**. Una nota de voz con su texto
-            debajo se lee dos veces y ocupa el doble: si mandaste un audio es
-            porque no querías escribir, y verlo transcrito de vuelta sobra
-            —salvo cuando hace falta, y entonces está a un toque—.
-          */}
-          {message.content && (
-            <>
-              {showTranscript && (
-                <p className="mt-1.5 text-[0.8rem] leading-snug whitespace-pre-wrap opacity-80">
-                  {message.content}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowTranscript((v) => !v)}
-                className="mt-1.5 flex items-center gap-1 text-[0.7rem] font-medium opacity-70 transition-opacity hover:opacity-100"
-              >
-                <Captions aria-hidden className="size-3.5" />
-                {showTranscript ? 'Ocultar transcripción' : 'Transcribir'}
-              </button>
-            </>
-          )}
-        </>
+        /*
+          Solo la nota. **La transcripción no se enseña**: si mandaste un audio
+          fue porque no querías escribir, y verlo transcrito de vuelta ocupa el
+          doble para decir lo mismo — que Numi conteste a lo que dijiste ya
+          prueba que entendió. El texto sigue guardado (es lo que queda cuando
+          el audio ya no está), pero no es lo que se lee aquí.
+        */
+        <AudioPlayer
+          src={message.audioUrl}
+          load={loadAudio && ((force) => loadAudio(message.id, force))}
+          peaks={message.waveform}
+          seconds={message.audioSeconds}
+          at={message.at}
+        />
       ) : isUser ? (
         <p className="whitespace-pre-wrap">
           {message.dictated && (

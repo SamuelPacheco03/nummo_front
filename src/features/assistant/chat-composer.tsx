@@ -1,9 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { ArrowUp, Mic, Paperclip, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
+import { CANCEL_AT, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
 import { formatDuration, useAudioRecorder } from './use-audio-recorder'
+
+/**
+ * `true` donde se toca con el dedo.
+ *
+ * El gesto de mantener pulsado no se ofrece con ratón: en escritorio hay que
+ * sostener el botón del ratón sin moverlo mientras se habla, que es incómodo y
+ * no lo hace nadie — ahí se pulsa una vez y se para con otro botón, igual que
+ * en WhatsApp de escritorio.
+ */
+function useTouchInput(): boolean {
+  const [touch, setTouch] = useState(() => window.matchMedia?.('(pointer: coarse)').matches ?? false)
+  useEffect(() => {
+    const mql = window.matchMedia('(pointer: coarse)')
+    const onChange = () => setTouch(mql.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+  return touch
+}
 
 /** Acción secundaria: solo icono, sin relleno, dentro de la barra. */
 function ComposerAction({
@@ -11,16 +31,19 @@ function ComposerAction({
   Icon,
   disabled = false,
   onClick,
+  ...pointer
 }: {
   label: string
   Icon: typeof Mic
   disabled?: boolean
   onClick?: () => void
+  onPointerDown?: (e: ReactPointerEvent<HTMLButtonElement>) => void
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      {...pointer}
       disabled={disabled}
       aria-label={label}
       title={label}
@@ -96,6 +119,24 @@ export function ChatComposer({
   const [value, setValue] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
   const recorder = useAudioRecorder()
+  const touch = useTouchInput()
+
+  /*
+    El gesto de mantener pulsado: `hold` es el desplazamiento del dedo desde
+    donde empezó. Al fijar la grabación —subiendo hasta el candado— `hold` se
+    limpia y manda la barra de siempre, que es exactamente lo que hace falta:
+    una grabación fijada y una de escritorio se manejan igual.
+  */
+  const [hold, setHold] = useState<{ dx: number; dy: number } | null>(null)
+  const origin = useRef<{ x: number; y: number } | null>(null)
+  const startedAt = useRef(0)
+  // La grabación arranca cuando el navegador da el micrófono, que puede tardar
+  // más que el gesto entero. Si para entonces ya se soltó, no se graba nada.
+  const abandoned = useRef(false)
+  const detach = useRef<(() => void) | null>(null)
+
+  // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
+  useEffect(() => () => detach.current?.(), [])
 
   useEffect(() => {
     if (autoFocus) ref.current?.focus()
@@ -125,6 +166,7 @@ export function ChatComposer({
   const startRecording = async () => {
     const ok = await recorder.start()
     if (!ok) toast.error('No se pudo acceder al micrófono. Revisa los permisos del navegador.')
+    return ok
   }
 
   const stopAndSend = async () => {
@@ -133,8 +175,99 @@ export function ChatComposer({
     else toast.error('La grabación quedó vacía.')
   }
 
+  /** Fin del gesto: suelta los escuchas del puntero y limpia el estado del dedo. */
+  const endHold = () => {
+    detach.current?.()
+    origin.current = null
+    setHold(null)
+  }
+
+  /**
+   * Mantener pulsado para grabar (§32.2).
+   *
+   * Los escuchas van en `window` y no en el botón porque **el botón desaparece**
+   * en cuanto empieza el gesto: la barra de grabación sustituye al composer
+   * entero. Atado al botón, el primer `pointermove` ya no llegaba a nadie y el
+   * dedo se quedaba arrastrando sobre un elemento que ya no existía —ni cancelar
+   * ni fijar ni soltar hacían nada—.
+   */
+  const onMicPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!touch || !canRecord || origin.current) return
+    e.preventDefault()
+    origin.current = { x: e.clientX, y: e.clientY }
+    startedAt.current = performance.now()
+    abandoned.current = false
+    setHold({ dx: 0, dy: 0 })
+
+    const onMove = (ev: PointerEvent) => {
+      const from = origin.current
+      if (!from) return
+      const dx = ev.clientX - from.x
+      const dy = ev.clientY - from.y
+
+      // Fijada: el dedo se puede soltar y la grabación sigue sola.
+      if (dy <= -LOCK_AT) {
+        endHold()
+        return
+      }
+      if (dx <= -CANCEL_AT) {
+        abandoned.current = true
+        recorder.cancel()
+        endHold()
+        return
+      }
+      setHold({ dx: Math.min(dx, 0), dy: Math.min(dy, 0) })
+    }
+
+    const onUp = () => {
+      if (!origin.current) return
+      const held = performance.now() - startedAt.current
+      endHold()
+      // Un toque no es una grabación: sin esto, rozar el micrófono manda un
+      // audio de dos décimas que no dice nada.
+      if (held < MIN_SECONDS * 1000) {
+        abandoned.current = true
+        recorder.cancel()
+        toast('Mantén pulsado el micrófono para grabar')
+        return
+      }
+      void stopAndSend()
+    }
+
+    const onCancel = () => {
+      if (!origin.current) return
+      abandoned.current = true
+      recorder.cancel()
+      endHold()
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
+    detach.current = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+      detach.current = null
+    }
+
+    void startRecording().then((ok) => {
+      if (!ok) endHold()
+      // El permiso pudo tardar más que el gesto entero.
+      else if (abandoned.current) recorder.cancel()
+    })
+  }
+
+  if (hold) return <HoldToRecord seconds={recorder.seconds} dx={hold.dx} dy={hold.dy} />
+
   if (recorder.isRecording) {
-    return <RecordingBar seconds={recorder.seconds} onCancel={recorder.cancel} onStop={() => void stopAndSend()} />
+    return (
+      <RecordingBar
+        seconds={recorder.seconds}
+        onCancel={recorder.cancel}
+        onStop={() => void stopAndSend()}
+      />
+    )
   }
 
   return (
@@ -202,10 +335,13 @@ export function ChatComposer({
           </button>
         ) : (
           <ComposerAction
-            label="Grabar nota de voz"
+            label={touch ? 'Mantén pulsado para grabar una nota de voz' : 'Grabar nota de voz'}
             Icon={Mic}
             disabled={!canRecord}
-            onClick={() => void startRecording()}
+            // Con el dedo se mantiene pulsado (WhatsApp); con ratón, un clic
+            // empieza y otro botón para. Nunca las dos cosas a la vez.
+            onClick={touch ? undefined : () => void startRecording()}
+            onPointerDown={onMicPointerDown}
           />
         )}
       </div>

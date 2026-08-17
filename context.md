@@ -1784,11 +1784,32 @@ porque a ojo se ven idénticos y la onda entera cabe en 130 bytes.
 guarda en el hilo y lee lo que llegue; sin esos campos la nota se ve como antes, plana hasta que
 suene.
 
-**La transcripción no sale sola: hay que pedir «Transcribir».** Una nota de voz con su texto debajo
-se lee dos veces y ocupa el doble — si mandaste un audio fue porque no querías escribir, y verlo
-transcrito de vuelta sobra. El texto ya está en el cliente, así que el botón no pide nada: solo lo
-enseña. La excepción es el mensaje dictado **sin** audio guardado: ahí la transcripción es todo lo
-que queda, y esconderla dejaría una burbuja vacía.
+**La transcripción no se enseña.** Una nota de voz con su texto debajo se lee dos veces y ocupa el
+doble para decir lo mismo: si mandaste un audio fue porque no querías escribir, y que Numi conteste
+a lo que dijiste ya prueba que entendió. El texto sigue guardado —es lo que queda cuando el audio
+ya no está— pero no es lo que se lee en la burbuja. La excepción es el mensaje dictado **sin** audio
+guardado: ahí la transcripción es todo lo que hay, y esconderla dejaría una burbuja vacía.
+
+## 32.2. Grabar una nota de voz
+
+**El gesto es el de WhatsApp, y se copia a propósito.** No por parecerse: es el único gesto de
+grabar que la gente ya tiene aprendido, y dictarle a Numi se parece más a mandar un audio que a
+rellenar un formulario.
+
+| Dónde | Cómo se graba | Por qué |
+| --- | --- | --- |
+| Dedo (`pointer: coarse`) | **Mantener pulsado** el micrófono | Es el gesto que ya se sabe |
+| Ratón | **Un clic** empieza, otro botón para | Sostener el botón del ratón sin moverlo mientras se habla no lo hace nadie — WhatsApp de escritorio tampoco lo pide |
+
+Manteniendo pulsado hay tres salidas, y la barra las dice mientras pasan: **soltar** manda,
+**deslizar a la izquierda** cancela (el aviso se va con el dedo y se apaga según se acerca), y
+**subir** fija la grabación — a partir de ahí el dedo sobra y manda la barra de siempre, la misma
+que usa el ratón. Un toque de menos de 0,7 s no es una grabación: se descarta y se dice por qué.
+
+**Los escuchas del puntero van en `window`, no en el botón.** El botón **desaparece** en cuanto
+empieza el gesto —la barra de grabación sustituye al composer entero—, así que atado a él el primer
+`pointermove` ya no llega a nadie: ni cancelar, ni fijar, ni soltar hacían nada, y el micrófono se
+quedaba abierto. Es el mismo error que el arrastre del lanzador de Numi (§87.5) con otra cara.
 
 ---
 
@@ -3393,6 +3414,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
 | `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
 | `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
+| `HoldToRecord` | `features/assistant/hold-to-record.tsx` | Lo que se ve mientras se mantiene pulsado el micrófono (§32.2) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |
