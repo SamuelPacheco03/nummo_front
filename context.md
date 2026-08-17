@@ -2800,6 +2800,23 @@ La página no construye claves de query ni llama a `fetch`. El hook no renderiza
   Ojo con el `<Outlet />`: puede estar **dentro del componente compartido** que la página monta,
   no en la página. `SettlementList` lo lleva por pagos y por egresos.
 
+  **Esas quince rutas llevan `handle: OVERLAY`**, y no es decorativo: es lo único que distingue
+  «abrir una ficha» de «cambiar de pantalla», porque en la URL las dos son igual de nuevas. Lo
+  lee el scroll (abajo).
+
+- **Cada pantalla empieza por arriba.** Bajabas en una lista larga, cambiabas de sección y
+  aparecías al final de la nueva, mirando el pie de una página cuyo título no habías visto.
+
+  Lo hace `PageScrollRestoration` (`app/page-scroll.tsx`), que envuelve al `ScrollRestoration` de
+  React Router: guarda la posición por clave, así que **destino nuevo → arriba, volver atrás →
+  donde estabas**. La clave la da `getKey`, quedándose con la coincidencia más profunda que no sea
+  `OVERLAY`: por eso `/cartera/cxc` y `/cartera/cxc/abc` comparten clave y abrir la ficha no mueve
+  la lista de detrás.
+
+  **No se hace con un `useEffect` y `scrollTo(0, 0)` por cada cambio de `pathname`**, que es la
+  solución que sale primero: arregla el caso obvio y rompe los otros dos —pierde el sitio al
+  volver atrás y manda al principio la lista al abrir un cajón encima—.
+
 ## 87.6. Estado
 
 | Tipo de estado | Dónde vive |

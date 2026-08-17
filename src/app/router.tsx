@@ -3,6 +3,16 @@ import { AppShell } from '@/app/layout/app-shell'
 import { ProtectedRoute } from '@/features/auth/protected-route'
 import { SettingsLayout } from '@/features/config/settings-layout'
 
+/**
+ * Marca una ruta como **capa sobre la de arriba** —un cajón de detalle, un
+ * formulario de alta—, no como pantalla nueva.
+ *
+ * Lo lee `PageScrollRestoration`: es lo único que distingue «abrir la ficha de un
+ * contacto» de «irme a otra pantalla», porque en la URL las dos son igual de
+ * nuevas. Sin esto, abrir un cajón mandaría al principio la lista de detrás.
+ */
+const OVERLAY = { overlay: true } as const
+
 // Rutas pesadas cargadas bajo demanda (code-splitting).
 export const router = createBrowserRouter([
   {
@@ -77,18 +87,21 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'nuevo',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
                 }),
               },
               {
                 path: ':contactId/editar',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
                 }),
               },
               {
                 path: ':contactId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/contacts/contact-detail-page')).ContactDetailPage,
                 }),
@@ -106,6 +119,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: ':receivableId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/receivables/receivable-detail-page')).ReceivableDetailPage,
                 }),
@@ -121,12 +135,14 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'nuevo',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/payments/register-payment-page')).RegisterPaymentPage,
                 }),
               },
               {
                 path: ':paymentId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/payments/payment-detail-page')).PaymentDetailPage,
                 }),
@@ -142,18 +158,21 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'nuevo',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
                 }),
               },
               {
                 path: ':agreementId/editar',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
                 }),
               },
               {
                 path: ':agreementId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/billing/agreement-detail-page')).AgreementDetailPage,
                 }),
@@ -170,6 +189,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: ':expenseId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/expense-detail-page')).ExpenseDetailPage,
                 }),
@@ -185,12 +205,14 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'nuevo',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/register-disbursement-page')).RegisterDisbursementPage,
                 }),
               },
               {
                 path: ':disbursementId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/disbursement-detail-page')).DisbursementDetailPage,
                 }),
@@ -206,18 +228,21 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'nuevo',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
                 }),
               },
               {
                 path: ':scheduleId/editar',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
                 }),
               },
               {
                 path: ':scheduleId',
+                handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/schedule-detail-page')).ScheduleDetailPage,
                 }),

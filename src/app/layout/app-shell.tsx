@@ -14,6 +14,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { toast } from 'sonner'
 import { CommandBar } from '@/features/search/command-bar'
 import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
+import { PageScrollRestoration } from '@/app/page-scroll'
 import { BottomNav } from './bottom-nav'
 import { Brand, SidebarBody } from './sidebar'
 
@@ -68,6 +69,9 @@ export function AppShell() {
 
   return (
     <div className="bg-background flex min-h-dvh">
+      {/* Cada pantalla empieza por arriba; volver atrás devuelve a su sitio. */}
+      <PageScrollRestoration />
+
       <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r lg:flex">
         <SidebarBody />
       </aside>
