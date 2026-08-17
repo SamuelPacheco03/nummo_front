@@ -2674,17 +2674,19 @@ Todos son parte del sistema y deben reutilizarse:
 Estado a la fecha de esta revisión. **Cada línea se cierra o se reclasifica; ninguna se
 ignora.** La columna "Resolución" dice quién gana: el documento o el código.
 
-### 95.1. Navegación desktop — **alta**
+### 95.1. Navegación desktop — ✅ **cerrada (fase 2)**
 
-El documento (§14) propone una navegación por modelo mental: `Inicio · Cartera · Ingresos ·
-Gastos · Contactos · Cuentas · Análisis · Numi · Configuración`.
+El sidebar tenía **7 grupos y 21 enlaces**, con un grupo **"Maestros"** que exponía entidades
+del backend y "Políticas de interés" en primer nivel — justo lo que §14 prohíbe.
 
-El sidebar real tiene **7 grupos y 21 enlaces**, e incluye un grupo **"Maestros"** que expone
-entidades del backend (Conceptos de cobro, Categorías de gasto, Métodos de pago, Cuentas) —
-justamente lo que §14 prohíbe. "Políticas de interés" también está en primer nivel.
+**Resuelto (fase 2):** el sidebar baja a **13 enlaces** y Configuración pasa a ser una única
+entrada que abre su propia sub-navegación (`features/config/settings-layout.tsx`), agrupada en
+Organización · Preferencias · **Catálogos** · Cartera. "Maestros" desaparece como término de
+cara al usuario, también en la guía.
 
-**Resolución: gana el documento.** Maestros y Políticas de interés son configuración, no
-operación diaria: deben vivir bajo Configuración. Ver fase 2 del plan.
+**Las URLs no cambiaron.** `/maestros/…` y `/cartera/interes` siguen resolviendo: lo que se
+movió es dónde vive cada pantalla en la navegación, no su dirección. Así ningún enlace
+guardado ni el historial se rompen, y no hizo falta una sola redirección.
 
 ### 95.2. Navegación mobile — **alta**
 
@@ -2865,20 +2867,29 @@ actualización de este documento.
 
 ---
 
-## Fase 2 — Navegación de escritorio
+## Fase 2 — Navegación de escritorio ✅ **completada**
 
 **Por qué segunda:** define dónde vive cada pantalla; conviene antes de rediseñarlas.
 
-**Alcance**
+**Lo que se hizo**
 
-1. Reagrupar el sidebar al modelo mental (§14): mover **Maestros** y **Políticas de interés**
-   bajo Configuración; agrupar Cartera / Gastos / Caja / Informes con nombres de usuario.
-   → brecha 95.1
-2. Mantener las rutas actuales y añadir redirecciones si alguna cambia: no romper enlaces
-   guardados ni el historial.
-3. Sidebar navegable con teclado y con estado activo evidente (§46).
+1. `features/config/settings-layout.tsx`: shell de Configuración con sub-navegación propia
+   —columna fija en escritorio, tira horizontal desplazable por debajo de `lg`— que absorbe
+   las once pantallas de ajustes. El sidebar pasa de 21 a 13 enlaces. → 95.1
+2. "Maestros" → **"Catálogos"** de cara al usuario, también en la guía (`/ayuda`), que apuntaba
+   a una sección con el nombre viejo.
+3. Rutas intactas: cero redirecciones, cero enlaces rotos.
+4. Accesibilidad del sidebar (§46): `<nav aria-label>`, `aria-current="page"` —incluido el caso
+   en que Configuración está activa por una ruta hija que no comparte prefijo— y anillo de foco
+   visible en cada enlace.
 
-**Se nota en:** el shell completo. **Riesgo:** medio (toca rutas). **Tamaño:** pequeño-mediano.
+**Verificación:** typecheck limpio, 0 errores de lint, 80 tests en verde (5 nuevos sobre el
+agrupamiento, el estado activo y que las URLs antiguas siguen resolviendo), build OK.
+
+**Decisión anotada, no ejecutada:** renombrar "Acuerdos" a "Cobros recurrentes" (§14 lo usa como
+ejemplo) toca 58 apariciones en 14 archivos, incluido el glosario de la guía y las respuestas de
+Numi. Es un cambio de **vocabulario de producto**, no de navegación, y merece su propia pasada
+deliberada. Lo mismo con "Panel" → "Inicio".
 
 ---
 
@@ -2959,7 +2970,7 @@ sitio.
 | Fase | Tema | Riesgo | Depende de |
 | --- | --- | --- | --- |
 | ✅ 1 | Cimientos del sistema visual | bajo | — |
-| 2 | Navegación de escritorio | medio | 1 |
+| ✅ 2 | Navegación de escritorio | medio | 1 |
 | 3 | Experiencia móvil | medio | 1, 2 |
 | 4 | Dashboard | medio | 1, 2 |
 | 5 | Listados, detalles y Numi | medio | 1, 4 |

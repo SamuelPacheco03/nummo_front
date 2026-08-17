@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { AppShell } from '@/app/layout/app-shell'
 import { ProtectedRoute } from '@/features/auth/protected-route'
+import { SettingsLayout } from '@/features/config/settings-layout'
 
 // Rutas pesadas cargadas bajo demanda (code-splitting).
 export const router = createBrowserRouter([
@@ -143,13 +144,6 @@ export const router = createBrowserRouter([
               Component: (await import('@/features/billing/agreement-detail-page')).AgreementDetailPage,
             }),
           },
-          {
-            path: 'cartera/interes',
-            lazy: async () => ({
-              Component: (await import('@/features/billing/interest-policies-page')).InterestPoliciesPage,
-            }),
-          },
-
           // Gastos
           {
             path: 'gastos/cxp',
@@ -215,65 +209,80 @@ export const router = createBrowserRouter([
             }),
           },
 
-          // Maestros
+          // Catálogos (bajo Configuración)
+          // Configuración: una sola entrada en el sidebar con su propia
+          // sub-navegación. Las URLs no cambian —los enlaces guardados siguen
+          // funcionando—; lo que cambia es dónde vive cada pantalla en la
+          // navegación (§14: modelo mental, no modelo de datos).
           {
-            path: 'maestros/conceptos',
-            lazy: async () => ({
-              Component: (await import('@/features/masters/billing-concepts-page')).BillingConceptsPage,
-            }),
-          },
-          {
-            path: 'maestros/categorias',
-            lazy: async () => ({
-              Component: (await import('@/features/masters/expense-categories-page'))
-                .ExpenseCategoriesPage,
-            }),
-          },
-          {
-            path: 'maestros/metodos',
-            lazy: async () => ({
-              Component: (await import('@/features/masters/payment-methods-page')).PaymentMethodsPage,
-            }),
-          },
-          {
-            path: 'maestros/cuentas',
-            lazy: async () => ({
-              Component: (await import('@/features/masters/financial-accounts-page'))
-                .FinancialAccountsPage,
-            }),
-          },
+            element: <SettingsLayout />,
+            children: [
+              { path: 'config', element: <Navigate to="/config/empresa" replace /> },
+              {
+                path: 'cartera/interes',
+                lazy: async () => ({
+                  Component: (await import('@/features/billing/interest-policies-page')).InterestPoliciesPage,
+                }),
+              },
 
-          // Configuración (organización)
-          { path: 'config', element: <Navigate to="/config/empresa" replace /> },
-          {
-            path: 'config/empresa',
-            lazy: async () => ({ Component: (await import('@/features/config/company-page')).CompanyPage }),
-          },
-          {
-            path: 'config/sedes',
-            lazy: async () => ({ Component: (await import('@/features/config/branches-page')).BranchesPage }),
-          },
-          {
-            path: 'config/miembros',
-            lazy: async () => ({ Component: (await import('@/features/config/members-page')).MembersPage }),
-          },
-          {
-            path: 'config/apariencia',
-            lazy: async () => ({
-              Component: (await import('@/features/config/appearance-page')).AppearancePage,
-            }),
-          },
-          {
-            path: 'config/asistente',
-            lazy: async () => ({
-              Component: (await import('@/features/config/assistant-page')).AssistantPage,
-            }),
-          },
-          {
-            path: 'config/sesiones',
-            lazy: async () => ({
-              Component: (await import('@/features/config/sessions-page')).SessionsPage,
-            }),
+              {
+                path: 'maestros/conceptos',
+                lazy: async () => ({
+                  Component: (await import('@/features/masters/billing-concepts-page')).BillingConceptsPage,
+                }),
+              },
+              {
+                path: 'maestros/categorias',
+                lazy: async () => ({
+                  Component: (await import('@/features/masters/expense-categories-page'))
+                    .ExpenseCategoriesPage,
+                }),
+              },
+              {
+                path: 'maestros/metodos',
+                lazy: async () => ({
+                  Component: (await import('@/features/masters/payment-methods-page')).PaymentMethodsPage,
+                }),
+              },
+              {
+                path: 'maestros/cuentas',
+                lazy: async () => ({
+                  Component: (await import('@/features/masters/financial-accounts-page'))
+                    .FinancialAccountsPage,
+                }),
+              },
+
+              {
+                path: 'config/empresa',
+                lazy: async () => ({ Component: (await import('@/features/config/company-page')).CompanyPage }),
+              },
+              {
+                path: 'config/sedes',
+                lazy: async () => ({ Component: (await import('@/features/config/branches-page')).BranchesPage }),
+              },
+              {
+                path: 'config/miembros',
+                lazy: async () => ({ Component: (await import('@/features/config/members-page')).MembersPage }),
+              },
+              {
+                path: 'config/apariencia',
+                lazy: async () => ({
+                  Component: (await import('@/features/config/appearance-page')).AppearancePage,
+                }),
+              },
+              {
+                path: 'config/asistente',
+                lazy: async () => ({
+                  Component: (await import('@/features/config/assistant-page')).AssistantPage,
+                }),
+              },
+              {
+                path: 'config/sesiones',
+                lazy: async () => ({
+                  Component: (await import('@/features/config/sessions-page')).SessionsPage,
+                }),
+              },
+            ],
           },
         ],
       },

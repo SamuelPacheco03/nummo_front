@@ -5,25 +5,15 @@ import {
   ArrowLeftRight,
   Banknote,
   BarChart3,
-  Bot,
-  Building2,
   Coins,
-  CreditCard,
   FileText,
   HelpCircle,
   Landmark,
   LayoutDashboard,
-  MapPin,
   Menu,
-  MonitorSmartphone,
-  Palette,
-  Percent,
   PieChart,
-  ReceiptText,
-  Tags,
-  UserCog,
+  Settings,
   Users,
-  Wallet,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PageLoader } from '@/components/ui/loader'
@@ -37,6 +27,7 @@ import { useLogout } from '@/features/auth/hooks'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { isSettingsPath } from '@/features/config/settings-layout'
 import { getErrorMessage } from '@/lib/errors'
 import { InstallAppButton } from '@/pwa/install-app-button'
 import { OfflineIndicator } from '@/pwa/offline-indicator'
@@ -59,7 +50,6 @@ const SECTIONS: NavSection[] = [
       { to: '/cartera/cxc', label: 'Cuentas por cobrar', Icon: Coins },
       { to: '/cartera/pagos', label: 'Pagos', Icon: Banknote },
       { to: '/cartera/acuerdos', label: 'Acuerdos', Icon: FileText },
-      { to: '/cartera/interes', label: 'Políticas de interés', Icon: Percent },
     ],
   },
   {
@@ -85,24 +75,10 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Maestros',
-    items: [
-      { to: '/maestros/conceptos', label: 'Conceptos de cobro', Icon: ReceiptText },
-      { to: '/maestros/categorias', label: 'Categorías de gasto', Icon: Tags },
-      { to: '/maestros/metodos', label: 'Métodos de pago', Icon: CreditCard },
-      { to: '/maestros/cuentas', label: 'Cuentas', Icon: Wallet },
-    ],
-  },
-  {
-    title: 'Organización',
-    items: [
-      { to: '/config/empresa', label: 'Empresa', Icon: Building2 },
-      { to: '/config/sedes', label: 'Sedes', Icon: MapPin },
-      { to: '/config/miembros', label: 'Miembros', Icon: UserCog },
-      { to: '/config/apariencia', label: 'Apariencia', Icon: Palette },
-      { to: '/config/asistente', label: 'Asistente', Icon: Bot },
-      { to: '/config/sesiones', label: 'Sesiones', Icon: MonitorSmartphone },
-    ],
+    // Configuración entra como un único enlace: sus once pantallas viven en la
+    // sub-navegación de SettingsLayout. Volcarlas aquí sería exponer el modelo
+    // de datos en la navegación principal, que es justo lo que §14 prohíbe.
+    items: [{ to: '/config', label: 'Configuración', Icon: Settings }],
   },
 ]
 
@@ -115,8 +91,10 @@ function Brand() {
 }
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const { pathname } = useLocation()
+
   return (
-    <nav className="flex flex-col gap-5 px-3 py-4">
+    <nav aria-label="Principal" className="flex flex-col gap-5 px-3 py-4">
       {SECTIONS.map((section, i) => (
         <div key={section.title ?? i} className="flex flex-col gap-0.5">
           {section.title && (
@@ -124,27 +102,38 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
               {section.title}
             </div>
           )}
-          {section.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground',
-                  isActive && 'bg-secondary font-medium text-foreground',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.Icon className={cn('size-4 shrink-0', isActive && 'text-brand')} />
-                  <span className="truncate">{item.label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
+          {section.items.map((item) => {
+            // `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que
+            // también cuelgan de Configuración: sin esto el enlace se apagaría
+            // justo cuando el usuario está dentro de esa sección.
+            const forceActive = item.to === '/config' && isSettingsPath(pathname)
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={onNavigate}
+                aria-current={forceActive ? 'page' : undefined}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground',
+                    'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+                    (isActive || forceActive) && 'bg-secondary font-medium text-foreground',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.Icon
+                      aria-hidden
+                      className={cn('size-4 shrink-0', (isActive || forceActive) && 'text-brand')}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            )
+          })}
         </div>
       ))}
     </nav>

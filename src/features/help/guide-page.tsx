@@ -50,10 +50,10 @@ const STEPS: Step[] = [
   {
     n: 2,
     Icon: Wallet,
-    title: 'Configura tus "maestros"',
-    body: 'Son las listas base que reutilizarás: conceptos de cobro (mensualidad, matrícula…), categorías de gasto, métodos de pago y cuentas (caja, bancos). Con esto listo, todo lo demás es más rápido.',
+    title: 'Configura tus catálogos',
+    body: 'Son las listas base que reutilizarás: conceptos de cobro (mensualidad, matrícula…), categorías de gasto, métodos de pago y cuentas (caja, bancos). Los encuentras en Configuración › Catálogos. Con esto listo, todo lo demás es más rápido.',
     to: '/maestros/conceptos',
-    cta: 'Ir a Maestros',
+    cta: 'Ir a Catálogos',
   },
   {
     n: 3,
@@ -265,7 +265,7 @@ const GLOSSARY: { group: string; terms: { term: string; def: string }[] }[] = [
 /* ── Roles ────────────────────────────────────────────────────────────── */
 const ROLES: { role: string; def: string }[] = [
   { role: 'Propietario', def: 'Control total; único por organización. Gestiona todo, incluida la empresa y los miembros.' },
-  { role: 'Administrador', def: 'Gestiona organización, sedes, miembros y maestros; también opera cartera y gastos.' },
+  { role: 'Administrador', def: 'Gestiona organización, sedes, miembros y catálogos; también opera cartera y gastos.' },
   { role: 'Contador', def: 'Opera cartera, gastos, pagos y acuerdos; no gestiona la organización ni los miembros.' },
   { role: 'Operador', def: 'Registra el día a día (contactos, cobros, pagos); sin acuerdos ni configuración.' },
   { role: 'Lector', def: 'Solo consulta: ve la información sin poder modificarla.' },
@@ -482,7 +482,7 @@ export function GuidePage() {
             <span className="text-brand">•</span>
             <span>
               Lo que ya no uses no se borra: se <strong className="text-foreground">archiva</strong> (contactos)
-              o se marca inactivo (maestros), para no perder el historial.
+              o se marca inactivo (catálogos), para no perder el historial.
             </span>
           </li>
         </ul>
