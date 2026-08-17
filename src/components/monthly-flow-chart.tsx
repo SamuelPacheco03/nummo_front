@@ -16,8 +16,7 @@ type Shape = 'bars' | 'line'
  *
  * **Las dos formas responden preguntas distintas** y por eso se conservan las
  * dos: en barras se comparan meses concretos —¿agosto fue mejor que julio?—; en
- * línea se ve la tendencia de un vistazo. El neto siempre va en línea: no es una
- * cantidad que entra ni que sale, es el resultado de las otras dos.
+ * línea se ve la tendencia de un vistazo.
  */
 export function MonthlyFlowChart({
   items,
@@ -37,10 +36,17 @@ export function MonthlyFlowChart({
     net: Number(m.net) || 0,
   }))
 
+  /*
+    Las tres van de la misma forma. El neto estuvo un tiempo siempre en línea
+    —es un resultado, no una cantidad que entra o sale— y en modo barras se leía
+    fatal: una línea cruzando por delante de las barras parece otra escala, y con
+    pocos meses de datos se arrastraba pegada al cero.
+  */
+  const bar = shape === 'bars' ? 'bar' : 'line'
   const series: ChartSeries[] = [
-    { key: 'income', label: 'Ingresos', tone: 'chart-2', shape: shape === 'line' ? 'line' : 'bar' },
-    { key: 'expense', label: 'Egresos', tone: 'chart-4', shape: shape === 'line' ? 'line' : 'bar' },
-    { key: 'net', label: 'Neto', tone: 'chart-1', shape: 'line' },
+    { key: 'income', label: 'Ingresos', tone: 'chart-2', shape: bar },
+    { key: 'expense', label: 'Egresos', tone: 'chart-4', shape: bar },
+    { key: 'net', label: 'Neto', tone: 'chart-1', shape: bar },
   ]
 
   return (

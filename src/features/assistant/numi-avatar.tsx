@@ -17,6 +17,7 @@ export function NumiAvatar({ className }: { className?: string }) {
       src={GLYPH_URL}
       alt=""
       aria-hidden
+      draggable={false}
       width={256}
       height={256}
       className={cn('size-6 shrink-0 object-contain', className)}
@@ -34,6 +35,12 @@ export function NumiAppMark({ className }: { className?: string }) {
       src={MARK_URL}
       alt=""
       aria-hidden
+      /*
+        Sin esto, arrastrar el botón flotante inicia el arrastre nativo de la
+        imagen y el navegador cancela el gesto (`pointercancel`) al segundo
+        movimiento: el botón no se movía y volvía solo a su sitio.
+      */
+      draggable={false}
       width={256}
       height={256}
       className={cn('size-14 shrink-0 object-contain', className)}
