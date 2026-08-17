@@ -59,7 +59,7 @@ export function AppearancePage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <PageHeader title="Apariencia" description="Personaliza el tema de la interfaz." />
       <Card>
         <CardHeader>

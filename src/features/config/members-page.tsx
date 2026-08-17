@@ -7,17 +7,9 @@ import { Plus, Trash2, Users } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { FormDialog } from '@/components/ui/form-dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -75,40 +67,33 @@ function AddMemberDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Agregar miembro</DialogTitle>
-          <DialogDescription>
-            El usuario debe tener una cuenta en Nummo. Si aún no la tiene, pídele que se registre en{' '}
-            <span className="font-medium text-foreground">/register</span> con su email.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field label="Email" htmlFor="m-email" required error={errors.email?.message}>
-            <Input id="m-email" type="email" placeholder="persona@empresa.com" {...register('email')} />
-          </Field>
-          <Field label="Rol" htmlFor="m-role" error={errors.role?.message}>
-            <NativeSelect id="m-role" {...register('role')}>
-              {ASSIGNABLE_ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {roleLabel(r)}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={add.isPending}>
-              {add.isPending && <Loader size="sm" />}
-              Agregar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Agregar miembro"
+      description={
+        <>
+          El usuario debe tener una cuenta en Nummo. Si aún no la tiene, pídele que se registre en{' '}
+          <span className="text-foreground font-medium">/register</span> con su email.
+        </>
+      }
+      submitLabel="Agregar"
+      loading={add.isPending}
+      onSubmit={onSubmit}
+    >
+      <Field label="Email" htmlFor="m-email" required error={errors.email?.message}>
+        <Input id="m-email" type="email" placeholder="persona@empresa.com" {...register('email')} />
+      </Field>
+      <Field label="Rol" htmlFor="m-role" error={errors.role?.message}>
+        <NativeSelect id="m-role" {...register('role')}>
+          {ASSIGNABLE_ROLES.map((r) => (
+            <option key={r} value={r}>
+              {roleLabel(r)}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+    </FormDialog>
   )
 }
 

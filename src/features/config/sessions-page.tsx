@@ -66,7 +66,7 @@ export function SessionsPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <PageHeader title="Sesiones" description="Dispositivos donde tu cuenta tiene la sesión abierta.">
         {others > 0 && (
           <Button variant="outline" size="sm" onClick={() => setConfirmOthers(true)}>

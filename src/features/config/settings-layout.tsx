@@ -98,7 +98,14 @@ export function SettingsLayout() {
         </Drawer>
       </div>
 
-      <div className="min-w-0 flex-1">
+      {/*
+        **El ancho lo pone el layout, no cada página.** Unas iban a `max-w-2xl` y
+        otras a todo lo ancho, así que al saltar de Empresa a Sedes la columna
+        cambiaba de tamaño y parecía otra pantalla. `3xl` es el punto medio: deja
+        respirar las filas de miembros y sedes sin estirar los formularios más
+        allá de lo que se lee cómodo.
+      */}
+      <div className="min-w-0 max-w-3xl flex-1">
         <Outlet />
       </div>
     </div>

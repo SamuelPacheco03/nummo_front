@@ -7,15 +7,8 @@ import { MapPin, Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { FormDialog } from '@/components/ui/form-dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -95,44 +88,35 @@ function BranchDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar sede' : 'Nueva sede'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field label="Nombre" htmlFor="b-name" required error={errors.name?.message}>
-            <Input id="b-name" placeholder="Sede principal" {...register('name')} />
-          </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Código" htmlFor="b-code" error={errors.code?.message}>
-              <Input id="b-code" {...register('code')} />
-            </Field>
-            <Field label="Teléfono" htmlFor="b-phone" error={errors.phone?.message}>
-              <Input id="b-phone" {...register('phone')} />
-            </Field>
-          </div>
-          <Field label="Dirección" htmlFor="b-address" error={errors.address?.message}>
-            <Input id="b-address" {...register('address')} />
-          </Field>
-          {isEdit && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
-              Sede activa
-            </label>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader size="sm" />}
-              {isEdit ? 'Guardar' : 'Crear'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? 'Editar sede' : 'Nueva sede'}
+      submitLabel={isEdit ? 'Guardar' : 'Crear'}
+      loading={busy}
+      onSubmit={onSubmit}
+    >
+      <Field label="Nombre" htmlFor="b-name" required error={errors.name?.message}>
+        <Input id="b-name" placeholder="Sede principal" {...register('name')} />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Código" htmlFor="b-code" error={errors.code?.message}>
+          <Input id="b-code" {...register('code')} />
+        </Field>
+        <Field label="Teléfono" htmlFor="b-phone" error={errors.phone?.message}>
+          <Input id="b-phone" {...register('phone')} />
+        </Field>
+      </div>
+      <Field label="Dirección" htmlFor="b-address" error={errors.address?.message}>
+        <Input id="b-address" {...register('address')} />
+      </Field>
+      {isEdit && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
+          Sede activa
+        </label>
+      )}
+    </FormDialog>
   )
 }
 

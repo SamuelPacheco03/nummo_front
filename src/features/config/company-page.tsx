@@ -146,7 +146,7 @@ export function CompanyPage() {
   }, [organization, reset])
 
   if (isPending) {
-    return <Skeleton className="h-96 w-full max-w-2xl" />
+    return <Skeleton className="h-96 w-full" />
   }
   if (isError || !organization) {
     return (
@@ -175,7 +175,7 @@ export function CompanyPage() {
   })
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <PageHeader title="Empresa" description="Datos y estado de la organización." />
       <Card>
         <form onSubmit={onSubmit} noValidate>

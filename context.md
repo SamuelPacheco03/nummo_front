@@ -823,8 +823,25 @@ igual que en escritorio.
 
 La regla que deja: **una navegación larga no se aplana en horizontal; se mete en el cajón.**
 
+**El ancho de las pantallas de ajustes lo pone el layout, no cada página.** Unas iban a
+`max-w-2xl` y otras a todo lo ancho, así que saltar de Empresa a Sedes cambiaba el tamaño de la
+columna y parecía otra pantalla. Hoy es un `max-w-3xl` en el contenedor del `<Outlet />` y ninguna
+página declara el suyo: deja respirar las filas de miembros y sedes sin estirar los formularios
+más allá de lo que se lee cómodo.
+
 `Sheet` se queda para lo que **no** cambia de eje: los laterales de navegación y la hoja inferior
 de acciones.
+
+**Y el diálogo centrado, ¿cuándo?** Cuando no hay nada detrás que mirar. El cajón existe porque
+se abre **sobre una lista**: una ficha que se comparte por URL, unos filtros que se aplican a lo
+que sigue ahí al fondo. En Configuración no hay lista: son tres campos y un botón. Ahí va
+`FormDialog` (`components/ui/form-dialog.tsx`), centrado en las dos orientaciones, con el pie
+siempre Cancelar + acción. Lo usan sedes, miembros y asistente; antes cada una repetía su propio
+`Dialog` + `<form className="space-y-4">` + `DialogFooter` con etiquetas distintas y un `Loader`
+que a veces estaba y a veces no.
+
+En una palabra: **cuelga de una lista → cajón; es un formulario corto de ajustes → diálogo
+centrado.**
 
 ---
 
@@ -3010,6 +3027,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
 | `MasterCrud` | `features/masters/master-crud.tsx` | Listado CRUD de un maestro |
 | `SettingsLayout` | `features/config/settings-layout.tsx` | Shell de Configuración: columna en escritorio, `Drawer` por debajo de `lg` |
+| `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
