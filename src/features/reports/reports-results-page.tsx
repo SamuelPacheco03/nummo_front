@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowRight } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
-import { KpiTile } from '@/components/kpi-tile'
+import { KpiStrip, KpiTile } from '@/components/kpi-tile'
 import { Panel } from '@/components/panel'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { Chart } from '@/components/ui/chart'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { formatMoney, pctChange, todayISODate } from '@/lib/format'
+import { formatMoney, pctChange, plural, todayISODate } from '@/lib/format'
 import { AgingBucketBucket, type AgingBucket } from '@/api/generated/model'
 import { ReportBreakdown } from './report-breakdown'
 import {
@@ -110,11 +110,7 @@ export function ReportsResultsPage() {
     return (
       <div className="space-y-6">
         {header}
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
+        <Skeleton className="h-[7.5rem]" />
         <Skeleton className="h-80" />
         <div className="grid gap-4 lg:grid-cols-2">
           <Skeleton className="h-72" />
@@ -129,8 +125,25 @@ export function ReportsResultsPage() {
     <div className="space-y-6">
       {header}
 
-      {/* 1 · El período: lo que entró, lo que salió y lo que quedó. */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/*
+        1 · El período. **El neto manda** y los otros dos van debajo, como en el
+        Panel (§11.1): tres cifras del mismo tamaño obligan a leer las tres para
+        saber cómo fue el mes, cuando la respuesta es una sola. Ingresos y
+        egresos explican el neto; no compiten con él.
+      */}
+      <KpiStrip
+        featured={
+          <KpiTile
+            featured
+            label="Neto del período"
+            value={formatMoney(cashflow?.current?.net ?? '0', currency)}
+            delta={{
+              pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net),
+              higherIsGood: true,
+            }}
+          />
+        }
+      >
         <KpiTile
           label="Ingresos"
           value={formatMoney(cashflow?.current?.income ?? '0', currency)}
@@ -147,15 +160,7 @@ export function ReportsResultsPage() {
             higherIsGood: false,
           }}
         />
-        <KpiTile
-          label="Neto"
-          value={formatMoney(cashflow?.current?.net ?? '0', currency)}
-          delta={{
-            pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net),
-            higherIsGood: true,
-          }}
-        />
-      </div>
+      </KpiStrip>
 
       {/* 2 · La tendencia, que el período por sí solo no cuenta. */}
       <Panel title="Flujo mensual · últimos 6 meses">
@@ -232,19 +237,27 @@ export function ReportsResultsPage() {
           </Link>
         }
       >
-        <div className="grid gap-3 sm:grid-cols-3">
+        <KpiStrip
+          featured={
+            <KpiTile
+              featured
+              label="Neto esperado"
+              value={formatMoney(String(netMonthly), currency)}
+              sub="cada mes, si nada cambia"
+            />
+          }
+        >
           <KpiTile
             label="Ingresos recurrentes"
             value={formatMoney(String(monthlyIncome), currency)}
-            sub={`${activeAgreements.length} acuerdos activos`}
+            sub={plural(activeAgreements.length, 'acuerdo activo', 'acuerdos activos')}
           />
           <KpiTile
             label="Gastos recurrentes"
             value={formatMoney(String(monthlyExpense), currency)}
-            sub={`${activeSchedules.length} recurrentes activos`}
+            sub={plural(activeSchedules.length, 'recurrente activo', 'recurrentes activos')}
           />
-          <KpiTile label="Neto esperado" value={formatMoney(String(netMonthly), currency)} />
-        </div>
+        </KpiStrip>
       </Panel>
     </div>
   )
