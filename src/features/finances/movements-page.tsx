@@ -1,16 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
-import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
-import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, type ActiveFilter } from '@/components/ui/data-list'
+import { DataList } from '@/components/ui/data-list'
+import {
+  FilterField,
+  FilterSheet,
+  FilterSortField,
+  type SortChoice,
+} from '@/components/ui/filter-sheet'
 import { listColumns } from '@/components/ui/list-columns'
+import { ListToolbar } from '@/components/ui/list-toolbar'
+import { NativeSelect } from '@/components/ui/native-select'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { formatAmount, formatDateHuman } from '@/lib/format'
+import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { useListFilters } from '@/lib/use-list-filters'
 import { cn } from '@/lib/utils'
 import type {
   GetApiV1OrganizationsOrgIdFinancialMovementsMovementType,
@@ -21,49 +28,78 @@ import type {
 import { MOVEMENT_TYPES, MOVEMENT_TYPE_LABELS } from './labels'
 import { useAccountBalances, useMovements } from './hooks'
 
-type DirFilter = '' | 'IN' | 'OUT'
-const PAGE_SIZE = 20
+/** Diez, como el resto de listados. */
+const PAGE_SIZE = 10
+
+/** Criterios que viven en la URL, en español como las rutas (§87.5). */
+const FILTER_KEYS = ['flujo', 'cuenta', 'tipo', 'orden', 'dir', 'pagina'] as const
+type FilterKey = (typeof FILTER_KEYS)[number]
+
+/** Los que cuentan para el contador del botón «Filtros». */
+const ADVANCED_KEYS: FilterKey[] = ['cuenta', 'tipo']
+
+/** Entra o sale: la pregunta que más se hace sobre un libro de caja. */
+const FLOW_CHOICES = [
+  { value: '', label: 'Todos' },
+  { value: 'IN', label: 'Entradas' },
+  { value: 'OUT', label: 'Salidas' },
+]
 
 /** Columnas ordenables que acepta el endpoint (contrato: ListMovementsQuery). */
-const SORT_OPTIONS = [
-  { field: 'occurredAt', label: 'Fecha' },
-  { field: 'amount', label: 'Monto' },
+const SORT_CHOICES: SortChoice[] = [
+  { field: 'occurredAt', label: 'Fecha', asc: 'Más antiguos', desc: 'Más recientes' },
+  { field: 'amount', label: 'Monto', asc: 'Menor primero', desc: 'Mayor primero' },
 ]
+
+const DEFAULT_SORT = 'occurredAt'
 
 const column = listColumns<LedgerMovement>()
 
+/**
+ * El libro de caja, con el mismo patrón de filtros que el resto (§21.1).
+ *
+ * **Sin cifras de cabecera:** los saldos por cuenta ya son la pantalla de al
+ * lado (`/caja/cuentas`), y sumarlos aquí en uno solo sería inventar un total —
+ * las cuentas pueden estar en monedas distintas y el backend no firma esa suma
+ * (§70, §88.4).
+ */
 export function MovementsPage() {
   const { orgId } = useCurrentOrg()
   const { balances } = useAccountBalances(orgId)
   const accountName = useMemo(() => new Map(balances.map((b) => [b.accountId, b.name])), [balances])
 
+  const { values, set, clear } = useListFilters<FilterKey>('nummo:movimientos:filtros', FILTER_KEYS)
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'occurredAt', desc: true }])
-  const [accountId, setAccountId] = useState('')
-  const [direction, setDirection] = useState<DirFilter>('')
-  const [movementType, setMovementType] = useState('')
-  const [page, setPage] = useState(1)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Cualquier cambio de criterio devuelve a la primera página.
-  useEffect(() => {
-    setPage(1)
-  }, [q, accountId, direction, movementType, sorting])
+  const page = Number(values.pagina) || 1
+  const sortField = values.orden || DEFAULT_SORT
+  // Lo último ocurrido primero: se calla `desc` en la URL y se escribe `asc`.
+  const desc = values.dir !== 'asc'
 
-  const active = sorting[0]
+  /** Cambiar cualquier criterio devuelve a la primera página. */
+  const filter = (patch: Partial<Record<FilterKey, string>>) => set({ ...patch, pagina: '' })
+
+  const sortBy = (field: string, descending: boolean) =>
+    filter({ orden: field === DEFAULT_SORT ? '' : field, dir: descending ? '' : 'asc' })
+
   const params: GetApiV1OrganizationsOrgIdFinancialMovementsParams = {
     page,
     pageSize: PAGE_SIZE,
-    financialAccountId: accountId || undefined,
-    direction: direction || undefined,
-    movementType: (movementType || undefined) as
-      | GetApiV1OrganizationsOrgIdFinancialMovementsMovementType
-      | undefined,
     q: q || undefined,
-    sort: active?.id as GetApiV1OrganizationsOrgIdFinancialMovementsSort | undefined,
-    order: active?.desc ? 'desc' : 'asc',
+    financialAccountId: values.cuenta || undefined,
+    direction: (values.flujo ||
+      undefined) as GetApiV1OrganizationsOrgIdFinancialMovementsParams['direction'],
+    movementType: (values.tipo ||
+      undefined) as GetApiV1OrganizationsOrgIdFinancialMovementsMovementType,
+    sort: sortField as GetApiV1OrganizationsOrgIdFinancialMovementsSort,
+    order: desc ? 'desc' : 'asc',
   }
-  const { items, total, totalPages, isPending, isError, error, isFetching } = useMovements(orgId, params)
+  const { items, total, totalPages, isPending, isError, error, isFetching } = useMovements(
+    orgId,
+    params,
+  )
 
   const columns = useMemo(
     () =>
@@ -109,43 +145,52 @@ export function MovementsPage() {
     [accountName],
   )
 
-  const activeFilters = [
-    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
-    accountId && { id: 'account', label: `Cuenta: ${accountName.get(accountId) ?? '—'}`, onRemove: () => setAccountId('') },
-    direction && { id: 'dir', label: direction === 'IN' ? 'Entradas' : 'Salidas', onRemove: () => setDirection('') },
-    movementType && {
-      id: 'type',
-      label: MOVEMENT_TYPE_LABELS[movementType] ?? movementType,
-      onRemove: () => setMovementType(''),
-    },
-  ].filter(Boolean) as ActiveFilter[]
-
-  const hasFilters = Boolean(q) || accountId !== '' || direction !== '' || movementType !== ''
-  const clearFilters = () => {
+  const advancedCount = ADVANCED_KEYS.filter((k) => values[k]).length
+  const hasFilters = Boolean(q) || FILTER_KEYS.some((k) => k !== 'pagina' && values[k])
+  const clearAll = () => {
     setSearch('')
-    setAccountId('')
-    setDirection('')
-    setMovementType('')
+    clear()
   }
 
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader title="Movimientos" description="Libro de todos los movimientos de caja." />
 
       {isError ? (
         <ErrorState error={error} fallback="No se pudieron cargar los movimientos." />
       ) : (
         <>
+          <ListToolbar
+            search={search}
+            onSearch={setSearch}
+            searchPlaceholder="Buscar por descripción o referencia…"
+            main={{
+              label: 'Flujo',
+              allLabel: 'Entradas y salidas',
+              choices: FLOW_CHOICES,
+              value: values.flujo,
+              onChange: (flujo) => filter({ flujo }),
+            }}
+            filterCount={advancedCount}
+            onOpenFilters={() => setSheetOpen(true)}
+          />
+
           <DataList
             columns={columns}
             rows={items}
             getRowId={(m) => m.id}
+            sort={{
+              value: [{ id: sortField, desc }],
+              onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, next[0]?.desc !== false),
+              options: SORT_CHOICES.map(({ field, label }) => ({ field, label })),
+              // El orden ya vive en el cajón, que es la única vía en móvil.
+              showSortControl: false,
+            }}
             isLoading={isPending}
-            activeFilters={activeFilters}
-            onClearFilters={clearFilters}
+            skeletonRows={PAGE_SIZE}
             emptyText={
               hasFilters ? (
-                <NoResults entity="movimientos" onClear={clearFilters} />
+                <NoResults entity="movimientos" onClear={clearAll} />
               ) : (
                 <EmptyState
                   Icon={ArrowLeftRight}
@@ -154,59 +199,60 @@ export function MovementsPage() {
                 />
               )
             }
-            search={{
-              value: search,
-              onChange: setSearch,
-              placeholder: 'Buscar por descripción o referencia…',
-            }}
-            sort={{ value: sorting, onChange: setSorting, options: SORT_OPTIONS }}
-            filters={
-              <>
-                <NativeSelect
-                  className="w-full sm:w-52"
-                  value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
-                  aria-label="Cuenta"
-                >
-                  <option value="">Todas las cuentas</option>
-                  {balances.map((b) => (
-                    <option key={b.accountId} value={b.accountId}>
-                      {b.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-                <NativeSelect
-                  className="w-40"
-                  value={movementType}
-                  onChange={(e) => setMovementType(e.target.value)}
-                  aria-label="Tipo"
-                >
-                  <option value="">Todos los tipos</option>
-                  {MOVEMENT_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {MOVEMENT_TYPE_LABELS[t]}
-                    </option>
-                  ))}
-                </NativeSelect>
-                <NativeSelect
-                  className="w-32"
-                  value={direction}
-                  onChange={(e) => setDirection(e.target.value as DirFilter)}
-                  aria-label="Dirección"
-                >
-                  <option value="">Ambas</option>
-                  <option value="IN">Entradas</option>
-                  <option value="OUT">Salidas</option>
-                </NativeSelect>
-              </>
-            }
           />
 
           {!isPending && total > 0 && (
-            <Pagination page={page} pageSize={PAGE_SIZE} total={total} totalPages={totalPages} isFetching={isFetching} onPage={setPage} />
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              totalPages={totalPages}
+              isFetching={isFetching}
+              onPage={(next) => set({ pagina: next > 1 ? String(next) : '' })}
+            />
           )}
         </>
       )}
+
+      <FilterSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onClear={clearAll}
+        canClear={hasFilters}
+        resultLabel={`Ver ${plural(total, 'movimiento', 'movimientos')}`}
+      >
+        <FilterField label="Cuenta">
+          <NativeSelect
+            value={values.cuenta}
+            onChange={(e) => filter({ cuenta: e.target.value })}
+            aria-label="Cuenta"
+          >
+            <option value="">Todas las cuentas</option>
+            {balances.map((b) => (
+              <option key={b.accountId} value={b.accountId}>
+                {b.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </FilterField>
+
+        <FilterField label="Tipo de movimiento" hint="Qué lo originó: un pago, un egreso…">
+          <NativeSelect
+            value={values.tipo}
+            onChange={(e) => filter({ tipo: e.target.value })}
+            aria-label="Tipo de movimiento"
+          >
+            <option value="">Todos los tipos</option>
+            {MOVEMENT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {MOVEMENT_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </NativeSelect>
+        </FilterField>
+
+        <FilterSortField choices={SORT_CHOICES} field={sortField} desc={desc} onChange={sortBy} />
+      </FilterSheet>
     </div>
   )
 }

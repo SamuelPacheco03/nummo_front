@@ -76,11 +76,23 @@ no reescribas módulos completos por un ajuste, no cambies el stack durante un c
 
 Extraer lo repetido **no** viola esto: quitar un duplicado es más pequeño que mantener dos.
 
+## Herramientas del repo, no las tuyas
+
+Usa **solo** los comandos de abajo. Este repositorio **no tiene Prettier**: lanzar
+`npx prettier --write` reformatea el archivo entero a un estilo ajeno —comillas dobles, punto y
+coma— y convierte un cambio de diez líneas en un diff de trescientas. Lo mismo con cualquier
+formateador, linter o codemod que no esté en `package.json`.
+
+El estilo se mantiene a mano, imitando el archivo que estás tocando (§89).
+
 ## Antes de terminar
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test
 ```
+
+`pnpm lint` está **en cero advertencias**. Si tu cambio suma una, arréglala: la única forma de que
+la próxima se note es que no haya ninguna de fondo.
 
 Y si el cambio altera un patrón global (navegación, componentes, tipografía, tablas,
 formularios, Numi, loaders, responsive, accesibilidad): **actualiza `context.md` en el mismo

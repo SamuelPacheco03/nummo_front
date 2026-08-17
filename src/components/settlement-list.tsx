@@ -5,21 +5,20 @@ import { CashflowKpis } from '@/components/cashflow-kpis'
 import { ContactPicker } from '@/components/contact-picker'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
-import { SearchInput } from '@/components/search-input'
 import { SectionSwitch } from '@/components/section-switch'
 import { Button } from '@/components/ui/button'
 import { DataList, RowChevron } from '@/components/ui/data-list'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
-import { FilterChips, type FilterChoice } from '@/components/ui/filter-chips'
+import { type FilterChoice } from '@/components/ui/filter-chips'
 import {
   FilterField,
   FilterSheet,
-  FilterSheetTrigger,
   FilterSortField,
   type SortChoice,
 } from '@/components/ui/filter-sheet'
 import { listColumns } from '@/components/ui/list-columns'
+import { ListToolbar } from '@/components/ui/list-toolbar'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
@@ -222,47 +221,20 @@ export function SettlementList({
         <ErrorState error={error} fallback={copy.loadError} />
       ) : (
         <>
-          <div className="space-y-3">
-            <FilterChips
-              className="lg:hidden"
-              label="Estado"
-              choices={statusChoices}
-              value={values.estado}
-              onChange={(estado) => filter({ estado })}
-            />
-
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1 sm:max-w-72">
-                <SearchInput
-                  value={search}
-                  onChange={setSearch}
-                  placeholder={copy.searchPlaceholder}
-                />
-              </div>
-              {/* Ocultar va en la envoltura: `className` llega al `select`, y el
-                  chevron vive fuera de él. */}
-              <div className="hidden lg:block">
-                <NativeSelect
-                  className="w-44"
-                  value={values.estado}
-                  onChange={(e) => filter({ estado: e.target.value })}
-                  aria-label="Estado"
-                >
-                  <option value="">Todos los estados</option>
-                  {SETTLEMENT_STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {statusOf(value).label}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-              <FilterSheetTrigger
-                className="ml-auto"
-                count={advancedCount}
-                onClick={() => setSheetOpen(true)}
-              />
-            </div>
-          </div>
+          <ListToolbar
+            search={search}
+            onSearch={setSearch}
+            searchPlaceholder={copy.searchPlaceholder}
+            main={{
+              label: 'Estado',
+              allLabel: 'Todos los estados',
+              choices: statusChoices,
+              value: values.estado,
+              onChange: (estado) => filter({ estado }),
+            }}
+            filterCount={advancedCount}
+            onOpenFilters={() => setSheetOpen(true)}
+          />
 
           <DataList
             columns={columns}

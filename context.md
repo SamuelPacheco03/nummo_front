@@ -799,8 +799,9 @@ de acciones.
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
-Lo usan las cuatro pantallas de dinero —cuentas por cobrar y por pagar, pagos y egresos—; las
-demás listas todavía llevan su barra de filtros dentro de `DataList` (§95).
+Lo usa **todo listado** de la app: cartera, pagos y egresos, contactos, acuerdos y movimientos.
+Los maestros son la excepción declarada —`MasterCrud` resuelve su propio estado— porque su lista
+es un catálogo corto que no se comparte por enlace.
 No es un capricho técnico: es lo que hace que el botón «atrás» funcione, que se pueda mandar
 «mira estas cuentas» por chat y que recargar no devuelva al principio. El estado de React no
 duplica nada — se deriva de los parámetros en cada render.
@@ -841,6 +842,9 @@ el backend —`cashflow` devuelve `previous`—, no se calcula aquí (§88.4).
 | El filtro principal (estado) | `FilterChips`, rejilla 2×2 | Desplegable junto al buscador |
 | El resto | `FilterSheet`, tras un botón con el contador | El mismo botón, **a la derecha del todo** |
 | Ordenar | Dentro del cajón, `FilterSortField` | Pulsando la cabecera de la columna |
+
+Esa fila la dibuja `ListToolbar`, no cada pantalla: dónde va cada filtro según el ancho es una
+decisión que debe tomarse **una vez**, no seis.
 
 **Por qué el estado cambia de forma con el breakpoint:** en móvil el dedo agradece un objetivo
 grande y siempre visible. Desde `lg` la lista **es** una tabla, con su propia fila de cabeceras, y
@@ -2952,6 +2956,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
+| `ListToolbar` | `components/ui/list-toolbar.tsx` | La fila de controles de un listado |
 | `FilterSheet` · `FilterSheetTrigger` · `FilterField` · `FilterSortField` | `components/ui/filter-sheet.tsx` | Filtros avanzados y orden, en hoja inferior / cajón |
 | `BalanceKpis` | `components/balance-kpis.tsx` | Total, vencido y al día de una cartera |
 | `SectionSwitch` | `components/section-switch.tsx` | Salto entre pantallas espejo, solo en móvil |

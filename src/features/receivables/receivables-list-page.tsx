@@ -16,20 +16,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { FilterChips, type FilterChoice } from '@/components/ui/filter-chips'
+import { type FilterChoice } from '@/components/ui/filter-chips'
 import {
   FilterField,
   FilterSheet,
-  FilterSheetTrigger,
   FilterSortField,
   type SortChoice,
 } from '@/components/ui/filter-sheet'
 import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
-import { SearchInput } from '@/components/search-input'
 import { DataList, RowChevron } from '@/components/ui/data-list'
 import { listColumns } from '@/components/ui/list-columns'
+import { ListToolbar } from '@/components/ui/list-toolbar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -335,54 +334,24 @@ export function ReceivablesListPage() {
         <ErrorState error={error} fallback="No se pudieron cargar las cuentas por cobrar." />
       ) : (
         <>
-          <div className="space-y-3">
-            {/*
-              Móvil y tablet: fichas. El dedo agradece un objetivo grande y
-              siempre visible. Desde `lg` la lista es una tabla de verdad, con su
-              propia fila de controles, y una rejilla de fichas ahí compite con
-              las cabeceras: el estado vuelve a un desplegable junto al buscador.
-            */}
-            <FilterChips
-              className="lg:hidden"
-              label="Estado"
-              choices={statusChoices}
-              value={values.estado}
-              onChange={(estado) => filter({ estado })}
-            />
-
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1 sm:max-w-72">
-                <SearchInput
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Buscar por pagador…"
-                />
-              </div>
-              {/* Ocultar va en la envoltura: `className` llega al `select`, y el
-                  chevron vive fuera de él. */}
-              <div className="hidden lg:block">
-                <NativeSelect
-                  className="w-44"
-                  value={values.estado}
-                  onChange={(e) => filter({ estado: e.target.value })}
-                  aria-label="Estado"
-                >
-                  <option value="">Todos los estados</option>
-                  {ALL_STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {RECEIVABLE_STATUS_LABELS[value] ?? value}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-              {/* A la derecha del todo: es el cajón, no un criterio más. */}
-              <FilterSheetTrigger
-                className="ml-auto"
-                count={advancedCount}
-                onClick={() => setSheetOpen(true)}
-              />
-            </div>
-          </div>
+          <ListToolbar
+            search={search}
+            onSearch={setSearch}
+            searchPlaceholder="Buscar por pagador…"
+            main={{
+              label: 'Estado',
+              allLabel: 'Todos los estados',
+              choices: statusChoices,
+              options: ALL_STATUSES.map((value) => ({
+                value,
+                label: RECEIVABLE_STATUS_LABELS[value] ?? value,
+              })),
+              value: values.estado,
+              onChange: (estado) => filter({ estado }),
+            }}
+            filterCount={advancedCount}
+            onOpenFilters={() => setSheetOpen(true)}
+          />
 
           <DataList
             columns={columns}

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from 'lucide-react'
 import {
   flexRender,
   useTable,
@@ -54,22 +54,7 @@ interface DataListProps<TData extends RowData> {
   }
   /** Filtros propios de la lista, a la derecha de la barra. */
   filters?: ReactNode
-  /**
-   * Filtros activos ahora mismo, uno por criterio (§21: deben verse y poder
-   * soltarse). Se dibujan como fichas bajo la barra, con su × y un "Limpiar
-   * todo". Si va vacío, no ocupa sitio.
-   */
-  activeFilters?: ActiveFilter[]
-  /** Suelta todos los criterios de golpe. */
-  onClearFilters?: () => void
   className?: string
-}
-
-export interface ActiveFilter {
-  id: string
-  /** Lo que el usuario reconoce: "Vencidas", "Pagador: Laura Gómez". */
-  label: string
-  onRemove: () => void
 }
 
 /**
@@ -95,8 +80,6 @@ export function DataList<TData extends RowData>({
   search,
   sort,
   filters,
-  activeFilters,
-  onClearFilters,
   className,
 }: DataListProps<TData>) {
   const table = useTable({
@@ -142,33 +125,6 @@ export function DataList<TData extends RowData>({
               />
             )}
           </div>
-        </div>
-      )}
-
-      {activeFilters && activeFilters.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          <span className="text-muted-foreground text-xs">Filtros:</span>
-          {activeFilters.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={filter.onRemove}
-              className="bg-secondary hover:bg-secondary/70 focus-visible:ring-ring/50 text-secondary-foreground inline-flex items-center gap-1 rounded-full py-1 pr-1.5 pl-2.5 text-xs transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-            >
-              {filter.label}
-              <X aria-hidden className="size-3.5" />
-              <span className="sr-only">Quitar filtro</span>
-            </button>
-          ))}
-          {onClearFilters && activeFilters.length > 1 && (
-            <button
-              type="button"
-              onClick={onClearFilters}
-              className="text-muted-foreground hover:text-foreground ml-1 text-xs underline-offset-4 hover:underline"
-            >
-              Limpiar todo
-            </button>
-          )}
         </div>
       )}
 
