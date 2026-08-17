@@ -1,291 +1,310 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, Wallet } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
-import { BarList } from '@/components/bar-list'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
-import { ContactAmountList } from '@/components/contact-amount-list'
-import { UpcomingList } from '@/components/upcoming-list'
 import { KpiTile } from '@/components/kpi-tile'
-import { Input } from '@/components/ui/input'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Skeleton } from '@/components/ui/skeleton'
+import { NumiAppMark } from '@/features/assistant/numi-avatar'
+import { useNumiStore } from '@/features/assistant/numi-store'
+import { allowedQuickActions } from '@/features/actions/quick-actions'
+import { QuickActionTile } from '@/features/actions/quick-action-tile'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useAccountBalances, useMovements } from '@/features/finances/hooks'
 import { MOVEMENT_TYPE_LABELS } from '@/features/finances/labels'
-import { formatMoney, formatDateHuman, todayISODate } from '@/lib/format'
+import { formatDateHuman, formatMoney } from '@/lib/format'
+import { balanceByCurrency, buildInsight } from './insights'
 import { cn } from '@/lib/utils'
 import {
-  useCashflow,
   useCashflowMonthly,
-  useExpensesByCategory,
-  useIncomeByConcept,
   usePayablesSummary,
   useReceivablesSummary,
-  useRecurringCommitment,
-  useTopCreditors,
   useTopDebtors,
   useUpcomingPayables,
   useUpcomingReceivables,
-  type Period,
 } from './hooks'
 
-/** Grupo de KPIs bajo una "lente" (Realizado / Pendiente / Esperado). */
-function KpiGroup({ label, children }: { label: string; children: ReactNode }) {
+/** Fila de "necesita tu atención": cifra + el porqué + a dónde ir. */
+function AttentionRow({
+  Icon,
+  tone,
+  title,
+  context,
+  amount,
+  to,
+}: {
+  Icon: LucideIcon
+  tone: 'destructive' | 'warning'
+  title: string
+  context: string
+  amount: string
+  to: string
+}) {
   return (
-    <section className="space-y-2">
-      <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</h2>
-      <div className="grid gap-3 sm:grid-cols-3">{children}</div>
-    </section>
+    <Link
+      to={to}
+      className="hover:bg-secondary focus-visible:ring-ring/50 -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+    >
+      <span
+        className={cn(
+          'grid size-9 shrink-0 place-items-center rounded-lg',
+          tone === 'destructive' ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning',
+        )}
+      >
+        <Icon aria-hidden className="size-4.5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{title}</span>
+        {/* §2.2: la cifra sola no dice nada; el contexto es lo que permite decidir. */}
+        <span className="text-muted-foreground block text-xs">{context}</span>
+      </span>
+      <span className="nums shrink-0 text-sm font-medium">{amount}</span>
+    </Link>
   )
 }
 
-function pctChange(current: string | undefined, previous: string | undefined): number | null {
-  const c = Number(current)
-  const p = Number(previous)
-  if (!Number.isFinite(c) || !Number.isFinite(p) || p === 0) return null
-  return ((c - p) / Math.abs(p)) * 100
+function AttentionList({
+  currency,
+  overdueAmount,
+  overdueCount,
+  topDebtor,
+  nextReceivable,
+  nextPayable,
+}: {
+  currency?: string
+  overdueAmount?: string
+  overdueCount: number
+  topDebtor?: string
+  nextReceivable?: { receivableId: string; displayName: string; dueDate: string; balance: string }
+  nextPayable?: { expenseId: string; displayName: string; dueDate: string; balance: string }
+}) {
+  const rows: ReactNode[] = []
+
+  if (overdueCount > 0) {
+    rows.push(
+      <AttentionRow
+        key="overdue"
+        Icon={AlertTriangle}
+        tone="destructive"
+        title={`${overdueCount} cuenta(s) vencida(s)`}
+        context={topDebtor ? `El mayor saldo es de ${topDebtor}` : 'Requieren gestión de cobro'}
+        amount={formatMoney(overdueAmount ?? '0', currency)}
+        to="/cartera/cxc"
+      />,
+    )
+  }
+
+  if (nextReceivable) {
+    rows.push(
+      <AttentionRow
+        key="next-in"
+        Icon={CalendarClock}
+        tone="warning"
+        title="Próximo cobro"
+        context={`${nextReceivable.displayName} · vence ${formatDateHuman(nextReceivable.dueDate)}`}
+        amount={formatMoney(nextReceivable.balance, currency)}
+        to={`/cartera/cxc/${nextReceivable.receivableId}`}
+      />,
+    )
+  }
+
+  if (nextPayable) {
+    rows.push(
+      <AttentionRow
+        key="next-out"
+        Icon={CalendarClock}
+        tone="warning"
+        title="Próximo pago"
+        context={`${nextPayable.displayName} · vence ${formatDateHuman(nextPayable.dueDate)}`}
+        amount={formatMoney(nextPayable.balance, currency)}
+        to={`/gastos/cxp/${nextPayable.expenseId}`}
+      />,
+    )
+  }
+
+  // Nada que atender es una buena noticia, y se dice como tal (§27, §73).
+  if (rows.length === 0) {
+    return (
+      <p className="text-muted-foreground py-4 text-center text-sm">
+        Nada vencido y nada que venza esta semana. Todo al día.
+      </p>
+    )
+  }
+
+  return <div className="divide-y">{rows}</div>
 }
 
-function monthStart(): string {
-  const t = todayISODate()
-  return `${t.slice(0, 7)}-01`
-}
-
+/**
+ * Panel de inicio.
+ *
+ * Responde las seis preguntas de §16 y en ese orden: cuánto tengo, qué puedo
+ * hacer, cómo va el flujo, qué requiere atención, qué observa Numi y qué pasó.
+ *
+ * Deliberadamente **no** es un índice de informes: los desgloses por concepto,
+ * el aging, los top deudores y los recurrentes viven en Informes, que es donde
+ * se analiza. Duplicarlos aquí era lo que convertía el Panel en el vertedero de
+ * widgets que §16 y §77 prohíben.
+ */
 export function DashboardPage() {
-  const { orgId, organization } = useCurrentOrg()
+  const { orgId, organization, role } = useCurrentOrg()
   const currency = organization?.defaultCurrency
-  const [period, setPeriod] = useState<Period>(() => ({ from: monthStart(), to: todayISODate() }))
 
-  const { report: cashflow } = useCashflow(orgId, period)
+  const { summary: cxc, isPending: cxcLoading } = useReceivablesSummary(orgId)
+  const { summary: cxp, isPending: cxpLoading } = usePayablesSummary(orgId)
+  const { balances, isPending: balancesLoading } = useAccountBalances(orgId)
   const { items: monthly } = useCashflowMonthly(orgId, 6)
-  const { summary: cxc } = useReceivablesSummary(orgId)
-  const { summary: cxp } = usePayablesSummary(orgId)
-  const {
-    monthlyIncome,
-    monthlyExpense,
-    netMonthly,
-    activeAgreements,
-    activeSchedules,
-    incomeItems,
-    expenseItems,
-  } = useRecurringCommitment(orgId)
-  const { items: income } = useIncomeByConcept(orgId, period)
-  const { items: expenses } = useExpensesByCategory(orgId, period)
-  const { balances } = useAccountBalances(orgId)
-  const { debtors } = useTopDebtors(orgId, 5)
-  const { creditors } = useTopCreditors(orgId, 5)
-  const { upcoming } = useUpcomingReceivables(orgId, 30, 5)
-  const { upcoming: upcomingPay } = useUpcomingPayables(orgId, 30, 5)
-  const { items: movements } = useMovements(orgId, { page: 1, pageSize: 8, order: 'desc' })
+  const { debtors } = useTopDebtors(orgId, 1)
+  const { upcoming } = useUpcomingReceivables(orgId, 7, 1)
+  const { upcoming: upcomingPay } = useUpcomingPayables(orgId, 7, 1)
+  const { items: movements, isPending: movementsLoading } = useMovements(orgId, {
+    page: 1,
+    pageSize: 6,
+    order: 'desc',
+  })
 
   const accountName = useMemo(() => new Map(balances.map((b) => [b.accountId, b.name])), [balances])
-  const netPosition = Number(cxc?.totalOutstanding ?? 0) - Number(cxp?.totalOutstanding ?? 0)
+  const totals = useMemo(() => balanceByCurrency(balances), [balances])
+
+  const actions = allowedQuickActions(role)
+  const baseCurrency = currency ?? balances[0]?.currency
+  const available = baseCurrency ? (totals.get(baseCurrency) ?? 0) : 0
+  const otherCurrencies = [...totals.keys()].filter((c) => c !== baseCurrency)
+
+  const openNumi = useNumiStore((s) => s.open)
+  const insight = buildInsight({ cxc, cxp, currency })
+  const kpisLoading = cxcLoading || cxpLoading || balancesLoading
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Panel" description={organization?.name}>
-        <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            value={period.from}
-            max={period.to}
-            onChange={(e) => setPeriod((p) => ({ ...p, from: e.target.value }))}
-            className="h-8 w-auto"
-            aria-label="Desde"
-          />
-          <span className="text-muted-foreground">→</span>
-          <Input
-            type="date"
-            value={period.to}
-            max={todayISODate()}
-            onChange={(e) => setPeriod((p) => ({ ...p, to: e.target.value }))}
-            className="h-8 w-auto"
-            aria-label="Hasta"
-          />
+    <div className="space-y-8">
+      <PageHeader title="Panel" description={organization?.name} />
+
+      {/* 1 · Resumen financiero — las cuatro preguntas de §16, nada más. */}
+      <section aria-labelledby="resumen">
+        <h2 id="resumen" className="sr-only">
+          Resumen financiero
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {kpisLoading ? (
+            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)
+          ) : (
+            <>
+              <KpiTile
+                label="Saldo disponible"
+                value={formatMoney(available, baseCurrency)}
+                sub={
+                  otherCurrencies.length > 0
+                    ? `+ saldos en ${otherCurrencies.join(', ')}`
+                    : `${balances.length} cuenta(s)`
+                }
+              />
+              <KpiTile
+                label="Por cobrar"
+                value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
+                sub={`${(cxc?.pendingCount ?? 0) + (cxc?.partialCount ?? 0)} cuenta(s) abiertas`}
+              />
+              <KpiTile
+                label="Vencido"
+                value={formatMoney(cxc?.overdueAmount ?? '0', currency)}
+                sub={`${cxc?.overdueCount ?? 0} cuenta(s) en mora`}
+              />
+              <KpiTile
+                label="Por pagar"
+                value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
+                sub={`${cxp?.overdueCount ?? 0} vencida(s)`}
+              />
+            </>
+          )}
         </div>
-      </PageHeader>
+      </section>
 
-      {/* Realizado — lo que entró y salió en el período */}
-      <KpiGroup label="Realizado · flujo del período">
-        <KpiTile
-          label="Ingresos"
-          value={formatMoney(cashflow?.current.income ?? '0', currency)}
-          delta={{ pct: pctChange(cashflow?.current.income, cashflow?.previous.income), higherIsGood: true }}
-        />
-        <KpiTile
-          label="Egresos"
-          value={formatMoney(cashflow?.current.expense ?? '0', currency)}
-          delta={{ pct: pctChange(cashflow?.current.expense, cashflow?.previous.expense), higherIsGood: false }}
-        />
-        <KpiTile
-          label="Neto"
-          value={formatMoney(cashflow?.current.net ?? '0', currency)}
-          delta={{ pct: pctChange(cashflow?.current.net, cashflow?.previous.net), higherIsGood: true }}
-        />
-      </KpiGroup>
+      {/* 2 · Acciones rápidas — lo que se viene a hacer, no a mirar. */}
+      {actions.length > 0 && (
+        <section aria-labelledby="acciones" className="space-y-2">
+          <h2
+            id="acciones"
+            className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
+          >
+            Acciones rápidas
+          </h2>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {actions.map((action) => (
+              <QuickActionTile key={action.to} action={action} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Pendiente — lo que falta cobrar y pagar, a hoy */}
-      <KpiGroup label="Pendiente · a hoy">
-        <KpiTile
-          label="Por cobrar"
-          value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
-          sub={`${formatMoney(cxc?.overdueAmount ?? '0', currency)} vencido`}
-        />
-        <KpiTile
-          label="Por pagar"
-          value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
-          sub={`${formatMoney(cxp?.overdueAmount ?? '0', currency)} vencido`}
-        />
-        <KpiTile
-          label="Posición neta"
-          value={formatMoney(netPosition.toFixed(2), currency)}
-          sub="por cobrar − por pagar"
-        />
-      </KpiGroup>
-
-      {/* Esperado — recurrente configurado por mes */}
-      <KpiGroup label="Esperado · recurrente/mes">
-        <KpiTile
-          label="Ingreso/mes"
-          value={formatMoney(monthlyIncome.toFixed(2), currency)}
-          sub={`${activeAgreements.length} acuerdo(s)`}
-        />
-        <KpiTile
-          label="Egreso/mes"
-          value={formatMoney(monthlyExpense.toFixed(2), currency)}
-          sub={`${activeSchedules.length} recurrente(s)`}
-        />
-        <KpiTile
-          label="Neto/mes"
-          value={formatMoney(netMonthly.toFixed(2), currency)}
-          sub="según lo configurado"
-        />
-      </KpiGroup>
-
-      {/* Flujo mensual — tendencia de ingresos/egresos */}
-      <Panel title="Flujo · últimos 6 meses">
+      {/* 3 · Flujo de caja */}
+      <Panel
+        title="Flujo · últimos 6 meses"
+        action={
+          <Link to="/informes/resultados" className="text-brand text-xs hover:underline">
+            Ver informe
+          </Link>
+        }
+      >
         <MonthlyFlowChart items={monthly} currency={currency} />
       </Panel>
 
-      {/* Gráficas */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Ingresos por concepto">
-          <BarList items={income} tone="bg-chart-2" currency={currency} />
-        </Panel>
-        <Panel title="Egresos por categoría">
-          <BarList items={expenses} tone="bg-chart-4" currency={currency} />
-        </Panel>
-      </div>
+      {/* 4 · Necesita tu atención */}
+      <Panel title="Necesita tu atención">
+        <AttentionList
+          currency={currency}
+          overdueAmount={cxc?.overdueAmount}
+          overdueCount={cxc?.overdueCount ?? 0}
+          topDebtor={debtors[0]?.displayName}
+          nextReceivable={upcoming[0]}
+          nextPayable={upcomingPay[0]}
+        />
+      </Panel>
 
-      {/* Saldos / deudores / próximas */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel
-          title="Saldos por cuenta"
-          action={
-            <Link to="/caja/cuentas" className="text-xs text-brand hover:underline">
-              Ver caja
-            </Link>
-          }
-        >
-          {balances.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Sin cuentas.</p>
-          ) : (
-            <ul className="divide-y">
-              {balances.map((b) => (
-                <li key={b.accountId} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <span className="truncate">{b.name}</span>
-                  <span className={cn('nums font-medium', Number(b.balance) < 0 && 'text-destructive')}>
-                    {formatMoney(b.balance, b.currency)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
+      {/* 5 · Insight de Numi — uno, y solo si dice algo. */}
+      {insight && (
+        <div className="bg-card flex items-start gap-3 rounded-lg border p-4">
+          <NumiAppMark className="size-8 shrink-0 rounded-[28%]" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="text-sm">{insight.text}</p>
+            <div className="flex flex-wrap gap-3 text-xs">
+              <Link to={insight.to} className="text-brand hover:underline">
+                {insight.cta}
+              </Link>
+              <button
+                type="button"
+                onClick={openNumi}
+                className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+              >
+                Preguntarle a Numi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-        <Panel title="Top deudores">
-          <ContactAmountList
-            items={debtors.map((d) => ({ id: d.payerContactId, name: d.displayName, amount: d.overdueBalance }))}
-            currency={currency}
-            emptyLabel="Nadie en mora. 🎉"
-          />
-        </Panel>
-
-        <Panel title="Top acreedores">
-          <ContactAmountList
-            items={creditors.map((c) => ({ id: c.supplierContactId, name: c.displayName, amount: c.overdueBalance }))}
-            currency={currency}
-            emptyLabel="Nada por pagar vencido. 🎉"
-          />
-        </Panel>
-      </div>
-
-      {/* Próximos vencimientos: cobrar vs pagar */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Próximas a vencer">
-          <UpcomingList
-            items={upcoming.map((u) => ({
-              id: u.receivableId,
-              href: `/cartera/cxc/${u.receivableId}`,
-              name: u.displayName,
-              dueDate: u.dueDate,
-              amount: u.balance,
-            }))}
-            currency={currency}
-            emptyLabel="Nada próximo."
-          />
-        </Panel>
-
-        <Panel title="Próximos pagos">
-          <UpcomingList
-            items={upcomingPay.map((u) => ({
-              id: u.expenseId,
-              href: `/gastos/cxp/${u.expenseId}`,
-              name: u.displayName,
-              dueDate: u.dueDate,
-              amount: u.balance,
-            }))}
-            currency={currency}
-            emptyLabel="Nada próximo."
-          />
-        </Panel>
-      </div>
-
-      {/* Recurrentes — resumen rápido; el detalle vive en Cobros y pagos */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel
-          title="Ingresos recurrentes"
-          action={
-            <Link to="/informes/cartera" className="text-xs text-brand hover:underline">
-              Ver todos
-            </Link>
-          }
-        >
-          <BarList items={incomeItems.slice(0, 5)} tone="bg-chart-2" currency={currency} emptyLabel="Sin acuerdos activos." />
-        </Panel>
-        <Panel
-          title="Egresos recurrentes"
-          action={
-            <Link to="/informes/cartera" className="text-xs text-brand hover:underline">
-              Ver todos
-            </Link>
-          }
-        >
-          <BarList items={expenseItems.slice(0, 5)} tone="bg-chart-4" currency={currency} emptyLabel="Sin recurrentes activos." />
-        </Panel>
-      </div>
-
-      {/* Movimientos recientes */}
+      {/* 6 · Actividad reciente */}
       <Panel
-        title="Movimientos recientes"
+        title="Actividad reciente"
         action={
-          <Link to="/caja/movimientos" className="text-xs text-brand hover:underline">
+          <Link to="/caja/movimientos" className="text-brand text-xs hover:underline">
             Ver todos
           </Link>
         }
       >
-        {movements.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">Sin movimientos.</p>
+        {movementsLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-9" />
+            ))}
+          </div>
+        ) : movements.length === 0 ? (
+          <EmptyState
+            Icon={Wallet}
+            title="Todavía no hay movimientos"
+            description="Cada pago, egreso o transferencia que registres aparecerá aquí."
+            className="py-6"
+          />
         ) : (
           <ul className="divide-y">
             {movements.map((m) => {
@@ -295,18 +314,32 @@ export function DashboardPage() {
                   <span
                     className={cn(
                       'grid size-6 shrink-0 place-items-center rounded-full',
-                      isIn ? 'bg-success/10 text-success-strong' : 'bg-destructive/10 text-destructive',
+                      isIn
+                        ? 'bg-success/10 text-success-strong'
+                        : 'bg-destructive/10 text-destructive',
                     )}
                   >
-                    {isIn ? <ArrowDownRight className="size-3.5" /> : <ArrowUpRight className="size-3.5" />}
+                    {isIn ? (
+                      <ArrowDownRight aria-hidden className="size-3.5" />
+                    ) : (
+                      <ArrowUpRight aria-hidden className="size-3.5" />
+                    )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate">{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {accountName.get(m.financialAccountId) ?? '—'} · {formatDateHuman(m.occurredAt)}
+                    <div className="truncate">
+                      {MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}
+                    </div>
+                    <div className="text-muted-foreground truncate text-xs">
+                      {accountName.get(m.financialAccountId) ?? '—'} ·{' '}
+                      {formatDateHuman(m.occurredAt)}
                     </div>
                   </div>
-                  <span className={cn('nums shrink-0 font-medium', isIn ? 'text-success-strong' : 'text-destructive')}>
+                  <span
+                    className={cn(
+                      'nums shrink-0 font-medium',
+                      isIn ? 'text-success-strong' : 'text-destructive',
+                    )}
+                  >
                     {isIn ? '+' : '−'} {formatMoney(m.amount)}
                   </span>
                 </li>

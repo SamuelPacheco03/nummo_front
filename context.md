@@ -2642,7 +2642,7 @@ Los nombres de la izquierda son los que propone la sección 64 de este documento
 | `ConfirmOperation` | ✅ `ConfirmDialog` | `components/ui/confirm-dialog.tsx` |
 | `AccountCard` | ❌ no existe | lista inline en `features/finances/accounts-page.tsx` |
 | — | ✅ `ErrorState` + `InlineError` | `components/ui/error-state.tsx` |
-| `QuickAction` | ✅ dentro de `BottomNav` (hoja "Nuevo") | `app/layout/bottom-nav.tsx` |
+| `QuickAction` | ✅ `QuickActionTile` + catálogo compartido | `features/actions/` |
 
 ## 94.1. Componentes existentes que el documento no nombraba
 
@@ -2698,17 +2698,17 @@ acción rápida de creación.
 segunda navegación que aprender. El botón flotante de Numi se limita a escritorio: con la
 barra puesta se solapaba con ella.
 
-### 95.3. Dashboard — **alta**
+### 95.3. Dashboard — ✅ **cerrada (fase 4)**
 
-El documento (§16) pide: resumen financiero → acciones rápidas → flujo de caja → necesita tu
-atención → insight de Numi → actividad reciente.
+El Panel mostraba **9 KPIs en 3 grupos** y **10 paneles**, sin acciones rápidas, sin bloque de
+atención y sin insight — el "vertedero de widgets" que §16 y §77 prohíben.
 
-El código muestra **9 KPIs en 3 grupos** (Realizado / Pendiente / Esperado) y **10 paneles**,
-sin acciones rápidas, sin bloque de "necesita tu atención" y sin insight de Numi. §77 prohíbe
-explícitamente "dashboards con 20 KPIs".
+**Resuelto (fase 4):** reordenado a las seis secciones de §16, con **4 KPIs** (saldo disponible ·
+por cobrar · vencido · por pagar).
 
-**Resolución: gana el documento**, conservando la idea buena del código (las tres lentes
-Realizado/Pendiente/Esperado) pero reducida y con jerarquía. Ver fase 4.
+Lo que se quitó **no se perdió: estaba duplicado.** Los desgloses por concepto y categoría, el
+aging, los top deudores y acreedores y los recurrentes ya vivían en Informes, que es donde se
+analiza; los saldos por cuenta, en Caja. El Panel dejó de competir con ellos.
 
 ### 95.4. Estados vacíos — ✅ **cerrada (fase 1)**
 
@@ -2865,7 +2865,7 @@ actualización de este documento.
 `pnpm test` 75 en verde (19 nuevos: 10 de formato, 9 de los componentes de estado).
 
 **Pendiente que la fase 1 dejó anotado:** los dos vacíos en línea del dashboard
-(`Sin cuentas.`, `Sin movimientos.`) se atienden en la fase 4, cuando esa pantalla se rehace.
+(`Sin cuentas.`, `Sin movimientos.`) — resueltos en la fase 4 al rehacer esa pantalla.
 
 ---
 
@@ -2928,24 +2928,35 @@ así que el repaso cabe en la fase 5, cuando se pasen listas y fichas por su che
 
 ---
 
-## Fase 4 — Dashboard
+## Fase 4 — Dashboard ✅ **completada**
 
-**Por qué cuarta:** ya existen `EmptyState`, `StatusBadge`, formato de dinero y navegación
-definitiva; el dashboard puede componerse sin inventar piezas.
+**Por qué cuarta:** ya existían `EmptyState`, `StatusBadge`, el formato de dinero y la
+navegación definitiva; el Panel pudo componerse sin inventar piezas.
 
-**Alcance**
+**Lo que se hizo**
 
-1. Reordenar según §16: resumen → acciones rápidas → flujo de caja → necesita tu atención →
-   insight de Numi → actividad reciente.
-2. Reducir de 9 KPIs a **4 protagonistas** (saldo disponible · por cobrar · vencido · por
-   pagar). Lo demás baja de rango o se mueve a Informes. → brecha 95.3
-3. Componente `QuickAction` + fila de acciones rápidas.
-4. Bloque "Necesita tu atención": cartera vencida, próximos cobros, próximos pagos —
-   con **contexto**, no solo cifra (§2.2).
-5. Un único insight de Numi, y solo si aporta.
+1. Las seis secciones de §16, en ese orden: resumen → acciones rápidas → flujo → necesita tu
+   atención → insight de Numi → actividad reciente. → 95.3
+2. De 9 KPIs a **4**: saldo disponible, por cobrar, vencido, por pagar.
+3. `features/actions/`: el catálogo de acciones rápidas (`quick-actions.ts`) y su tarjeta
+   (`quick-action-tile.tsx`) pasan a ser **uno solo**, compartido por el Panel y por el botón
+   "Nuevo" de la barra de móvil. Dos catálogos que se desincronizan era el riesgo evidente.
+4. "Necesita tu atención" da **contexto, no solo cifra** (§2.2): cuántas cuentas vencidas y de
+   quién es el mayor saldo, el próximo cobro y el próximo pago con su fecha. Sin nada que
+   atender, lo dice como la buena noticia que es en lugar de mostrar una tarjeta vacía.
+5. Un único insight, calculado **solo con cifras del API** (§35), elegido por prioridad —lo que
+   duele antes que lo que informa— y **omitido si no hay nada que decir**.
+6. El saldo disponible se agrega **por moneda**: el API no devuelve un total, y sumar pesos con
+   dólares daría una cifra sin significado (§88.4).
 
-**Se nota en:** la primera pantalla que ve todo el mundo.
-**Riesgo:** medio. **Tamaño:** grande.
+**Verificación:** typecheck limpio, 0 errores de lint y **de vuelta a los 10 warnings de base**
+—las 6 advertencias que introdujo el primer intento se cerraron separando lógica de
+presentación (§66)—, 95 tests en verde (8 nuevos sobre la agregación por moneda y la elección
+de insight, incluida la división por cero), build OK.
+
+**De paso:** `UpcomingList` quedó huérfano al sustituirlo "Necesita tu atención" y se borró
+(§90.5). Y la fase 2 había dejado la misma clase de warning en `settings-layout.tsx`: también
+se corrigió, extrayendo `settings-nav.ts`.
 
 ---
 
@@ -2989,7 +3000,7 @@ sitio.
 | ✅ 1 | Cimientos del sistema visual | bajo | — |
 | ✅ 2 | Navegación de escritorio | medio | 1 |
 | ✅ 3 | Experiencia móvil | medio | 1, 2 |
-| 4 | Dashboard | medio | 1, 2 |
+| ✅ 4 | Dashboard | medio | 1, 2 |
 | 5 | Listados, detalles y Numi | medio | 1, 4 |
 | 6 | Command bar y pulido | medio-alto | todas |
 

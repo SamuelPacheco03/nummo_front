@@ -2,7 +2,8 @@ import { afterEach, expect, test } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { createMemoryRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
-import { SettingsLayout, SETTINGS_PATHS, isSettingsPath } from './settings-layout'
+import { SettingsLayout } from './settings-layout'
+import { SETTINGS_PATHS, isSettingsPath } from './settings-nav'
 
 afterEach(cleanup)
 

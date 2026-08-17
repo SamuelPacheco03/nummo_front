@@ -1,85 +1,14 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
-import {
-  ArrowLeftRight,
-  Banknote,
-  Coins,
-  FileText,
-  HandCoins,
-  LayoutDashboard,
-  Menu,
-  Plus,
-  UserPlus,
-} from 'lucide-react'
+import { Coins, LayoutDashboard, Menu, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { NumiAppMark } from '@/features/assistant/numi-avatar'
 import { useNumiStore } from '@/features/assistant/numi-store'
+import { allowedQuickActions } from '@/features/actions/quick-actions'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements, type AnyRole } from '@/features/organizations/roles'
 import { cn } from '@/lib/utils'
 import { SidebarBody } from './sidebar'
-
-type QuickAction = {
-  to: string
-  label: string
-  description: string
-  Icon: LucideIcon
-  allowed: (role: AnyRole | undefined) => boolean
-}
-
-/**
- * Lo que el usuario viene a hacer desde el teléfono (§15). No es un índice de la
- * aplicación: son las seis operaciones que se registran de pie, delante de
- * alguien, y que no deberían costar tres toques.
- *
- * Dos abren un diálogo que vive dentro de una lista, así que se piden por URL
- * (`?nueva=1`, `?transferir=1`) y la página los abre al llegar.
- */
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    to: '/cartera/pagos/nuevo',
-    label: 'Registrar pago',
-    description: 'Alguien te pagó',
-    Icon: Banknote,
-    allowed: canEditContacts,
-  },
-  {
-    to: '/gastos/egresos/nuevo',
-    label: 'Registrar egreso',
-    description: 'Pagaste algo',
-    Icon: HandCoins,
-    allowed: canEditContacts,
-  },
-  {
-    to: '/cartera/cxc?nueva=1',
-    label: 'Nueva cuenta por cobrar',
-    description: 'Registrar algo que te deben',
-    Icon: Coins,
-    allowed: canEditContacts,
-  },
-  {
-    to: '/contactos/nuevo',
-    label: 'Nuevo contacto',
-    description: 'Un pagador o un proveedor',
-    Icon: UserPlus,
-    allowed: canEditContacts,
-  },
-  {
-    to: '/cartera/acuerdos/nuevo',
-    label: 'Nuevo acuerdo',
-    description: 'Un cobro que se repite cada mes',
-    Icon: FileText,
-    allowed: canManageAgreements,
-  },
-  {
-    to: '/caja/cuentas?transferir=1',
-    label: 'Transferencia',
-    description: 'Mover dinero entre tus cuentas',
-    Icon: ArrowLeftRight,
-    allowed: canEditContacts,
-  },
-]
 
 const itemClass =
   'flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.68rem] transition-colors focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none'
@@ -144,7 +73,7 @@ function QuickActionsSheet({
   const { role } = useCurrentOrg()
   // §47: no ofrecer lo que el usuario no puede hacer. Si su rol no permite nada,
   // el botón "Nuevo" ni siquiera se dibuja (ver BottomNav).
-  const actions = QUICK_ACTIONS.filter((a) => a.allowed(role))
+  const actions = allowedQuickActions(role)
 
   const go = (to: string) => {
     onOpenChange(false)
@@ -196,7 +125,7 @@ export function BottomNav() {
   const openNumi = useNumiStore((s) => s.open)
   const { role } = useCurrentOrg()
   const location = useLocation()
-  const canCreate = QUICK_ACTIONS.some((a) => a.allowed(role))
+  const canCreate = allowedQuickActions(role).length > 0
 
   return (
     <>
