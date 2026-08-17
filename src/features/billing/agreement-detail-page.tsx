@@ -1,12 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Ban, Pause, Pencil, Play } from 'lucide-react'
+import { Ban, MoreHorizontal, Pause, Pencil, Play } from 'lucide-react'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useBranches } from '@/features/config/hooks'
@@ -15,7 +20,6 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
-import type { ReactNode } from 'react'
 import { RECURRENCE_LABELS, agreementStatus } from './labels'
 import {
   useAgreement,
@@ -25,17 +29,14 @@ import {
   useResumeAgreement,
 } from './hooks'
 
+const LIST = '/cartera/acuerdos'
 
-function InfoRow({ label, children }: { label: string; children: ReactNode }) {
-  if (children == null || children === '') return null
-  return (
-    <div className="grid grid-cols-3 gap-3 px-4 py-2.5 text-sm">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="col-span-2 break-words">{children}</dd>
-    </div>
-  )
-}
-
+/**
+ * Ficha de un acuerdo de cobro. Abre como cajón sobre la lista (§11.1.3).
+ *
+ * La cifra de cabecera es el monto pactado: es el dato por el que se abre esta
+ * ficha, igual que el saldo lo es en una cuenta por cobrar.
+ */
 export function AgreementDetailPage() {
   const { agreementId } = useParams()
   const { orgId, role } = useCurrentOrg()
@@ -49,8 +50,18 @@ export function AgreementDetailPage() {
 
   const { contact: payer } = useContact(orgId, agreement?.payerContactId)
   const { contact: beneficiary } = useContact(orgId, agreement?.beneficiaryContactId ?? undefined)
-  const { items: concepts } = useBillingConcepts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
-  const { items: policies } = useInterestPolicies(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
+  const { items: concepts } = useBillingConcepts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
+  const { items: policies } = useInterestPolicies(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
+  })
   const { branches } = useBranches(orgId)
 
   const conceptName = useMemo(
@@ -66,34 +77,21 @@ export function AgreementDetailPage() {
     [branches, agreement],
   )
 
-  if (isPending) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-9 w-56" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    )
-  }
+  if (isPending) return <DetailDrawer closeTo={LIST} loading />
   if (isError || !agreement) {
     return (
-      <div className="space-y-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/cartera/acuerdos">
-            <ArrowLeft className="size-4" />
-            Acuerdos
-          </Link>
-        </Button>
-        <p className="text-sm text-destructive">{getErrorMessage(error, 'No se encontró el acuerdo.')}</p>
-      </div>
+      <DetailDrawer
+        closeTo={LIST}
+        title="Acuerdo"
+        error={getErrorMessage(error, 'No se encontró el acuerdo.')}
+      />
     )
   }
 
   const busy = pause.isPending || resume.isPending || end.isPending
+  const isOpen = agreement.status === 'ACTIVE' || agreement.status === 'PAUSED'
 
-  const runLifecycle = async (
-    action: typeof pause | typeof resume | typeof end,
-    okMsg: string,
-  ) => {
+  const runLifecycle = async (action: typeof pause | typeof resume | typeof end, okMsg: string) => {
     try {
       await action.mutateAsync({ orgId: orgId ?? '', id: agreement.id })
       toast.success(okMsg)
@@ -104,92 +102,111 @@ export function AgreementDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-          <Link to="/cartera/acuerdos">
-            <ArrowLeft className="size-4" />
-            Acuerdos
-          </Link>
-        </Button>
-        <PageHeader
-          title={payer?.displayName ?? agreement.name ?? 'Acuerdo'}
-          description={
+    <>
+      <DetailDrawer
+        closeTo={LIST}
+        title={payer?.displayName ?? agreement.name ?? 'Acuerdo'}
+        meta={
+          <span className="flex items-center gap-2">
+            {conceptName ?? '—'}
+            <span className="text-border">·</span>
             <StatusBadge {...agreementStatus(agreement.status)} />
-          }
-        >
-          {canManage && (
+          </span>
+        }
+        amount={formatAmount(agreement.agreedAmount, agreement.currency)}
+        actions={
+          canManage &&
+          isOpen && (
             <>
-              {agreement.status === 'ACTIVE' && (
-                <Button variant="outline" size="sm" disabled={busy} onClick={() => runLifecycle(pause, 'Acuerdo pausado')}>
-                  <Pause className="size-4" />
+              {/*
+                Pausar o reanudar es lo que se viene a hacer con un acuerdo
+                vivo; editar y finalizar son excepciones y no comparten altura.
+              */}
+              {agreement.status === 'ACTIVE' ? (
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => runLifecycle(pause, 'Acuerdo pausado')}
+                >
+                  <Pause aria-hidden className="size-4" />
                   Pausar
                 </Button>
-              )}
-              {agreement.status === 'PAUSED' && (
-                <Button variant="outline" size="sm" disabled={busy} onClick={() => runLifecycle(resume, 'Acuerdo reanudado')}>
-                  <Play className="size-4" />
+              ) : (
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => runLifecycle(resume, 'Acuerdo reanudado')}
+                >
+                  <Play aria-hidden className="size-4" />
                   Reanudar
                 </Button>
               )}
-              {(agreement.status === 'ACTIVE' || agreement.status === 'PAUSED') && (
-                <>
-                  <Button asChild variant="outline" size="sm">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreHorizontal aria-hidden className="size-4" />
+                    Más
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
                     <Link to={`/cartera/acuerdos/${agreement.id}/editar`}>
                       <Pencil className="size-4" />
-                      Editar
+                      Editar acuerdo
                     </Link>
-                  </Button>
-                  <Button variant="outline" size="sm" disabled={busy} onClick={() => setEndOpen(true)}>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={busy} onClick={() => setEndOpen(true)}>
                     <Ban className="size-4" />
                     Finalizar
-                  </Button>
-                </>
-              )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
-          )}
-        </PageHeader>
-      </div>
+          )
+        }
+      >
+        <DetailSection title="Cobro">
+          <DetailRows>
+            <DetailRow label="Concepto">{conceptName}</DetailRow>
+            <DetailRow label="Monto" strong>
+              {formatAmount(agreement.agreedAmount, agreement.currency)}
+            </DetailRow>
+            <DetailRow label="Recurrencia">
+              {RECURRENCE_LABELS[agreement.recurrenceType] ?? agreement.recurrenceType} · día{' '}
+              {agreement.dueDay}
+            </DetailRow>
+            <DetailRow label="Vigencia">
+              {formatDateHuman(agreement.startDate)}
+              {agreement.endDate ? ` → ${formatDateHuman(agreement.endDate)}` : ' → sin fin'}
+            </DetailRow>
+            <DetailRow label="Se genera">{`${agreement.generateDaysBefore} días antes`}</DetailRow>
+            <DetailRow label="Interés de mora">{policyName ?? 'Sin interés de mora'}</DetailRow>
+          </DetailRows>
+        </DetailSection>
 
-      <section>
-        <h2 className="mb-2 text-sm font-medium">Detalle</h2>
-        <Card className="gap-0 py-0">
-          <dl className="divide-y">
-            <InfoRow label="Referencia">{agreement.name}</InfoRow>
-            <InfoRow label="Pagador">
+        <DetailSection title="Quién">
+          <DetailRows>
+            <DetailRow label="Pagador">
               {payer ? (
                 <Link to={`/contactos/${payer.id}`} className="font-medium hover:underline">
                   {payer.displayName}
                 </Link>
-              ) : (
-                '—'
-              )}
-            </InfoRow>
-            <InfoRow label="Beneficiario">
+              ) : null}
+            </DetailRow>
+            <DetailRow label="Beneficiario">
               {beneficiary ? (
                 <Link to={`/contactos/${beneficiary.id}`} className="hover:underline">
                   {beneficiary.displayName}
                 </Link>
               ) : null}
-            </InfoRow>
-            <InfoRow label="Concepto">{conceptName ?? '—'}</InfoRow>
-            <InfoRow label="Monto">
-              <span className="nums font-medium">{formatAmount(agreement.agreedAmount, agreement.currency)}</span>
-            </InfoRow>
-            <InfoRow label="Recurrencia">
-              {RECURRENCE_LABELS[agreement.recurrenceType] ?? agreement.recurrenceType} · día {agreement.dueDay}
-            </InfoRow>
-            <InfoRow label="Vigencia">
-              {formatDateHuman(agreement.startDate)}
-              {agreement.endDate ? ` → ${formatDateHuman(agreement.endDate)}` : ' → sin fin'}
-            </InfoRow>
-            <InfoRow label="Generar días antes">{`${agreement.generateDaysBefore} días`}</InfoRow>
-            <InfoRow label="Política de interés">{policyName ?? 'Sin interés de mora'}</InfoRow>
-            <InfoRow label="Sede">{branchName ?? null}</InfoRow>
-            <InfoRow label="Notas">{agreement.notes ?? null}</InfoRow>
-          </dl>
-        </Card>
-      </section>
+            </DetailRow>
+            <DetailRow label="Sede">{branchName}</DetailRow>
+            <DetailRow label="Referencia">{agreement.name}</DetailRow>
+            <DetailRow label="Notas">{agreement.notes}</DetailRow>
+          </DetailRows>
+        </DetailSection>
+      </DetailDrawer>
 
       <ConfirmDialog
         open={endOpen}
@@ -201,6 +218,6 @@ export function AgreementDetailPage() {
         loading={end.isPending}
         onConfirm={() => runLifecycle(end, 'Acuerdo finalizado')}
       />
-    </div>
+    </>
   )
 }

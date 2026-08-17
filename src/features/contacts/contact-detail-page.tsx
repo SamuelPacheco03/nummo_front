@@ -2,39 +2,47 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import {
   ArrowDownLeft,
-  ArrowLeft,
   ArrowUpRight,
   Archive,
+  MoreHorizontal,
   Pencil,
   Plus,
   Star,
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import {
+  DetailDrawer,
+  DetailEmpty,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+} from '@/components/ui/detail-drawer'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusDot } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import { cn } from '@/lib/utils'
 import type { ContactRelationship } from '@/api/generated/model'
 import { AddRelationshipDialog } from './add-relationship-dialog'
 import { contactTypeLabel } from './utils'
 import { useArchiveContact, useContact, useRelationships, useRemoveRelationship } from './hooks'
 
-function InfoRow({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null
-  return (
-    <div className="grid grid-cols-3 gap-3 px-4 py-2.5 text-sm">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="col-span-2 break-words">{value}</dd>
-    </div>
-  )
-}
+const LIST = '/contactos'
 
+/**
+ * Ficha de un contacto. Abre como cajón sobre la lista, igual que las de dinero
+ * (§11.1.3): la lista sigue montada detrás con sus filtros y su scroll.
+ */
 export function ContactDetailPage() {
   const { contactId } = useParams()
   const { orgId, role } = useCurrentOrg()
@@ -49,27 +57,14 @@ export function ContactDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [removingRel, setRemovingRel] = useState<ContactRelationship | null>(null)
 
-  if (isPending) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-9 w-56" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    )
-  }
+  if (isPending) return <DetailDrawer closeTo={LIST} loading />
   if (isError || !contact) {
     return (
-      <div className="space-y-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/contactos">
-            <ArrowLeft className="size-4" />
-            Contactos
-          </Link>
-        </Button>
-        <p className="text-sm text-destructive">
-          {getErrorMessage(error, 'No se encontró el contacto.')}
-        </p>
-      </div>
+      <DetailDrawer
+        closeTo={LIST}
+        title="Contacto"
+        error={getErrorMessage(error, 'No se encontró el contacto.')}
+      />
     )
   }
 
@@ -98,95 +93,90 @@ export function ContactDetailPage() {
     }
   }
 
+  const document = contact.documentNumber
+    ? [contact.documentType, contact.documentNumber].filter(Boolean).join(' ')
+    : null
+
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-          <Link to="/contactos">
-            <ArrowLeft className="size-4" />
-            Contactos
-          </Link>
-        </Button>
-        <PageHeader
-          title={contact.displayName}
-          description={
-            <span className="flex items-center gap-2">
-              {contactTypeLabel(contact.contactType)}
-              <span className="text-border">·</span>
-              <StatusDot active={contact.isActive} inactiveLabel="Archivado" />
-            </span>
-          }
-        >
-          {canEdit && (
+    <>
+      <DetailDrawer
+        closeTo={LIST}
+        title={contact.displayName}
+        meta={
+          <span className="flex items-center gap-2">
+            {contactTypeLabel(contact.contactType)}
+            <span className="text-border">·</span>
+            <StatusDot active={contact.isActive} inactiveLabel="Archivado" />
+          </span>
+        }
+        actions={
+          canEdit && (
             <>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild size="sm">
                 <Link to={`/contactos/${contact.id}/editar`}>
-                  <Pencil className="size-4" />
+                  <Pencil aria-hidden className="size-4" />
                   Editar
                 </Link>
               </Button>
+              {/* Archivar es la excepción, no lo que se viene a hacer. */}
               {contact.isActive && (
-                <Button variant="outline" size="sm" onClick={() => setArchiveOpen(true)}>
-                  <Archive className="size-4" />
-                  Archivar
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <MoreHorizontal aria-hidden className="size-4" />
+                      Más
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => setArchiveOpen(true)}>
+                      <Archive className="size-4" />
+                      Archivar contacto
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </>
-          )}
-        </PageHeader>
-      </div>
+          )
+        }
+      >
+        <DetailSection title="Información">
+          <DetailRows>
+            <DetailRow label="Tipo">{contactTypeLabel(contact.contactType)}</DetailRow>
+            <DetailRow label="Documento">{document}</DetailRow>
+            <DetailRow label="Email">{contact.email}</DetailRow>
+            <DetailRow label="Teléfono">{contact.phone}</DetailRow>
+            <DetailRow label="Dirección">{contact.address}</DetailRow>
+            <DetailRow label="Notas">{contact.notes}</DetailRow>
+          </DetailRows>
+        </DetailSection>
 
-      {/* Información */}
-      <section>
-        <h2 className="mb-2 text-sm font-medium">Información</h2>
-        <Card className="gap-0 py-0">
-          <dl className="divide-y">
-            <InfoRow label="Tipo" value={contactTypeLabel(contact.contactType)} />
-            <InfoRow
-              label="Documento"
-              value={
-                contact.documentNumber
-                  ? [contact.documentType, contact.documentNumber].filter(Boolean).join(' ')
-                  : null
-              }
-            />
-            <InfoRow label="Email" value={contact.email} />
-            <InfoRow label="Teléfono" value={contact.phone} />
-            <InfoRow label="Dirección" value={contact.address} />
-            <InfoRow label="Notas" value={contact.notes} />
-          </dl>
-        </Card>
-      </section>
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-medium">Relaciones</h3>
+            {canEdit && (
+              <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+                <Plus aria-hidden className="size-4" />
+                Agregar
+              </Button>
+            )}
+          </div>
 
-      {/* Relaciones */}
-      <section>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-medium">Relaciones</h2>
-          {canEdit && (
-            <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="size-4" />
-              Agregar
-            </Button>
-          )}
-        </div>
-
-        <Card className="gap-0 py-0">
           {relPending ? (
-            <div className="space-y-2 p-3">
-              <Skeleton className="h-6 w-full" />
-              <Skeleton className="h-6 w-2/3" />
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-2/3" />
             </div>
           ) : relationships.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">Sin relaciones.</p>
+            <DetailEmpty>Sin relaciones.</DetailEmpty>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y rounded-lg border">
               {relationships.map((rel) => {
                 const outgoing = rel.direction === 'OUTGOING'
                 const DirIcon = outgoing ? ArrowUpRight : ArrowDownLeft
                 return (
-                  <li key={rel.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                  <li key={rel.id} className="flex items-center gap-3 px-3.5 py-2.5 text-sm">
                     <DirIcon
-                      className={cnDir(outgoing)}
+                      className={cn('size-4 shrink-0', outgoing ? 'text-chart-1' : 'text-chart-3')}
                       aria-label={outgoing ? 'Saliente' : 'Entrante'}
                     />
                     <div className="min-w-0 flex-1">
@@ -196,10 +186,10 @@ export function ContactDetailPage() {
                       >
                         {rel.counterpart.displayName}
                       </Link>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                         {rel.relationshipType}
                         {rel.isPrimary && (
-                          <span className="inline-flex items-center gap-0.5 text-brand">
+                          <span className="text-brand inline-flex items-center gap-0.5">
                             <Star className="size-3 fill-current" />
                             principal
                           </span>
@@ -222,8 +212,8 @@ export function ContactDetailPage() {
               })}
             </ul>
           )}
-        </Card>
-      </section>
+        </section>
+      </DetailDrawer>
 
       {orgId && (
         <AddRelationshipDialog
@@ -254,10 +244,6 @@ export function ContactDetailPage() {
         loading={removeRel.isPending}
         onConfirm={onRemoveRel}
       />
-    </div>
+    </>
   )
-}
-
-function cnDir(outgoing: boolean): string {
-  return `size-4 shrink-0 ${outgoing ? 'text-chart-1' : 'text-chart-3'}`
 }

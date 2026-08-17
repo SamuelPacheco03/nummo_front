@@ -60,7 +60,7 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/contacts/contacts-list-page')).ContactsListPage,
             }),
-            // Alta y edición cuelgan de la lista: abren en cajón sobre ella.
+            // Ficha, alta y edición cuelgan de la lista: abren en cajón sobre ella.
             children: [
               {
                 path: 'nuevo',
@@ -74,13 +74,13 @@ export const router = createBrowserRouter([
                   Component: (await import('@/features/contacts/contact-form-page')).ContactFormPage,
                 }),
               },
+              {
+                path: ':contactId',
+                lazy: async () => ({
+                  Component: (await import('@/features/contacts/contact-detail-page')).ContactDetailPage,
+                }),
+              },
             ],
-          },
-          {
-            path: 'contactos/:contactId',
-            lazy: async () => ({
-              Component: (await import('@/features/contacts/contact-detail-page')).ContactDetailPage,
-            }),
           },
 
           // Cartera
@@ -125,7 +125,7 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/billing/agreements-list-page')).AgreementsListPage,
             }),
-            // Alta y edición cuelgan de la lista: abren en cajón sobre ella.
+            // Ficha, alta y edición cuelgan de la lista: abren en cajón sobre ella.
             children: [
               {
                 path: 'nuevo',
@@ -139,13 +139,13 @@ export const router = createBrowserRouter([
                   Component: (await import('@/features/billing/agreement-form-page')).AgreementFormPage,
                 }),
               },
+              {
+                path: ':agreementId',
+                lazy: async () => ({
+                  Component: (await import('@/features/billing/agreement-detail-page')).AgreementDetailPage,
+                }),
+              },
             ],
-          },
-          {
-            path: 'cartera/acuerdos/:agreementId',
-            lazy: async () => ({
-              Component: (await import('@/features/billing/agreement-detail-page')).AgreementDetailPage,
-            }),
           },
           // Gastos
           {
@@ -189,8 +189,20 @@ export const router = createBrowserRouter([
             lazy: async () => ({
               Component: (await import('@/features/expenses/schedules-list-page')).SchedulesListPage,
             }),
-            // El detalle es hijo: la lista sigue montada detrás del cajón.
+            // Ficha, alta y edición cuelgan de la lista: abren en cajón sobre ella.
             children: [
+              {
+                path: 'nuevo',
+                lazy: async () => ({
+                  Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
+                }),
+              },
+              {
+                path: ':scheduleId/editar',
+                lazy: async () => ({
+                  Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
+                }),
+              },
               {
                 path: ':scheduleId',
                 lazy: async () => ({
@@ -198,18 +210,6 @@ export const router = createBrowserRouter([
                 }),
               },
             ],
-          },
-          {
-            path: 'gastos/recurrentes/nuevo',
-            lazy: async () => ({
-              Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
-            }),
-          },
-          {
-            path: 'gastos/recurrentes/:scheduleId/editar',
-            lazy: async () => ({
-              Component: (await import('@/features/expenses/schedule-form-page')).ScheduleFormPage,
-            }),
           },
 
           // Catálogos (bajo Configuración)

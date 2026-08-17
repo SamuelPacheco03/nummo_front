@@ -1,20 +1,17 @@
 import { useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
-import { PageHeader } from '@/components/page-header'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -24,6 +21,9 @@ import type { ExpenseSchedule } from '@/api/generated/model'
 import { useCreateSchedule, useExpenseSchedule, useUpdateSchedule } from './hooks'
 
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/
+
+/** El botón de guardar vive en el pie del cajón, fuera del <form>. */
+const FORM_ID = 'schedule-form'
 
 const schema = z.object({
   supplierContactId: z.string().min(1, 'Selecciona el proveedor'),
@@ -135,106 +135,93 @@ export function ScheduleFormPage() {
     }
   })
 
-  if (isEdit && loading) return <Skeleton className="h-[28rem] w-full max-w-2xl" />
-
   return (
-    <div className="max-w-2xl">
-      <PageHeader title={isEdit ? 'Editar gasto recurrente' : 'Nuevo gasto recurrente'}>
-        <Button asChild variant="ghost" size="sm">
-          <Link to={backTo}>
-            <ArrowLeft className="size-4" />
-            Volver
-          </Link>
+    <DetailDrawer
+      closeTo={backTo}
+      title={isEdit ? 'Editar gasto recurrente' : 'Nuevo gasto recurrente'}
+      loading={isEdit && loading}
+      footer={
+        // Fuera del <form>, así que se ata por id para poder enviarlo igual.
+        <Button type="submit" form={FORM_ID} disabled={busy} className="w-full">
+          {busy && <Loader size="sm" />}
+          {isEdit ? 'Guardar cambios' : 'Crear'}
         </Button>
-      </PageHeader>
+      }
+    >
+      <form id={FORM_ID} onSubmit={onSubmit} noValidate className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Proveedor" required error={errors.supplierContactId?.message}>
+            <ContactPicker
+              orgId={oid}
+              value={supplierId || null}
+              onChange={(id) => setValue('supplierContactId', id ?? '', { shouldValidate: true })}
+              invalid={!!errors.supplierContactId}
+            />
+          </Field>
+          <Field label="Categoría" htmlFor="s-cat" required error={errors.expenseCategoryId?.message}>
+            <NativeSelect id="s-cat" {...register('expenseCategoryId')}>
+              <option value="">Selecciona…</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        </div>
 
-      <Card>
-        <form onSubmit={onSubmit} noValidate>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Proveedor" required error={errors.supplierContactId?.message}>
-                <ContactPicker
-                  orgId={oid}
-                  value={supplierId || null}
-                  onChange={(id) => setValue('supplierContactId', id ?? '', { shouldValidate: true })}
-                  invalid={!!errors.supplierContactId}
-                />
-              </Field>
-              <Field label="Categoría" htmlFor="s-cat" required error={errors.expenseCategoryId?.message}>
-                <NativeSelect id="s-cat" {...register('expenseCategoryId')}>
-                  <option value="">Selecciona…</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-            </div>
+        <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
+          <MoneyField
+            control={control}
+            name="agreedAmount"
+            label="Monto acordado"
+            id="s-amount"
+            required
+            error={errors.agreedAmount?.message}
+            info="Valor de cada cuenta por pagar que se generará automáticamente por este gasto recurrente."
+          />
+          <Field label="Moneda" htmlFor="s-currency" error={errors.currency?.message}>
+            <Input id="s-currency" maxLength={3} {...register('currency')} />
+          </Field>
+        </div>
 
-            <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-              <MoneyField
-                control={control}
-                name="agreedAmount"
-                label="Monto acordado"
-                id="s-amount"
-                required
-                error={errors.agreedAmount?.message}
-                info="Valor de cada cuenta por pagar que se generará automáticamente por este gasto recurrente."
-              />
-              <Field label="Moneda" htmlFor="s-currency" error={errors.currency?.message}>
-                <Input id="s-currency" maxLength={3} {...register('currency')} />
-              </Field>
-            </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Inicio" htmlFor="s-start" required error={errors.startDate?.message}>
+            <Input id="s-start" type="date" {...register('startDate')} />
+          </Field>
+          <Field label="Fin" htmlFor="s-end" hint="Opcional" error={errors.endDate?.message}>
+            <Input id="s-end" type="date" {...register('endDate')} />
+          </Field>
+          <Field
+            label="Día de pago"
+            htmlFor="s-dueday"
+            required
+            info="Día del mes (1–31) en que vence cada cuota."
+            error={errors.dueDay?.message}
+          >
+            <Input id="s-dueday" className="nums" type="number" min={1} max={31} {...register('dueDay', { valueAsNumber: true })} />
+          </Field>
+        </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Inicio" htmlFor="s-start" required error={errors.startDate?.message}>
-                <Input id="s-start" type="date" {...register('startDate')} />
-              </Field>
-              <Field label="Fin" htmlFor="s-end" hint="Opcional" error={errors.endDate?.message}>
-                <Input id="s-end" type="date" {...register('endDate')} />
-              </Field>
-              <Field
-                label="Día de pago"
-                htmlFor="s-dueday"
-                required
-                info="Día del mes (1–31) en que vence cada cuota."
-                error={errors.dueDay?.message}
-              >
-                <Input id="s-dueday" className="nums" type="number" min={1} max={31} {...register('dueDay', { valueAsNumber: true })} />
-              </Field>
-            </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Generar días antes"
+            htmlFor="s-genbefore"
+            hint="0–60"
+            info="Cuántos días antes del vencimiento se crea sola la cuenta por pagar del mes. 0 = el mismo día."
+            error={errors.generateDaysBefore?.message}
+          >
+            <Input id="s-genbefore" className="nums" type="number" min={0} max={60} {...register('generateDaysBefore', { valueAsNumber: true })} />
+          </Field>
+          <Field label="Nombre / referencia" htmlFor="s-name" hint="Opcional">
+            <Input id="s-name" {...register('name')} />
+          </Field>
+        </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Generar días antes"
-                htmlFor="s-genbefore"
-                hint="0–60"
-                info="Cuántos días antes del vencimiento se crea sola la cuenta por pagar del mes. 0 = el mismo día."
-                error={errors.generateDaysBefore?.message}
-              >
-                <Input id="s-genbefore" className="nums" type="number" min={0} max={60} {...register('generateDaysBefore', { valueAsNumber: true })} />
-              </Field>
-              <Field label="Nombre / referencia" htmlFor="s-name" hint="Opcional">
-                <Input id="s-name" {...register('name')} />
-              </Field>
-            </div>
-
-            <Field label="Notas" htmlFor="s-notes">
-              <Textarea id="s-notes" rows={2} {...register('notes')} />
-            </Field>
-          </CardContent>
-          <CardFooter className="justify-end gap-2 border-t pt-6">
-            <Button type="button" variant="outline" onClick={() => navigate(backTo)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader size="sm" />}
-              {isEdit ? 'Guardar cambios' : 'Crear'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        <Field label="Notas" htmlFor="s-notes">
+          <Textarea id="s-notes" rows={2} {...register('notes')} />
+        </Field>
+      </form>
+    </DetailDrawer>
   )
 }

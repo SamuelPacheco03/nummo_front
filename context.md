@@ -2679,9 +2679,19 @@ La página no construye claves de query ni llama a `fetch`. El hook no renderiza
 - **Todas** las pantallas se cargan con `lazy: async () => ({ Component: ... })`.
 - Rutas en **español** (`/cartera/cxc`, `/gastos/egresos`, `/informes/resultados`), aunque
   el API hable inglés. La URL es interfaz de usuario.
-- **Patrón de detalle sobre lista:** cuando el detalle debe abrirse en cajón sin perder la
-  lista de fondo, la ruta de detalle se declara **hija** de la de lista y la lista renderiza
-  su `<Outlet />` dentro de un `DetailDrawer`. Así se conservan filtros y scroll (sección 78).
+- **Patrón de detalle sobre lista, sin excepciones:** ficha, alta y edición se declaran **hijas**
+  de la ruta de lista, la lista monta su `<Outlet />` y el componente hijo se dibuja dentro de un
+  `DetailDrawer`. Así se conservan filtros y scroll (sección 78) y la URL se sigue pudiendo
+  compartir y recargar.
+
+  **Se aplica a las diez rutas con parámetro**, no solo a las de dinero. Hubo un tiempo en que
+  algunas fichas colgaban de la raíz con su `PageHeader` y su botón «Volver»: al abrirlas se
+  perdían los filtros de la lista, y al volver había que reconstruirlos a mano. La comprobación es
+  mecánica —¿la ruta con `:id` está dentro de `children`? ¿el padre monta `<Outlet />`?— y conviene
+  hacerla al añadir cualquier pantalla nueva.
+
+  Ojo con el `<Outlet />`: puede estar **dentro del componente compartido** que la página monta,
+  no en la página. `SettlementList` lo lleva por pagos y por egresos.
 
 ## 87.6. Estado
 
