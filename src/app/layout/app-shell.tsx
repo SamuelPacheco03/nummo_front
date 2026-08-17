@@ -1,194 +1,18 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
-import {
-  Activity,
-  ArrowLeftRight,
-  Banknote,
-  BarChart3,
-  Coins,
-  FileText,
-  HelpCircle,
-  Landmark,
-  LayoutDashboard,
-  Menu,
-  PieChart,
-  Settings,
-  Users,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { useState } from 'react'
+import { Outlet, useNavigate } from 'react-router'
 import { PageLoader } from '@/components/ui/loader'
-import { BrandLockup, BrandMark } from '@/components/brand-mark'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { NumiWidget } from '@/features/assistant/numi-widget'
 import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { isSettingsPath } from '@/features/config/settings-layout'
 import { getErrorMessage } from '@/lib/errors'
-import { InstallAppButton } from '@/pwa/install-app-button'
-import { OfflineIndicator } from '@/pwa/offline-indicator'
-import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-
-type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean }
-type NavSection = { title?: string; items: NavItem[] }
-
-const SECTIONS: NavSection[] = [
-  {
-    items: [
-      { to: '/', label: 'Panel', Icon: LayoutDashboard, end: true },
-      { to: '/contactos', label: 'Contactos', Icon: Users },
-    ],
-  },
-  {
-    title: 'Cartera',
-    items: [
-      { to: '/cartera/cxc', label: 'Cuentas por cobrar', Icon: Coins },
-      { to: '/cartera/pagos', label: 'Pagos', Icon: Banknote },
-      { to: '/cartera/acuerdos', label: 'Acuerdos', Icon: FileText },
-    ],
-  },
-  {
-    title: 'Gastos',
-    items: [
-      { to: '/gastos/cxp', label: 'Cuentas por pagar', Icon: Coins },
-      { to: '/gastos/egresos', label: 'Egresos', Icon: Banknote },
-      { to: '/gastos/recurrentes', label: 'Recurrentes', Icon: FileText },
-    ],
-  },
-  {
-    title: 'Caja',
-    items: [
-      { to: '/caja/cuentas', label: 'Cuentas', Icon: Landmark },
-      { to: '/caja/movimientos', label: 'Movimientos', Icon: ArrowLeftRight },
-    ],
-  },
-  {
-    title: 'Informes',
-    items: [
-      { to: '/informes/resultados', label: 'Resultados', Icon: BarChart3 },
-      { to: '/informes/cartera', label: 'Cobros y pagos', Icon: PieChart },
-    ],
-  },
-  {
-    // Configuración entra como un único enlace: sus once pantallas viven en la
-    // sub-navegación de SettingsLayout. Volcarlas aquí sería exponer el modelo
-    // de datos en la navegación principal, que es justo lo que §14 prohíbe.
-    items: [{ to: '/config', label: 'Configuración', Icon: Settings }],
-  },
-]
-
-function Brand() {
-  return (
-    <Link to="/" className="flex items-center" aria-label="Nummo — ir al panel">
-      <BrandLockup />
-    </Link>
-  )
-}
-
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const { pathname } = useLocation()
-
-  return (
-    <nav aria-label="Principal" className="flex flex-col gap-5 px-3 py-4">
-      {SECTIONS.map((section, i) => (
-        <div key={section.title ?? i} className="flex flex-col gap-0.5">
-          {section.title && (
-            <div className="px-2 pb-1 text-[0.68rem] font-medium tracking-wider text-muted-foreground uppercase">
-              {section.title}
-            </div>
-          )}
-          {section.items.map((item) => {
-            // `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que
-            // también cuelgan de Configuración: sin esto el enlace se apagaría
-            // justo cuando el usuario está dentro de esa sección.
-            const forceActive = item.to === '/config' && isSettingsPath(pathname)
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={onNavigate}
-                aria-current={forceActive ? 'page' : undefined}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground',
-                    'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
-                    (isActive || forceActive) && 'bg-secondary font-medium text-foreground',
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <item.Icon
-                      aria-hidden
-                      className={cn('size-4 shrink-0', (isActive || forceActive) && 'text-brand')}
-                    />
-                    <span className="truncate">{item.label}</span>
-                  </>
-                )}
-              </NavLink>
-            )
-          })}
-        </div>
-      ))}
-    </nav>
-  )
-}
-
-function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
-  return (
-    <>
-      <div className="flex h-14 items-center border-b px-4">
-        <Brand />
-      </div>
-      <div className="border-b p-3">
-        <OrgSwitcher />
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <NavLinks onNavigate={onNavigate} />
-      </div>
-      <div className="space-y-3 border-t p-3">
-        <NavLink
-          to="/ayuda"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-2 px-2 text-xs text-muted-foreground hover:text-foreground',
-              isActive && 'text-foreground',
-            )
-          }
-        >
-          <HelpCircle className="size-3.5" />
-          Ayuda
-        </NavLink>
-        <NavLink
-          to="/estado"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-2 px-2 text-xs text-muted-foreground hover:text-foreground',
-              isActive && 'text-foreground',
-            )
-          }
-        >
-          <Activity className="size-3.5" />
-          Estado del sistema
-        </NavLink>
-        <InstallAppButton />
-        <OfflineIndicator />
-        <div className="flex items-center justify-between gap-2">
-          <ThemeToggle />
-          <UserMenu />
-        </div>
-      </div>
-    </>
-  )
-}
+import { BottomNav } from './bottom-nav'
+import { Brand, SidebarBody } from './sidebar'
 
 function NoOrgOnboarding() {
   const navigate = useNavigate()
@@ -205,12 +29,12 @@ function NoOrgOnboarding() {
   }
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-background p-6">
+    <div className="bg-background grid min-h-dvh place-items-center p-6">
       <div className="w-full max-w-md space-y-5 text-center">
         <BrandMark className="mx-auto size-12" />
         <div className="space-y-1">
           <h1 className="font-display text-xl font-semibold">Crea tu organización</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Aún no perteneces a ninguna organización. Crea una para empezar a trabajar.
           </p>
         </div>
@@ -219,7 +43,7 @@ function NoOrgOnboarding() {
           <button
             type="button"
             onClick={onLogout}
-            className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
           >
             Cerrar sesión
           </button>
@@ -232,49 +56,47 @@ function NoOrgOnboarding() {
 
 export function AppShell() {
   const { isLoading, hasNoOrgs } = useCurrentOrg()
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const location = useLocation()
-
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [location.pathname])
 
   if (isLoading) return <PageLoader />
   if (hasNoOrgs) return <NoOrgOnboarding />
 
   return (
-    <div className="flex min-h-dvh bg-background">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
+    <div className="bg-background flex min-h-dvh">
+      <aside className="bg-sidebar sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r lg:flex">
         <SidebarBody />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur lg:hidden">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Abrir menú">
-                <Menu className="size-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0">
-              <SheetTitle className="sr-only">Navegación</SheetTitle>
-              <SidebarBody onNavigate={() => setMobileOpen(false)} />
-            </SheetContent>
-          </Sheet>
+        {/*
+          En móvil la cabecera ya no navega: de eso se encarga la barra inferior.
+          Se queda con lo que identifica el contexto —marca, organización activa
+          y usuario—, que es justo lo que §49 pide tener siempre a la vista.
+        */}
+        <header className="bg-background/90 sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4 backdrop-blur lg:hidden">
           <Brand />
-          <div className="ml-auto">
+          <div className="ml-auto flex min-w-0 items-center gap-2">
+            <div className="w-36 min-w-0">
+              <OrgSwitcher />
+            </div>
             <UserMenu />
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
+        {/*
+          El padding inferior reserva la altura de la barra de navegación más la
+          franja de gestos de iOS: sin él, la última fila de cada lista queda
+          debajo de la barra y no se puede tocar.
+        */}
+        <main className="flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8">
           <div className="mx-auto w-full max-w-6xl">
             <Outlet />
           </div>
         </main>
       </div>
 
-      {/* Asistente Numi: flotante, disponible en cualquier pantalla del shell. */}
+      <BottomNav />
+
+      {/* Numi: botón flotante en escritorio; en móvil su sitio es la barra. */}
       <NumiWidget />
     </div>
   )

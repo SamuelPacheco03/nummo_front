@@ -9,7 +9,7 @@ function NativeSelect({ className, children, ...props }: ComponentProps<'select'
       <select
         data-slot="native-select"
         className={cn(
-          'border-input flex h-9 w-full appearance-none rounded-md border bg-transparent px-3 py-1 pr-8 text-sm shadow-xs outline-none transition-[color,box-shadow]',
+          'border-input flex h-9 w-full appearance-none rounded-md pointer-coarse:min-h-11 border bg-transparent px-3 py-1 pr-8 text-sm shadow-xs outline-none transition-[color,box-shadow]',
           'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
           'aria-invalid:border-destructive aria-invalid:ring-destructive/20',

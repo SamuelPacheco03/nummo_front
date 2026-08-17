@@ -9,6 +9,14 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+  Área táctil: §43 pide ~44×44 px donde se toca con el dedo, pero agrandar los
+  controles a secas costaría la densidad de consola en escritorio. Los
+  componentes usan la variante nativa `pointer-coarse:` (p. ej.
+  `pointer-coarse:min-h-11` en botones e inputs), que solo aplica en punteros
+  gruesos. No hace falta declararla: Tailwind 4 la trae de serie.
+*/
+
+/*
   Design tokens SEMÁNTICOS de Nummo (nada de "blue-500" como significado).
   La paleta sale del isotipo y su gradiente teal → cian → azul → índigo:
     primary #2563EB · índigo #4F46E5 · teal #14B8A6 · cian #22C7D6

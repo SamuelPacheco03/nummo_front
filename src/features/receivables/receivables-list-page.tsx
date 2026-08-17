@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { Coins, Percent, Plus, RefreshCw } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
@@ -43,6 +43,29 @@ const SORT_OPTIONS = [
 
 const column = listColumns<ReceivableBalance>()
 
+/**
+ * Abre un diálogo de la página cuando la URL lo pide (`?nueva=1`, `?transferir=1`).
+ * Así la acción es enlazable: la barra de acciones rápidas de móvil navega aquí
+ * y el formulario aparece solo, sin obligar a buscar el botón. El parámetro se
+ * consume al abrir para que recargar o volver atrás no lo reabra.
+ */
+function useOpenFromUrl(param: string, open: (value: true) => void) {
+  const [params, setParams] = useSearchParams()
+  const requested = params.get(param) === '1'
+  useEffect(() => {
+    if (!requested) return
+    open(true)
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete(param)
+        return next
+      },
+      { replace: true },
+    )
+  }, [requested, param, open, setParams])
+}
+
 export function ReceivablesListPage() {
   const { orgId, role } = useCurrentOrg()
   const canGenerate = canManageAgreements(role)
@@ -56,6 +79,7 @@ export function ReceivablesListPage() {
   const [payerId, setPayerId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
+  useOpenFromUrl('nueva', setCreateOpen)
 
   // Cualquier cambio de criterio devuelve a la primera página.
   useEffect(() => {

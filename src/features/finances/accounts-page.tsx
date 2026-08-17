@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
 import { ArrowLeftRight, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,23 @@ export function AccountsPage() {
   const canTransfer = canManageAgreements(role)
   const { balances, isPending, isError, error } = useAccountBalances(orgId)
   const [transferOpen, setTransferOpen] = useState(false)
+
+  // `?transferir=1` abre la transferencia: es la acción rápida de móvil. Se
+  // consume al abrir para que recargar o volver atrás no la reabra.
+  const [params, setParams] = useSearchParams()
+  const wantsTransfer = params.get('transferir') === '1'
+  useEffect(() => {
+    if (!wantsTransfer) return
+    setTransferOpen(true)
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('transferir')
+        return next
+      },
+      { replace: true },
+    )
+  }, [wantsTransfer, setParams])
 
   const column = listColumns<(typeof balances)[number]>()
   const columns = useMemo(

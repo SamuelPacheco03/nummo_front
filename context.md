@@ -2642,7 +2642,7 @@ Los nombres de la izquierda son los que propone la sección 64 de este documento
 | `ConfirmOperation` | ✅ `ConfirmDialog` | `components/ui/confirm-dialog.tsx` |
 | `AccountCard` | ❌ no existe | lista inline en `features/finances/accounts-page.tsx` |
 | — | ✅ `ErrorState` + `InlineError` | `components/ui/error-state.tsx` |
-| `QuickAction` | ❌ no existe | — (brecha 95.3) |
+| `QuickAction` | ✅ dentro de `BottomNav` (hoja "Nuevo") | `app/layout/bottom-nav.tsx` |
 
 ## 94.1. Componentes existentes que el documento no nombraba
 
@@ -2688,13 +2688,15 @@ cara al usuario, también en la guía.
 movió es dónde vive cada pantalla en la navegación, no su dirección. Así ningún enlace
 guardado ni el historial se rompen, y no hizo falta una sola redirección.
 
-### 95.2. Navegación mobile — **alta**
+### 95.2. Navegación mobile — ✅ **cerrada (fase 3)**
 
-El documento (§15) pide bottom navigation con acción central "Nuevo".
-El código usa un `Sheet` lateral con el sidebar completo: 21 enlaces en un cajón, y ninguna
+El código usaba un `Sheet` lateral con el sidebar completo: 21 enlaces en un cajón y ninguna
 acción rápida de creación.
 
-**Resolución: gana el documento.** Ver fase 3.
+**Resuelto (fase 3):** barra inferior `Inicio · Cartera · Nuevo · Numi · Más`
+(`app/layout/bottom-nav.tsx`). "Más" sigue abriendo el sidebar completo, así que no hay una
+segunda navegación que aprender. El botón flotante de Numi se limita a escritorio: con la
+barra puesta se solapaba con ella.
 
 ### 95.3. Dashboard — **alta**
 
@@ -2893,21 +2895,36 @@ deliberada. Lo mismo con "Panel" → "Inicio".
 
 ---
 
-## Fase 3 — Experiencia móvil
+## Fase 3 — Experiencia móvil ✅ **completada**
 
 **Por qué tercera:** es la brecha más grande frente al documento y el uso real (cobrar y
 registrar se hacen desde el teléfono).
 
-**Alcance**
+**Lo que se hizo**
 
-1. Bottom navigation: `Inicio · Cartera · Nuevo · Numi · Más` (§15).
-2. Acción central **Nuevo** → hoja inferior con: registrar ingreso, registrar egreso,
-   registrar pago, crear cobro, crear contacto, transferencia.
-3. "Más" abre el resto de secciones; el `Sheet` deja de ser la única navegación.
-4. Auditar objetivos táctiles a 44×44 (§43) y formularios móviles (§44): ancho completo,
-   teclado numérico en importes, una sola columna.
+1. `app/layout/bottom-nav.tsx`: barra inferior `Inicio · Cartera · Nuevo · Numi · Más`, con
+   `env(safe-area-inset-bottom)` para la franja de gestos de iOS. → 95.2
+2. **Nuevo** abre una hoja inferior con seis acciones: registrar pago, registrar egreso, nueva
+   cuenta por cobrar, nuevo contacto, nuevo acuerdo y transferencia. Filtradas por rol (§47):
+   a un `VIEWER` el botón ni se le dibuja.
+3. Dos de esas acciones abrían un diálogo que vive dentro de una lista. Ahora se piden por URL
+   (`/cartera/cxc?nueva=1`, `/caja/cuentas?transferir=1`) y la página los abre al llegar,
+   consumiendo el parámetro para que volver atrás no los reabra. De paso quedan enlazables.
+4. El sidebar se extrae a `app/layout/sidebar.tsx` porque ahora se monta en dos sitios: la
+   columna de escritorio y la hoja de "Más".
+5. La cabecera de móvil deja de navegar (de eso se encarga la barra) y se queda con lo que
+   identifica el contexto: marca, **organización activa** y usuario (§49).
+6. Área táctil (§43): botones, inputs y selects crecen a 44 px con la variante nativa
+   `pointer-coarse:` de Tailwind, que solo aplica donde se toca con el dedo. El escritorio
+   conserva su densidad.
 
-**Se nota en:** todo el uso móvil. **Riesgo:** medio. **Tamaño:** grande.
+**Verificación:** typecheck limpio, 0 errores de lint, 87 tests en verde (7 nuevos sobre los
+destinos, el filtrado por rol y el estado activo), build OK, y la variante `pointer-coarse`
+confirmada en el CSS generado.
+
+**Pendiente anotado:** §44 (formularios móviles: teclado numérico en importes, una sola
+columna) no se auditó pantalla por pantalla. `MoneyInput` ya existe y centraliza los importes,
+así que el repaso cabe en la fase 5, cuando se pasen listas y fichas por su checklist.
 
 ---
 
@@ -2971,7 +2988,7 @@ sitio.
 | --- | --- | --- | --- |
 | ✅ 1 | Cimientos del sistema visual | bajo | — |
 | ✅ 2 | Navegación de escritorio | medio | 1 |
-| 3 | Experiencia móvil | medio | 1, 2 |
+| ✅ 3 | Experiencia móvil | medio | 1, 2 |
 | 4 | Dashboard | medio | 1, 2 |
 | 5 | Listados, detalles y Numi | medio | 1, 4 |
 | 6 | Command bar y pulido | medio-alto | todas |
