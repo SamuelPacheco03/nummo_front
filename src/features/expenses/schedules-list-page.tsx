@@ -1,160 +1,94 @@
 import { useMemo } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router'
-import { FileText, Plus } from 'lucide-react'
-import { PageHeader } from '@/components/page-header'
-import { Pagination } from '@/components/pagination'
-import { Button } from '@/components/ui/button'
-import { DataList, RowChevron } from '@/components/ui/data-list'
-import { listColumns } from '@/components/ui/list-columns'
-import { StatusBadge } from '@/components/ui/status-badge'
-import { ErrorState } from '@/components/ui/error-state'
-import { EmptyState, NoResults } from '@/components/ui/empty-state'
-import { useContacts } from '@/features/contacts/hooks'
+import { RecurringList } from '@/components/recurring-list'
 import { useExpenseCategories } from '@/features/masters/hooks'
-import { useMasterListState } from '@/features/masters/master-list-state'
+import { RECURRING_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageAgreements } from '@/features/organizations/roles'
-import { formatAmount } from '@/lib/format'
+import type {
+  RecurringListCopy,
+  RecurringListResult,
+  RecurringQuery,
+} from '@/lib/recurring-list'
+import type {
+  GetApiV1OrganizationsOrgIdExpenseSchedulesParams,
+  GetApiV1OrganizationsOrgIdExpenseSchedulesSort,
+} from '@/api/generated/model'
 import { RECURRENCE_LABELS, scheduleStatus } from './labels'
-import type { ExpenseSchedule } from '@/api/generated/model'
 import { useExpenseSchedules } from './hooks'
 
-/** Columnas ordenables que acepta el endpoint (contrato: NamedListQuery). */
-const SORT_OPTIONS = [
-  { field: 'createdAt', label: 'Creación' },
-  { field: 'name', label: 'Nombre' },
-]
+const COPY: RecurringListCopy = {
+  title: 'Gastos recurrentes',
+  description: 'Pagos periódicos a proveedores por categoría.',
+  action: 'Nuevo recurrente',
+  party: 'Proveedor',
+  searchPlaceholder: 'Buscar recurrente…',
+  entity: ['recurrente', 'recurrentes'],
+  emptyTitle: 'Todavía no tienes gastos recurrentes',
+  emptyDescription:
+    'Crea uno para que Nummo genere solo la cuenta por pagar de cada período: arriendo, servicios, nómina…',
+  loadError: 'No se pudieron cargar los gastos recurrentes.',
+}
 
-const column = listColumns<ExpenseSchedule>()
-
-export function SchedulesListPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageAgreements(role)
-  const navigate = useNavigate()
-  const state = useMasterListState()
-
-  const { items, total, totalPages, isPending, isError, error, isFetching } = useExpenseSchedules(orgId, {
-    page: state.params.page,
-    pageSize: state.params.pageSize,
-    q: state.params.q,
-    sort: state.params.sort,
-    order: state.params.order,
+/**
+ * Traduce lo que pide la lista al contrato de recurrentes y normaliza las filas.
+ *
+ * El API devuelve ids; el nombre de la categoría se resuelve aquí con un mapa
+ * (suficiente para el catálogo de una org; a gran escala el backend debería
+ * denormalizarlo en el listado).
+ */
+function useScheduleRows(params: RecurringQuery): RecurringListResult {
+  const { orgId } = useCurrentOrg()
+  const query: GetApiV1OrganizationsOrgIdExpenseSchedulesParams = {
+    page: params.page,
+    pageSize: params.pageSize,
+    q: params.q,
+    sort: params.sort as GetApiV1OrganizationsOrgIdExpenseSchedulesSort,
+    order: params.order,
+    supplierContactId: params.contactId,
+    status: params.status as GetApiV1OrganizationsOrgIdExpenseSchedulesParams['status'],
+  }
+  const list = useExpenseSchedules(orgId, query)
+  const { items: categories } = useExpenseCategories(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'name',
+    order: 'asc',
   })
-
-  const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
-  const { items: categories } = useExpenseCategories(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
-  const contactMap = useMemo(() => new Map(contacts.map((c) => [c.id, c.displayName])), [contacts])
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
 
-  const columns = useMemo(
-    () =>
-      column.columns([
-        column.display({
-          id: 'supplier',
-          header: 'Proveedor',
-          cell: ({ row }) => (
-            <div className="min-w-0">
-              <p className="truncate font-medium">
-                {contactMap.get(row.original.supplierContactId) ?? '—'}
-              </p>
-              <p className="text-muted-foreground truncate text-xs">
-                {row.original.name ?? categoryMap.get(row.original.expenseCategoryId) ?? '—'}
-              </p>
-            </div>
-          ),
-        }),
-        column.display({
-          id: 'recurrence',
-          header: 'Recurrencia',
-          cell: ({ row }) => (
-            <span className="text-muted-foreground">
-              {RECURRENCE_LABELS[row.original.recurrenceType] ?? row.original.recurrenceType} · día{' '}
-              {row.original.dueDay}
-            </span>
-          ),
-        }),
-        column.display({
-          id: 'status',
-          header: 'Estado',
-          cell: ({ row }) => <StatusBadge {...scheduleStatus(row.original.status)} />,
-        }),
-        column.display({
-          id: 'amount',
-          header: 'Monto',
-          meta: { align: 'right' },
-          cell: ({ row }) => formatAmount(row.original.agreedAmount, row.original.currency),
-        }),
-        column.display({
-          id: 'chevron',
-          header: '',
-          meta: { hideOnStack: true },
-          cell: () => <RowChevron />,
-        }),
-      ]),
-    [contactMap, categoryMap],
-  )
-
-  const hasFilters = Boolean(state.search) || state.active !== 'true'
-  const clearFilters = () => {
-    state.setSearch('')
-    state.setActive('true')
+  return {
+    ...list,
+    items: list.items.map((s) => ({
+      id: s.id,
+      contactId: s.supplierContactId,
+      subtitle: s.name ?? categoryMap.get(s.expenseCategoryId) ?? '—',
+      recurrenceType: s.recurrenceType,
+      dueDay: s.dueDay,
+      status: s.status,
+      agreedAmount: s.agreedAmount,
+      currency: s.currency,
+    })),
   }
+}
+
+/**
+ * Gastos que se repiten. Es el espejo de los acuerdos de cobro, así que comparte
+ * la pantalla (`RecurringList`) y solo aporta las palabras y su endpoint.
+ */
+export function SchedulesListPage() {
+  const { role } = useCurrentOrg()
 
   return (
-    <div>
-      <PageHeader title="Gastos recurrentes" description="Pagos periódicos a proveedores por categoría.">
-        {canManage && (
-          <Button asChild size="sm">
-            <Link to="/gastos/recurrentes/nuevo">
-              <Plus className="size-4" />
-              Nuevo recurrente
-            </Link>
-          </Button>
-        )}
-      </PageHeader>
-
-      {isError ? (
-        <ErrorState error={error} fallback="No se pudieron cargar." />
-      ) : (
-        <>
-          <DataList
-            columns={columns}
-            rows={items}
-            getRowId={(s) => s.id}
-            onRowClick={(s) => navigate(`/gastos/recurrentes/${s.id}`)}
-            isLoading={isPending}
-            skeletonRows={6}
-            emptyText={
-              hasFilters ? (
-                <NoResults entity="gastos recurrentes" onClear={clearFilters} />
-              ) : (
-                <EmptyState
-                  Icon={FileText}
-                  title="Todavía no tienes gastos recurrentes"
-                  description="Crea uno para que Nummo genere solo la cuenta por pagar de cada período: arriendo, servicios, nómina…"
-                  action={
-                    canManage && (
-                      <Button size="sm" onClick={() => navigate('/gastos/recurrentes/nuevo')}>
-                        <Plus className="size-4" />
-                        Nuevo recurrente
-                      </Button>
-                    )
-                  }
-                />
-              )
-            }
-            search={{ value: state.search, onChange: state.setSearch, placeholder: 'Buscar recurrente…' }}
-            sort={{ value: state.sorting, onChange: state.setSorting, options: SORT_OPTIONS }}
-          />
-
-          {!isPending && total > 0 && (
-            <Pagination page={state.page} pageSize={state.params.pageSize} total={total} totalPages={totalPages} isFetching={isFetching} onPage={state.setPage} />
-          )}
-        </>
-      )}
-
-      {/* Detalle en cajón: ruta hija, la lista se queda montada detrás. */}
-      <Outlet />
-    </div>
+    <RecurringList
+      copy={COPY}
+      storageKey="nummo:recurrentes:filtros"
+      sections={RECURRING_SECTIONS}
+      newTo="/gastos/recurrentes/nuevo"
+      detailTo={(id) => `/gastos/recurrentes/${id}`}
+      statusOf={scheduleStatus}
+      recurrenceLabels={RECURRENCE_LABELS}
+      canManage={canManageAgreements(role)}
+      useList={useScheduleRows}
+    />
   )
 }

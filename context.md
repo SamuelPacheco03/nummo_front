@@ -799,9 +799,15 @@ de acciones.
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
-Lo usa **todo listado** de la app: cartera, pagos y egresos, contactos, acuerdos y movimientos.
-Los maestros son la excepción declarada —`MasterCrud` resuelve su propio estado— porque su lista
-es un catálogo corto que no se comparte por enlace.
+Lo usa **todo listado** de la app: cartera, pagos y egresos, acuerdos y recurrentes, contactos y
+movimientos. Los maestros son la única excepción declarada —`MasterCrud` resuelve su propio
+estado— porque su lista es un catálogo corto que no se comparte por enlace.
+
+**Gastos recurrentes fue el último en llegar, y enseña cómo se detecta el que falta:** usaba
+`useMasterListState` por parecerse a un catálogo, así que sus filtros no viajaban en la URL y ni
+siquiera ofrecía los dos que su endpoint acepta (`status`, `supplierContactId`). Si una pantalla
+es una **lista de trabajo** —se filtra, se comparte, se vuelve a ella—, va con este patrón aunque
+su estado de partida se pareciera al de un maestro.
 No es un capricho técnico: es lo que hace que el botón «atrás» funcione, que se pueda mandar
 «mira estas cuentas» por chat y que recargar no devuelva al principio. El estado de React no
 duplica nada — se deriva de los parámetros en cada render.
@@ -1056,6 +1062,7 @@ con el actual marcado.
 | --- | --- | --- |
 | Lo que se debe | `PORTFOLIO_SECTIONS` | Por cobrar · Por pagar |
 | Lo que ya se movió | `LEDGER_SECTIONS` | Pagos · Egresos |
+| Lo que se repite | `RECURRING_SECTIONS` | Cobros · Gastos |
 
 Se consultan a la vez, y en móvil la navegación vive detrás de «Más», a dos toques.
 
@@ -2911,6 +2918,7 @@ siempre son palabras y un endpoint, así que viajan como props:
 | Cuentas por cobrar / por pagar | `BalanceKpis`, `FilterSortField`, `DataList` | Etiquetas y su consulta |
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
 | Pagos / egresos | `SettlementList`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
+| Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
 
 `SettlementDrawer` nació de dos archivos de ~310 líneas idénticos salvo por eso. Hoy el
 formulario vive una vez y cada página son ~120 líneas: sus palabras, su consulta de cuentas
@@ -2955,6 +2963,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
 | `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale |
 | `SettlementList` | `components/settlement-list.tsx` | Listado de pagos o egresos |
+| `RecurringList` | `components/recurring-list.tsx` | Listado de acuerdos o gastos recurrentes |
 | `CashflowKpis` | `components/cashflow-kpis.tsx` | Cifras de flujo del mes, con comparación |
 | `Sheet` · `Dialog` · `Popover` · `DropdownMenu` | `components/ui/` | Primitivas Radix |
 | `Field` · `Label` · `Input` · `Textarea` · `NativeSelect` | `components/ui/` | Formularios |

@@ -84,3 +84,14 @@ export const LEDGER_SECTIONS = [
   { to: '/cartera/pagos', label: 'Pagos' },
   { to: '/gastos/egresos', label: 'Egresos' },
 ]
+
+/**
+ * Y el tercero: lo que se repite todos los meses, cobrando y pagando.
+ *
+ * Un acuerdo y un gasto recurrente son la misma plantilla —genera sola la cuenta
+ * de cada período— desde los dos lados del dinero.
+ */
+export const RECURRING_SECTIONS = [
+  { to: '/cartera/acuerdos', label: 'Cobros' },
+  { to: '/gastos/recurrentes', label: 'Gastos' },
+]
