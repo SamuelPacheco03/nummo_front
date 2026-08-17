@@ -1,145 +1,33 @@
-import { type ReactNode } from 'react'
+import { type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
-import { Skeleton } from '@/components/ui/skeleton'
-import { InlineError } from '@/components/ui/error-state'
+import { Drawer } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 
 /**
  * Cajón de detalle: la ficha de un registro sin abandonar su lista.
  *
- * En ≥sm entra flotando desde la derecha (con margen y esquinas redondeadas);
- * por debajo, como hoja desde abajo, que es el gesto esperado en móvil. La
- * animación vive en `index.css` (`.animate-drawer`) porque cambia de eje con el
- * breakpoint y eso no se expresa bien con las utilidades de entrada/salida.
- *
- * Va montado sobre Radix Dialog, así que hereda foco atrapado, cierre con Esc,
- * bloqueo del scroll de fondo y los roles ARIA correctos.
- *
- * Se usa desde una ruta hija de la lista (ver `router.tsx`): la lista sigue
- * montada detrás y `closeTo` es la ruta a la que se vuelve al cerrar, de modo
- * que la URL del detalle se puede compartir y recargar.
+ * Es `Drawer` (§94) atado a una **ruta hija** de la lista (ver `router.tsx`): la
+ * lista sigue montada detrás y `closeTo` es la ruta a la que se vuelve al
+ * cerrar, de modo que la URL del detalle se puede compartir y recargar. Todo lo
+ * demás —el eje, la cabecera, el pie fijo— lo pone el panel.
  */
 export function DetailDrawer({
   closeTo,
-  title,
-  meta,
-  amount,
-  actions,
-  loading = false,
-  error,
-  footer,
-  children,
-}: {
+  ...panel
+}: Omit<ComponentProps<typeof Drawer>, 'open' | 'onOpenChange'> & {
   /** Ruta de la lista: a donde se navega al cerrar. */
   closeTo: string
-  title?: ReactNode
-  /** Línea bajo el título: estado, categoría, propósito… */
-  meta?: ReactNode
-  /** Cifra protagonista de la cabecera (el dato por el que se abre la ficha). */
-  amount?: ReactNode
-  /** Botones de la cabecera. */
-  actions?: ReactNode
-  loading?: boolean
-  error?: string | null
-  /** Pie fijo. Los formularios ponen aquí Guardar/Cancelar; las fichas no lo usan. */
-  footer?: ReactNode
-  children?: ReactNode
 }) {
   const navigate = useNavigate()
 
   return (
-    <DialogPrimitive.Root
+    <Drawer
       open
       onOpenChange={(open) => {
         if (!open) navigate(closeTo)
       }}
-    >
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay
-          className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-[2px] dark:bg-slate-950/65"
-        />
-        <DialogPrimitive.Content
-          // Sin descripción: el contenido de la ficha ya cumple ese papel y
-          // Radix avisa por consola si apuntamos a un id que no existe.
-          aria-describedby={undefined}
-          className={cn(
-            'animate-drawer bg-card text-card-foreground fixed z-50 flex flex-col overflow-hidden border shadow-2xl',
-            'inset-x-0 top-14 bottom-0 rounded-t-2xl',
-            'sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[30rem] sm:max-w-[calc(100%-2rem)] sm:rounded-xl',
-          )}
-        >
-          {/* Tirador: solo en la hoja móvil, donde se arrastra con el pulgar. */}
-          <div className="bg-border mx-auto mt-2 h-1 w-9 shrink-0 rounded-full sm:hidden" />
-
-          <div className="flex-none border-b px-5 pt-4 pb-4 sm:px-6">
-            <div className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                {loading ? (
-                  <>
-                    <DialogPrimitive.Title className="sr-only">Cargando detalle</DialogPrimitive.Title>
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="mt-2 h-4 w-32" />
-                  </>
-                ) : (
-                  <>
-                    <DialogPrimitive.Title className="font-display truncate text-lg font-semibold">
-                      {title}
-                    </DialogPrimitive.Title>
-                    {meta && <div className="text-muted-foreground mt-1 text-sm">{meta}</div>}
-                  </>
-                )}
-              </div>
-              <DialogPrimitive.Close
-                className="text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 -mt-1 -mr-1 shrink-0 rounded-md p-1.5 transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-                aria-label="Cerrar"
-              >
-                <X className="size-4" />
-              </DialogPrimitive.Close>
-            </div>
-
-            {loading ? (
-              <Skeleton className="mt-3 h-8 w-40" />
-            ) : (
-              amount && <p className="nums mt-3 text-2xl font-semibold tracking-tight">{amount}</p>
-            )}
-
-            {!loading && actions && <div className="mt-3 flex flex-wrap gap-2">{actions}</div>}
-          </div>
-
-          <div
-            className={cn(
-              'scrollbar-slim flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6',
-              // Sin pie, el respiro de abajo lo pone el propio cuerpo; con pie,
-              // lo pone el pie, que es quien toca el borde de la pantalla.
-              !footer && 'pb-[max(1.25rem,env(safe-area-inset-bottom))]',
-            )}
-          >
-            {loading ? (
-              <>
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-32 w-full" />
-              </>
-            ) : error ? (
-              <InlineError>{error}</InlineError>
-            ) : (
-              children
-            )}
-          </div>
-
-          {/*
-            Pie fijo fuera del área con scroll: en un formulario, Guardar tiene
-            que estar visible sin llegar al final de los campos.
-          */}
-          {!loading && !error && footer && (
-            <div className="bg-card flex-none border-t px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
-              {footer}
-            </div>
-          )}
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+      {...panel}
+    />
   )
 }
 

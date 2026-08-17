@@ -29,7 +29,8 @@ el usuario — pero deja constancia de la contradicción para poder actualizar e
 
 ## Reglas que no se negocian
 
-1. **Reutiliza antes de crear.** Consulta §94 antes de escribir un componente nuevo.
+1. **Reutiliza antes de crear.** Consulta §94 antes de escribir un componente nuevo, y lee
+   «Nada por duplicado» más abajo: las pantallas espejo comparten componente, no lo copian.
 2. **Solo tokens semánticos** (`bg-card`, `text-muted-foreground`). Nunca un hex ni
    `bg-slate-100` en un componente.
 3. **Mobile-first**, baseline 360–390px. Probar 360 / 768 / 1024 / 1440.
@@ -42,10 +43,38 @@ el usuario — pero deja constancia de la contradicción para poder actualizar e
 9. **Cubre los estados obligatorios** (§45): loading, loaded, empty, error, y permisos.
 10. **No instales dependencias** sin pasar por §63.
 
+## Nada por duplicado
+
+Esta app tiene **pantallas espejo** por todas partes: cuentas por cobrar y por pagar, pagos y
+egresos, cobrar y pagar. Se parecen tanto que copiar el archivo del otro lado y cambiarle las
+palabras siempre es lo más rápido. **No lo hagas.** Lo que se duplica se arregla una vez, se
+olvida la otra, y en dos semanas las dos pantallas cuentan historias distintas.
+
+Antes de escribir un componente, en este orden:
+
+1. **Mira el inventario** (`context.md` §94). Si ya existe, úsalo.
+2. **Mira el espejo.** ¿Existe la versión del otro lado? Entonces el componente es **uno solo**,
+   parametrizado — no dos. Lo que cambia entre lados casi siempre son palabras y un endpoint:
+   que viajen como props (`copy`, `onSubmit`), no como un archivo nuevo.
+3. **Mira si ya lo estás reescribiendo.** Si vas a copiar más de ~20 líneas de otro archivo,
+   eso no es un componente nuevo: es uno que hay que extraer.
+4. **Solo entonces créalo** — y añádelo a §94 en el mismo commit, o el siguiente lo volverá a
+   escribir.
+
+Lo mismo vale para lo que ya está resuelto una vez: hay **un** panel lateral (`Drawer`), **un**
+selector segmentado (`SegmentedControl`), **un** badge de estado (`StatusBadge`), **un** vacío
+(`EmptyState`). Si necesitas una variante, se le añade una prop al que existe; no nace un
+primo.
+
+**Al revés también cuenta:** si tocas algo de un lado del espejo, comprueba el otro en el mismo
+commit.
+
 ## Cambio mínimo
 
 Haz el cambio más pequeño que resuelva la solicitud. No rediseñes secciones que nadie pidió,
 no reescribas módulos completos por un ajuste, no cambies el stack durante un cambio visual.
+
+Extraer lo repetido **no** viola esto: quitar un duplicado es más pequeño que mantener dos.
 
 ## Antes de terminar
 

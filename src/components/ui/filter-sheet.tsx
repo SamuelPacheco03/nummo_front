@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Drawer } from '@/components/ui/drawer'
 import { NativeSelect } from '@/components/ui/native-select'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 /**
@@ -39,8 +39,8 @@ export function FilterSheetTrigger({
 }
 
 /**
- * Filtros avanzados: hoja inferior en móvil, cajón por la derecha en escritorio
- * (§2.3, §44).
+ * Filtros avanzados, dentro del `Drawer` de la app (§94): hoja inferior en móvil
+ * y cajón por la derecha en escritorio (§2.3, §44).
  *
  * El eje cambia con el breakpoint a propósito: abajo es el gesto natural del
  * pulgar, y en una pantalla ancha un panel que ocupa el borde inferior deja la
@@ -72,15 +72,15 @@ export function FilterSheet({
   canClear: boolean
 }) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="drawer" className="gap-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        <SheetTitle className="pb-3 text-base">Filtros</SheetTitle>
-
-        <div className="scrollbar-slim -mx-1 flex flex-col gap-4 overflow-y-auto px-1 pb-4">
-          {children}
-        </div>
-
-        <div className="flex gap-2 border-t pt-3">
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Filtros"
+      // Cuatro criterios no llenan una pantalla: en móvil se ajusta al alto de
+      // lo que hay y deja ver la lista de detrás.
+      fit
+      footer={
+        <div className="flex gap-2">
           <Button variant="ghost" onClick={onClear} disabled={!canClear} className="flex-1">
             Limpiar todo
           </Button>
@@ -88,8 +88,10 @@ export function FilterSheet({
             {resultLabel}
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      }
+    >
+      {children}
+    </Drawer>
   )
 }
 

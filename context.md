@@ -755,6 +755,31 @@ ancha y clara que sobre el sidebar oscuro se ve como una cicatriz.
 El pulgar va en `currentColor` a baja opacidad, así que **hereda la superficie** y no hace falta
 declarar dos versiones (§11.2).
 
+## 11.1.3. Un solo panel lateral
+
+Todo lo que se abre «de lado» —la ficha de un registro, los filtros avanzados, registrar dinero—
+sale del mismo `Drawer` (`components/ui/drawer.tsx`): **hoja desde abajo en móvil, cajón flotante
+por la derecha desde `sm`**.
+
+El eje cambia con el breakpoint a propósito: abajo es el gesto del pulgar, y en una pantalla
+ancha un panel pegado al borde inferior tapa la tabla justo donde se mira el resultado. Lo
+resuelve `.animate-drawer` (`index.css`), que es la única forma de cambiar el **eje** de entrada
+con el breakpoint: mezclar `slide-in-from-bottom` con `sm:slide-in-from-right` deja las dos
+traslaciones activas y el panel entra en diagonal.
+
+Hubo un tiempo con **dos** paneles: el cajón de detalle traía su propio Radix Dialog y la hoja de
+filtros montaba otro sobre `Sheet`, con anchos, esquinas y cabeceras distintas. Eran dos cosas que
+el usuario lee como la misma y que se separaban cada vez que alguien tocaba una. Ahora hay uno, y
+encima solo cambia **cómo se abre**:
+
+| Forma | Quién manda | Para qué |
+| --- | --- | --- |
+| `DetailDrawer` | Una ruta hija de la lista | Lo que se comparte y se recarga: fichas, formularios de alta |
+| Estado local (`FilterSheet`, …) | Un `useState` | Lo efímero: filtros, opciones de una pantalla |
+
+`Sheet` se queda para lo que **no** cambia de eje: los laterales de navegación y la hoja inferior
+de acciones.
+
 ---
 
 ## 21.1. Filtros que sobreviven a la navegación
@@ -976,21 +1001,21 @@ una a la otra hace creer que te has salido de la sección.
 Por eso `BottomLink` calcula él mismo si está activo (`to` + `also[]`, prefijo de ruta) en vez de
 delegarlo a `NavLink`, que solo entiende una ruta por enlace. Las rutas del par viven en
 `PORTFOLIO_SECTIONS` (`features/navigation/sections.ts`), un único sitio que sirve a la barra y al
-enlace espejo de §15.2.
+salto espejo de §15.2.
 
 ## 15.2. Salto entre pantallas espejo
 
 Por cobrar y por pagar se consultan a la vez. En móvil la navegación vive detrás de «Más», a dos
-toques, así que las dos pantallas llevan un `MirrorLink`: **un** enlace, debajo de la cabecera,
-que anuncia solo la que **no** estás viendo — «Ver cuentas por pagar →».
+toques, así que las dos pantallas llevan un `SectionSwitch`: dos botones —«Por cobrar» y «Por
+pagar»— debajo de la cabecera, con el actual marcado.
 
-**Un enlace, no dos pestañas.** Un par de botones al estilo pestaña prometía que las dos vistas
-son hermanas dentro de una misma pantalla, y no lo son: son secciones distintas del menú, cada una
-con su cabecera y sus acciones. Además dibujaba en pantalla la que ya estás mirando. Así pesa una
-línea de texto en vez de una barra.
+Se probó reducirlo a un solo enlace hacia la otra («Ver cuentas por pagar →») para ahorrar sitio.
+**Se descartó:** ver las dos caras a la vez es lo que enseña que existen y en cuál estás; con un
+enlace suelto hay que leerlo para deducirlo.
 
-Solo por debajo de `lg`: en escritorio el sidebar ya tiene las dos a la vista y esto sería una
-tercera forma de navegar a lo mismo.
+Van de enlaces, no de pestañas: son dos rutas de verdad, así que «atrás» funciona y cada una se
+puede compartir. Solo por debajo de `lg`: en escritorio el sidebar ya tiene las dos a la vista y
+esto sería una tercera forma de navegar a lo mismo.
 
 ---
 
@@ -2799,6 +2824,28 @@ usa una máscara, por qué `--primary` no se aclara en hover). Sigue ese estilo:
 Esta tabla evita el error más caro: crear un componente que ya existe con otro nombre.
 Los nombres de la izquierda son los que propone la sección 64 de este documento.
 
+## 94.0. Las pantallas espejo comparten componente
+
+Media app está duplicada por diseño: cobrar y pagar, cuentas por cobrar y por pagar, pagos y
+egresos. Se parecen tanto que **copiar el archivo del otro lado y cambiarle las palabras siempre
+es lo más rápido** — y siempre acaba igual: el arreglo se hace en uno de los dos y las pantallas
+se separan.
+
+La regla es que el componente sea **uno solo, parametrizado**. Lo que cambia entre lados casi
+siempre son palabras y un endpoint, así que viajan como props:
+
+| Espejo | Componente compartido | Qué aporta cada lado |
+| --- | --- | --- |
+| Cuentas por cobrar / por pagar | `BalanceKpis`, `FilterSortField`, `DataList` | Etiquetas y su consulta |
+| Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
+
+`SettlementDrawer` nació de dos archivos de ~310 líneas idénticos salvo por eso. Hoy el
+formulario vive una vez y cada página son ~120 líneas: sus palabras, su consulta de cuentas
+abiertas y su llamada al contrato. La lógica que no es de pantalla —qué cuenta admite dinero, qué
+entrega el formulario— vive en `lib/settlement.ts`, donde se puede probar sin montar nada.
+
+Y al revés: **si tocas un lado del espejo, revisa el otro en el mismo commit.**
+
 | Propuesto (§64) | En el código hoy | Ruta |
 | --- | --- | --- |
 | `PageHeader` | ✅ `PageHeader` | `components/page-header.tsx` |
@@ -2831,7 +2878,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `MonthlyFlowChart` · `AgingChart` | `components/` | Gráficas de flujo y de antigüedad |
 | `ContactAmountList` · `UpcomingList` | `components/` | Listas de contacto+importe y de vencimientos |
 | `BrandMark` · `BrandLockup` | `components/brand-mark.tsx` | Marca |
-| `DetailDrawer` | `components/ui/detail-drawer.tsx` | Cajón de detalle (abajo en móvil, derecha en ≥sm) |
+| `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
+| `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
+| `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale |
 | `Sheet` · `Dialog` · `Popover` · `DropdownMenu` | `components/ui/` | Primitivas Radix |
 | `Field` · `Label` · `Input` · `Textarea` · `NativeSelect` | `components/ui/` | Formularios |
 | `SegmentedControl` | `components/ui/segmented-control.tsx` | Alternador de pocas opciones |
@@ -2842,7 +2891,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
 | `FilterSheet` · `FilterSheetTrigger` · `FilterField` · `FilterSortField` | `components/ui/filter-sheet.tsx` | Filtros avanzados y orden, en hoja inferior / cajón |
 | `BalanceKpis` | `components/balance-kpis.tsx` | Total, vencido y al día de una cartera |
-| `MirrorLink` | `components/mirror-link.tsx` | Salto a la pantalla espejo, solo en móvil |
+| `SectionSwitch` | `components/section-switch.tsx` | Salto entre pantallas espejo, solo en móvil |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 
 ---

@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { BalanceKpis } from '@/components/balance-kpis'
-import { MirrorLink } from '@/components/mirror-link'
+import { SectionSwitch } from '@/components/section-switch'
 import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
 import { Button } from '@/components/ui/button'
 import {
@@ -328,7 +328,7 @@ export function ReceivablesListPage() {
         )}
       </PageHeader>
 
-      <MirrorLink options={PORTFOLIO_SECTIONS} />
+      <SectionSwitch options={PORTFOLIO_SECTIONS} />
 
       <BalanceKpis
         label="Por cobrar"

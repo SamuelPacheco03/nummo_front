@@ -64,14 +64,11 @@ export const SECTIONS: NavSection[] = [
  * Las dos caras de la cartera: lo que te deben y lo que debes.
  *
  * Se declara aquí, junto al resto de la navegación, y no en el componente: son
- * rutas, y las rutas viven en un solo sitio. Sirve a dos cosas —el enlace espejo
+ * rutas, y las rutas viven en un solo sitio. Sirve a dos cosas —el `SectionSwitch`
  * de móvil y el destino «Cartera» de la barra inferior—, que es justo por lo que
  * merece estar en un único sitio.
- *
- * Las etiquetas van en minúscula porque se leen dentro de una frase: «Ver
- * cuentas por pagar».
  */
 export const PORTFOLIO_SECTIONS = [
-  { to: '/cartera/cxc', label: 'cuentas por cobrar' },
-  { to: '/gastos/cxp', label: 'cuentas por pagar' },
+  { to: '/cartera/cxc', label: 'Por cobrar' },
+  { to: '/gastos/cxp', label: 'Por pagar' },
 ]
