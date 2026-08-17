@@ -30,6 +30,7 @@ import type {
   UpcomingReceivable,
 } from '@/api/generated/model'
 import { todayISODate } from '@/lib/format'
+import { asArray } from '@/lib/list-result'
 
 /** Rango de fechas (YYYY-MM-DD) para los reportes por período. */
 export interface Period {
@@ -58,7 +59,7 @@ export function useCashflow(orgId: string | undefined, period: Period) {
 /** Flujo mensual (ingresos/egresos/neto) de los últimos N meses, más antiguo primero. */
 export function useCashflowMonthly(orgId: string | undefined, months = 6) {
   const query = useGetApiV1OrganizationsOrgIdReportsCashflowMonthly(orgId ?? '', { months }, enabled(orgId))
-  return { ...query, items: (query.data?.data ?? []) as MonthlyCashflow[] }
+  return { ...query, items: asArray<MonthlyCashflow>(query.data?.data) }
 }
 
 export function useReceivablesSummary(orgId: string | undefined) {
@@ -69,13 +70,13 @@ export function useReceivablesSummary(orgId: string | undefined) {
 /** Aging de cartera por cobrar (por vencer / 1–30 / 31–60 / +60 días). */
 export function useReceivablesAging(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdReportsReceivablesAging(orgId ?? '', enabled(orgId))
-  return { ...query, buckets: (query.data?.data ?? []) as AgingBucket[] }
+  return { ...query, buckets: asArray<AgingBucket>(query.data?.data) }
 }
 
 /** Aging de cuentas por pagar (por vencer / 1–30 / 31–60 / +60 días). */
 export function usePayablesAging(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdReportsPayablesAging(orgId ?? '', enabled(orgId))
-  return { ...query, buckets: (query.data?.data ?? []) as AgingBucket[] }
+  return { ...query, buckets: asArray<AgingBucket>(query.data?.data) }
 }
 
 export function usePayablesSummary(orgId: string | undefined) {
@@ -85,34 +86,34 @@ export function usePayablesSummary(orgId: string | undefined) {
 
 export function useTopDebtors(orgId: string | undefined, limit = 5) {
   const query = useGetApiV1OrganizationsOrgIdReportsTopDebtors(orgId ?? '', { limit }, enabled(orgId))
-  return { ...query, debtors: (query.data?.data ?? []) as Debtor[] }
+  return { ...query, debtors: asArray<Debtor>(query.data?.data) }
 }
 
 /** A quién le debes más (proveedores por saldo vencido) — espejo de top-debtors. */
 export function useTopCreditors(orgId: string | undefined, limit = 5) {
   const query = useGetApiV1OrganizationsOrgIdReportsTopCreditors(orgId ?? '', { limit }, enabled(orgId))
-  return { ...query, creditors: (query.data?.data ?? []) as Creditor[] }
+  return { ...query, creditors: asArray<Creditor>(query.data?.data) }
 }
 
 export function useUpcomingReceivables(orgId: string | undefined, days = 30, limit = 5) {
   const query = useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables(orgId ?? '', { days, limit }, enabled(orgId))
-  return { ...query, upcoming: (query.data?.data ?? []) as UpcomingReceivable[] }
+  return { ...query, upcoming: asArray<UpcomingReceivable>(query.data?.data) }
 }
 
 /** Cuentas por pagar próximas a vencer — espejo de upcoming-receivables. */
 export function useUpcomingPayables(orgId: string | undefined, days = 30, limit = 5) {
   const query = useGetApiV1OrganizationsOrgIdReportsUpcomingPayables(orgId ?? '', { days, limit }, enabled(orgId))
-  return { ...query, upcoming: (query.data?.data ?? []) as UpcomingPayable[] }
+  return { ...query, upcoming: asArray<UpcomingPayable>(query.data?.data) }
 }
 
 export function useIncomeByConcept(orgId: string | undefined, period: Period) {
   const query = useGetApiV1OrganizationsOrgIdReportsIncomeByConcept(orgId ?? '', { from: period.from, to: period.to }, enabled(orgId))
-  return { ...query, items: (query.data?.data ?? []) as NamedAmount[] }
+  return { ...query, items: asArray<NamedAmount>(query.data?.data) }
 }
 
 export function useExpensesByCategory(orgId: string | undefined, period: Period) {
   const query = useGetApiV1OrganizationsOrgIdReportsExpensesByCategory(orgId ?? '', { from: period.from, to: period.to }, enabled(orgId))
-  return { ...query, items: (query.data?.data ?? []) as NamedAmount[] }
+  return { ...query, items: asArray<NamedAmount>(query.data?.data) }
 }
 
 /**

@@ -18,3 +18,18 @@ export interface ListResult<T> {
   error: unknown
   isFetching: boolean
 }
+
+/**
+ * Lee una respuesta del API que **debe ser una lista**, sin fiarse.
+ *
+ * `(query.data?.data ?? []) as T[]` solo cubre `undefined`: cualquier otra cosa
+ * —un error servido como 200, un backend a medio desplegar, un endpoint que
+ * cambia de forma— atraviesa el cast y revienta en el primer `.map()`, y se
+ * lleva la pantalla entera por delante.
+ *
+ * Aquí se comprueba de verdad. Una lista que no llega se queda vacía, que es un
+ * estado que las pantallas ya saben pintar (§45); una pantalla en blanco, no.
+ */
+export function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : []
+}

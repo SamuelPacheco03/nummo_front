@@ -7,11 +7,12 @@ import {
 } from '@/api/generated/endpoints/organizations/organizations'
 import type { OrganizationSummary } from '@/api/generated/model'
 import { useOrgStore } from './org-store'
+import { asArray } from '@/lib/list-result'
 
 /** Lista de organizaciones del usuario (`{ organization, role }[]`). */
 function useOrganizations() {
   const query = useGetApiV1Organizations({ query: { staleTime: 60_000 } })
-  const organizations = (query.data?.data ?? []) as OrganizationSummary[]
+  const organizations = asArray<OrganizationSummary>(query.data?.data)
   return { ...query, organizations }
 }
 

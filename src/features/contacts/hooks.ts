@@ -17,6 +17,7 @@ import type {
   ContactRelationship,
   GetApiV1OrganizationsOrgIdContactsParams,
 } from '@/api/generated/model'
+import { asArray } from '@/lib/list-result'
 
 /* ---------- Queries ---------- */
 
@@ -50,7 +51,7 @@ export function useRelationships(orgId: string | undefined, contactId: string | 
     contactId ?? '',
     { query: { enabled: !!orgId && !!contactId } },
   )
-  return { ...query, relationships: (query.data?.data ?? []) as ContactRelationship[] }
+  return { ...query, relationships: asArray<ContactRelationship>(query.data?.data) }
 }
 
 /* ---------- Mutations ---------- */

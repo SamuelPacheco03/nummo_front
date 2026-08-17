@@ -1,5 +1,4 @@
 import { Link, NavLink, useLocation } from 'react-router'
-import { Activity, HelpCircle } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/features/auth/user-menu'
@@ -91,33 +90,13 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       <div className="scrollbar-slim scroll-fade-y min-h-0 flex-1 overflow-y-auto">
         <NavLinks onNavigate={onNavigate} />
       </div>
+      {/*
+        Aquí abajo queda lo que es del **dispositivo y la sesión**: instalar la
+        app, el aviso de sin conexión, el tema y la cuenta. Ayuda y estado del
+        sistema subieron al grupo «Ajustes» de la navegación, que es donde tienen
+        vecinos y donde el objetivo táctil llega a los 44 px que pide §43.
+      */}
       <div className="border-sidebar-border space-y-3 border-t p-3">
-        <NavLink
-          to="/ayuda"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'text-sidebar-muted-foreground hover:text-sidebar-foreground flex items-center gap-2 px-3 text-xs transition-colors',
-              isActive && 'text-sidebar-foreground',
-            )
-          }
-        >
-          <HelpCircle aria-hidden className="size-3.5" />
-          Ayuda
-        </NavLink>
-        <NavLink
-          to="/estado"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'text-sidebar-muted-foreground hover:text-sidebar-foreground flex items-center gap-2 px-3 text-xs transition-colors',
-              isActive && 'text-sidebar-foreground',
-            )
-          }
-        >
-          <Activity aria-hidden className="size-3.5" />
-          Estado del sistema
-        </NavLink>
         <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
         {/*

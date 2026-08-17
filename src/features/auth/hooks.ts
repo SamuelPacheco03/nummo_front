@@ -11,6 +11,7 @@ import {
 } from '@/api/generated/endpoints/auth/auth'
 import type { Session, User } from '@/api/generated/model'
 import { clearCsrfToken, refreshCsrfToken } from '@/lib/csrf'
+import { asArray } from '@/lib/list-result'
 
 /**
  * Usuario autenticado actual (estado de servidor vía `GET /auth/me`).
@@ -76,7 +77,7 @@ export function useLogout() {
 /** Sesiones activas del usuario (dispositivos con la sesión abierta). */
 export function useSessions() {
   const query = useGetApiV1AuthSessions({ query: { staleTime: 30_000 } })
-  return { ...query, sessions: (query.data?.data ?? []) as Session[] }
+  return { ...query, sessions: asArray<Session>(query.data?.data) }
 }
 
 /** Cierra una sesión concreta por id. */

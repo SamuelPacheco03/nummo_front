@@ -11,13 +11,14 @@ import type {
   GetApiV1OrganizationsOrgIdFinancialMovementsParams,
   LedgerMovement,
 } from '@/api/generated/model'
+import { asArray } from '@/lib/list-result'
 import type { ListResult } from '@/lib/list-result'
 
 export function useAccountBalances(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdFinancialAccountsBalances(orgId ?? '', {
     query: { enabled: !!orgId, staleTime: 30_000 },
   })
-  return { ...query, balances: (query.data?.data ?? []) as AccountBalance[] }
+  return { ...query, balances: asArray<AccountBalance>(query.data?.data) }
 }
 
 export function useMovements(

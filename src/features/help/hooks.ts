@@ -1,5 +1,6 @@
 import { useGetApiV1OrganizationsOrgIdKnowledgeSearch } from '@/api/generated/endpoints/knowledge/knowledge'
 import type { KnowledgeHit } from '@/api/generated/model'
+import { asArray } from '@/lib/list-result'
 
 /**
  * Búsqueda en la base de conocimiento (RAG). Solo consulta cuando `q` tiene al
@@ -13,5 +14,5 @@ export function useKnowledgeSearch(orgId: string | undefined, q: string, limit =
     { q: q.trim(), limit },
     { query: { enabled, staleTime: 60_000, retry: false } },
   )
-  return { ...query, hits: (query.data?.data ?? []) as KnowledgeHit[], enabled }
+  return { ...query, hits: asArray<KnowledgeHit>(query.data?.data), enabled }
 }

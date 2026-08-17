@@ -21,6 +21,7 @@ import type {
   ReceivableBalance,
   ReceivableDetail,
 } from '@/api/generated/model'
+import { asArray } from '@/lib/list-result'
 import type { ListResult } from '@/lib/list-result'
 
 export function useReceivables(
@@ -107,7 +108,7 @@ export function useAccruals(orgId: string | undefined, receivableId: string | un
   const query = useGetApiV1OrganizationsOrgIdReceivablesIdAccruals(orgId ?? '', receivableId ?? '', {
     query: { enabled: !!orgId && !!receivableId },
   })
-  return { ...query, accruals: (query.data?.data ?? []) as InterestAccrual[] }
+  return { ...query, accruals: asArray<InterestAccrual>(query.data?.data) }
 }
 
 /** Causa la mora de toda la org (idempotente); también corre el worker a diario. */

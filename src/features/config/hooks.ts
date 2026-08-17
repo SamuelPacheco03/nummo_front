@@ -35,6 +35,7 @@ import type {
   Organization,
   OrganizationSettings,
 } from '@/api/generated/model'
+import { asArray } from '@/lib/list-result'
 
 /* ---------- Queries ---------- */
 
@@ -45,12 +46,12 @@ export function useOrgDetail(orgId: string | undefined) {
 
 export function useBranches(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdBranches(orgId ?? '', { query: { enabled: !!orgId } })
-  return { ...query, branches: (query.data?.data ?? []) as Branch[] }
+  return { ...query, branches: asArray<Branch>(query.data?.data) }
 }
 
 export function useMembers(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdMembers(orgId ?? '', { query: { enabled: !!orgId } })
-  return { ...query, members: (query.data?.data ?? []) as Member[] }
+  return { ...query, members: asArray<Member>(query.data?.data) }
 }
 
 export function useOrgSettings(orgId: string | undefined) {
