@@ -140,7 +140,7 @@ export function BranchesPage() {
     <div className="space-y-4">
       <PageHeader title="Sedes" description="Ubicaciones de la organización.">
         {canManage && (
-          <Button size="sm" onClick={openCreate}>
+          <Button size="sm" onClick={openCreate} aria-label="Agregar sede">
             <Plus className="size-4" />
             <span className="hidden sm:inline">Agregar sede</span>
           </Button>

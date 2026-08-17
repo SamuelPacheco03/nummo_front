@@ -928,6 +928,38 @@ lectura de 68 caracteres), `Block` con su ancla `#`, `Flow` para los recorridos,
 `StateList`, `GoTo`— y los apartes van en `Note` (§94), que no sabe nada de la guía y sirve en
 cualquier pantalla.
 
+## 11.1.5. Los avisos (`toast`)
+
+Un aviso es **un aparte que llega solo**: lo mismo que un `Note` dentro de un texto, pero
+disparado por una acción. Así que se lee como familia y no como un invento aparte —superficie de
+tarjeta, **filo de color a la izquierda**, icono del tono— y todo sale de `Toaster`
+(`components/ui/sonner.tsx`), que se monta una vez en `providers.tsx`.
+
+Venía con `richColors`, la paleta propia de Sonner en hexadecimal. Se veía bien y se veía **de
+otra aplicación**: un rojo que no era el de «Vencida», un verde que no era el de «Pagado». Ahora
+los colores son tokens y claro/oscuro salen sin configurar nada.
+
+**Dónde sale es la mitad del problema.** En escritorio va arriba a la derecha: el centro lo ocupa
+la barra de comandos (§36) y un aviso encima la tapaba justo al usarla. Por debajo de `lg` no hay
+barra de comandos y el ancho manda, así que arriba y centrado, bajo la cabecera —de ahí los dos
+`offset`, 76 y 64, que son la altura de cada cabecera—.
+
+Dos detalles que cuestan una tarde si se descubren desde cero:
+
+- **El filo va en un `::before`, no en `border-l`.** El CSS de Sonner se inyecta después de la
+  hoja de la app y pinta `border` con la misma especificidad: una utilidad de borde pierde
+  siempre. El pseudo-elemento no se lo disputa nadie.
+- **Las variables de Sonner van por `style`, no por clase** (`--normal-bg`, `--normal-text`,
+  `--border-radius`, `--toast-close-button-*`). Su CSS pinta la superficie con ellas; una clase
+  pelearía con esa regla en vez de sustituirla.
+
+Cuatro segundos y botón de cerrar: lo que dura un «Pago registrado» sin estorbar, y con salida a
+mano para el error que haya que leer dos veces. El **fondo no cambia con el tono** —solo el filo y
+el icono—, para que el texto se lea igual de bien en los cuatro (§7: nunca fiarlo todo al color).
+
+**Qué se escribe dentro:** el título es el hecho en tres palabras («Sede creada», «Rol
+actualizado»); el error sale de `getErrorMessage(err, '…')` (§88), nunca del `statusText`.
+
 ---
 
 ## 21.1. Filtros que sobreviven a la navegación
@@ -3210,6 +3242,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
+| `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList`, con su papel en la tarjeta |
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |

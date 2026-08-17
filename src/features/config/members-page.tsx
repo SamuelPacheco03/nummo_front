@@ -137,7 +137,7 @@ export function MembersPage() {
     <div className="space-y-4">
       <PageHeader title="Miembros" description="Personas con acceso a la organización.">
         {canManage && (
-          <Button size="sm" onClick={() => setAddOpen(true)}>
+          <Button size="sm" onClick={() => setAddOpen(true)} aria-label="Agregar miembro">
             <Plus className="size-4" />
             <span className="hidden sm:inline">Agregar</span>
           </Button>
