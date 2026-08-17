@@ -804,6 +804,20 @@ encima solo cambia **cómo se abre**:
 | `DetailDrawer` | Una ruta hija de la lista | Lo que se comparte y se recarga: fichas, formularios de alta |
 | Estado local (`FilterSheet`, …) | Un `useState` | Lo efímero: filtros, opciones de una pantalla |
 
+**También sirve para navegar.** La sub-navegación de Configuración —once destinos en cuatro
+grupos— es una columna fija en escritorio y, por debajo de `lg`, esa misma lista dentro del
+`Drawer`, detrás de un botón «Secciones» (`features/config/settings-layout.tsx`).
+
+Antes era una **tira horizontal desplazable**, y era el error que §21.1 reprocha en los filtros:
+de once destinos se veían tres, los otros ocho quedaban detrás de un gesto que nadie ve, y al
+aplanar la lista se perdían los títulos de grupo. Un `select` con `<optgroup>` los recupera en
+una sola línea, pero **tiene que mostrar el destino actual** —repitiendo el `<h1>` que va justo
+debajo— y en tablet se estira a lo ancho hasta parecer un campo de formulario vacío. El botón no
+finge ser otra cosa, y dentro cabe la lista **entera**, con sus grupos y el activo resaltado,
+igual que en escritorio.
+
+La regla que deja: **una navegación larga no se aplana en horizontal; se mete en el cajón.**
+
 `Sheet` se queda para lo que **no** cambia de eje: los laterales de navegación y la hoja inferior
 de acciones.
 
@@ -2990,6 +3004,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `InfoHint` | `components/ui/info-hint.tsx` | Ayuda contextual breve |
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
 | `MasterCrud` | `features/masters/master-crud.tsx` | Listado CRUD de un maestro |
+| `SettingsLayout` | `features/config/settings-layout.tsx` | Shell de Configuración: columna en escritorio, `Drawer` por debajo de `lg` |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
@@ -3229,8 +3244,9 @@ actualización de este documento.
 **Lo que se hizo**
 
 1. `features/config/settings-layout.tsx`: shell de Configuración con sub-navegación propia
-   —columna fija en escritorio, tira horizontal desplazable por debajo de `lg`— que absorbe
-   las once pantallas de ajustes. El sidebar pasa de 21 a 13 enlaces. → 95.1
+   —columna fija en escritorio; por debajo de `lg` fue una tira horizontal desplazable y hoy es
+   el `Drawer` detrás de «Secciones» (§11.1.3)— que absorbe las once pantallas de ajustes. El
+   sidebar pasa de 21 a 13 enlaces. → 95.1
 2. "Maestros" → **"Catálogos"** de cara al usuario, también en la guía (`/ayuda`), que apuntaba
    a una sección con el nombre viejo.
 3. Rutas intactas: cero redirecciones, cero enlaces rotos.
