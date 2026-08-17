@@ -31,7 +31,7 @@ export function useContacts(
   const page = query.data?.data
   return {
     ...query,
-    contacts: (page?.data ?? []) as Contact[],
+    contacts: asArray<Contact>(page?.data),
     total: page?.total ?? 0,
     totalPages: page?.totalPages ?? 1,
     pageNumber: page?.page ?? params.page ?? 1,

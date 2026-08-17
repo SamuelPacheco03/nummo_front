@@ -19,8 +19,18 @@ export function Pagination({
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(page * pageSize, total)
 
+  /*
+    La paginación pertenece a la lista que hay encima, no es otro bloque de la
+    página: separada como uno más quedaba flotando en medio de la nada.
+
+    De ahí las dos piezas del espacio. `pt-1.5` es lo suyo —la mitad de lo que
+    tenía—; el `-mt-2` recorta el hueco que le pone el `space-y-*` del contenedor,
+    que se aplica como `margin-bottom` de la lista y no se puede tocar desde aquí
+    de otra forma. Ocho puntos y no más: en un panel de `space-y-3` tiene que
+    seguir quedando aire.
+  */
   return (
-    <div className="flex items-center justify-between gap-3 pt-3 text-sm text-muted-foreground">
+    <div className="text-muted-foreground -mt-2 flex items-center justify-between gap-3 pt-1.5 text-sm">
       <span className="nums">
         {from}–{to} de {total}
       </span>
