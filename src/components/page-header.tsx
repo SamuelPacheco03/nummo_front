@@ -16,7 +16,10 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'border-border mb-5 flex items-start justify-between gap-3 border-b pb-3',
+        // `flex-wrap`: cuando las acciones no caben —dos selectores de fecha en
+        // una pantalla de 390— bajan a su propia línea en vez de aplastar el
+        // título hasta partirlo en una palabra por renglón.
+        'border-border mb-5 flex flex-wrap items-start justify-between gap-3 border-b pb-3',
         className,
       )}
     >

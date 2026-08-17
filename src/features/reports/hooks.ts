@@ -120,7 +120,7 @@ export function useExpensesByCategory(orgId: string | undefined, period: Period)
  * Compromiso recurrente mensual configurado: acuerdos y gastos recurrentes
  * ACTIVOS. Expone los totales/mes y las listas ya resueltas con nombre de
  * contacto (`incomeItems`/`expenseItems`, orden desc). Reutilizado por el Panel
- * y por Cobros y pagos para no duplicar el armado.
+ * y por el informe para no duplicar el armado.
  */
 export function useRecurringCommitment(orgId: string | undefined) {
   const { items: agreements, isPending: agreementsLoading } = useAgreements(orgId, {

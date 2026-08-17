@@ -2170,6 +2170,27 @@ Ejemplos:
 
 # 57. Gráficas
 
+**Todas salen de `components/ui/chart.tsx`**: `Chart` para series en el tiempo —barras, líneas,
+áreas, apiladas— y `DonutChart` para composición. Ninguna página dibuja la suya.
+
+Debajo hay **Recharts**. Hasta el rediseño se dibujaban a mano en SVG, y para una línea de seis
+meses funcionaba; pero cada gráfica nueva era empezar de cero —ejes, escalas, tooltips y
+responsive otra vez— y con un módulo de informes por delante eso no escala. Es la excepción
+razonada a §63: la dependencia se justifica por lo que viene, no por lo que hay.
+
+**El envoltorio existe para que Recharts no se filtre a las páginas**, y por eso nadie lo importa
+directo:
+
+- **Color por token.** Las series piden `chart-1…5`, `success` o `destructive`. Van a los tokens
+  crudos (`--chart-1`), no a los de Tailwind: `@theme inline` **no emite** `--color-chart-1` a
+  CSS —eso significa `inline`—, así que dentro de un SVG resolvería a nada y todo saldría negro.
+- **Dinero en los dos idiomas** (§62): compacto en el eje, exacto en el tooltip.
+- **Un solo tooltip** para todas, con el formato de §58.
+- **Vacío explícito** (§45) en vez de unos ejes sin nada dentro.
+- **Sin animación** si el sistema pide menos movimiento.
+- **La cola agrupada en «Otros»** en el donut: doce porciones de dos grados no son un dato (§59).
+  El CSV exporta todas las filas; la gráfica resume, el archivo no.
+
 Mantener paleta coherente.
 
 Prioridad:
@@ -2265,6 +2286,11 @@ Antes de instalar una nueva dependencia:
 4. evitar dependencias para tareas triviales.
 
 No cambiar stack o librerías base durante un cambio visual salvo solicitud expresa.
+
+**Recharts** entró por esta puerta y conviene saber a cambio de qué: **+115 kB gzip**, en el
+mismo trozo que las gráficas, así que solo lo descargan el Panel y los informes. Se justificó por
+el módulo de informes que viene —escribir a mano cada tipo de gráfica nueva no escala— y a
+condición de envolverla: las páginas usan `Chart`, no Recharts (§57).
 
 ---
 
@@ -3143,9 +3169,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `SearchInput` | `components/search-input.tsx` | Buscador de listas |
 | `ContactPicker` | `components/contact-picker.tsx` | Selector de contacto con búsqueda |
 | `MoneyField` / `MoneyInput` | `components/money-field.tsx`, `ui/money-input.tsx` | Entrada de importes (crudo con punto, vista agrupada) |
-| `BarList` | `components/bar-list.tsx` | Ranking con barra proporcional |
-| `MonthlyFlowChart` · `AgingChart` | `components/` | Gráficas de flujo y de antigüedad |
-| `ContactAmountList` · `UpcomingList` | `components/` | Listas de contacto+importe y de vencimientos |
+| `Chart` · `DonutChart` | `components/ui/chart.tsx` | **Las gráficas de la app** (Recharts envuelto) |
+| `MonthlyFlowChart` | `components/monthly-flow-chart.tsx` | Flujo mensual, en barras o línea |
+| `UpcomingList` | `components/` | Lista de vencimientos próximos |
 | `BrandMark` · `BrandLockup` | `components/brand-mark.tsx` | Marca |
 | `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
@@ -3480,10 +3506,9 @@ pantallazo para algo que ya está a un toque es ruido. **El catálogo sigue vivo
 (`features/actions/quick-actions.ts`) y lo consume la hoja de "Nuevo"; lo que desapareció es la
 rejilla del Panel.
 
-**El gráfico de flujo se puede ver en línea o en barras**, con el selector sobre él y **línea por
-defecto**: la pregunta del Panel es de tendencia, y una línea la responde de un vistazo. Las
-barras siguen a un toque para comparar meses concretos. Sin librería de gráficos (§63): la línea
-es un `<path>` de SVG.
+**El gráfico de flujo se puede ver en línea o en barras**, con el selector sobre él: la pregunta
+del Panel es de tendencia, y una línea la responde de un vistazo; las barras están a un toque para
+comparar meses concretos. *(Se dibujaba a mano en SVG; hoy lo hace `Chart` sobre Recharts —§57.)*
 6. El saldo disponible se agrega **por moneda**: el API no devuelve un total, y sumar pesos con
    dólares daría una cifra sin significado (§88.4).
 

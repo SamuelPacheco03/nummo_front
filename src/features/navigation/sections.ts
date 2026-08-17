@@ -6,7 +6,6 @@ import {
   FileText,
   Landmark,
   LayoutDashboard,
-  PieChart,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -46,10 +45,7 @@ export const SECTIONS: NavSection[] = [
   },
   {
     title: 'Informes',
-    items: [
-      { to: '/informes/resultados', label: 'Resultados', Icon: BarChart3 },
-      { to: '/informes/cartera', label: 'Cobros y pagos', Icon: PieChart },
-    ],
+    items: [{ to: '/informes/resultados', label: 'Resultados', Icon: BarChart3 }],
   },
 ]
 

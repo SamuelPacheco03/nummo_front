@@ -70,12 +70,6 @@ export const router = createBrowserRouter([
               Component: (await import('@/features/reports/reports-results-page')).ReportsResultsPage,
             }),
           },
-          {
-            path: 'informes/cartera',
-            lazy: async () => ({
-              Component: (await import('@/features/reports/reports-portfolio-page')).ReportsPortfolioPage,
-            }),
-          },
 
           // Contactos
           {

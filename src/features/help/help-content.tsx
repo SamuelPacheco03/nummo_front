@@ -234,17 +234,20 @@ export function Informes() {
         <DefList items={KPIS} />
       </Block>
 
-      <Block id="exportar" title="Llevártelo a otro lado">
+      <Block id="que-trae" title="Qué encontrarás">
         <P>
-          Todos los informes se exportan a CSV: resultados, cartera, deudores y próximos vencimientos.
-          El archivo respeta el período y los filtros que tengas puestos.
+          El resultado del período —ingresos, egresos y neto, comparados con el período anterior—,
+          la tendencia de los últimos seis meses, de dónde salió cada peso y en qué se fue, cómo
+          está la cartera hoy por antigüedad, y lo que tienes comprometido cada mes según tus
+          acuerdos y gastos recurrentes.
         </P>
+        <Note tone="info">
+          Los desgloses se exportan a CSV con <T>todas</T> las filas, también las que la gráfica
+          agrupa en «Otros».
+        </Note>
       </Block>
 
-      <div className="flex flex-wrap gap-4">
-        <GoTo to="/informes/resultados">Ir a Resultados</GoTo>
-        <GoTo to="/informes/cartera">Ir a Cobros y pagos</GoTo>
-      </div>
+      <GoTo to="/informes/resultados">Ir a Informes</GoTo>
     </>
   )
 }

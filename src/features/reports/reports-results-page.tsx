@@ -1,12 +1,16 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
+import { ArrowRight } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { KpiTile } from '@/components/kpi-tile'
 import { Panel } from '@/components/panel'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
+import { Chart } from '@/components/ui/chart'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatMoney, pctChange, todayISODate } from '@/lib/format'
+import { AgingBucketBucket, type AgingBucket } from '@/api/generated/model'
 import { ReportBreakdown } from './report-breakdown'
 import {
   defaultPeriod,
@@ -14,8 +18,24 @@ import {
   useCashflowMonthly,
   useExpensesByCategory,
   useIncomeByConcept,
+  usePayablesAging,
+  usePayablesSummary,
+  useReceivablesAging,
+  useReceivablesSummary,
+  useRecurringCommitment,
   type Period,
 } from './hooks'
+
+/** Los cuatro tramos, en el orden en que se leen: de lo sano a lo preocupante. */
+const BUCKETS: { bucket: AgingBucketBucket; label: string }[] = [
+  { bucket: AgingBucketBucket.not_due, label: 'Por vencer' },
+  { bucket: AgingBucketBucket.d1_30, label: '1–30 días' },
+  { bucket: AgingBucketBucket.d31_60, label: '31–60 días' },
+  { bucket: AgingBucketBucket.d60_plus, label: '+60 días' },
+]
+
+const amountOf = (buckets: AgingBucket[], bucket: AgingBucketBucket) =>
+  Number(buckets.find((b) => b.bucket === bucket)?.amount) || 0
 
 export function ReportsResultsPage() {
   const { orgId, organization } = useCurrentOrg()
@@ -27,109 +47,205 @@ export function ReportsResultsPage() {
   const { items: income, isPending: incomeLoading } = useIncomeByConcept(orgId, period)
   const { items: expenses, isPending: expensesLoading } = useExpensesByCategory(orgId, period)
 
+  const { summary: cxc, isPending: cxcLoading } = useReceivablesSummary(orgId)
+  const { summary: cxp, isPending: cxpLoading } = usePayablesSummary(orgId)
+  const { buckets: cxcAging, isPending: cxcAgingLoading } = useReceivablesAging(orgId)
+  const { buckets: cxpAging, isPending: cxpAgingLoading } = usePayablesAging(orgId)
+  const { monthlyIncome, monthlyExpense, netMonthly, activeAgreements, activeSchedules, isPending: recurringLoading } =
+    useRecurringCommitment(orgId)
+
+  /* Antigüedad de las dos caras en la misma gráfica: el tramo se compara mejor
+     contra su espejo que contra sí mismo. */
+  const aging = BUCKETS.map(({ bucket, label }) => ({
+    tramo: label,
+    cobrar: amountOf(cxcAging, bucket),
+    pagar: amountOf(cxpAging, bucket),
+  }))
+
   /*
-    Entero o nada (§45.1). Las tres gráficas llegaban por separado y el informe
-    se leía primero como un período sin actividad. `!cashflow` mantiene a la vista
-    el informe anterior mientras se recalcula al cambiar de fechas: ahí sí hay
-    algo cierto que enseñar, y parpadear a esqueleto en cada tecla sería peor.
+    Entero o nada (§45.1). `!cashflow` mantiene el informe anterior a la vista
+    mientras se recalcula al cambiar de fechas: ahí ya hay algo cierto que
+    enseñar, y parpadear a esqueleto en cada tecla sería peor.
   */
-  const isLoading = (isPending || monthlyLoading || incomeLoading || expensesLoading) && !cashflow
+  const isLoading =
+    (isPending ||
+      monthlyLoading ||
+      incomeLoading ||
+      expensesLoading ||
+      cxcLoading ||
+      cxpLoading ||
+      cxcAgingLoading ||
+      cxpAgingLoading ||
+      recurringLoading) &&
+    !cashflow
+
+  const header = (
+    <PageHeader
+      title="Resultados"
+      description="Cuánto entró y salió, de dónde, y cómo está la cartera hoy."
+    >
+      <div className="flex items-center gap-2">
+        <Input
+          type="date"
+          value={period.from}
+          max={period.to}
+          onChange={(e) => setPeriod((p) => ({ ...p, from: e.target.value }))}
+          className="h-8 w-auto"
+          aria-label="Desde"
+        />
+        <span className="text-muted-foreground">→</span>
+        <Input
+          type="date"
+          value={period.to}
+          max={todayISODate()}
+          onChange={(e) => setPeriod((p) => ({ ...p, to: e.target.value }))}
+          className="h-8 w-auto"
+          aria-label="Hasta"
+        />
+      </div>
+    </PageHeader>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <Skeleton className="h-80" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Resultados"
-        description="Cuánto entró y salió, y de dónde, en el período que elijas."
+      {header}
+
+      {/* 1 · El período: lo que entró, lo que salió y lo que quedó. */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <KpiTile
+          label="Ingresos"
+          value={formatMoney(cashflow?.current?.income ?? '0', currency)}
+          delta={{
+            pct: pctChange(cashflow?.current?.income, cashflow?.previous?.income),
+            higherIsGood: true,
+          }}
+        />
+        <KpiTile
+          label="Egresos"
+          value={formatMoney(cashflow?.current?.expense ?? '0', currency)}
+          delta={{
+            pct: pctChange(cashflow?.current?.expense, cashflow?.previous?.expense),
+            higherIsGood: false,
+          }}
+        />
+        <KpiTile
+          label="Neto"
+          value={formatMoney(cashflow?.current?.net ?? '0', currency)}
+          delta={{
+            pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net),
+            higherIsGood: true,
+          }}
+        />
+      </div>
+
+      {/* 2 · La tendencia, que el período por sí solo no cuenta. */}
+      <Panel title="Flujo mensual · últimos 6 meses">
+        <MonthlyFlowChart items={monthly} currency={currency} height={280} />
+      </Panel>
+
+      {/* 3 · De dónde sale y en qué se va. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ReportBreakdown
+          title="Ingresos por concepto"
+          nameHeader="Concepto"
+          items={income}
+          currency={currency}
+          csvFile={`ingresos-por-concepto_${period.from}_a_${period.to}.csv`}
+          emptyLabel="Sin ingresos en el período."
+        />
+        <ReportBreakdown
+          title="Egresos por categoría"
+          nameHeader="Categoría"
+          items={expenses}
+          currency={currency}
+          csvFile={`egresos-por-categoria_${period.from}_a_${period.to}.csv`}
+          emptyLabel="Sin egresos en el período."
+        />
+      </div>
+
+      {/*
+        4 · La cartera **hoy**, que no depende del período elegido y por eso lo
+        dice el título. Es la pregunta que más se hace después de ver el
+        resultado: «vale, ¿y cuánto de esto está en la calle?».
+      */}
+      <Panel
+        title="Cartera hoy · por antigüedad"
+        action={
+          <Link to="/cartera/cxc" className="text-brand text-xs hover:underline">
+            Ver cuentas por cobrar
+          </Link>
+        }
       >
-        <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            value={period.from}
-            max={period.to}
-            onChange={(e) => setPeriod((p) => ({ ...p, from: e.target.value }))}
-            className="h-8 w-auto"
-            aria-label="Desde"
-          />
-          <span className="text-muted-foreground">→</span>
-          <Input
-            type="date"
-            value={period.to}
-            max={todayISODate()}
-            onChange={(e) => setPeriod((p) => ({ ...p, to: e.target.value }))}
-            className="h-8 w-auto"
-            aria-label="Hasta"
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <KpiTile
+              label="Por cobrar"
+              value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
+              sub={`${formatMoney(cxc?.overdueAmount ?? '0', currency)} vencido`}
+            />
+            <KpiTile
+              label="Por pagar"
+              value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
+              sub={`${formatMoney(cxp?.overdueAmount ?? '0', currency)} vencido`}
+            />
+          </div>
+          <Chart
+            data={aging}
+            x="tramo"
+            currency={currency}
+            height={240}
+            series={[
+              { key: 'cobrar', label: 'Por cobrar', tone: 'chart-2' },
+              { key: 'pagar', label: 'Por pagar', tone: 'chart-4' },
+            ]}
+            empty="No hay cuentas abiertas."
           />
         </div>
-      </PageHeader>
+      </Panel>
 
-      {isLoading ? (
-        <>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-          </div>
-          <Skeleton className="h-72" />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Skeleton className="h-80" />
-            <Skeleton className="h-80" />
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <KpiTile
-              label="Ingresos"
-              value={formatMoney(cashflow?.current?.income ?? '0', currency)}
-              delta={{
-                pct: pctChange(cashflow?.current?.income, cashflow?.previous?.income),
-                higherIsGood: true,
-              }}
-            />
-            <KpiTile
-              label="Egresos"
-              value={formatMoney(cashflow?.current?.expense ?? '0', currency)}
-              delta={{
-                pct: pctChange(cashflow?.current?.expense, cashflow?.previous?.expense),
-                higherIsGood: false,
-              }}
-            />
-            <KpiTile
-              label="Neto"
-              value={formatMoney(cashflow?.current?.net ?? '0', currency)}
-              delta={{
-                pct: pctChange(cashflow?.current?.net, cashflow?.previous?.net),
-                higherIsGood: true,
-              }}
-            />
-          </div>
-
-          <Panel title="Flujo mensual · últimos 6 meses">
-            <MonthlyFlowChart items={monthly} currency={currency} />
-          </Panel>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ReportBreakdown
-              title="Ingresos por concepto"
-              nameHeader="Concepto"
-              items={income}
-              tone="bg-chart-2"
-              currency={currency}
-              csvFile={`ingresos-por-concepto_${period.from}_a_${period.to}.csv`}
-              emptyLabel="Sin ingresos en el período."
-            />
-            <ReportBreakdown
-              title="Egresos por categoría"
-              nameHeader="Categoría"
-              items={expenses}
-              tone="bg-chart-4"
-              currency={currency}
-              csvFile={`egresos-por-categoria_${period.from}_a_${period.to}.csv`}
-              emptyLabel="Sin egresos en el período."
-            />
-          </div>
-        </>
-      )}
+      {/* 5 · Lo que ya está firmado y se repite: la base del mes que viene. */}
+      <Panel
+        title="Cada mes, según lo configurado"
+        action={
+          <Link to="/cartera/acuerdos" className="text-brand inline-flex items-center gap-1 text-xs hover:underline">
+            Ver acuerdos
+            <ArrowRight aria-hidden className="size-3" />
+          </Link>
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-3">
+          <KpiTile
+            label="Ingresos recurrentes"
+            value={formatMoney(String(monthlyIncome), currency)}
+            sub={`${activeAgreements.length} acuerdos activos`}
+          />
+          <KpiTile
+            label="Gastos recurrentes"
+            value={formatMoney(String(monthlyExpense), currency)}
+            sub={`${activeSchedules.length} recurrentes activos`}
+          />
+          <KpiTile label="Neto esperado" value={formatMoney(String(netMonthly), currency)} />
+        </div>
+      </Panel>
     </div>
   )
 }
