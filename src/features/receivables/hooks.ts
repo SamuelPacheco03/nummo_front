@@ -21,7 +21,7 @@ import type {
   ReceivableBalance,
   ReceivableDetail,
 } from '@/api/generated/model'
-import type { ListResult } from '@/features/masters/master-list-state'
+import type { ListResult } from '@/lib/list-result'
 
 export function useReceivables(
   orgId: string | undefined,

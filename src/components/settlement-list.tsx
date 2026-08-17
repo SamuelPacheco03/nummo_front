@@ -23,7 +23,6 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import {
   SETTLEMENT_ADVANCED_KEYS,
@@ -70,6 +69,7 @@ export function SettlementList({
   sortChoices,
   statusOf,
   kpi,
+  canRegister,
   useList,
 }: {
   copy: SettlementListCopy
@@ -85,10 +85,11 @@ export function SettlementList({
   sortChoices: SortChoice[]
   statusOf: (status: string) => { tone: StatusTone; label: string }
   kpi: { kind: 'income' | 'expense'; label: string; previousLabel: string }
+  /** Si el rol permite registrar. Lo decide cada feature, no este componente. */
+  canRegister: boolean
   useList: (params: SettlementQuery) => SettlementListResult
 }) {
-  const { orgId, organization, role } = useCurrentOrg()
-  const canRegister = canEditContacts(role)
+  const { orgId, organization } = useCurrentOrg()
   const navigate = useNavigate()
 
   const { values, set, clear } = useListFilters<SettlementFilterKey>(

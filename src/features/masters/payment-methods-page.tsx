@@ -18,11 +18,12 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import type { ListResult } from '@/lib/list-result'
 import type { PaymentMethod } from '@/api/generated/model'
-import { MasterCrud } from './master-crud'
-import { useMasterListState, type Column } from './master-list-state'
+import { MasterCrud, type Column } from './master-crud'
 import { METHOD_TYPES, METHOD_TYPE_LABELS } from './labels'
 import { useCreatePaymentMethod, usePaymentMethods, useUpdatePaymentMethod } from './hooks'
+import type { MasterParams } from './hooks'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(100),
@@ -126,11 +127,15 @@ function MethodDialog({
   )
 }
 
+/** Consulta este maestro; vive aquí porque el endpoint es de esta feature. */
+function usePaymentMethodRows(params: MasterParams): ListResult<PaymentMethod> {
+  const { orgId } = useCurrentOrg()
+  return usePaymentMethods(orgId, params)
+}
+
 export function PaymentMethodsPage() {
   const { orgId, role } = useCurrentOrg()
   const canManage = canManageOrg(role)
-  const state = useMasterListState()
-  const list = usePaymentMethods(orgId, state.params)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<PaymentMethod | null>(null)
 
@@ -142,8 +147,9 @@ export function PaymentMethodsPage() {
         canManage={canManage}
         newLabel="Nuevo método"
         searchPlaceholder="Buscar método…"
-        state={state}
-        list={list}
+        storageKey="nummo:metodos:filtros"
+        entity={['método', 'métodos']}
+        useList={usePaymentMethodRows}
         columns={COLUMNS}
         onNew={() => {
           setEditing(null)

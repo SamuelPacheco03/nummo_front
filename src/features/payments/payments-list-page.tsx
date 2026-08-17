@@ -2,6 +2,7 @@ import { SettlementList } from '@/components/settlement-list'
 import type { SortChoice } from '@/components/ui/filter-sheet'
 import { LEDGER_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { canEditContacts } from '@/features/organizations/roles'
 import type {
   SettlementListCopy,
   SettlementListResult,
@@ -76,6 +77,8 @@ function usePaymentRows(params: SettlementQuery): SettlementListResult {
  * (`SettlementList`) y solo aporta lo suyo: las palabras y su endpoint.
  */
 export function PaymentsListPage() {
+  const { role } = useCurrentOrg()
+
   return (
     <SettlementList
       copy={COPY}
@@ -88,6 +91,7 @@ export function PaymentsListPage() {
       sortChoices={SORT_CHOICES}
       statusOf={paymentStatus}
       kpi={{ kind: 'income', label: 'Cobrado este mes', previousLabel: 'El mes pasado' }}
+      canRegister={canEditContacts(role)}
       useList={usePaymentRows}
     />
   )

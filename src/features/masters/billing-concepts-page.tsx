@@ -19,12 +19,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import type { ListResult } from '@/lib/list-result'
 import { formatAmount } from '@/lib/format'
 import type { BillingConcept } from '@/api/generated/model'
-import { MasterCrud } from './master-crud'
-import { useMasterListState, type Column } from './master-list-state'
+import { MasterCrud, type Column } from './master-crud'
 import { isValidAmount } from './labels'
 import { useBillingConcepts, useCreateBillingConcept, useUpdateBillingConcept } from './hooks'
+import type { MasterParams } from './hooks'
 
 const schema = z.object({
   code: z.string().trim().max(40).optional(),
@@ -155,11 +156,15 @@ function ConceptDialog({
   )
 }
 
+/** Consulta este maestro; vive aquí porque el endpoint es de esta feature. */
+function useBillingConceptRows(params: MasterParams): ListResult<BillingConcept> {
+  const { orgId } = useCurrentOrg()
+  return useBillingConcepts(orgId, params)
+}
+
 export function BillingConceptsPage() {
   const { orgId, role } = useCurrentOrg()
   const canManage = canManageOrg(role)
-  const state = useMasterListState()
-  const list = useBillingConcepts(orgId, state.params)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<BillingConcept | null>(null)
 
@@ -171,8 +176,9 @@ export function BillingConceptsPage() {
         canManage={canManage}
         newLabel="Nuevo concepto"
         searchPlaceholder="Buscar concepto…"
-        state={state}
-        list={list}
+        storageKey="nummo:conceptos:filtros"
+        entity={['concepto', 'conceptos']}
+        useList={useBillingConceptRows}
         columns={COLUMNS}
         onNew={() => {
           setEditing(null)

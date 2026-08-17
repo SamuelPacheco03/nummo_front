@@ -19,8 +19,9 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
-import { MasterCrud } from '@/features/masters/master-crud'
-import { useMasterListState, type Column } from '@/features/masters/master-list-state'
+import type { ListResult } from '@/lib/list-result'
+import type { MasterParams } from '@/features/masters/hooks'
+import { MasterCrud, type Column } from '@/features/masters/master-crud'
 import type { InterestPolicy } from '@/api/generated/model'
 import {
   BASE_TYPES,
@@ -222,11 +223,15 @@ function PolicyDialog({
   )
 }
 
+/** Consulta este maestro; vive aquí porque el endpoint es de esta feature. */
+function useInterestPolicyRows(params: MasterParams): ListResult<InterestPolicy> {
+  const { orgId } = useCurrentOrg()
+  return useInterestPolicies(orgId, params)
+}
+
 export function InterestPoliciesPage() {
   const { orgId, role } = useCurrentOrg()
   const canManage = canManageOrg(role)
-  const state = useMasterListState()
-  const list = useInterestPolicies(orgId, state.params)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<InterestPolicy | null>(null)
 
@@ -238,8 +243,9 @@ export function InterestPoliciesPage() {
         canManage={canManage}
         newLabel="Nueva política"
         searchPlaceholder="Buscar política…"
-        state={state}
-        list={list}
+        storageKey="nummo:politicas:filtros"
+        entity={['política', 'políticas']}
+        useList={useInterestPolicyRows}
         columns={COLUMNS}
         onNew={() => {
           setEditing(null)

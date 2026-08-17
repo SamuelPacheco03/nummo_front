@@ -799,9 +799,13 @@ de acciones.
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
-Lo usa **todo listado** de la app: cartera, pagos y egresos, acuerdos y recurrentes, contactos y
-movimientos. Los maestros son la única excepción declarada —`MasterCrud` resuelve su propio
-estado— porque su lista es un catálogo corto que no se comparte por enlace.
+Lo usa **todo listado de la app, sin excepciones**: cartera, pagos y egresos, acuerdos y
+recurrentes, contactos, movimientos y los cinco maestros.
+
+Los maestros estuvieron declarados como excepción —«un catálogo corto que no se comparte por
+enlace»— y **la excepción no se sostuvo**: los criterios se perdían al volver de editar, y
+mantener ahí una barra de filtros propia significaba arreglar dos veces cada cosa. Si una lista
+merece filtros, merece estos.
 
 **Gastos recurrentes fue el último en llegar, y enseña cómo se detecta el que falta:** usaba
 `useMasterListState` por parecerse a un catálogo, así que sus filtros no viajaban en la URL y ni
@@ -2656,8 +2660,10 @@ cada llamante le pase todo por props, y lo segundo devuelve al sitio de origen l
 el componente venía a quitar. Lo que importa es que la dependencia sea **hacia los datos, nunca
 hacia la pantalla**.
 
-Regla práctica: si el import de `components/` termina en `hooks`, está bien; si termina en
-`-page`, `-dialog` o `-panel`, el componente está mal ubicado.
+Regla práctica: si el import de `components/` termina en `hooks`, está bien; cualquier otra cosa
+—una pantalla, un diálogo, un panel, **o los predicados de permisos**— viaja como prop. Los tres
+listados compartidos reciben `canManage` / `canRegister` de su feature en vez de calcularlo: quién
+puede hacer qué es una decisión de dominio, no de presentación.
 
 ## 87.3. Capas por pantalla
 
@@ -2970,8 +2976,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `SegmentedControl` | `components/ui/segmented-control.tsx` | Alternador de pocas opciones |
 | `InfoHint` | `components/ui/info-hint.tsx` | Ayuda contextual breve |
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
-| `MasterCrud` | `features/masters/master-crud.tsx` | CRUD genérico de maestros |
-| `useMasterListState` | `features/masters/master-list-state.ts` | Filtros y paginación de un maestro |
+| `MasterCrud` | `features/masters/master-crud.tsx` | Listado CRUD de un maestro |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
@@ -2980,6 +2985,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `BalanceKpis` | `components/balance-kpis.tsx` | Total, vencido y al día de una cartera |
 | `SectionSwitch` | `components/section-switch.tsx` | Salto entre pantallas espejo, solo en móvil |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
+| `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
 
 ---
 

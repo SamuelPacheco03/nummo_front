@@ -11,7 +11,7 @@ import type {
   GetApiV1OrganizationsOrgIdFinancialMovementsParams,
   LedgerMovement,
 } from '@/api/generated/model'
-import type { ListResult } from '@/features/masters/master-list-state'
+import type { ListResult } from '@/lib/list-result'
 
 export function useAccountBalances(orgId: string | undefined) {
   const query = useGetApiV1OrganizationsOrgIdFinancialAccountsBalances(orgId ?? '', {

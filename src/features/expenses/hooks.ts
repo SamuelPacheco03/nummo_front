@@ -38,7 +38,7 @@ import type {
   GetApiV1OrganizationsOrgIdExpenseSchedulesParams,
   GetApiV1OrganizationsOrgIdExpensesParams,
 } from '@/api/generated/model'
-import type { ListResult } from '@/features/masters/master-list-state'
+import type { ListResult } from '@/lib/list-result'
 
 function listOf<T>(query: {
   data?: { data?: unknown }

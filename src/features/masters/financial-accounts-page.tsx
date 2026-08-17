@@ -20,12 +20,13 @@ import { useBranches } from '@/features/config/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import type { ListResult } from '@/lib/list-result'
 import { formatAmount } from '@/lib/format'
 import type { FinancialAccount } from '@/api/generated/model'
-import { MasterCrud } from './master-crud'
-import { useMasterListState, type Column } from './master-list-state'
+import { MasterCrud, type Column } from './master-crud'
 import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, isValidAmount } from './labels'
 import { useCreateFinancialAccount, useFinancialAccounts, useUpdateFinancialAccount } from './hooks'
+import type { MasterParams } from './hooks'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
@@ -171,11 +172,15 @@ function AccountDialog({
   )
 }
 
+/** Consulta este maestro; vive aquí porque el endpoint es de esta feature. */
+function useFinancialAccountRows(params: MasterParams): ListResult<FinancialAccount> {
+  const { orgId } = useCurrentOrg()
+  return useFinancialAccounts(orgId, params)
+}
+
 export function FinancialAccountsPage() {
   const { orgId, role } = useCurrentOrg()
   const canManage = canManageOrg(role)
-  const state = useMasterListState()
-  const list = useFinancialAccounts(orgId, state.params)
   const { branches } = useBranches(orgId)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<FinancialAccount | null>(null)
@@ -215,8 +220,9 @@ export function FinancialAccountsPage() {
         canManage={canManage}
         newLabel="Nueva cuenta"
         searchPlaceholder="Buscar cuenta…"
-        state={state}
-        list={list}
+        storageKey="nummo:cuentas-financieras:filtros"
+        entity={['cuenta', 'cuentas']}
+        useList={useFinancialAccountRows}
         columns={columns}
         onNew={() => {
           setEditing(null)

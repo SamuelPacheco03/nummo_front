@@ -19,10 +19,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import type { ListResult } from '@/lib/list-result'
 import type { ExpenseCategory } from '@/api/generated/model'
-import { MasterCrud } from './master-crud'
-import { useMasterListState, type Column } from './master-list-state'
+import { MasterCrud, type Column } from './master-crud'
 import { useCreateExpenseCategory, useExpenseCategories, useUpdateExpenseCategory } from './hooks'
+import type { MasterParams } from './hooks'
 
 const schema = z.object({
   code: z.string().trim().max(40).optional(),
@@ -154,11 +155,15 @@ function CategoryDialog({
   )
 }
 
+/** Consulta este maestro; vive aquí porque el endpoint es de esta feature. */
+function useExpenseCategoryRows(params: MasterParams): ListResult<ExpenseCategory> {
+  const { orgId } = useCurrentOrg()
+  return useExpenseCategories(orgId, params)
+}
+
 export function ExpenseCategoriesPage() {
   const { orgId, role } = useCurrentOrg()
   const canManage = canManageOrg(role)
-  const state = useMasterListState()
-  const list = useExpenseCategories(orgId, state.params)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ExpenseCategory | null>(null)
 
@@ -170,8 +175,9 @@ export function ExpenseCategoriesPage() {
         canManage={canManage}
         newLabel="Nueva categoría"
         searchPlaceholder="Buscar categoría…"
-        state={state}
-        list={list}
+        storageKey="nummo:categorias:filtros"
+        entity={['categoría', 'categorías']}
+        useList={useExpenseCategoryRows}
         columns={COLUMNS}
         onNew={() => {
           setEditing(null)

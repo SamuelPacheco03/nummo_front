@@ -1,4 +1,4 @@
-import type { ListResult } from '@/features/masters/master-list-state'
+import type { ListResult } from '@/lib/list-result'
 
 /**
  * El vocabulario de **listar dinero registrado** —pagos y egresos—, sin React.
