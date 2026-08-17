@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -116,6 +116,11 @@ export function AgreementsListPage() {
     [contactMap, conceptMap],
   )
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    status && { id: 'status', label: agreementStatus(status).label, onRemove: () => setStatus('') },
+  ].filter(Boolean) as ActiveFilter[]
+
   const hasFilters = Boolean(q) || status !== ''
   const clearFilters = () => {
     setSearch('')
@@ -145,6 +150,8 @@ export function AgreementsListPage() {
             getRowId={(a) => a.id}
             onRowClick={(a) => navigate(`/cartera/acuerdos/${a.id}`)}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="acuerdos" onClear={clearFilters} />

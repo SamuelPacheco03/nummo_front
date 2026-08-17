@@ -4,7 +4,7 @@ import type { SortingState } from '@tanstack/react-table'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns } from '@/components/ui/data-list'
+import { DataList, listColumns, type ActiveFilter } from '@/components/ui/data-list'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -108,6 +108,17 @@ export function MovementsPage() {
     [accountName],
   )
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    accountId && { id: 'account', label: `Cuenta: ${accountName.get(accountId) ?? '—'}`, onRemove: () => setAccountId('') },
+    direction && { id: 'dir', label: direction === 'IN' ? 'Entradas' : 'Salidas', onRemove: () => setDirection('') },
+    movementType && {
+      id: 'type',
+      label: MOVEMENT_TYPE_LABELS[movementType] ?? movementType,
+      onRemove: () => setMovementType(''),
+    },
+  ].filter(Boolean) as ActiveFilter[]
+
   const hasFilters = Boolean(q) || accountId !== '' || direction !== '' || movementType !== ''
   const clearFilters = () => {
     setSearch('')
@@ -129,6 +140,8 @@ export function MovementsPage() {
             rows={items}
             getRowId={(m) => m.id}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="movimientos" onClear={clearFilters} />

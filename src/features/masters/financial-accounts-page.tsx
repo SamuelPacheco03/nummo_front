@@ -112,7 +112,7 @@ function AccountDialog({
           <Field label="Nombre" htmlFor="fa-name" required error={errors.name?.message}>
             <Input id="fa-name" placeholder="Caja general" {...register('name')} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Tipo" htmlFor="fa-type" error={errors.accountType?.message}>
               <NativeSelect id="fa-type" {...register('accountType')}>
                 {ACCOUNT_TYPES.map((t) => (
@@ -126,7 +126,7 @@ function AccountDialog({
               <Input id="fa-currency" maxLength={3} placeholder="COP" {...register('currency')} />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <MoneyField
               control={control}
               name="openingBalance"

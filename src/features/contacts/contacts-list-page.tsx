@@ -7,7 +7,7 @@ import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusDot } from '@/components/ui/status-badge'
-import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { DataList, listColumns, RowChevron, type ActiveFilter as FilterChip } from '@/components/ui/data-list'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -112,6 +112,20 @@ export function ContactsListPage() {
     [],
   )
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    contactType && {
+      id: 'type',
+      label: contactType === 'PERSON' ? 'Personas' : 'Empresas',
+      onRemove: () => setContactType(''),
+    },
+    active !== 'true' && {
+      id: 'active',
+      label: active === 'false' ? 'Archivados' : 'Activos y archivados',
+      onRemove: () => setActive('true'),
+    },
+  ].filter(Boolean) as FilterChip[]
+
   const hasFilters = Boolean(q) || contactType !== '' || active !== 'true'
   const clearFilters = () => {
     setSearch('')
@@ -142,6 +156,8 @@ export function ContactsListPage() {
             getRowId={(c) => c.id}
             onRowClick={(c) => navigate(`/contactos/${c.id}`)}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="contactos" onClear={clearFilters} />

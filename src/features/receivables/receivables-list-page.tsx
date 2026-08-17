@@ -9,7 +9,7 @@ import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -172,6 +172,16 @@ export function ReceivablesListPage() {
     }
   }
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    status && { id: 'status', label: receivableStatus(status).label, onRemove: () => setStatus('') },
+    payerId && {
+      id: 'payer',
+      label: `Pagador: ${contactMap.get(payerId) ?? '—'}`,
+      onRemove: () => setPayerId(null),
+    },
+  ].filter(Boolean) as ActiveFilter[]
+
   const hasFilters = Boolean(q) || status !== '' || payerId !== null
   const clearFilters = () => {
     setSearch('')
@@ -212,6 +222,8 @@ export function ReceivablesListPage() {
             getRowId={(r) => r.receivableId}
             onRowClick={(r) => navigate(`/cartera/cxc/${r.receivableId}`)}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="cuentas por cobrar" onClear={clearFilters} />

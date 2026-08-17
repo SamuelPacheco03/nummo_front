@@ -9,7 +9,7 @@ import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
-import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -136,6 +136,12 @@ export function ExpensesListPage() {
     }
   }
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    status && { id: 'status', label: expenseStatus(status).label, onRemove: () => setStatus('') },
+    supplierId && { id: 'supplier', label: 'Proveedor filtrado', onRemove: () => setSupplierId(null) },
+  ].filter(Boolean) as ActiveFilter[]
+
   const hasFilters = Boolean(q) || status !== '' || supplierId !== null
   const clearFilters = () => {
     setSearch('')
@@ -170,6 +176,8 @@ export function ExpensesListPage() {
             getRowId={(e) => e.expenseId}
             onRowClick={(e) => navigate(`/gastos/cxp/${e.expenseId}`)}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="gastos" onClear={clearFilters} />

@@ -2803,14 +2803,27 @@ botón no se aclara en oscuro.
 **Resuelto (fase 1):** §3.2, §4 y §5 listan los tokens reales, con una nota explícita de que
 `--surface` / `--surface-subtle` / `--danger` no existen.
 
-### 95.13. Confirmación de operaciones de Numi — **media**
+### 95.13. Confirmación de operaciones de Numi — ⚠️ **parcialmente cerrada (fase 5)**
 
-§34 exige que Numi muestre un **resumen estructurado** con `[Cancelar] [Confirmar]` antes de
-ejecutar. El código implementa el flujo de dos pasos, pero como **texto** (`isConfirmation()`
-detecta la confirmación por lenguaje natural), no como componente con botones.
+§34 exige un **resumen estructurado** con `[Cancelar] [Confirmar]` antes de ejecutar. El código
+resolvía el flujo de dos pasos por texto: había que escribir "sí" para que se registrara un
+movimiento de dinero.
 
-**Resolución: gana el documento.** Una operación financiera no debería confirmarse escribiendo
-"ok". Ver fase 5.
+**Resuelto (fase 5):** cuando Numi propone una escritura, el panel ofrece **botones explícitos**
+de Confirmar y Cancelar (`isAwaitingConfirmation` + `ConfirmOperationBar`). Ya no hace falta
+acertar la palabra.
+
+**Lo que NO se puede cerrar desde el front:** el resumen sigue siendo el texto que redacta Numi,
+no una tabla de campos. `POST /assistant/chat` devuelve **texto plano** y el contrato está
+congelado en v1.0.0: no hay ningún campo que diga "esto es una propuesta de escritura, y estos
+son sus campos". Renderizar la tabla de §34 exigiría **parsear la salida del modelo**, que es
+frágil justo donde no se puede fallar.
+
+**Lo que haría falta:** que el backend añada al contrato una respuesta estructurada para las
+propuestas de operación (tipo, campos, etiquetas). Mientras tanto, la detección es una
+heurística sobre texto y se asume como tal: degrada bien en los dos sentidos —un falso positivo
+manda "Confirmar" a una pregunta cualquiera, un falso negativo deja el flujo de escribirlo a
+mano— y **nunca ejecuta nada por su cuenta**.
 
 ### 95.14. Lo que ya cumple
 
@@ -2922,9 +2935,7 @@ registrar se hacen desde el teléfono).
 destinos, el filtrado por rol y el estado activo), build OK, y la variante `pointer-coarse`
 confirmada en el CSS generado.
 
-**Pendiente anotado:** §44 (formularios móviles: teclado numérico en importes, una sola
-columna) no se auditó pantalla por pantalla. `MoneyInput` ya existe y centraliza los importes,
-así que el repaso cabe en la fase 5, cuando se pasen listas y fichas por su checklist.
+**Pendiente anotado:** §44 (formularios móviles) — resuelto en la fase 5.
 
 ---
 
@@ -2960,19 +2971,30 @@ se corrigió, extrayendo `settings-nav.ts`.
 
 ---
 
-## Fase 5 — Listados, detalles y Numi operativo
+## Fase 5 — Listados, detalles y Numi operativo ✅ **completada (con una salvedad)**
 
-**Alcance**
+**Lo que se hizo**
 
-1. Pasar listas y fichas por el checklist §18–§21: filtros frecuentes visibles, filtros
-   activos evidentes, "limpiar filtros" fácil.
-2. Revisar las fichas de detalle contra §53 (auditoría: qué pasó, cuándo, quién) y §55
-   (reversión, nunca "eliminar").
-3. Confirmación estructurada de operaciones de Numi: tarjeta de resumen con
-   `[Cancelar] [Confirmar]`, en lugar de confirmar escribiendo. → brecha 95.13
-4. Respuestas enriquecidas de Numi (§32, §33): cifra, breakdown, tabla breve, acciones.
+1. **Filtros activos visibles** (§21): `DataList` gana fichas de filtro, una por criterio, cada
+   una con su × y un "Limpiar todo" cuando hay más de una. Conectadas en las siete listas
+   operativas, describiendo el filtro en los términos del usuario ("Vencida", "Pagador: Laura
+   Gómez") y no en los del API.
+2. **§55 auditado, sin cambios necesarios:** las operaciones financieras ya decían "Revertir",
+   y los "Eliminar" que quedan son borrados de verdad (una credencial de IA, una relación entre
+   contactos), no reversiones disfrazadas. Se deja escrito para no volver a revisarlo.
+3. **Confirmación de Numi con botones** (§34): ver 95.13 para lo que sí y lo que no se pudo
+   cerrar, y por qué.
+4. **§44, formularios móviles** —que la fase 3 dejó anotado—: siete formularios usaban
+   `grid-cols-2` sin breakpoint, es decir dos columnas a 360 px. Ahora apilan y solo se parten
+   desde `sm`. El teclado numérico ya estaba resuelto (`MoneyInput` con `inputMode="decimal"`).
 
-**Riesgo:** medio. **Tamaño:** grande.
+**Verificación:** typecheck limpio, 0 errores de lint, 10 warnings (= base), 98 tests en verde
+(3 nuevos sobre la detección de confirmación, incluidos los negativos), build OK.
+
+**Salvedad:** el punto 4 del alcance original —respuestas enriquecidas de Numi (§32, §33): cifra,
+breakdown, tabla breve, acciones— **no se hizo, y no se puede hacer solo desde el front** por la
+misma razón que 95.13: el endpoint devuelve texto plano. Queda como petición al contrato, no como
+deuda del frontend.
 
 ---
 
@@ -3001,7 +3023,7 @@ sitio.
 | ✅ 2 | Navegación de escritorio | medio | 1 |
 | ✅ 3 | Experiencia móvil | medio | 1, 2 |
 | ✅ 4 | Dashboard | medio | 1, 2 |
-| 5 | Listados, detalles y Numi | medio | 1, 4 |
+| ✅ 5 | Listados, detalles y Numi | medio | 1, 4 |
 | 6 | Command bar y pulido | medio-alto | todas |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

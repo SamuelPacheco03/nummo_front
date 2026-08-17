@@ -150,7 +150,7 @@ function PolicyDialog({
               ))}
             </NativeSelect>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Tasa"
               htmlFor="ip-rate"
@@ -186,7 +186,7 @@ function PolicyDialog({
               ))}
             </NativeSelect>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <MoneyField
               control={control}
               name="capAmount"

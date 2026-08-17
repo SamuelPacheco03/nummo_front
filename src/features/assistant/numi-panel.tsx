@@ -9,7 +9,9 @@ import { ChatComposer } from './chat-composer'
 import { NumiAvatar } from './numi-avatar'
 import { TypingIndicator } from './typing-indicator'
 import { useNumiChat } from './hooks'
+import { isAwaitingConfirmation } from './utils'
 import { NumiLoader } from '@/components/ui/loader'
+import { Button } from '@/components/ui/button'
 
 /** Botón de la cabecera: icono suelto, sin peso visual. */
 function HeaderAction({
@@ -84,9 +86,41 @@ function QuickStart({ onPick }: { onPick: (text: string) => void }) {
  * a la esquina inferior derecha, sobre el contenido (no lo tapa ni lo bloquea:
  * se puede seguir leyendo la pantalla mientras se conversa).
  */
+/**
+ * Confirmación explícita de una operación propuesta por Numi (§34).
+ *
+ * El resumen lo escribe Numi en su mensaje —el contrato v1.0.0 devuelve texto
+ * plano, no campos—, así que esta barra aporta lo que faltaba: que el sí y el no
+ * sean dos botones y no una palabra que hay que acertar. "Confirmar" va como
+ * acción primaria; "Cancelar" queda en bajo énfasis porque no destruye nada,
+ * solo desiste (§24).
+ */
+function ConfirmOperationBar({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="bg-card flex flex-wrap items-center gap-2 rounded-xl border p-3 shadow-sm">
+      <p className="text-muted-foreground w-full text-xs">
+        Numi no registra nada sin tu confirmación.
+      </p>
+      <Button size="sm" onClick={onConfirm}>
+        Confirmar
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onCancel}>
+        Cancelar
+      </Button>
+    </div>
+  )
+}
+
 export function NumiPanel({ onClose }: { onClose: () => void }) {
   const { messages, error, isTyping, isHydrating, role, orgName, send, sendAudio, retry, newConversation } =
     useNumiChat()
+
+  // §34: una operación financiera no se confirma escribiendo "ok". Cuando Numi
+  // propone una escritura, el sí y el no se ofrecen como botones.
+  const last = messages[messages.length - 1]
+  const awaitingConfirmation =
+    !isTyping && last?.role === 'assistant' && isAwaitingConfirmation(last.content)
+
   const listRef = useRef<HTMLDivElement>(null)
 
   // El hilo siempre pegado abajo: hay que escribir el scroll del DOM.
@@ -145,6 +179,13 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
               <TypingIndicator />
             </ChatBubble>
           </AssistantRow>
+        )}
+
+        {awaitingConfirmation && (
+          <ConfirmOperationBar
+            onConfirm={() => void send('Confirmar')}
+            onCancel={() => void send('Cancelar')}
+          />
         )}
 
         {error && (

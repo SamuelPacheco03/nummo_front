@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
-import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
@@ -127,6 +127,13 @@ export function DisbursementsListPage() {
     ])
   }, [contactMap])
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    status && { id: 'status', label: disbursementStatus(status).label, onRemove: () => setStatus('') },
+    purpose && { id: 'purpose', label: DISBURSEMENT_PURPOSE_LABELS[purpose] ?? purpose, onRemove: () => setPurpose('') },
+    supplierId && { id: 'supplier', label: 'Proveedor filtrado', onRemove: () => setSupplierId(null) },
+  ].filter(Boolean) as ActiveFilter[]
+
   const hasFilters = Boolean(q) || supplierId !== null || status !== '' || purpose !== ''
   const clearFilters = () => {
     setSearch('')
@@ -158,6 +165,8 @@ export function DisbursementsListPage() {
             getRowId={(d) => d.id}
             onRowClick={(d) => navigate(`/gastos/egresos/${d.id}`)}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="egresos" onClear={clearFilters} />

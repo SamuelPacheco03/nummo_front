@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
-import { DataList, listColumns, RowChevron } from '@/components/ui/data-list'
+import { DataList, listColumns, RowChevron, type ActiveFilter } from '@/components/ui/data-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ErrorState } from '@/components/ui/error-state'
@@ -125,6 +125,13 @@ export function PaymentsListPage() {
     [contactMap],
   )
 
+  const activeFilters = [
+    q && { id: 'q', label: `Busca: ${q}`, onRemove: () => setSearch('') },
+    status && { id: 'status', label: paymentStatus(status).label, onRemove: () => setStatus('') },
+    purpose && { id: 'purpose', label: PAYMENT_PURPOSE_LABELS[purpose] ?? purpose, onRemove: () => setPurpose('') },
+    payerId && { id: 'payer', label: `Pagador: ${payerName(payerId)}`, onRemove: () => setPayerId(null) },
+  ].filter(Boolean) as ActiveFilter[]
+
   const hasFilters = Boolean(q) || payerId !== null || status !== '' || purpose !== ''
   const clearFilters = () => {
     setSearch('')
@@ -156,6 +163,8 @@ export function PaymentsListPage() {
             getRowId={(p) => p.id}
             onRowClick={(p) => navigate(`/cartera/pagos/${p.id}`)}
             isLoading={isPending}
+            activeFilters={activeFilters}
+            onClearFilters={clearFilters}
             emptyText={
               hasFilters ? (
                 <NoResults entity="pagos" onClear={clearFilters} />

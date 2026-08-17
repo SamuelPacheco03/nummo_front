@@ -92,6 +92,43 @@ export function shouldRefreshData(userMessage: string, reply: string): boolean {
   return isConfirmation(userMessage) || mentionsAppliedChange(reply)
 }
 
+/**
+ * Numi está proponiendo una operación y espera un sí.
+ *
+ * Sirve para ofrecer botones explícitos de Confirmar/Cancelar (§34), en vez de
+ * obligar a teclear "ok" para que se registre un movimiento de dinero.
+ *
+ * **Es una heurística sobre texto libre, y se asume como tal.** El endpoint del
+ * asistente devuelve texto plano —el contrato v1.0.0 no trae un campo que diga
+ * "esto es una propuesta de escritura"—, así que se deduce del mensaje. Degrada
+ * bien en los dos sentidos: un falso positivo enseña un botón que manda "sí" a
+ * una pregunta cualquiera, y un falso negativo deja el flujo de siempre, que es
+ * escribirlo a mano. Ninguno de los dos ejecuta nada por su cuenta.
+ *
+ * Se exige que la frase sea una PREGUNTA y que hable de registrar algo: "¿Quieres
+ * ver el detalle?" no es una propuesta de operación.
+ */
+const CONFIRM_VERBS = 'registro|registre|creo|cree|guardo|guarde|aplico|aplique|transfiero|transfiera|anulo|anule|revierto|revierta'
+
+const CONFIRM_MARKERS: RegExp[] = [
+  new RegExp(`\\b(?:lo|la|los|las) (?:${CONFIRM_VERBS})\\b`),
+  new RegExp(`\\b(?:quieres|deseas|desea|necesitas) que (?:lo |la |los |las )?(?:${CONFIRM_VERBS})\\b`),
+  /\bconfirmas\b/,
+  /\bme confirmas\b/,
+  /\bconfirma(?:s|r)? (?:para|y) (?:registrar|crear|guardar|aplicar|transferir)\b/,
+  /\bprocedo\b/,
+  /\bcontinuo\b/,
+  /\b(?:esta|es) correcto\b/,
+  /\btodo correcto\b/,
+]
+
+export function isAwaitingConfirmation(reply: string): boolean {
+  if (!reply.includes('?') && !reply.includes('¿')) return false
+  // La propuesta va al final: el resumen antes, la pregunta después.
+  const tail = normalize(reply.slice(-320))
+  return CONFIRM_MARKERS.some((marker) => marker.test(tail))
+}
+
 /** Hora local corta para la marca de tiempo de cada burbuja. */
 export function formatTime(iso: string): string {
   const date = new Date(iso)

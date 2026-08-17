@@ -82,7 +82,7 @@ export function CreateOrgDialog({
           <Field label="Razón social" htmlFor="org-legal" error={errors.legalName?.message}>
             <Input id="org-legal" {...register('legalName')} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="NIT / Tax ID" htmlFor="org-tax" error={errors.taxId?.message}>
               <Input id="org-tax" {...register('taxId')} />
             </Field>

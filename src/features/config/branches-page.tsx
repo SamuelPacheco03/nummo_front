@@ -104,7 +104,7 @@ function BranchDialog({
           <Field label="Nombre" htmlFor="b-name" required error={errors.name?.message}>
             <Input id="b-name" placeholder="Sede principal" {...register('name')} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Código" htmlFor="b-code" error={errors.code?.message}>
               <Input id="b-code" {...register('code')} />
             </Field>
