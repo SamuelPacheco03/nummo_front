@@ -842,19 +842,29 @@ Un filtro que hay que descifrar no es un filtro. Reglas del contenido de `Filter
    control que nombran —se leía antes el desplegable que su propio título—, y es el tic de
    plantilla que §11.1 prohíbe.
 2. **Ni «ascendente» ni «descendente».** No dicen nada de una fecha de vencimiento ni de un saldo:
-   hay que traducirlas mentalmente cada vez. `FilterSortField` ofrece **una opción por
-   combinación** de columna y dirección, dicha por su resultado —«Las que vencen antes», «Mayor
-   saldo primero»—, agrupadas con `<optgroup>` bajo el nombre de la columna. Un botón suelto de
-   dirección, sin etiqueta, era peor todavía: no se sabía si era un estado o una acción.
-3. **Ordenar no es filtrar.** Va al final, separado por una línea, y no cuenta para el contador
+   hay que traducirlas mentalmente cada vez. En `FilterSortField` las palabras de la dirección
+   **cambian con la columna** — «Vencen antes / Vencen después» para una fecha, «Menor primero /
+   Mayor primero» para un importe.
+3. **Ordenar son dos decisiones, y llevan dos controles:** un desplegable con la columna y,
+   debajo, las dos direcciones como fichas. Se probó juntarlas en una sola lista de seis opciones
+   («Las que vencen antes», «Mayor saldo primero», …) y se descartó: obliga a releer las seis para
+   cambiar solo la dirección, y crece multiplicando en cuanto aparece una columna más. Un botón
+   suelto de dirección, sin etiqueta, era peor todavía: no se sabía si era un estado o una acción.
+4. **Ordenar no es filtrar.** Va al final, separado por una línea, y no cuenta para el contador
    del botón: no esconde registros, solo los recoloca.
-4. **Un rango lleva sus dos palabras.** Dos campos de fecha sin más son un acertijo hasta que
+5. **Un rango lleva sus dos palabras.** Dos campos de fecha sin más son un acertijo hasta que
    abres el calendario: cada uno lleva «Desde» y «Hasta» encima, y una línea de ayuda dice lo que
    no es evidente —que se puede acotar por un solo lado—.
-5. **El vacío se nombra entero.** «Todos los estados», no «Todos»; la opción se lee sola cuando el
+6. **El vacío se nombra entero.** «Todos los estados», no «Todos»; la opción se lee sola cuando el
    desplegable está cerrado y la etiqueta queda arriba.
-6. **Una línea de ayuda solo donde falta.** `FilterField` acepta `hint`, pero explicarlo todo es
+7. **Una línea de ayuda solo donde falta.** `FilterField` acepta `hint`, pero explicarlo todo es
    otra forma de no explicar nada.
+
+**Se ordena por una sola columna, y no por gusto:** el contrato v1.0.0 acepta un `sort` y un
+`order`, no una lista, y estas pantallas se paginan en el servidor. Encadenar un segundo criterio
+en el front reordenaría solo la página visible y daría un orden global falso (§88.4). Un editor de
+criterios encadenados es una **petición de contrato**, no trabajo de front — y antes de pedirlo,
+conviene comprobar que el caso real no se resuelve con un desempate fijo en el backend.
 
 ---
 

@@ -70,19 +70,9 @@ const ALL_STATUSES = ['PENDING', 'PARTIAL', 'OVERDUE', 'PAID', 'CANCELLED', 'WRI
 
 /** Columnas ordenables que acepta el endpoint (contrato: ListExpensesQuery). */
 const SORT_CHOICES: SortChoice[] = [
-  {
-    field: 'dueDate',
-    label: 'Vencimiento',
-    asc: 'Las que vencen antes',
-    desc: 'Las que vencen después',
-  },
-  { field: 'balance', label: 'Saldo', asc: 'Menor saldo primero', desc: 'Mayor saldo primero' },
-  {
-    field: 'originalAmount',
-    label: 'Valor original',
-    asc: 'Menor valor primero',
-    desc: 'Mayor valor primero',
-  },
+  { field: 'dueDate', label: 'Vencimiento', asc: 'Vencen antes', desc: 'Vencen después' },
+  { field: 'balance', label: 'Saldo', asc: 'Menor primero', desc: 'Mayor primero' },
+  { field: 'originalAmount', label: 'Valor original', asc: 'Menor primero', desc: 'Mayor primero' },
 ]
 
 /** Lo que necesitan las cabeceras de la tabla: solo la columna y su nombre. */

@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Drawer } from '@/components/ui/drawer'
+import { FilterChips } from '@/components/ui/filter-chips'
 import { NativeSelect } from '@/components/ui/native-select'
 import { cn } from '@/lib/utils'
 
@@ -125,27 +126,35 @@ export function FilterField({
   )
 }
 
-/** Una columna ordenable, con las dos direcciones dichas en cristiano. */
+/** Una columna ordenable, con sus dos direcciones dichas en cristiano. */
 export interface SortChoice {
   /** Valor de `sort` que acepta el endpoint. */
   field: string
   /** Cómo se llama la columna en la tabla. */
   label: string
-  /** Qué queda primero de menor a mayor: «Las que vencen antes». */
+  /** Qué queda primero de menor a mayor: «Vencen antes», «Menor primero». */
   asc: string
-  /** Y de mayor a menor: «Mayor saldo primero». */
+  /** Y de mayor a menor: «Vencen después», «Mayor primero». */
   desc: string
 }
 
 /**
  * El orden de la lista, dentro de la hoja de filtros.
  *
- * Una sola opción por combinación de columna y dirección. «Ascendente» y
- * «descendente» no dicen nada de una fecha de vencimiento ni de un saldo: hay
- * que traducirlas mentalmente cada vez, y antes vivían en un botón suelto sin
- * etiqueta que no se sabía si era un estado o una acción. Aquí cada opción dice
- * el resultado, y las dos direcciones van agrupadas bajo el nombre de la
- * columna para que se vea que son la misma decisión.
+ * **Dos decisiones, dos controles:** por qué columna y en qué dirección. Se
+ * probó juntarlas en una sola lista de seis opciones y se descartó — obliga a
+ * releer las seis para cambiar solo la dirección, y crece multiplicando en
+ * cuanto aparece una columna más.
+ *
+ * Las palabras de la dirección **cambian con la columna** (`asc`/`desc` de cada
+ * `SortChoice`): «ascendente» y «descendente» no dicen nada de una fecha de
+ * vencimiento ni de un saldo, hay que traducirlas mentalmente cada vez.
+ *
+ * **Una sola columna a la vez, no varias.** El contrato v1.0.0 acepta un `sort`
+ * y un `order`, no una lista, y la lista se pagina en el servidor: ordenar por
+ * un segundo criterio en el front reordenaría solo la página visible y daría un
+ * orden global falso (§88.4). Un editor de criterios encadenados necesita
+ * primero que el API los acepte.
  */
 export function FilterSortField({
   choices,
@@ -158,23 +167,35 @@ export function FilterSortField({
   desc: boolean
   onChange: (field: string, desc: boolean) => void
 }) {
+  const current = choices.find((c) => c.field === field) ?? choices[0]
+  if (!current) return null
+
   return (
     <FilterField label="Ordenar" className="border-t pt-4">
-      <NativeSelect
-        value={`${field}:${desc ? 'desc' : 'asc'}`}
-        onChange={(e) => {
-          const [next = '', dir = ''] = e.target.value.split(':')
-          onChange(next, dir === 'desc')
-        }}
-        aria-label="Ordenar la lista"
-      >
-        {choices.map((choice) => (
-          <optgroup key={choice.field} label={choice.label}>
-            <option value={`${choice.field}:asc`}>{choice.asc}</option>
-            <option value={`${choice.field}:desc`}>{choice.desc}</option>
-          </optgroup>
-        ))}
-      </NativeSelect>
+      <div className="space-y-2">
+        <NativeSelect
+          value={current.field}
+          // Cambiar de columna conserva la dirección: si venías mirando lo más
+          // grande primero, sigues queriendo lo más grande primero.
+          onChange={(e) => onChange(e.target.value, desc)}
+          aria-label="Ordenar por"
+        >
+          {choices.map((choice) => (
+            <option key={choice.field} value={choice.field}>
+              {choice.label}
+            </option>
+          ))}
+        </NativeSelect>
+        <FilterChips
+          label="Dirección del orden"
+          choices={[
+            { value: 'asc', label: current.asc },
+            { value: 'desc', label: current.desc },
+          ]}
+          value={desc ? 'desc' : 'asc'}
+          onChange={(value) => onChange(current.field, value === 'desc')}
+        />
+      </div>
     </FilterField>
   )
 }
