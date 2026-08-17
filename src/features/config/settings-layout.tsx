@@ -39,9 +39,14 @@ export function SettingsLayout() {
   return (
     <div className="lg:flex lg:gap-8">
       {/* Escritorio: columna fija y agrupada */}
+      {/*
+        `top-24` y no `top-8`: la cabecera de escritorio es `sticky` y mide 64 px,
+        así que una columna pegada a 32 px se metía por debajo al desplazar y
+        parecía que se movía sola. 64 de cabecera + 32 de respiro.
+      */}
       <nav
         aria-label="Configuración"
-        className="sticky top-8 hidden w-52 shrink-0 flex-col gap-5 self-start lg:flex"
+        className="sticky top-24 hidden w-52 shrink-0 flex-col gap-5 self-start lg:flex"
       >
         {GROUPS.map((group) => (
           <div key={group.title} className="flex flex-col gap-0.5">

@@ -1,15 +1,12 @@
 import {
-  Activity,
   ArrowLeftRight,
   Banknote,
   BarChart3,
   Coins,
   FileText,
-  HelpCircle,
   Landmark,
   LayoutDashboard,
   PieChart,
-  Settings,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -52,31 +49,6 @@ export const SECTIONS: NavSection[] = [
     items: [
       { to: '/informes/resultados', label: 'Resultados', Icon: BarChart3 },
       { to: '/informes/cartera', label: 'Cobros y pagos', Icon: PieChart },
-    ],
-  },
-  {
-    /*
-      Lo que es de la aplicación, no del negocio.
-
-      Configuración estuvo sola, sin título y con un hueco encima, y se leía como
-      un resto: cuatro grupos etiquetados y un enlace suelto al final. El problema
-      no era la etiqueta que faltaba, era que **no tenía con quién**. Ayuda y
-      estado del sistema son de su misma familia y vivían al pie en texto diminuto
-      —objetivos táctiles de 16 px, la mitad de lo que pide §43—, así que suben
-      aquí con el peso de un ítem de navegación.
-
-      Configuración entra como un único enlace: sus once pantallas viven en la
-      sub-navegación de `SettingsLayout`. Volcarlas aquí sería exponer el modelo
-      de datos en la navegación principal, que es justo lo que §14 prohíbe.
-
-      «Instalar app» se queda al pie a propósito: aparece y desaparece según el
-      navegador, y un grupo que cambia de tamaño solo se lee peor.
-    */
-    title: 'Ajustes',
-    items: [
-      { to: '/config', label: 'Configuración', Icon: Settings },
-      { to: '/ayuda', label: 'Ayuda', Icon: HelpCircle },
-      { to: '/estado', label: 'Estado del sistema', Icon: Activity },
     ],
   },
 ]

@@ -1,4 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router'
+import { Activity, HelpCircle, Settings } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/features/auth/user-menu'
@@ -18,8 +20,6 @@ export function Brand() {
 }
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const { pathname } = useLocation()
-
   return (
     <nav aria-label="Principal" className="flex flex-col gap-5 px-3 py-4">
       {SECTIONS.map((section, i) => (
@@ -29,48 +29,74 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
               {section.title}
             </div>
           )}
-          {section.items.map((item) => {
-            // `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que
-            // también cuelgan de Configuración: sin esto el enlace se apagaría
-            // justo cuando el usuario está dentro de esa sección.
-            const forceActive = item.to === '/config' && isSettingsPath(pathname)
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={onNavigate}
-                aria-current={forceActive ? 'page' : undefined}
-                className={({ isActive }) =>
-                  cn(
-                    'text-sidebar-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground relative flex items-center gap-2.5 rounded-md py-2 pr-2 pl-3 text-sm transition-colors',
-                    'focus-visible:ring-sidebar-ring/60 focus-visible:ring-[3px] focus-visible:outline-none',
-                    // El activo no solo se tiñe: lleva una barra de marca a la
-                    // izquierda. Sobre superficie oscura un simple cambio de fondo
-                    // se pierde, y §7 pide no fiarlo todo al color.
-                    (isActive || forceActive) &&
-                      'bg-sidebar-accent text-sidebar-foreground font-medium before:bg-sidebar-primary before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[3px] before:rounded-full before:content-[""]',
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <item.Icon
-                      aria-hidden
-                      className={cn(
-                        'size-4 shrink-0',
-                        (isActive || forceActive) && 'text-sidebar-primary',
-                      )}
-                    />
-                    <span className="truncate">{item.label}</span>
-                  </>
-                )}
-              </NavLink>
-            )
-          })}
+          {section.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                cn(
+                  'text-sidebar-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground relative flex items-center gap-2.5 rounded-md py-2 pr-2 pl-3 text-sm transition-colors',
+                  'focus-visible:ring-sidebar-ring/60 focus-visible:ring-[3px] focus-visible:outline-none',
+                  // El activo no solo se tiñe: lleva una barra de marca a la
+                  // izquierda. Sobre superficie oscura un simple cambio de fondo
+                  // se pierde, y §7 pide no fiarlo todo al color.
+                  isActive &&
+                    'bg-sidebar-accent text-sidebar-foreground font-medium before:bg-sidebar-primary before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[3px] before:rounded-full before:content-[""]',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <item.Icon
+                    aria-hidden
+                    className={cn('size-4 shrink-0', isActive && 'text-sidebar-primary')}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
         </div>
       ))}
     </nav>
+  )
+}
+
+/**
+ * Enlace del pie: mismo peso menor para los tres, que es lo que los agrupa como
+ * «esto no es una sección de trabajo».
+ */
+function FooterLink({
+  to,
+  label,
+  Icon,
+  onNavigate,
+  forceActive = false,
+}: {
+  to: string
+  label: string
+  Icon: LucideIcon
+  onNavigate?: () => void
+  /** Para destinos que cubren más rutas que la suya. */
+  forceActive?: boolean
+}) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onNavigate}
+      aria-current={forceActive ? 'page' : undefined}
+      className={({ isActive }) =>
+        cn(
+          'text-sidebar-muted-foreground hover:text-sidebar-foreground flex items-center gap-2 px-3 text-xs transition-colors',
+          (isActive || forceActive) && 'text-sidebar-foreground font-medium',
+        )
+      }
+    >
+      <Icon aria-hidden className="size-3.5 shrink-0" />
+      {label}
+    </NavLink>
   )
 }
 
@@ -79,6 +105,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
  * hoja de "Más" en móvil — de ahí que viva aparte del shell.
  */
 export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
+  const { pathname } = useLocation()
+
   return (
     <>
       <div className="border-sidebar-border flex h-16 items-center border-b px-4">
@@ -91,12 +119,31 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         <NavLinks onNavigate={onNavigate} />
       </div>
       {/*
-        Aquí abajo queda lo que es del **dispositivo y la sesión**: instalar la
-        app, el aviso de sin conexión, el tema y la cuenta. Ayuda y estado del
-        sistema subieron al grupo «Ajustes» de la navegación, que es donde tienen
-        vecinos y donde el objetivo táctil llega a los 44 px que pide §43.
+        El pie de lo que no es una sección de trabajo.
+
+        **Configuración va aquí y no en la navegación**, aunque sea el destino
+        más importante de los tres: en el pie está siempre a la vista al abrir el
+        sidebar, mientras que al final de la lista obligaba a desplazarse —y
+        además quedaba como un ítem suelto sin grupo—.
       */}
       <div className="border-sidebar-border space-y-3 border-t p-3">
+        <FooterLink
+          to="/config"
+          label="Configuración"
+          Icon={Settings}
+          onNavigate={onNavigate}
+          // `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que
+          // también cuelgan de aquí: sin esto el enlace se apagaría justo cuando
+          // el usuario está dentro de esa sección.
+          forceActive={isSettingsPath(pathname)}
+        />
+        <FooterLink to="/ayuda" label="Ayuda" Icon={HelpCircle} onNavigate={onNavigate} />
+        <FooterLink
+          to="/estado"
+          label="Estado del sistema"
+          Icon={Activity}
+          onNavigate={onNavigate}
+        />
         <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
         {/*

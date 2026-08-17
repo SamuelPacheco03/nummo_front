@@ -733,20 +733,23 @@ todavía no está jerarquizado.
 | Zona | Qué lleva |
 | --- | --- |
 | **Cabecera** | La barra de comandos (ocupa el ancho útil), el selector de tema y el menú de perfil —que incluye cerrar sesión— |
-| **Sidebar** | La organización activa, la navegación —que termina en el grupo «Ajustes»— y, al pie, instalar app |
+| **Sidebar** | La organización activa, la navegación del negocio y, al pie, lo que no es negocio: configuración, ayuda, estado, instalar app |
 
 El **selector de organización va en el sidebar, no en la cabecera**: es contexto permanente, no
 una herramienta, y en la cabecera de móvil competía con la búsqueda y se veía apretado.
 
-**Ningún ítem suelto en la navegación.** Configuración vivió sola al final, sin título de grupo y
-con un hueco encima, y se leía como un resto. El arreglo no fue ponerle etiqueta —un título para
-un solo ítem es el mismo problema con más ruido— sino **darle vecinos**: ayuda y estado del
-sistema son de su misma familia (cosas de la aplicación, no del negocio) y estaban al pie en texto
-de 12 px. Los tres forman el grupo «Ajustes», con el peso y el objetivo táctil de un ítem de
-navegación.
+**La navegación es solo del negocio; configuración va al pie.** Estuvo un tiempo suelta al final
+de la lista —sin título de grupo, con un hueco encima— y se leía como un resto; agruparla ahí con
+ayuda y estado tampoco funcionó, porque quedaba por debajo de cinco grupos y en móvil había que
+desplazarse para verla. **El pie no se desplaza**: se ve entera en cuanto se abre el sidebar. Va
+la primera de los tres, con el mismo peso menor —12 px— que ayuda y estado del sistema, que es
+justo lo que los agrupa como «esto no es una sección de trabajo».
 
-El pie se queda solo con lo del **dispositivo y la sesión**: instalar la app, el aviso de sin
-conexión, el tema y la cuenta.
+Como `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que también cuelgan de ella,
+el enlace se marca activo con `isSettingsPath` y no solo con el `NavLink`.
+
+El resto del pie es lo del **dispositivo y la sesión**: instalar la app, el aviso de sin conexión,
+el tema y la cuenta.
 
 **Tema y perfil solo aparecen una vez por pantalla.** En escritorio viven en la cabecera, siempre
 a la vista, y el pie del sidebar los oculta (`lg:hidden`). Por debajo de `lg` no hay cabecera de
