@@ -714,13 +714,31 @@ Cuatro patrones que hacen que una pantalla se lea como generada, y que en Nummo 
 3. **Micro-etiquetas en MAYÚSCULAS con letter-spacing en cada sección.** Cuando todo grita, nada
    jerarquiza. Los títulos de sección van en sentence case con `font-display` (`Panel`). Las
    versalitas se reservan a metadatos de verdad, como los grupos del sidebar.
-4. **Rejillas perfectamente uniformes para lo secundario.** Seis acciones en seis columnas iguales
-   pesan lo mismo que las cifras y encima truncan el texto. Lo secundario va compacto —una fila de
-   fichas que fluye— y lo importante se queda con el espacio.
+4. **Rejillas perfectamente uniformes.** Seis acciones en seis columnas iguales pesan lo mismo que
+   las cifras y encima truncan el texto. Y cuatro KPIs idénticos en fila **no jerarquizan nada**:
+   si las cuatro cifras se ven igual, el usuario tiene que leerlas todas para saber cuál importa.
+   Una manda —el saldo, que es la primera pregunta de §16— y las otras tres la acompañan, más
+   pequeñas y en fila.
+
+   **Un carrusel no es la solución.** Escondería dos de las tres, y lo vencido es justo lo que no
+   puede quedar fuera de la vista (§78). Reducir el cuerpo sí cabe, incluso a 360 px, y deja las
+   cuatro cifras de un vistazo.
 
 La regla detrás de las cuatro: **la jerarquía se hace con tamaño, agrupación y espacio, no
 añadiendo bordes, fondos y pastillas.** Si algo destaca solo porque se le puso un recuadro,
 todavía no está jerarquizado.
+
+## 11.2. Los componentes heredan su superficie
+
+Desde que el sidebar va oscuro también en tema claro (§4), la aplicación tiene **dos superficies
+con luminosidad opuesta**. Un componente que se monta en las dos —`OrgSwitcher`, el aviso de "sin
+conexión", el botón de instalar— **no puede fijar color**: usa `text-current` y `bg-current/…`, y
+hereda.
+
+Fijar `text-foreground` en uno de ellos deja texto invisible sobre el sidebar, que es exactamente
+el bug que apareció al hacer este cambio. Y al revés: la hoja inferior de "Registrar" heredaba
+`bg-sidebar` y salía oscura en tema claro. Las hojas **laterales** son navegación y van sobre la
+superficie del sidebar; la **inferior** es contenido y va sobre la de capa.
 
 ---
 

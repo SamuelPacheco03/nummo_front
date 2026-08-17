@@ -31,19 +31,28 @@ export function KpiTile({
   const Icon = up ? ArrowUpRight : ArrowDownRight
 
   return (
-    <div className="px-5 py-4">
-      <div className="text-muted-foreground text-[0.8rem]">{label}</div>
+    <div className={cn(featured ? 'px-5 py-5' : 'px-3 py-4 sm:px-4')}>
+      <div className={cn('text-muted-foreground', featured ? 'text-[0.85rem]' : 'text-xs')}>
+        {label}
+      </div>
       <div
         className={cn(
-          'font-display nums mt-1.5 leading-none font-semibold tracking-tight',
-          // El saldo es la primera pregunta de §16: se distingue por tamaño, que
-          // es jerarquía de verdad, no por un borde de color alrededor.
-          featured ? 'text-[2rem]' : 'text-[1.6rem]',
+          'font-display nums leading-none font-semibold tracking-tight',
+          // La jerarquía la hace el TAMAÑO, no un borde de color alrededor. El
+          // saldo se lee de lejos; los otros tres, al posar la vista.
+          featured
+            ? 'mt-2 text-[1.9rem] sm:text-[2.25rem]'
+            : 'mt-1.5 text-[1.05rem] sm:text-[1.35rem]',
         )}
       >
         {value}
       </div>
-      <div className="mt-1.5 flex items-center gap-2 text-xs">
+      <div
+        className={cn(
+          'flex items-center gap-2',
+          featured ? 'mt-2 text-xs' : 'mt-1 text-[0.7rem] sm:text-xs',
+        )}
+      >
         {showDelta && (
           <span className={cn('inline-flex items-center gap-0.5', good ? 'text-success-strong' : 'text-destructive')}>
             <Icon className="size-3.5" />
@@ -62,10 +71,25 @@ export function KpiTile({
  * Agrupar en vez de repetir tarjeta es lo que hace que se lean como un resumen
  * y no como cuatro widgets independientes.
  */
-export function KpiStrip({ children }: { children: ReactNode }) {
+export function KpiStrip({
+  featured,
+  children,
+}: {
+  /** El saldo: la primera pregunta de §16 y la única que se lee de lejos. */
+  featured: ReactNode
+  /** Las otras tres, compactas y en fila. */
+  children: ReactNode
+}) {
   return (
-    <div className="bg-card grid divide-y overflow-hidden rounded-lg border sm:grid-cols-2 sm:divide-x lg:grid-cols-4 [&>*:nth-child(-n+2)]:sm:border-b lg:[&>*]:border-b-0">
-      {children}
+    <div className="bg-card grid overflow-hidden rounded-lg border lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)]">
+      <div className="border-b lg:border-r lg:border-b-0">{featured}</div>
+      {/*
+        Tres columnas incluso a 360 px. Un carrusel escondería dos de las tres
+        —y lo vencido es justo lo que no puede quedar fuera de la vista (§78)—;
+        en cambio, reducir el cuerpo sí cabe y deja las cuatro cifras de un
+        vistazo, que es lo que el Panel tiene que responder.
+      */}
+      <div className="grid grid-cols-3 divide-x">{children}</div>
     </div>
   )
 }

@@ -199,14 +199,10 @@ export function DashboardPage() {
           Resumen financiero
         </h2>
         {kpisLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
+          <Skeleton className="h-[7.5rem]" />
         ) : (
-          <KpiStrip>
-            <>
+          <KpiStrip
+            featured={
               <KpiTile
                 featured
                 label="Saldo disponible"
@@ -217,26 +213,25 @@ export function DashboardPage() {
                     : plural(balances.length, 'cuenta', 'cuentas')
                 }
               />
-              <KpiTile
-                label="Por cobrar"
-                value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
-                sub={plural(
-                  (cxc?.pendingCount ?? 0) + (cxc?.partialCount ?? 0),
-                  'cuenta abierta',
-                  'cuentas abiertas',
-                )}
-              />
-              <KpiTile
-                label="Vencido"
-                value={formatMoney(cxc?.overdueAmount ?? '0', currency)}
-                sub={plural(cxc?.overdueCount ?? 0, 'cuenta en mora', 'cuentas en mora')}
-              />
-              <KpiTile
-                label="Por pagar"
-                value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
-                sub={plural(cxp?.overdueCount ?? 0, 'vencida', 'vencidas')}
-              />
-            </>
+            }
+          >
+            {/* Subtítulos cortos: estas tres celdas miden un tercio de pantalla
+                en móvil, y una frase larga ahí se corta y no dice nada. */}
+            <KpiTile
+              label="Por cobrar"
+              value={formatMoney(cxc?.totalOutstanding ?? '0', currency)}
+              sub={plural((cxc?.pendingCount ?? 0) + (cxc?.partialCount ?? 0), 'abierta', 'abiertas')}
+            />
+            <KpiTile
+              label="Vencido"
+              value={formatMoney(cxc?.overdueAmount ?? '0', currency)}
+              sub={plural(cxc?.overdueCount ?? 0, 'en mora', 'en mora')}
+            />
+            <KpiTile
+              label="Por pagar"
+              value={formatMoney(cxp?.totalOutstanding ?? '0', currency)}
+              sub={plural(cxp?.overdueCount ?? 0, 'vencida', 'vencidas')}
+            />
           </KpiStrip>
         )}
       </section>

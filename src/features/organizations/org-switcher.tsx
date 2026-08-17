@@ -41,11 +41,13 @@ export function OrgSwitcher() {
           <Button
             variant="ghost"
             size="sm"
-            className="border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground h-auto w-full justify-between gap-2 border px-3 py-2"
+            // Hereda el color de su superficie: se monta en el sidebar (oscuro)
+            // y en la cabecera de móvil (clara), así que no puede fijar ninguno.
+            className="h-auto w-full justify-between gap-2 border border-current/15 bg-current/[0.04] px-3 py-2 text-current hover:bg-current/10 hover:text-current"
           >
-            <Building2 className="text-sidebar-muted-foreground size-4 shrink-0" />
+            <Building2 className="size-4 shrink-0 opacity-60" />
             <span className="truncate font-medium">{organization?.name}</span>
-            <ChevronsUpDown className="text-sidebar-muted-foreground size-4 shrink-0" />
+            <ChevronsUpDown className="size-4 shrink-0 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">

@@ -82,19 +82,17 @@ function QuickActionsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="gap-1 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        <SheetTitle className="px-1 pb-2 text-base">Registrar</SheetTitle>
+      <SheetContent side="bottom" className="gap-1 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <SheetTitle className="px-3 pt-1 pb-2 text-base">Registrar</SheetTitle>
         <div className="overflow-y-auto">
           {actions.map((action) => (
             <button
               key={action.to}
               type="button"
               onClick={() => go(action.to)}
-              className="hover:bg-secondary focus-visible:ring-ring/50 flex min-h-14 w-full items-center gap-3 rounded-lg px-2 text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+              className="hover:bg-secondary focus-visible:ring-ring/50 flex min-h-14 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
             >
-              <span className="bg-secondary text-brand grid size-10 shrink-0 place-items-center rounded-lg">
-                <action.Icon aria-hidden className="size-5" />
-              </span>
+              <action.Icon aria-hidden className="text-brand size-5 shrink-0" />
               <span className="min-w-0">
                 <span className="block text-sm font-medium">{action.label}</span>
                 <span className="text-muted-foreground block text-xs">{action.description}</span>

@@ -23,8 +23,14 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'bg-sidebar text-sidebar-foreground border-sidebar-border data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col shadow-lg transition ease-in-out data-[state=closed]:duration-200 data-[state=open]:duration-300',
-          side !== 'bottom' && 'h-full w-72 max-w-[85vw]',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col shadow-lg transition ease-in-out data-[state=closed]:duration-200 data-[state=open]:duration-300',
+          // Los laterales alojan la navegación, así que van sobre la superficie
+          // del sidebar. La hoja inferior es CONTENIDO —acciones, formularios— y
+          // por eso usa la superficie de capa: heredar el sidebar la dejaba
+          // oscura en tema claro, que es exactamente lo que no debe pasar.
+          side !== 'bottom' &&
+            'bg-sidebar text-sidebar-foreground border-sidebar-border h-full w-72 max-w-[85vw]',
+          side === 'bottom' && 'bg-popover text-popover-foreground',
           side === 'left' &&
             'inset-y-0 left-0 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
           side === 'right' &&
