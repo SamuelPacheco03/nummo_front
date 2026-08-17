@@ -32,8 +32,10 @@ export function ThemeToggle({ className }: { className?: string }) {
           title={label}
           onClick={() => setMode(m)}
           className={cn(
-            'text-muted-foreground hover:text-foreground inline-flex size-8 items-center justify-center rounded-md transition-colors',
-            mode === m && 'bg-secondary text-foreground shadow-xs',
+            // `current` en vez de un token fijo: el selector vive en la cabecera
+            // (clara) y en el sidebar (oscuro), y no puede fijar color (§11.2).
+            'inline-flex size-8 items-center justify-center rounded-md opacity-55 transition-opacity hover:opacity-100',
+            mode === m && 'bg-current/10 opacity-100',
           )}
         >
           <Icon className="size-4" />

@@ -1,6 +1,8 @@
 import { Link, NavLink, useLocation } from 'react-router'
 import { Activity, HelpCircle } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { UserMenu } from '@/features/auth/user-menu'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { isSettingsPath } from '@/features/config/settings-nav'
 import { SECTIONS } from '@/features/navigation/sections'
@@ -118,6 +120,16 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         </NavLink>
         <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
+        {/*
+          Preferencia a la izquierda, cuenta a la derecha, al fondo del todo.
+          Ambos heredan la superficie con `border-current` (§11.2): el sidebar va
+          oscuro también en tema claro, así que fijar color dejaría uno de los dos
+          ilegible.
+        */}
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <ThemeToggle className="border-current/15 bg-transparent" />
+          <UserMenu />
+        </div>
       </div>
     </>
   )
