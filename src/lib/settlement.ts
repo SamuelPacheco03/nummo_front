@@ -65,3 +65,31 @@ export interface SettlementCopy {
   /** Qué pasa con lo que sobre del monto. */
   leftover: string
 }
+
+/**
+ * Param que dice **a dónde volver** después de registrar el movimiento.
+ *
+ * Registrar un pago desde una cuenta por cobrar terminaba en la ficha del pago:
+ * dos pantallas más allá de donde se estaba, y con la lista de cartera —lo que
+ * se estaba revisando— perdida. Quien llega desde una cuenta vuelve a ella.
+ *
+ * En la URL y no en el `state` del router porque así sobrevive a una recarga,
+ * como el resto de los criterios de la app (§21.1). En español, como las rutas.
+ */
+export const RETURN_PARAM = 'volver'
+
+/** Añade el «vuelve aquí» a un enlace de registrar. */
+export function withReturn(to: string, from: string): string {
+  return `${to}${to.includes('?') ? '&' : '?'}${RETURN_PARAM}=${encodeURIComponent(from)}`
+}
+
+/**
+ * Destino de vuelta, o `null` si no lo hay.
+ *
+ * Solo rutas internas: un valor de la URL no se pasa a `navigate()` sin mirarlo
+ * —`//otro.sitio` es una URL absoluta disfrazada de ruta—.
+ */
+export function returnPath(params: URLSearchParams): string | null {
+  const value = params.get(RETURN_PARAM)
+  return value && value.startsWith('/') && !value.startsWith('//') ? value : null
+}

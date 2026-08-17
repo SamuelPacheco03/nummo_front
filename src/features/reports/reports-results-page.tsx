@@ -79,31 +79,39 @@ export function ReportsResultsPage() {
       recurringLoading) &&
     !cashflow
 
+  /*
+    El período va en su propia fila y no en el `PageHeader`: dos selectores de
+    fecha ocupan casi 300 px y ahí dejarían al título un palmo (§11.1: las
+    acciones de la cabecera no bajan nunca, así que lo que no cabe no entra).
+    Bajo el encabezado ya es la fila de controles de cualquier listado.
+  */
   const header = (
-    <PageHeader
-      title="Resultados"
-      description="Cuánto entró y salió, de dónde, y cómo está la cartera hoy."
-    >
-      <div className="flex items-center gap-2">
+    <>
+      <PageHeader
+        title="Resultados"
+        description="Cuánto entró y salió, de dónde, y cómo está la cartera hoy."
+        className="mb-3"
+      />
+      <div className="flex items-center gap-2 sm:justify-end">
         <Input
           type="date"
           value={period.from}
           max={period.to}
           onChange={(e) => setPeriod((p) => ({ ...p, from: e.target.value }))}
-          className="h-8 w-auto"
+          className="h-8 w-full min-w-0 sm:w-auto"
           aria-label="Desde"
         />
-        <span className="text-muted-foreground">→</span>
+        <span className="text-muted-foreground shrink-0">→</span>
         <Input
           type="date"
           value={period.to}
           max={todayISODate()}
           onChange={(e) => setPeriod((p) => ({ ...p, to: e.target.value }))}
-          className="h-8 w-auto"
+          className="h-8 w-full min-w-0 sm:w-auto"
           aria-label="Hasta"
         />
       </div>
-    </PageHeader>
+    </>
   )
 
   if (isLoading) {

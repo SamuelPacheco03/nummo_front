@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { SettlementDrawer } from '@/components/settlement-drawer'
 import {
   isOpenAccount,
+  returnPath,
   type SettlementCopy,
   type SettlementValues,
 } from '@/lib/settlement'
@@ -52,6 +53,9 @@ export function RegisterPaymentPage() {
   // Se siembra desde la cuenta de la que se venía: llegar aquí con el pagador
   // ya puesto es la mitad del formulario resuelta.
   const [payerId, setPayerId] = useState<string | null>(searchParams.get('payer'))
+  // Quien llegó desde una cuenta por cobrar vuelve a ella, no a la ficha del
+  // pago: lo que estaba mirando era la cartera.
+  const back = returnPath(searchParams)
 
   const { items: concepts } = useBillingConcepts(orgId, {
     page: 1,
@@ -101,7 +105,7 @@ export function RegisterPaymentPage() {
       })
       const detail = res.data as PaymentDetail
       toast.success('Pago registrado')
-      navigate(`${LIST}/${detail.payment.id}`)
+      navigate(back ?? `${LIST}/${detail.payment.id}`)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo registrar el pago'))
     }
@@ -109,7 +113,7 @@ export function RegisterPaymentPage() {
 
   return (
     <SettlementDrawer
-      closeTo={LIST}
+      closeTo={back ?? LIST}
       copy={COPY}
       purposes={PURPOSES}
       applyPurpose="RECEIVABLE"

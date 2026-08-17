@@ -882,7 +882,9 @@ siempre Cancelar + acción. Lo usan sedes, miembros y asistente; antes cada una 
 que a veces estaba y a veces no.
 
 En una palabra: **cuelga de una lista → cajón; es un formulario corto de ajustes → diálogo
-centrado.**
+centrado.** Y «Configuración» aquí es literal, no un parecido: crear una cuenta por cobrar o un
+gasto son cinco campos igual de cortos, pero se abren desde la lista de cartera y **van al
+cajón** — lo hacen desde `AccountFormDrawer` (§94), uno solo para las dos caras.
 
 ---
 
@@ -978,6 +980,25 @@ acción del usuario, así que no puede desaparecer como si la hubiera**.
 - **`id` fijo** (`app-update`), así nunca se apila consigo mismo.
 
 Lo demás es el mismo aviso de siempre: filo `brand`, icono de descarga, superficie de tarjeta.
+
+## 11.1.7. El encabezado de una página
+
+`PageHeader` es título, descripción y acciones a la derecha, y **las acciones no bajan nunca**.
+
+Llegó a tener `flex-wrap` para que dos selectores de fecha no aplastaran el título en una pantalla
+de 390, y el remedio fue peor: en cuanto la descripción era larga, el botón «+» aterrizaba en su
+propia línea, **a la izquierda**, debajo del texto, y empujaba la página entera un renglón hacia
+abajo. Un botón que cambia de sitio y de lado según lo que diga la descripción no es un botón: es
+una sorpresa.
+
+La regla es al revés — **el que cede es el texto**: el bloque de título lleva `min-w-0 flex-1`, así
+que la descripción sigue en el renglón de abajo tantas veces como haga falta y las acciones se
+quedan donde estaban. En móvil las acciones se reducen a su icono (`<span className="hidden
+sm:inline">`), que es lo que hace que quepan.
+
+**Lo que no cabe, no entra.** Un control ancho —el rango de fechas de Resultados, casi 300 px— no
+va en la cabecera: va en su propia fila justo debajo, que es donde vive la barra de controles de
+cualquier listado.
 
 ---
 
@@ -1809,6 +1830,12 @@ que llegue, la ficha enseña lo que el API firma y nada más (§70).
 | --- | --- | --- |
 | Escritorio | Paleta a dos columnas, anclada arriba | La derecha es la ficha del seleccionado, con su acción principal: se encuentra y se resuelve sin salir |
 | Móvil | Pantalla completa | Con el teclado abierto, un diálogo centrado dejaba tres filas visibles y media pantalla en blanco |
+
+**En móvil se sale con una flecha atrás, no con «Cancelar».** La palabra se comía setenta píxeles
+de una barra de 390 y el placeholder se cortaba a media frase —«Busca un contacto, una cuenta, un
+pag…»—, que es justo lo que explica de qué va la caja. La flecha ocupa veinte, va a la izquierda
+en el sitio de la lupa y es el gesto que ya trae el buscador de cualquier app del teléfono. En
+escritorio no hace falta: está `esc` en el pie y la lupa dice lo suyo.
 
 **Con el campo vacío no se lista el catálogo entero.** Enseñaba veinte destinos —toda la
 navegación y todas las acciones— sin un orden que significara nada. Ahora: las acciones **de la
@@ -3031,6 +3058,16 @@ La página no construye claves de query ni llama a `fetch`. El hook no renderiza
   solución que sale primero: arregla el caso obvio y rompe los otros dos —pierde el sitio al
   volver atrás y manda al principio la lista al abrir un cajón encima—.
 
+- **Quien llega desde algún sitio vuelve a él.** Registrar un pago desde una cuenta por cobrar
+  terminaba en la ficha del pago: dos pantallas más allá, con la cartera —lo que se estaba
+  revisando— perdida. Ahora el enlace lleva un `?volver=…` (`withReturn` / `returnPath`, en
+  `lib/settlement.ts`) y tanto la X del cajón como el final del formulario respetan ese destino;
+  sin él, todo sigue como antes y se cae en la ficha recién creada.
+
+  En la URL y no en el `state` del router, para que sobreviva a una recarga como el resto de los
+  criterios (§21.1). Y **se valida antes de navegar**: solo rutas internas, que `//otro.sitio` es
+  una URL absoluta disfrazada de ruta.
+
 ## 87.6. Estado
 
 | Tipo de estado | Dónde vive |
@@ -3305,6 +3342,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `SectionedLayout` | `components/ui/sectioned-layout.tsx` | Sección con navegación propia: columna en escritorio, `Drawer` bajo `lg` |
 | `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
+| `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { SettlementDrawer } from '@/components/settlement-drawer'
 import {
   isOpenAccount,
+  returnPath,
   type SettlementCopy,
   type SettlementValues,
 } from '@/lib/settlement'
@@ -54,6 +55,9 @@ export function RegisterDisbursementPage() {
   // Se siembra desde el gasto del que se venía: llegar aquí con el proveedor ya
   // puesto es la mitad del formulario resuelta.
   const [supplierId, setSupplierId] = useState<string | null>(searchParams.get('supplier'))
+  // Quien llegó desde una cuenta por pagar vuelve a ella, no a la ficha del
+  // egreso: lo que estaba mirando era la cartera.
+  const back = returnPath(searchParams)
 
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
@@ -103,7 +107,7 @@ export function RegisterDisbursementPage() {
       })
       const detail = res.data as DisbursementDetail
       toast.success('Egreso registrado')
-      navigate(`${LIST}/${detail.disbursement.id}`)
+      navigate(back ?? `${LIST}/${detail.disbursement.id}`)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo registrar el egreso'))
     }
@@ -111,7 +115,7 @@ export function RegisterDisbursementPage() {
 
   return (
     <SettlementDrawer
-      closeTo={LIST}
+      closeTo={back ?? LIST}
       copy={COPY}
       purposes={PURPOSES}
       applyPurpose="EXPENSE"

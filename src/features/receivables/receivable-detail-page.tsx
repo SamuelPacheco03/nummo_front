@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useParams } from 'react-router'
 import { Ban, Banknote, HandCoins, MoreHorizontal, Plus, Trash2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
+import { withReturn } from '@/lib/settlement'
 import { cn } from '@/lib/utils'
 import { AddAdjustmentDialog } from './add-adjustment-dialog'
 import { WaiveInterestDialog } from './waive-interest-dialog'
@@ -51,6 +52,7 @@ const CLOSED = new Set(['CANCELLED', 'WRITTEN_OFF'])
  */
 export function ReceivableDetailPage() {
   const { receivableId } = useParams()
+  const { pathname } = useLocation()
   const { orgId, role } = useCurrentOrg()
   const canAdjust = canEditContacts(role)
   const canManage = canManageAgreements(role)
@@ -141,7 +143,9 @@ export function ReceivableDetailPage() {
           <>
             {canAdjust && !isClosed && (
               <Button asChild size="sm">
-                <Link to={`/cartera/pagos/nuevo?payer=${r.payerContactId}`}>
+                <Link
+                  to={withReturn(`/cartera/pagos/nuevo?payer=${r.payerContactId}`, pathname)}
+                >
                   <Banknote aria-hidden className="size-4" />
                   Registrar pago
                 </Link>

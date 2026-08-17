@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { CornerDownLeft, Search, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, CornerDownLeft, Search, Sparkles, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Loader } from '@/components/ui/loader'
@@ -296,7 +296,22 @@ export function CommandBar({
         <DialogTitle className="sr-only">Buscar o preguntarle algo a Numi</DialogTitle>
 
         <div className="flex h-14 shrink-0 items-center gap-2.5 border-b px-4">
-          <Search aria-hidden className="text-muted-foreground size-4 shrink-0" />
+          {/*
+            En móvil la salida es una flecha atrás y no un «Cancelar»: la palabra
+            se comía setenta píxeles de una barra de 390 y el placeholder se
+            cortaba a media frase. Además es el gesto que ya trae el buscador de
+            cualquier app del teléfono. En escritorio no hace falta —está `esc`,
+            y la lupa dice de qué va la caja—.
+          */}
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            aria-label="Cerrar el buscador"
+            className="text-muted-foreground hover:text-foreground -ml-1 shrink-0 sm:hidden"
+          >
+            <ArrowLeft aria-hidden className="size-5" />
+          </button>
+          <Search aria-hidden className="text-muted-foreground hidden size-4 shrink-0 sm:block" />
           <input
             autoFocus
             value={query}
@@ -318,13 +333,6 @@ export function CommandBar({
               <X className="size-4" />
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="text-brand shrink-0 text-sm font-medium sm:hidden"
-          >
-            Cancelar
-          </button>
           <kbd className="bg-secondary text-muted-foreground hidden rounded border px-1.5 py-0.5 font-sans text-[0.68rem] sm:block">
             esc
           </kbd>

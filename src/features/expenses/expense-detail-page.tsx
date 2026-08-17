@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useParams } from 'react-router'
 import { Ban, Coins, MoreHorizontal, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
+import { withReturn } from '@/lib/settlement'
 import { expenseStatus } from './labels'
 import { useCancelExpense, useExpense, useWriteOffExpense } from './hooks'
 
@@ -27,6 +28,7 @@ const CLOSED = new Set(['CANCELLED', 'WRITTEN_OFF'])
 /** Ficha de una cuenta por pagar. Abre como cajón sobre la lista. */
 export function ExpenseDetailPage() {
   const { expenseId } = useParams()
+  const { pathname } = useLocation()
   const { orgId, role } = useCurrentOrg()
   const canPay = canEditContacts(role)
   const canManage = canManageAgreements(role)
@@ -93,7 +95,9 @@ export function ExpenseDetailPage() {
           <>
             {canPay && !isClosed && (
               <Button asChild size="sm">
-                <Link to={`/gastos/egresos/nuevo?supplier=${e.supplierContactId}`}>
+                <Link
+                  to={withReturn(`/gastos/egresos/nuevo?supplier=${e.supplierContactId}`, pathname)}
+                >
                   <Coins aria-hidden className="size-4" />
                   Registrar egreso
                 </Link>

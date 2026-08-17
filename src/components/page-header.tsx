@@ -16,14 +16,15 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        // `flex-wrap`: cuando las acciones no caben —dos selectores de fecha en
-        // una pantalla de 390— bajan a su propia línea en vez de aplastar el
-        // título hasta partirlo en una palabra por renglón.
-        'border-border mb-5 flex flex-wrap items-start justify-between gap-3 border-b pb-3',
+        // Sin `flex-wrap`: **las acciones no bajan nunca**. Cuando bajaban, el
+        // botón «+» aterrizaba a la izquierda bajo la descripción y empujaba la
+        // página entera una línea; el que cede es el texto, que para eso puede
+        // seguir en el renglón de abajo.
+        'border-border mb-5 flex items-start justify-between gap-3 border-b pb-3',
         className,
       )}
     >
-      <div className="min-w-0 space-y-0.5">
+      <div className="min-w-0 flex-1 space-y-0.5">
         {/*
           24px en móvil y 30px en escritorio. La jerarquía la pide §8 (28–32 px en
           escritorio); quedarse en 30 es lo que mantiene la densidad de consola sin
