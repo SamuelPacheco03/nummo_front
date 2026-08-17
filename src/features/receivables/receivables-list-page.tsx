@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronDown, Coins, Download, Percent, Plus, RefreshCw } from 'lucide-react'
+import { ChevronDown, Coins, Download, MoreHorizontal, Percent, Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
@@ -58,6 +58,9 @@ type FilterKey = (typeof FILTER_KEYS)[number]
 
 /** Criterios que cuentan para el contador del botón «Filtros». */
 const ADVANCED_KEYS: FilterKey[] = ['pagador', 'concepto', 'desde', 'hasta']
+
+/** Todos los estados del contrato, para el desplegable de los avanzados. */
+const ALL_STATUSES = ['PENDING', 'PARTIAL', 'OVERDUE', 'PAID', 'CANCELLED', 'WRITTEN_OFF']
 
 /** Columnas ordenables que acepta el endpoint (contrato: ListReceivablesQuery). */
 const SORT_OPTIONS = [
@@ -118,6 +121,11 @@ export function ReceivablesListPage() {
   const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])
 
   /*
+   * Solo los estados de trabajo diario van a la vista. Pagadas, canceladas y
+   * castigadas son consulta ocasional y viven en los filtros avanzados: sacarlas
+   * de aquí es lo que permite que las fichas quepan en dos líneas sin desplazarse
+   * en horizontal (§21).
+   *
    * Los contadores salen del resumen del API. «Todas» va sin número a propósito:
    * sumar los tres estados daría un total que el backend no firma —y que puede
    * no cuadrar, porque una cuenta parcial y vencida cuenta en uno solo—. §70:
@@ -128,10 +136,15 @@ export function ReceivablesListPage() {
     { value: 'OVERDUE', label: 'Vencidas', count: summary?.overdueCount },
     { value: 'PENDING', label: 'Pendientes', count: summary?.pendingCount },
     { value: 'PARTIAL', label: 'Parciales', count: summary?.partialCount },
-    { value: 'PAID', label: 'Pagadas' },
-    { value: 'CANCELLED', label: 'Canceladas' },
-    { value: 'WRITTEN_OFF', label: 'Castigadas' },
   ]
+  // Si el estado activo salió de los avanzados, se muestra igualmente: si no, el
+  // usuario vería la lista filtrada y ninguna ficha marcada.
+  if (values.estado && !statusChoices.some((c) => c.value === values.estado)) {
+    statusChoices.push({
+      value: values.estado,
+      label: RECEIVABLE_STATUS_LABELS[values.estado] ?? values.estado,
+    })
+  }
 
   const columns = useMemo(
     () =>
@@ -235,9 +248,12 @@ export function ReceivablesListPage() {
         {canGenerate && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Acciones
-                <ChevronDown aria-hidden className="size-4" />
+              {/* En móvil el título ya ocupa la fila: las acciones se reducen a
+                  su icono para no empujar la lista una línea entera hacia abajo. */}
+              <Button variant="outline" size="sm" aria-label="Acciones">
+                <MoreHorizontal aria-hidden className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">Acciones</span>
+                <ChevronDown aria-hidden className="hidden size-4 sm:inline" />
               </Button>
             </DropdownMenuTrigger>
             {/*
@@ -278,9 +294,9 @@ export function ReceivablesListPage() {
           </DropdownMenu>
         )}
         {canCreate && (
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" />
-            Nueva cuenta
+          <Button size="sm" onClick={() => setCreateOpen(true)} aria-label="Nueva cuenta">
+            <Plus aria-hidden className="size-4" />
+            <span className="hidden sm:inline">Nueva cuenta</span>
           </Button>
         )}
       </PageHeader>
@@ -392,6 +408,21 @@ export function ReceivablesListPage() {
         canClear={hasFilters}
         resultLabel={`Ver ${plural(total, 'cuenta', 'cuentas')}`}
       >
+        <FilterField label="Estado">
+          <NativeSelect
+            value={values.estado}
+            onChange={(e) => filter({ estado: e.target.value })}
+            aria-label="Estado"
+          >
+            <option value="">Todos</option>
+            {ALL_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {RECEIVABLE_STATUS_LABELS[value] ?? value}
+              </option>
+            ))}
+          </NativeSelect>
+        </FilterField>
+
         <FilterField label="Pagador">
           <ContactPicker
             orgId={orgId ?? ''}

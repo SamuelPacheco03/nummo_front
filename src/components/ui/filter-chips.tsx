@@ -15,9 +15,21 @@ export interface FilterChoice {
  * dentro de un `select` costaba tres toques y escondía cuántos registros hay en
  * cada uno. Con fichas se ve el reparto sin filtrar nada (§21).
  *
- * En pantallas estrechas la fila se desplaza en horizontal en vez de romperse en
- * varias líneas: mantiene el orden de lectura —lo que más urge primero— y no
- * empuja la lista hacia abajo.
+ * **No se desplaza en horizontal: envuelve.** Una tira que se desplaza esconde
+ * opciones detrás de un gesto que nadie ve, y a 360 px el corte a media ficha
+ * es ruido visual constante. Envolver ocupa una línea más y no esconde nada.
+ *
+ * Por debajo de `sm` van en **rejilla de dos columnas**, no envolviendo libres.
+ * Cuatro fichas no caben en una línea a 360 px sin encoger el texto hasta hacerlo
+ * incómodo, y dejarlas envolver da un 3 + 1 con una ficha suelta abajo que se lee
+ * como un descuido. Dos y dos se lee como una decisión, y de paso el objetivo
+ * táctil queda holgado (§43).
+ *
+ * Desde `sm` vuelven a ser fichas que hugean su contenido, que es como deben
+ * verse cuando hay sitio.
+ *
+ * La lista que se le pasa debe ser **corta**: los estados frecuentes. Los de
+ * consulta ocasional viven en los filtros avanzados (§21).
  */
 export function FilterChips({
   choices,
@@ -36,7 +48,7 @@ export function FilterChips({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn('scrollbar-slim -mx-1 flex gap-2 overflow-x-auto px-1 pb-1', className)}
+      className={cn('grid grid-cols-2 gap-2 sm:flex sm:flex-wrap', className)}
     >
       {choices.map((choice) => {
         const isActive = choice.value === value
@@ -48,7 +60,7 @@ export function FilterChips({
             aria-checked={isActive}
             onClick={() => onChange(choice.value)}
             className={cn(
-              'focus-visible:ring-ring/50 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap transition-colors focus-visible:ring-[3px] focus-visible:outline-none',
+              'focus-visible:ring-ring/50 inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap transition-colors focus-visible:ring-[3px] focus-visible:outline-none sm:justify-start',
               'pointer-coarse:min-h-11',
               isActive
                 ? 'bg-foreground text-background border-foreground font-medium'
@@ -57,7 +69,7 @@ export function FilterChips({
           >
             {choice.label}
             {choice.count !== undefined && (
-              <span className={cn('nums text-xs', isActive ? 'opacity-70' : 'opacity-60')}>
+              <span className={cn('nums text-[0.72rem]', isActive ? 'opacity-70' : 'opacity-55')}>
                 {choice.count}
               </span>
             )}

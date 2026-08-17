@@ -84,12 +84,14 @@ export function KpiStrip({
     <div className="bg-card grid overflow-hidden rounded-lg border lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)]">
       <div className="border-b lg:border-r lg:border-b-0">{featured}</div>
       {/*
-        Tres columnas incluso a 360 px. Un carrusel escondería dos de las tres
-        —y lo vencido es justo lo que no puede quedar fuera de la vista (§78)—;
-        en cambio, reducir el cuerpo sí cabe y deja las cuatro cifras de un
-        vistazo, que es lo que el Panel tiene que responder.
+        `auto-cols-fr` reparte el ancho entre los hijos que HAYA: dos secundarios
+        ocupan media y media, tres un tercio cada uno. Fijar `grid-cols-3` dejaba
+        una columna fantasma cuando solo venían dos.
+
+        Y van en fila incluso a 360 px, sin carrusel: lo vencido es justo lo que
+        no puede quedar fuera de la vista (§78). Reducir el cuerpo sí cabe.
       */}
-      <div className="grid grid-cols-3 divide-x">{children}</div>
+      <div className="grid grid-flow-col auto-cols-fr divide-x">{children}</div>
     </div>
   )
 }
