@@ -809,9 +809,11 @@ encima solo cambia **cómo se abre**:
 | `DetailDrawer` | Una ruta hija de la lista | Lo que se comparte y se recarga: fichas, formularios de alta |
 | Estado local (`FilterSheet`, …) | Un `useState` | Lo efímero: filtros, opciones de una pantalla |
 
-**También sirve para navegar.** La sub-navegación de Configuración —once destinos en cuatro
-grupos— es una columna fija en escritorio y, por debajo de `lg`, esa misma lista dentro del
-`Drawer`, detrás de un botón «Secciones» (`features/config/settings-layout.tsx`).
+**También sirve para navegar.** Una sección con muchos destinos —Configuración y Ayuda— es una
+columna fija en escritorio y, por debajo de `lg`, esa misma lista dentro del `Drawer`, detrás de
+un botón «Secciones». Es **un solo componente**, `SectionedLayout`
+(`components/ui/sectioned-layout.tsx`): las dos llegaron a tenerlo copiado y se extrajo antes de
+que la segunda copia empezara a divergir.
 
 Antes era una **tira horizontal desplazable**, y era el error que §21.1 reprocha en los filtros:
 de once destinos se veían tres, los otros ocho quedaban detrás de un gesto que nadie ve, y al
@@ -823,11 +825,10 @@ igual que en escritorio.
 
 La regla que deja: **una navegación larga no se aplana en horizontal; se mete en el cajón.**
 
-**El ancho de las pantallas de ajustes lo pone el layout, no cada página.** Unas iban a
-`max-w-2xl` y otras a todo lo ancho, así que saltar de Empresa a Sedes cambiaba el tamaño de la
-columna y parecía otra pantalla. Hoy es un `max-w-3xl` en el contenedor del `<Outlet />` y ninguna
-página declara el suyo: deja respirar las filas de miembros y sedes sin estirar los formularios
-más allá de lo que se lee cómodo.
+**El ancho lo pone el layout, no cada página.** Unas iban a `max-w-2xl` y otras a todo lo ancho,
+así que saltar de Empresa a Sedes cambiaba el tamaño de la columna y parecía otra pantalla. Hoy
+es un `max-w-3xl` en `SectionedLayout` y ninguna página declara el suyo: deja respirar las filas
+de miembros y sedes sin estirar los formularios más allá de lo que se lee cómodo.
 
 `Sheet` se queda para lo que **no** cambia de eje: los laterales de navegación y la hoja inferior
 de acciones.
@@ -842,6 +843,50 @@ que a veces estaba y a veces no.
 
 En una palabra: **cuelga de una lista → cajón; es un formulario corto de ajustes → diálogo
 centrado.**
+
+---
+
+## 11.1.4. La guía (`/ayuda`)
+
+Es documentación, y una documentación **no es un documento**: es una portada, temas cortos y un
+buscador que enlaza.
+
+Fue lo contrario durante un tiempo: **una sola página de 6.473 px** con nueve secciones y sesenta
+definiciones, todas con el mismo peso visual —«¿Qué es Nummo?», tres líneas, se anunciaba igual
+que el glosario entero—. Había índice, pero llevaba a un ancla dentro del muro, y desde ahí ya no
+se sabía ni dónde estabas ni cuánto quedaba.
+
+Hoy son tres capas:
+
+| Capa | Ruta | Qué es |
+| --- | --- | --- |
+| Portada | `/ayuda` | Buscador arriba y los temas en tarjetas, agrupados |
+| Tema | `/ayuda/:tema` | Una pantalla, con «anterior / siguiente» al pie |
+| Navegación | — | `SectionedLayout`, el mismo de Configuración (§11.1.3) |
+
+**Los temas van por tarea, no por tipo de contenido.** Antes los estados de cartera estaban en
+«Estados», sus términos en «Glosario» y su flujo en «Cómo fluye el dinero»: tres sitios para una
+sola cosa. Ahora *Cobrar* lleva su flujo, sus tipos de pago y sus términos juntos, y *Pagar* es su
+espejo. Lo que se consulta y no se lee —estados, roles, glosario— se queda aparte, como
+referencia, que es lo que es.
+
+**Un término se escribe una vez.** El glosario está agrupado por `slug` de tema, así que el mismo
+dato alimenta el apartado «Términos que verás aquí» de cada tema y la tabla completa del glosario.
+Dos listas paralelas se habrían separado a la primera corrección.
+
+**El orden vive en `TOPICS` y de ahí salen cuatro cosas**: la navegación lateral, las tarjetas de
+la portada, los enlaces anterior/siguiente y el destino de las búsquedas. Mover un tema lo mueve
+en los cuatro sitios; añadir uno lo hace aparecer sin tocar nada más.
+
+**El buscador busca dos veces.** Primero en la guía (`searchGuide`: temas y glosario, sin tildes),
+que devuelve **enlaces** —encontrar y llegar—; después en la base de conocimiento del asistente,
+que devuelve fragmentos. Antes solo estaba la segunda, y sus resultados eran texto muerto: leías
+lo que respondía tu pregunta y no había forma de ir a la página que lo explica entero.
+
+Para escribir dentro de un tema hay piezas propias en `features/help/help-ui.tsx` —`P` (ancho de
+lectura de 68 caracteres), `Block` con su ancla `#`, `Flow` para los recorridos, `DefList`,
+`StateList`, `GoTo`— y los apartes van en `Note` (§94), que no sabe nada de la guía y sirve en
+cualquier pantalla.
 
 ---
 
@@ -3026,8 +3071,10 @@ Todos son parte del sistema y deben reutilizarse:
 | `InfoHint` | `components/ui/info-hint.tsx` | Ayuda contextual breve |
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
 | `MasterCrud` | `features/masters/master-crud.tsx` | Listado CRUD de un maestro |
-| `SettingsLayout` | `features/config/settings-layout.tsx` | Shell de Configuración: columna en escritorio, `Drawer` por debajo de `lg` |
+| `SectionedLayout` | `components/ui/sectioned-layout.tsx` | Sección con navegación propia: columna en escritorio, `Drawer` bajo `lg` |
+| `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
+| `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList` |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |

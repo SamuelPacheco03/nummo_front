@@ -27,9 +27,22 @@ export const router = createBrowserRouter([
             path: 'estado',
             lazy: async () => ({ Component: (await import('@/pages/health')).HealthPage }),
           },
+          // Ayuda: portada con buscador y un tema por ruta, con su propia
+          // navegación (la misma forma que Configuración). Un tema por pantalla
+          // en vez de los nueve en un solo scroll.
           {
             path: 'ayuda',
-            lazy: async () => ({ Component: (await import('@/features/help/guide-page')).GuidePage }),
+            lazy: async () => ({ Component: (await import('@/features/help/help-layout')).HelpLayout }),
+            children: [
+              {
+                index: true,
+                lazy: async () => ({ Component: (await import('@/features/help/help-home')).HelpHome }),
+              },
+              {
+                path: ':tema',
+                lazy: async () => ({ Component: (await import('@/features/help/topic-page')).TopicPage }),
+              },
+            ],
           },
           {
             path: 'caja/cuentas',

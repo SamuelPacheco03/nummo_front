@@ -11,10 +11,7 @@ import {
   UserCog,
   Wallet,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-
-export type SettingsItem = { to: string; label: string; Icon: LucideIcon }
-type SettingsGroup = { title: string; items: SettingsItem[] }
+import type { SectionGroup } from '@/components/ui/sectioned-layout'
 
 /**
  * Todo lo que se configura una vez y luego se olvida. Vive aquí y no en el
@@ -22,7 +19,7 @@ type SettingsGroup = { title: string; items: SettingsItem[] }
  * mental del usuario, no el modelo de datos. Conceptos, categorías y métodos de
  * pago son catálogos que se tocan al montar la organización, no trabajo diario.
  */
-export const GROUPS: SettingsGroup[] = [
+export const GROUPS: SectionGroup[] = [
   {
     title: 'Organización',
     items: [
