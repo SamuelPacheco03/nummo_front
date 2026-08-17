@@ -1743,7 +1743,28 @@ No rellenar con ejemplos que parezcan datos reales.
 
 # 36. Search / Command bar
 
-La barra superior puede funcionar como punto de entrada universal.
+La barra superior es el punto de entrada universal: `⌘K` en escritorio, la lupa en móvil.
+
+**Busca en cinco sitios, no en uno** (`features/search/use-global-search.ts`): contactos, cuentas
+por cobrar y por pagar, pagos y egresos, tres resultados de cada uno y el mismo `q` rebotado. Antes
+solo consultaba contactos, así que buscar el nombre de quien te debe **no encontraba su cuenta**,
+que es justo a lo que se entra. Lo que el contrato todavía no da —el saldo de un contacto, el
+nombre del pagador en las listas de dinero— está pedido en `contract/HANDOFF-buscador.md`; hasta
+que llegue, la ficha enseña lo que el API firma y nada más (§70).
+
+**Dos formas, un componente:**
+
+| | Forma | Por qué |
+| --- | --- | --- |
+| Escritorio | Paleta a dos columnas, anclada arriba | La derecha es la ficha del seleccionado, con su acción principal: se encuentra y se resuelve sin salir |
+| Móvil | Pantalla completa | Con el teclado abierto, un diálogo centrado dejaba tres filas visibles y media pantalla en blanco |
+
+**Con el campo vacío no se lista el catálogo entero.** Enseñaba veinte destinos —toda la
+navegación y todas las acciones— sin un orden que significara nada. Ahora: las acciones **de la
+pantalla en la que estás**, los **recientes** (`features/search/recents.ts`, cinco, en
+`localStorage`, solo etiqueta y destino: ningún importe sale del servidor) y el resto de acciones.
+
+Los atajos se ven en el pie: `↑↓` navegar, `⏎` abrir, `⇥` la acción del seleccionado, `esc` cerrar.
 
 Placeholder recomendado:
 

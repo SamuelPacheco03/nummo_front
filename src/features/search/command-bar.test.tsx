@@ -4,23 +4,30 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 import type { AnyRole } from '@/features/organizations/roles'
+import { Search } from 'lucide-react'
 import { useNumiStore } from '@/features/assistant/numi-store'
 
 const role = vi.hoisted(() => ({ current: 'OWNER' as AnyRole }))
-const contacts = vi.hoisted(() => ({ current: [] as { id: string; displayName: string }[] }))
+const hits = vi.hoisted(() => ({ current: [] as { title: string; items: unknown[] }[] }))
 
 vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({ role: role.current, orgId: 'org-1', organization: undefined }),
 }))
-vi.mock('@/features/contacts/hooks', () => ({
-  useContacts: () => ({ contacts: contacts.current, isFetching: false }),
+/*
+  La búsqueda contra el servidor se sustituye entera: lo que se prueba aquí es la
+  paleta —qué ofrece, cómo filtra, cómo se recorre—, no las cinco consultas. Con
+  el hook real haría falta montar un `QueryClientProvider` en cada test para
+  comprobar cosas que no dependen de él.
+*/
+vi.mock('./use-global-search', () => ({
+  useGlobalSearch: () => ({ groups: hits.current, isFetching: false }),
 }))
 
 const { CommandBar } = await import('./command-bar')
 
 beforeEach(() => {
   role.current = 'OWNER'
-  contacts.current = []
+  hits.current = []
   useNumiStore.setState({ isOpen: false })
 })
 afterEach(cleanup)
@@ -33,12 +40,24 @@ function renderBar() {
   return render(<RouterProvider router={router} />)
 }
 
-test('es un punto de entrada universal: registrar, ir y preguntar', () => {
+test('sin escribir ofrece registrar y preguntar, no el catálogo entero', () => {
   renderBar()
 
   expect(screen.getByRole('option', { name: /registrar pago/i })).toBeInTheDocument()
-  expect(screen.getByRole('option', { name: /cuentas por cobrar/i })).toBeInTheDocument()
   expect(screen.getByRole('option', { name: /preguntarle algo a numi/i })).toBeInTheDocument()
+  // Las secciones ya no se listan de entrada: veinte destinos sin orden no son
+  // una sugerencia. Aparecen al escribir.
+  expect(screen.queryByRole('option', { name: /^cuentas por cobrar$/i })).not.toBeInTheDocument()
+})
+
+test('las secciones aparecen al escribir', async () => {
+  renderBar()
+  await userEvent.type(screen.getByRole('textbox'), 'cuentas por cobrar')
+
+  // Coincide la sección y también «Nueva cuenta por cobrar»: basta con que la
+  // navegación aparezca al escribir.
+  const found = await screen.findAllByRole('option', { name: /cuentas por cobrar/i })
+  expect(found.length).toBeGreaterThan(0)
 })
 
 test('filtra por texto, ignorando acentos y mayúsculas', async () => {
@@ -62,22 +81,32 @@ test('Numi sigue disponible aunque nada más coincida', async () => {
   expect(await screen.findByRole('option', { name: /preguntarle a numi/i })).toBeInTheDocument()
 })
 
-test('ofrece los contactos que devuelve la búsqueda', async () => {
-  contacts.current = [{ id: 'c1', displayName: 'Laura Gómez' }]
+test('ofrece lo que devuelve la búsqueda del servidor', async () => {
+  hits.current = [
+    {
+      title: 'Contactos',
+      items: [
+        { id: 'contact:c1', kind: 'contact', label: 'Laura Gómez', to: '/contactos/c1', Icon: Search, details: [] },
+      ],
+    },
+  ]
   renderBar()
   await userEvent.type(screen.getByRole('textbox'), 'laura')
 
   expect(await screen.findByRole('option', { name: /laura gómez/i })).toBeInTheDocument()
 })
 
-test('respeta los permisos: un lector no puede registrar nada', () => {
+test('respeta los permisos: un lector no puede registrar nada', async () => {
   role.current = 'VIEWER'
   renderBar()
 
   expect(screen.queryByRole('option', { name: /registrar pago/i })).not.toBeInTheDocument()
-  // Pero sí puede navegar y preguntar.
-  expect(screen.getByRole('option', { name: /cuentas por cobrar/i })).toBeInTheDocument()
+  // Pero sí puede preguntar…
   expect(screen.getByRole('option', { name: /preguntarle algo a numi/i })).toBeInTheDocument()
+  // …y navegar.
+  await userEvent.type(screen.getByRole('textbox'), 'cuentas por cobrar')
+  expect((await screen.findAllByRole('option', { name: /cuentas por cobrar/i })).length)
+    .toBeGreaterThan(0)
 })
 
 test('se recorre con las flechas y se ejecuta con Enter', async () => {
