@@ -17,6 +17,7 @@ import { usePaymentMethods } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
@@ -33,7 +34,8 @@ export function DisbursementDetailPage() {
   const canApply = canEditContacts(role)
 
   const { detail, isPending, isError, error } = useDisbursement(orgId, disbursementId)
-  const reverse = useReverseDisbursement(orgId ?? '')
+  const idem = useIdempotencyKey()
+  const reverse = useReverseDisbursement(orgId ?? '', idem.key)
   const [reverseOpen, setReverseOpen] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
 
@@ -65,6 +67,7 @@ export function DisbursementDetailPage() {
     try {
       await reverse.mutateAsync({ orgId: orgId ?? '', id: d.id })
       toast.success('Egreso reversado')
+      idem.renew()
       setReverseOpen(false)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo reversar'))

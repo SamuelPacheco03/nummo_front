@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { MoneyInput } from '@/components/ui/money-input'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useApplyDisbursementAllocations, useExpenses } from './hooks'
@@ -34,7 +35,8 @@ export function ApplySupplierAdvanceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const apply = useApplyDisbursementAllocations(orgId)
+  const idem = useIdempotencyKey()
+  const apply = useApplyDisbursementAllocations(orgId, idem.key)
   const [alloc, setAlloc] = useState<Record<string, string>>({})
   const availableNum = Number(available) || 0
 
@@ -74,6 +76,7 @@ export function ApplySupplierAdvanceDialog({
     try {
       await apply.mutateAsync({ orgId, id: disbursementId, data: { allocations } })
       toast.success('Anticipo aplicado')
+      idem.renew()
       setAlloc({})
       onOpenChange(false)
     } catch (err) {

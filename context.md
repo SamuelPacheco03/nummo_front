@@ -3252,6 +3252,29 @@ generado desde `features/<dominio>/hooks.ts`, nunca modificando la salida de Orv
 - Todo formato monetario pasa por `lib/format.ts`. Nunca se implementa a mano en un
   componente (sección 67).
 
+## 88.4b. Mover dinero dos veces
+
+Todas las mutaciones que mueven dinero aceptan `Idempotency-Key`. **Con la misma clave y el mismo
+cuerpo el backend devuelve la respuesta original en vez de volver a mover el dinero**, y ahí está
+toda la gracia: si la petición salió pero la respuesta se perdió —un túnel, un móvil que cambia de
+red— reintentar no duplica la transferencia.
+
+Las diez rutas la mandan: registrar pago y egreso, transferencias, aplicar anticipos, reversar
+pago y egreso, ajustes y condonaciones de cartera, y causar mora.
+
+**Una clave por intento, no por reintento** (`lib/idempotency.ts`). Es la parte que se hace mal
+sola:
+
+- Generarla en cada clic **no sirve de nada**: dos clics son dos claves y dos movimientos. Contra
+  el doble clic manda el botón deshabilitado mientras la mutación está en vuelo; la clave es
+  contra la red, que es lo que no se ve.
+- Generarla una vez y no renovarla nunca es peor: la segunda transferencia igual hecha **a
+  propósito** se la tragaría como repetida. Por eso `renew()` se llama al acertar.
+
+`useIdempotencyKey()` da las dos mitades (`key`, `renew`) y cada pantalla la renueva en su camino
+de éxito — ojo con las que tienen dos acciones, que la clave es de una sola: en cuentas por cobrar
+se renueva al causar mora, no al generar mensualidades.
+
 ## 88.5. El front no es frontera de seguridad
 
 Zod valida en cliente para dar buen feedback. El backend revalida todo. Los permisos de rol

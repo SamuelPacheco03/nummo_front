@@ -74,10 +74,11 @@ export function useGenerateReceivables(orgId: string) {
   })
 }
 
-export function useAddAdjustment(orgId: string) {
+export function useAddAdjustment(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdReceivablesIdAdjustments({
     mutation: { onSuccess: (_r, vars) => invalidate(qc, orgId, vars.id) },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
 
@@ -112,14 +113,15 @@ export function useAccruals(orgId: string | undefined, receivableId: string | un
 }
 
 /** Causa la mora de toda la org (idempotente); también corre el worker a diario. */
-export function useAccrueInterest(orgId: string) {
+export function useAccrueInterest(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdReceivablesAccrueInterest({
     mutation: { onSuccess: () => invalidate(qc, orgId) },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
 
-export function useWaiveInterest(orgId: string) {
+export function useWaiveInterest(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdReceivablesIdWaivers({
     mutation: {
@@ -130,5 +132,6 @@ export function useWaiveInterest(orgId: string) {
         })
       },
     },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }

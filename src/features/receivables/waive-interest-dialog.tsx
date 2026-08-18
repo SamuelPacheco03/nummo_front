@@ -17,6 +17,7 @@ import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
 import { Textarea } from '@/components/ui/textarea'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount } from '@/lib/format'
 import { useWaiveInterest } from './hooks'
 
@@ -47,7 +48,8 @@ export function WaiveInterestDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const waive = useWaiveInterest(orgId)
+  const idem = useIdempotencyKey()
+  const waive = useWaiveInterest(orgId, idem.key)
   const {
     register,
     control,
@@ -69,6 +71,7 @@ export function WaiveInterestDialog({
         data: { amount: v.amount, reason: v.reason || null },
       })
       toast.success('Interés condonado')
+      idem.renew()
       onOpenChange(false)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo condonar'))

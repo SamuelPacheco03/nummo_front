@@ -14,6 +14,7 @@ import {
 import { MoneyInput } from '@/components/ui/money-input'
 import { useReceivables } from '@/features/receivables/hooks'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useApplyAllocations } from './hooks'
@@ -35,7 +36,8 @@ export function ApplyAdvanceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const apply = useApplyAllocations(orgId)
+  const idem = useIdempotencyKey()
+  const apply = useApplyAllocations(orgId, idem.key)
   const [alloc, setAlloc] = useState<Record<string, string>>({})
   const availableNum = Number(available) || 0
 
@@ -83,6 +85,7 @@ export function ApplyAdvanceDialog({
     try {
       await apply.mutateAsync({ orgId, id: paymentId, data: { allocations } })
       toast.success('Anticipo aplicado')
+      idem.renew()
       setAlloc({})
       onOpenChange(false)
     } catch (err) {

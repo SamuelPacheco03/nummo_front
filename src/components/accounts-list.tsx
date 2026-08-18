@@ -105,7 +105,6 @@ export function AccountsList({
   onGenerate,
   generating,
   createDialog,
-  onCreate,
   useList,
 }: {
   copy: AccountsListCopy
@@ -126,8 +125,6 @@ export function AccountsList({
   generating: boolean
   /** El diálogo de crear, que cada lado monta con su formulario. */
   createDialog: (open: boolean, onOpenChange: (open: boolean) => void) => ReactNode
-  /** Se llama al pedir crear, por si el lado quiere hacer algo más. */
-  onCreate?: () => void
   useList: (params: AccountsQuery) => AccountsListResult
 }) {
   const navigate = useNavigate()
@@ -274,11 +271,6 @@ export function AccountsList({
     clear()
   }
 
-  const openCreate = () => {
-    onCreate?.()
-    setCreateOpen(true)
-  }
-
   return (
     <div className="space-y-5">
       <PageHeader title={copy.title} description={copy.description}>
@@ -329,7 +321,7 @@ export function AccountsList({
           </DropdownMenu>
         )}
         {canCreate && (
-          <Button size="sm" onClick={openCreate} aria-label={copy.createLabel}>
+          <Button size="sm" onClick={() => setCreateOpen(true)} aria-label={copy.createLabel}>
             <Plus aria-hidden className="size-4" />
             <span className="hidden sm:inline">{copy.createLabel}</span>
           </Button>
@@ -403,7 +395,7 @@ export function AccountsList({
                   description={copy.emptyDescription}
                   action={
                     canCreate && (
-                      <Button size="sm" onClick={openCreate}>
+                      <Button size="sm" onClick={() => setCreateOpen(true)}>
                         <Plus className="size-4" />
                         {copy.createLabel}
                       </Button>

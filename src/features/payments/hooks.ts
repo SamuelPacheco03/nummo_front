@@ -64,16 +64,18 @@ export function useRegisterPayment(orgId: string, idempotencyKey: string) {
   })
 }
 
-export function useApplyAllocations(orgId: string) {
+export function useApplyAllocations(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdPaymentsIdAllocations({
     mutation: { onSuccess: (_r, vars) => invalidateAll(qc, orgId, vars.id) },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
 
-export function useReversePayment(orgId: string) {
+export function useReversePayment(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdPaymentsIdReverse({
     mutation: { onSuccess: (_r, vars) => invalidateAll(qc, orgId, vars.id) },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }

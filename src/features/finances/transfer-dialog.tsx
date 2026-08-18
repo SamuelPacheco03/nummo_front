@@ -18,6 +18,7 @@ import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { useCreateTransfer } from './hooks'
 
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/
@@ -50,7 +51,8 @@ export function TransferDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const transfer = useCreateTransfer(orgId)
+  const idem = useIdempotencyKey()
+  const transfer = useCreateTransfer(orgId, idem.key)
   const {
     register,
     control,
@@ -75,6 +77,7 @@ export function TransferDialog({
         },
       })
       toast.success('Transferencia registrada')
+      idem.renew()
       onOpenChange(false)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo transferir'))

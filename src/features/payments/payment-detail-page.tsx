@@ -17,6 +17,7 @@ import { usePaymentMethods } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
@@ -33,7 +34,8 @@ export function PaymentDetailPage() {
   const canApply = canEditContacts(role)
 
   const { detail, isPending, isError, error } = usePayment(orgId, paymentId)
-  const reverse = useReversePayment(orgId ?? '')
+  const idem = useIdempotencyKey()
+  const reverse = useReversePayment(orgId ?? '', idem.key)
   const [reverseOpen, setReverseOpen] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
 
@@ -65,6 +67,7 @@ export function PaymentDetailPage() {
     try {
       await reverse.mutateAsync({ orgId: orgId ?? '', id: p.id })
       toast.success('Pago reversado')
+      idem.renew()
       setReverseOpen(false)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo reversar'))

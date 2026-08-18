@@ -205,15 +205,17 @@ export function useRegisterDisbursement(orgId: string, idempotencyKey: string) {
     request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
-export function useApplyDisbursementAllocations(orgId: string) {
+export function useApplyDisbursementAllocations(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdDisbursementsIdAllocations({
     mutation: { onSuccess: (_r, vars) => invDisb(qc, orgId, vars.id) },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
-export function useReverseDisbursement(orgId: string) {
+export function useReverseDisbursement(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdDisbursementsIdReverse({
     mutation: { onSuccess: (_r, vars) => invDisb(qc, orgId, vars.id) },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }

@@ -17,6 +17,7 @@ import { MoneyField } from '@/components/money-field'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { ADJUSTMENT_TYPE_LABELS, CREATE_ADJUSTMENT_TYPES } from './labels'
 import { useAddAdjustment } from './hooks'
 
@@ -44,7 +45,8 @@ export function AddAdjustmentDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const add = useAddAdjustment(orgId)
+  const idem = useIdempotencyKey()
+  const add = useAddAdjustment(orgId, idem.key)
   const {
     register,
     control,
@@ -65,6 +67,7 @@ export function AddAdjustmentDialog({
         data: { adjustmentType: v.adjustmentType, amount: v.amount, reason: v.reason || null },
       })
       toast.success('Ajuste agregado')
+      idem.renew()
       onOpenChange(false)
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo agregar el ajuste'))

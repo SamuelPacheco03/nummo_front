@@ -6,6 +6,7 @@ import { canEditContacts, canManageAgreements } from '@/features/organizations/r
 import { useReceivablesSummary } from '@/features/reports/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { getErrorMessage } from '@/lib/errors'
+import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, plural } from '@/lib/format'
 import type { AccountsListCopy, AccountsQuery } from '@/lib/accounts-list'
 import type {
@@ -66,7 +67,8 @@ export function ReceivablesListPage() {
     }
   }
 
-  const accrue = useAccrueInterest(orgId ?? '')
+  const idem = useIdempotencyKey()
+  const accrue = useAccrueInterest(orgId ?? '', idem.key)
   const onAccrue = async () => {
     try {
       const res = await accrue.mutateAsync({ orgId: orgId ?? '' })
@@ -74,6 +76,8 @@ export function ReceivablesListPage() {
       toast.success(
         `Mora causada: ${plural(r.charged, 'cargo', 'cargos')} · ${formatAmount(r.chargedAmount)}`,
       )
+      // Causar mora dos veces a propósito son dos operaciones, no un reintento.
+      idem.renew()
     } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo causar la mora'))
     }

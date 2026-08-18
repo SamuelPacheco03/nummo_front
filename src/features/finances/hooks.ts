@@ -42,7 +42,7 @@ export function useMovements(
   }
 }
 
-export function useCreateTransfer(orgId: string) {
+export function useCreateTransfer(orgId: string, idempotencyKey: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdFinancialAccountsTransfers({
     mutation: {
@@ -55,5 +55,6 @@ export function useCreateTransfer(orgId: string) {
         })
       },
     },
+    request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
