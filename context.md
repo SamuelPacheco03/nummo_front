@@ -1811,29 +1811,41 @@ que usa el ratón. Un toque de menos de 0,7 s no es una grabación: se descarta 
 existe: nadie descubre solo que puede soltar el dedo. Se agranda y se enciende según te acercas, y
 así el gesto se explica mientras lo haces.
 
-### Cuatro cosas sin las que «mantener pulsado» no funciona en un móvil
+### Cinco cosas sin las que «mantener pulsado» no funciona en un móvil
 
-Ninguna se nota cuando está; todas se notan cuando falta, y las cuatro juntas son la diferencia
-entre un gesto que responde y uno que se cancela solo.
+Ninguna se nota cuando está; todas se notan cuando falta. Las dos primeras son la misma historia:
+**el gesto se moría antes de empezar**, y se leyó de dos formas distintas —«se cancela con
+cualquier movimiento» y, tras dejar de descartar en `pointercancel`, «se bloquea de una»— porque
+era el mismo `pointercancel` con dos finales.
 
-1. **`touch-none` en el botón.** Es la de fondo. Sin ella el navegador entiende que el dedo quiere
-   desplazar el hilo, se queda con el gesto y manda `pointercancel` a los pocos píxeles: la
-   grabación moría al primer temblor y al candado no se llegaba nunca.
-2. **Zona muerta de 14 px.** Nadie sostiene el pulgar quieto mientras habla. Sin ella el pulso de
+1. **El composer no se desmonta mientras el dedo está encima.** El overlay se dibuja **sobre** él,
+   no en su lugar. Sustituirlo quitaba del DOM el botón que había recibido el `pointerdown`, y
+   quitar ese elemento dispara `pointercancel` **al instante**. Esto es lo que hacía que se
+   bloqueara nada más presionar.
+2. **`touch-none` en el botón.** Sin él el navegador entiende que el dedo quiere desplazar el hilo,
+   se queda con el gesto y también manda `pointercancel`, a los pocos píxeles.
+3. **Zona muerta de 14 px.** Nadie sostiene el pulgar quieto mientras habla. Sin ella el pulso de
    la mano contaba como deslizar.
-3. **Eje bloqueado.** El primer movimiento que sale de la zona muerta decide si esto es cancelar
+4. **Eje bloqueado.** El primer movimiento que sale de la zona muerta decide si esto es cancelar
    (horizontal) o fijar (vertical), y el otro eje se ignora a partir de ahí. Un pulgar sube
    torcido, y sin esto acumulaba desplazamiento a la izquierda y cancelaba a medio camino del
    candado.
-4. **`pointercancel` no tira la grabación, la fija.** No es el usuario: es el sistema quedándose
-   con el gesto —una notificación, el gesto de volver del borde—. Perder lo que alguien acaba de
-   dictar porque el móvil vibró es el peor final posible; que siga grabando y decida en la barra es
-   el menos malo.
+5. **`pointercancel` no tira la grabación, la fija.** Cuando de verdad ocurre no es el usuario: es
+   el sistema quedándose con el gesto —una notificación, el gesto de volver del borde—. Perder lo
+   que alguien acaba de dictar porque el móvil vibró es el peor final posible.
 
-**Y los escuchas del puntero van en `window`, no en el botón.** El botón **desaparece** en cuanto
-empieza el gesto —la barra de grabación sustituye al composer entero—, así que atado a él el primer
-`pointermove` ya no llega a nadie: ni cancelar, ni fijar, ni soltar hacían nada, y el micrófono se
-quedaba abierto. Es el mismo error que el arrastre del lanzador de Numi (§87.5) con otra cara.
+**Y los escuchas del puntero van en `window`, no en el botón**, para que el gesto no dependa de
+sobre qué elemento está el dedo. Es el mismo cuidado que el arrastre del lanzador de Numi (§87.5).
+
+**El micrófono grande y el candado se anclan al botón medido**, no a la esquina del contenedor. El
+micrófono pequeño vive dentro de la caja de escribir y el grande es el doble de ancho: puestos a
+ojo quedaban a seis píxeles el uno del otro y el dibujo saltaba bajo el dedo justo al empezar a
+grabar. Se mide el botón en el `pointerdown` y los dos se colocan ahí, el candado encima.
+
+**Cómo se prueba esto**, porque tiene truco: un ratón emulado **no reproduce** el fallo. Los
+punteros de ratón no se cancelan al desaparecer su objetivo, así que la primera versión pasaba las
+pruebas y moría en el teléfono. Hay que mandar toques de verdad
+(`Input.dispatchTouchEvent` por CDP) y **contar los `pointercancel`**: con el gesto sano son cero.
 
 ---
 

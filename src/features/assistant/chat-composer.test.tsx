@@ -50,6 +50,22 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+test('el botón sigue en el DOM durante todo el gesto', async () => {
+  stubPointer('coarse')
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  const mic = screen.getByRole('button', { name: /mantén pulsado/i })
+  press(mic)
+  await screen.findByText('Desliza para cancelar')
+
+  /*
+    Si el overlay sustituyera al composer, el navegador quitaría del DOM el
+    elemento que recibió el `pointerdown` y dispararía `pointercancel` al
+    instante — con el dedo, no con el ratón —. El gesto moría antes de empezar.
+  */
+  expect(mic.isConnected).toBe(true)
+})
+
 test('con el dedo: mantener pulsado graba y soltar envía', async () => {
   stubPointer('coarse')
   const onSendAudio = vi.fn()

@@ -150,6 +150,11 @@ export function ChatComposer({
     del candado.
   */
   const axis = useRef<'none' | 'x' | 'y'>('none')
+  /** Centro del micrófono en pantalla: ancla del círculo grande y del candado. */
+  const [anchor, setAnchor] = useState({ x: 0, y: 0 })
+  // Mientras se vuelca el audio grabado no es «grabando»: sin esto la barra de
+  // grabación parpadea al soltar y parece que se fijó.
+  const [finishing, setFinishing] = useState(false)
   const detach = useRef<(() => void) | null>(null)
 
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
@@ -187,9 +192,14 @@ export function ChatComposer({
   }
 
   const stopAndSend = async () => {
-    const blob = await recorder.stop()
-    if (blob) onSendAudio?.(blob)
-    else toast.error('La grabación quedó vacía.')
+    setFinishing(true)
+    try {
+      const blob = await recorder.stop()
+      if (blob) onSendAudio?.(blob)
+      else toast.error('La grabación quedó vacía.')
+    } finally {
+      setFinishing(false)
+    }
   }
 
   /** Fin del gesto: suelta los escuchas del puntero y limpia el estado del dedo. */
@@ -211,6 +221,8 @@ export function ChatComposer({
   const onMicPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
     if (!touch || !canRecord || origin.current) return
     e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    setAnchor({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
     origin.current = { x: e.clientX, y: e.clientY }
     startedAt.current = performance.now()
     abandoned.current = false
@@ -289,9 +301,7 @@ export function ChatComposer({
     })
   }
 
-  if (hold) return <HoldToRecord seconds={recorder.seconds} dx={hold.dx} dy={hold.dy} />
-
-  if (recorder.isRecording) {
+  if (recorder.isRecording && !hold && !finishing) {
     return (
       <RecordingBar
         seconds={recorder.seconds}
@@ -301,8 +311,22 @@ export function ChatComposer({
     )
   }
 
+  /*
+    **El composer no se desmonta mientras el dedo está encima.** El overlay de
+    «mantener pulsado» se dibuja *sobre* él, no en su lugar.
+
+    Sustituirlo quitaba del DOM el botón que había recibido el `pointerdown`, y
+    eso —con el dedo, no con el ratón— dispara `pointercancel` al instante: el
+    gesto moría nada más empezar. Primero se leyó como «se cancela con cualquier
+    movimiento» y luego, al dejar de descartar en `pointercancel`, como «se
+    bloquea de una». El mismo bug con dos caras.
+  */
   return (
-    <form
+    <div className="relative">
+      {hold && (
+        <HoldToRecord seconds={recorder.seconds} dx={hold.dx} dy={hold.dy} anchor={anchor} />
+      )}
+      <form
       onSubmit={(e) => {
         e.preventDefault()
         submit()
@@ -376,6 +400,7 @@ export function ChatComposer({
           />
         )}
       </div>
-    </form>
+      </form>
+    </div>
   )
 }

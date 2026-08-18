@@ -34,12 +34,22 @@ export function HoldToRecord({
   seconds,
   dx,
   dy,
+  anchor,
 }: {
   seconds: number
   /** Desplazamiento del dedo, negativo hacia la izquierda. */
   dx: number
   /** Desplazamiento del dedo, negativo hacia arriba. */
   dy: number
+  /**
+   * Centro del micrófono del composer, en coordenadas de pantalla.
+   *
+   * El círculo grande y el candado se anclan **ahí**, medido, y no a la esquina
+   * del contenedor: el micrófono pequeño vive dentro de la caja de escribir y el
+   * grande es el doble de ancho, así que a ojo quedaban a seis píxeles el uno
+   * del otro y el dibujo saltaba bajo el dedo al empezar a grabar.
+   */
+  anchor: { x: number; y: number }
 }) {
   const slide = Math.max(dx, -CANCEL_AT)
   // Cuanto más cerca de cancelar, más se apaga el texto: el aviso de que va a pasar.
@@ -49,8 +59,8 @@ export function HoldToRecord({
   const toLock = Math.min(1, -dy / LOCK_AT)
 
   return (
-    <div className="bg-card border-t px-3 py-2.5">
-      <div className="relative flex h-11 items-center">
+    <div className="bg-card absolute inset-0 z-40 flex flex-col justify-center border-t px-3 py-2.5">
+      <div className="flex h-11 items-center">
         <div className="bg-secondary flex h-11 flex-1 items-center gap-3 rounded-full pr-16 pl-4">
           <span className="bg-destructive size-2 shrink-0 animate-pulse rounded-full" />
           <span className="text-sm tabular-nums">{formatDuration(seconds)}</span>
@@ -66,30 +76,37 @@ export function HoldToRecord({
           </div>
         </div>
 
-        {/*
-          El candado, encima del dedo. Sube con él para que se vea que es ahí
-          adonde hay que llegar, y se ilumina al llegar.
-        */}
-        <div
-          aria-hidden
-          className={cn(
-            'bg-secondary absolute right-1 bottom-16 flex flex-col items-center gap-1 rounded-full px-2 py-2.5 transition-colors',
-            toLock >= 1 ? 'text-brand ring-brand/40 ring-2' : 'text-muted-foreground',
-          )}
-          style={{ transform: `scale(${1 + toLock * 0.15})` }}
-        >
-          <Lock className="size-4" />
-          <ChevronUp className={cn('size-3', toLock < 1 && 'animate-bounce')} />
-        </div>
-
-        <span
-          aria-hidden
-          className="bg-primary text-primary-foreground absolute right-0 grid size-14 place-items-center rounded-full shadow-lg transition-transform"
-          style={{ transform: `translate(${slide / 3}px, ${lift / 2}px) scale(${1 + Math.min(seconds, 3) * 0.03})` }}
-        >
-          <Mic className="size-6" />
-        </span>
       </div>
+
+      {/* El candado, justo encima del micrófono. Se ilumina al llegar. */}
+      <div
+        aria-hidden
+        className={cn(
+          'bg-secondary fixed z-50 flex flex-col items-center gap-1 rounded-full px-2 py-2.5 transition-colors',
+          toLock >= 1 ? 'text-brand ring-brand/40 ring-2' : 'text-muted-foreground',
+        )}
+        style={{
+          left: anchor.x,
+          top: anchor.y - LOCK_AT - 28,
+          transform: `translate(-50%, -50%) scale(${1 + toLock * 0.15})`,
+        }}
+      >
+        <Lock className="size-4" />
+        <ChevronUp className={cn('size-3', toLock < 1 && 'animate-bounce')} />
+      </div>
+
+      {/* El micrófono grande, exactamente donde estaba el pequeño. */}
+      <span
+        aria-hidden
+        className="bg-primary text-primary-foreground fixed z-50 grid size-14 place-items-center rounded-full shadow-lg"
+        style={{
+          left: anchor.x,
+          top: anchor.y,
+          transform: `translate(calc(-50% + ${slide / 3}px), calc(-50% + ${lift / 2}px)) scale(${1 + Math.min(seconds, 3) * 0.03})`,
+        }}
+      >
+        <Mic className="size-6" />
+      </span>
     </div>
   )
 }
