@@ -6,6 +6,7 @@ import { KpiStrip, KpiTile } from '@/components/kpi-tile'
 import { Panel } from '@/components/panel'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { Chart } from '@/components/ui/chart'
+import { ErrorState } from '@/components/ui/error-state'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -44,7 +45,7 @@ export function ReportsResultsPage() {
   const currency = organization?.defaultCurrency
   const [period, setPeriod] = useState<Period>(() => defaultPeriod())
 
-  const { report: cashflow, isPending } = useCashflow(orgId, period)
+  const { report: cashflow, isPending, isError, error, refetch } = useCashflow(orgId, period)
   const { items: monthly, isPending: monthlyLoading } = useCashflowMonthly(orgId, 6)
   const { accounts, isPending: accountsLoading } = useAccountsReport(orgId, period)
   const { items: income, isPending: incomeLoading } = useIncomeByConcept(orgId, period)
@@ -117,6 +118,26 @@ export function ReportsResultsPage() {
       </div>
     </>
   )
+
+  /*
+    Un informe que no se pudo traer **no se pinta con ceros**. Con el backend
+    caído esta pantalla enseñaba «$0» en las seis cifras: no parecía rota,
+    parecía un negocio sin movimiento. Eso en una consola financiera no es un
+    hueco de diseño, es una respuesta falsa (§45).
+  */
+  if (isError && !cashflow) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <ErrorState
+          error={error}
+          title="No se pudo cargar el informe"
+          fallback="Vuelve a intentarlo en un momento."
+          onRetry={() => void refetch()}
+        />
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (

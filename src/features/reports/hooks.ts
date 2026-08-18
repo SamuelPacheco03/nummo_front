@@ -12,7 +12,6 @@ import {
   useGetApiV1OrganizationsOrgIdReportsPayablesSummary,
   useGetApiV1OrganizationsOrgIdReportsReceivablesAging,
   useGetApiV1OrganizationsOrgIdReportsReceivablesSummary,
-  useGetApiV1OrganizationsOrgIdReportsTopCreditors,
   useGetApiV1OrganizationsOrgIdReportsTopDebtors,
   useGetApiV1OrganizationsOrgIdReportsUpcomingPayables,
   useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables,
@@ -21,7 +20,6 @@ import type {
   AccountReport,
   AgingBucket,
   CashflowReport,
-  Creditor,
   Debtor,
   GetApiV1OrganizationsOrgIdReportsAccountsParams,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
@@ -109,11 +107,6 @@ export function useTopDebtors(orgId: string | undefined, limit = 5) {
 }
 
 /** A quién le debes más (proveedores por saldo vencido) — espejo de top-debtors. */
-export function useTopCreditors(orgId: string | undefined, limit = 5) {
-  const query = useGetApiV1OrganizationsOrgIdReportsTopCreditors(orgId ?? '', { limit }, enabled(orgId))
-  return { ...query, creditors: asArray<Creditor>(query.data?.data) }
-}
-
 export function useUpcomingReceivables(orgId: string | undefined, days = 30, limit = 5) {
   const query = useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables(orgId ?? '', { days, limit }, enabled(orgId))
   return { ...query, upcoming: asArray<UpcomingReceivable>(query.data?.data) }

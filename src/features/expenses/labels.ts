@@ -29,7 +29,7 @@ export const DISBURSEMENT_PURPOSE_LABELS: Record<string, string> = {
 
 export const RECURRENCE_LABELS: Record<string, string> = { MONTHLY: 'Mensual' }
 
-export function expenseStatusTone(status: string): StatusTone {
+function expenseStatusTone(status: string): StatusTone {
   switch (status) {
     case 'PAID':
       return 'success'

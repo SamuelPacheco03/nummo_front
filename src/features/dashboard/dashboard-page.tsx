@@ -8,6 +8,7 @@ import { AccountRows } from '@/features/reports/accounts-report'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { KpiStrip, KpiTile } from '@/components/kpi-tile'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NumiAppMark } from '@/features/assistant/numi-avatar'
 import { useNumiStore } from '@/features/assistant/numi-store'
@@ -174,9 +175,10 @@ export function DashboardPage() {
   const userName = user?.fullName
   const currency = organization?.defaultCurrency
 
-  const { summary: cxc, isPending: cxcLoading } = useReceivablesSummary(orgId)
-  const { summary: cxp, isPending: cxpLoading } = usePayablesSummary(orgId)
-  const { balances, isPending: balancesLoading } = useAccountBalances(orgId)
+  const { summary: cxc, isPending: cxcLoading, isError: cxcFailed, error: cxcError, refetch } =
+    useReceivablesSummary(orgId)
+  const { summary: cxp, isPending: cxpLoading, isError: cxpFailed } = usePayablesSummary(orgId)
+  const { balances, isPending: balancesLoading, isError: balancesFailed } = useAccountBalances(orgId)
   const { items: monthly, isPending: monthlyLoading } = useCashflowMonthly(orgId, 6)
   const { accounts, isPending: accountsLoading } = useAccountsReport(orgId, defaultPeriod())
   const { debtors, isPending: debtorsLoading } = useTopDebtors(orgId, 1)
@@ -224,6 +226,28 @@ export function DashboardPage() {
     upcomingLoading ||
     upcomingPayLoading ||
     movementsLoading
+
+  /*
+    Y **entero o nada también cuando falla**.
+
+    Con el servidor caído el Panel no se veía roto: se veía sano. Cuatro ceros,
+    «0 en mora» y, lo peor, «Nada vencido y nada que venza en los próximos días.
+    Todo al día» — una afirmación que la pantalla no tenía cómo saber. Alguien
+    cierra el día tranquilo con cartera vencida encima. Un error se dice (§45).
+  */
+  if ((cxcFailed || cxpFailed || balancesFailed) && !cxc && !cxp) {
+    return (
+      <div className="space-y-8">
+        <PageHeader title={greeting(userName)} description="Así se mueven tus finanzas hoy." />
+        <ErrorState
+          error={cxcError}
+          title="No se pudo cargar el panel"
+          fallback="Vuelve a intentarlo en un momento."
+          onRetry={() => void refetch()}
+        />
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (

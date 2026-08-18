@@ -882,7 +882,12 @@ siempre Cancelar + acción. Lo usan sedes, miembros y asistente; antes cada una 
 que a veces estaba y a veces no.
 
 En una palabra: **cuelga de una lista → cajón; es un formulario corto de ajustes → diálogo
-centrado.** Y «Configuración» aquí es literal, no un parecido: crear una cuenta por cobrar o un
+centrado.**
+
+**Y el velo de detrás es uno solo**, `--scrim` (`bg-scrim`), para los tres —cajón, diálogo y hoja—.
+Cada primitiva traía el suyo (`bg-black/50` en dos, `bg-slate-950/45` con desenfoque en la otra),
+así que el fondo cambiaba según qué lo hubiera abierto; y un `slate` crudo en un componente es lo
+que §2 prohíbe. Y «Configuración» aquí es literal, no un parecido: crear una cuenta por cobrar o un
 gasto son cinco campos igual de cortos, pero se abren desde la lista de cartera y **van al
 cajón** — lo hacen desde `AccountFormDrawer` (§94), uno solo para las dos caras.
 
@@ -2221,6 +2226,24 @@ Al **recargar con datos ya en pantalla** —cambiar el período de un informe—
 esqueleto: se deja lo anterior a la vista (`isPending && !report`). Parpadear a gris en cada tecla
 es peor que un dato un segundo viejo.
 
+## 45.2b. Un fallo no se pinta con ceros
+
+El Panel y Resultados enseñaban su esqueleto mientras cargaban y, **si la petición fallaba**,
+seguían adelante con `?? '0'`: cuatro ceros, «0 en mora» y —lo peor— «Nada vencido y nada que
+venza en los próximos días. Todo al día». Una afirmación que la pantalla no tenía cómo saber.
+
+No parecía rota: parecía un negocio sano y sin movimiento. Alguien cierra el día tranquilo con
+cartera vencida encima, y esa es la única clase de bug que una consola financiera no se puede
+permitir — el hueco visual se nota, la respuesta falsa no.
+
+**La regla:** si la consulta que da sentido a la pantalla falla y no hay dato anterior que enseñar,
+la pantalla es un `ErrorState` con reintentar. No un cero, no un vacío. El «entero o nada» de
+§45.1 vale también para el fallo: entero, esqueleto **o error**.
+
+Ojo con la condición: `isError && !dato`. Con el dato viejo en mano se prefiere enseñarlo a
+vaciar la pantalla —un informe de hace un minuto sigue siendo cierto—, y en una lista un fallo al
+pasar de página no debe borrar lo que ya se estaba leyendo.
+
 ## 45.2. La puerta de entrada no parpadea
 
 Mientras `GET /auth/me` está en vuelo **no se sabe** si hay sesión, y `isAuthenticated` todavía es
@@ -3430,7 +3453,6 @@ Todos son parte del sistema y deben reutilizarse:
 | `MoneyField` / `MoneyInput` | `components/money-field.tsx`, `ui/money-input.tsx` | Entrada de importes (crudo con punto, vista agrupada) |
 | `Chart` · `DonutChart` | `components/ui/chart.tsx` | **Las gráficas de la app** (Recharts envuelto) |
 | `MonthlyFlowChart` | `components/monthly-flow-chart.tsx` | Flujo mensual, en barras o línea |
-| `UpcomingList` | `components/` | Lista de vencimientos próximos |
 | `BrandMark` · `BrandLockup` | `components/brand-mark.tsx` | Marca |
 | `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |

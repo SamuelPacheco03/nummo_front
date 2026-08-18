@@ -9,7 +9,7 @@ export const RECEIVABLE_STATUS_LABELS: Record<string, string> = {
   WRITTEN_OFF: 'Castigada',
 }
 
-export function receivableStatusTone(status: string): StatusTone {
+function receivableStatusTone(status: string): StatusTone {
   switch (status) {
     case 'PAID':
       return 'success'

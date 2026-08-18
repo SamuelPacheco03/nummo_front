@@ -76,7 +76,7 @@ export interface SettlementCopy {
  * En la URL y no en el `state` del router porque así sobrevive a una recarga,
  * como el resto de los criterios de la app (§21.1). En español, como las rutas.
  */
-export const RETURN_PARAM = 'volver'
+const RETURN_PARAM = 'volver'
 
 /** Añade el «vuelve aquí» a un enlace de registrar. */
 export function withReturn(to: string, from: string): string {

@@ -30,6 +30,10 @@
   --radius: 0.625rem;
 
   --background: #f8fafc;
+  /* Velo detrás de lo que se abre encima (cajón, diálogo, hoja). Un solo valor
+     para los tres: antes cada primitiva traía el suyo y el fondo cambiaba según
+     qué lo hubiera abierto. */
+  --scrim: rgb(2 6 23 / 0.45);
   --foreground: #0f172a;
 
   --card: #ffffff;
@@ -109,6 +113,7 @@
 
 .dark {
   --background: #0b1220;
+  --scrim: rgb(2 6 23 / 0.65);
   --foreground: #f8fafc;
 
   --card: #111827;
@@ -172,6 +177,7 @@
 /* Expone los tokens como utilidades Tailwind (bg-primary, text-muted-foreground, rounded-lg…) */
 @theme inline {
   --color-background: var(--background);
+  --color-scrim: var(--scrim);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
