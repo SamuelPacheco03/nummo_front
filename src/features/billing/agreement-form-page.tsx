@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
+import { Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { ContactPicker } from '@/components/contact-picker'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Loader } from '@/components/ui/loader'
 import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
@@ -16,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { todayISODate } from '@/lib/format'
 import type { BillingAgreement } from '@/api/generated/model'
@@ -74,7 +77,8 @@ export function AgreementFormPage() {
   const { agreementId } = useParams()
   const isEdit = !!agreementId
   const navigate = useNavigate()
-  const { orgId } = useCurrentOrg()
+  const { orgId, role } = useCurrentOrg()
+  const canManage = canManageAgreements(role)
   const oid = orgId ?? ''
 
   const { agreement, isPending: loadingAgreement } = useAgreement(orgId, agreementId)
@@ -170,6 +174,23 @@ export function AgreementFormPage() {
 
   if (isEdit && loadingAgreement) {
     return <DetailDrawer closeTo={backTo} loading />
+  }
+
+  /*
+    Un acuerdo lo firma quien lleva la cartera: fuera operadores y lectores.
+    El formulario se abría por URL a cualquiera y el 403 llegaba al guardar
+    (§45). Aquí se dice antes de escribir nada.
+  */
+  if (!canManage) {
+    return (
+      <DetailDrawer closeTo={backTo} title={isEdit ? 'Editar acuerdo' : 'Nuevo acuerdo'}>
+        <EmptyState
+          Icon={Lock}
+          title="No puedes gestionar acuerdos"
+          description="Los acuerdos los llevan el dueño, un administrador o el contador. Pídeles que lo creen, o que te cambien el rol."
+        />
+      </DetailDrawer>
+    )
   }
 
   return (

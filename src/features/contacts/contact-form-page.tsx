@@ -1,16 +1,19 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
+import { Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Loader } from '@/components/ui/loader'
 import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { canEditContacts } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import type { Contact } from '@/api/generated/model'
@@ -85,7 +88,8 @@ export function ContactFormPage() {
   const { contactId } = useParams()
   const isEdit = !!contactId
   const navigate = useNavigate()
-  const { orgId } = useCurrentOrg()
+  const { orgId, role } = useCurrentOrg()
+  const canEdit = canEditContacts(role)
   const { contact, isPending: loadingContact } = useContact(orgId, contactId)
   const create = useCreateContact(orgId ?? '')
   const update = useUpdateContact(orgId ?? '')
@@ -140,6 +144,25 @@ export function ContactFormPage() {
 
   if (isEdit && loadingContact) {
     return <DetailDrawer closeTo={closeTo} loading />
+  }
+
+  /*
+    Un lector no crea ni edita contactos, y hasta ahora el formulario se le
+    abría entero por URL: rellenaba, enviaba y se llevaba un 403 (§45: los
+    permisos son un estado de pantalla, no una sorpresa al guardar). El API
+    sigue siendo el guard de verdad (§48); esto es no ofrecer lo que no se
+    puede hacer.
+  */
+  if (!canEdit) {
+    return (
+      <DetailDrawer closeTo={closeTo} title={isEdit ? 'Editar contacto' : 'Nuevo contacto'}>
+        <EmptyState
+          Icon={Lock}
+          title="No puedes editar contactos"
+          description="Tu rol es de solo lectura. Pídele a un administrador que te cambie el rol si necesitas crear o editar."
+        />
+      </DetailDrawer>
+    )
   }
 
   return (

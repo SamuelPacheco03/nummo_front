@@ -2232,6 +2232,21 @@ Al **recargar con datos ya en pantalla** —cambiar el período de un informe—
 esqueleto: se deja lo anterior a la vista (`isPending && !report`). Parpadear a gris en cada tecla
 es peor que un dato un segundo viejo.
 
+## 45.2c. Un formulario que no se puede guardar no se abre
+
+Las listas escondían bien sus botones según el rol, pero **los formularios de crear se abrían a
+cualquiera por URL**: un lector llegaba a «Nuevo contacto» o «Nuevo acuerdo» —por un enlace
+guardado, por el botón atrás—, lo rellenaba entero y el 403 aparecía **al guardar**, con el trabajo
+ya hecho.
+
+Esconder el botón de entrada no es guardar la pantalla. La regla: **la pantalla que escribe
+comprueba el permiso ella misma**, y si no lo hay enseña un `EmptyState` con candado en lugar del
+formulario y sin pie de acciones. El API sigue siendo el guard de verdad (§48); esto es no ofrecer
+lo que no se puede hacer.
+
+Ojo con quién puede qué, que no es «todo o nada»: un **operador** edita contactos pero **no**
+firma acuerdos. Se comprueba con las funciones de `roles.ts`, nunca comparando el rol a mano.
+
 ## 45.2b. Un fallo no se pinta con ceros
 
 El Panel y Resultados enseñaban su esqueleto mientras cargaban y, **si la petición fallaba**,
