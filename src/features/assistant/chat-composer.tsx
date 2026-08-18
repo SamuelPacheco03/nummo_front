@@ -3,7 +3,7 @@ import { ArrowUp, Mic, Paperclip, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
-import { CANCEL_AT, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
+import { CANCEL_AT, DEAD_ZONE, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
 import { formatDuration, useAudioRecorder } from './use-audio-recorder'
 
 /**
@@ -47,10 +47,19 @@ function ComposerAction({
       disabled={disabled}
       aria-label={label}
       title={label}
+      onContextMenu={(e) => e.preventDefault()}
       className={cn(
         'text-muted-foreground grid size-8 shrink-0 place-items-center rounded-full transition-colors',
         'hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
         'disabled:pointer-events-none disabled:opacity-40',
+        /*
+          `touch-none` es lo que hace que mantener pulsado funcione en un móvil.
+          Sin él, el navegador entiende que el dedo quiere desplazar el hilo,
+          se queda con el gesto y manda `pointercancel` a los pocos píxeles: la
+          grabación moría al primer temblor y al candado no se llegaba nunca.
+          `select-none` y el menú contextual, por la pulsación larga de Android.
+        */
+        'touch-none select-none',
       )}
     >
       <Icon className="size-[1.05rem]" />
@@ -133,6 +142,14 @@ export function ChatComposer({
   // La grabación arranca cuando el navegador da el micrófono, que puede tardar
   // más que el gesto entero. Si para entonces ya se soltó, no se graba nada.
   const abandoned = useRef(false)
+  /*
+    Eje del gesto. El primer movimiento que sale de la zona muerta decide si esto
+    va a ser «cancelar» (horizontal) o «fijar» (vertical), y a partir de ahí el
+    otro eje se ignora. Sin esto, subir el pulgar en diagonal —que es como sube
+    un pulgar— acumulaba desplazamiento a la izquierda y cancelaba a medio camino
+    del candado.
+  */
+  const axis = useRef<'none' | 'x' | 'y'>('none')
   const detach = useRef<(() => void) | null>(null)
 
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
@@ -197,13 +214,22 @@ export function ChatComposer({
     origin.current = { x: e.clientX, y: e.clientY }
     startedAt.current = performance.now()
     abandoned.current = false
+    axis.current = 'none'
     setHold({ dx: 0, dy: 0 })
 
     const onMove = (ev: PointerEvent) => {
       const from = origin.current
       if (!from) return
-      const dx = ev.clientX - from.x
-      const dy = ev.clientY - from.y
+      const mx = ev.clientX - from.x
+      const my = ev.clientY - from.y
+
+      if (axis.current === 'none') {
+        // Hasta salir de la zona muerta, el dedo no ha dicho nada todavía.
+        if (Math.hypot(mx, my) < DEAD_ZONE) return
+        axis.current = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'
+      }
+      const dx = axis.current === 'x' ? Math.min(mx, 0) : 0
+      const dy = axis.current === 'y' ? Math.min(my, 0) : 0
 
       // Fijada: el dedo se puede soltar y la grabación sigue sola.
       if (dy <= -LOCK_AT) {
@@ -216,7 +242,7 @@ export function ChatComposer({
         endHold()
         return
       }
-      setHold({ dx: Math.min(dx, 0), dy: Math.min(dy, 0) })
+      setHold({ dx, dy })
     }
 
     const onUp = () => {
@@ -234,10 +260,15 @@ export function ChatComposer({
       void stopAndSend()
     }
 
+    /*
+      `pointercancel` no es el usuario: es el sistema quedándose con el gesto
+      —una notificación, el gesto de volver del borde—. **No se tira la
+      grabación**: se fija, como si hubiera subido al candado. Perder lo que
+      alguien acaba de dictar porque el móvil vibró es el peor final posible; en
+      la barra de grabación ya decide si lo manda o lo descarta.
+    */
     const onCancel = () => {
       if (!origin.current) return
-      abandoned.current = true
-      recorder.cancel()
       endHold()
     }
 

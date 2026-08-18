@@ -5,7 +5,15 @@ import { formatDuration } from './use-audio-recorder'
 /** A cuántos píxeles a la izquierda se cancela. */
 export const CANCEL_AT = 120
 /** A cuántos píxeles hacia arriba se fija la grabación. */
-export const LOCK_AT = 72
+export const LOCK_AT = 56
+/**
+ * Lo que el dedo puede moverse sin que signifique nada.
+ *
+ * Nadie sostiene el pulgar quieto mientras habla, y sin esta zona muerta el
+ * temblor de la mano contaba como «deslizar»: la grabación se cancelaba sola a
+ * los dos segundos de empezar.
+ */
+export const DEAD_ZONE = 14
 /** Por debajo de esto fue un toque, no una grabación. */
 export const MIN_SECONDS = 0.7
 
@@ -18,8 +26,9 @@ export const MIN_SECONDS = 0.7
  * dictado a Numi se parece más a mandar un audio que a rellenar un formulario.
  *
  * La barra dice **las dos salidas a la vez**: el tiempo que llevas y cómo salir
- * sin mandar nada. Y el candado aparece solo cuando empiezas a subir, para no
- * ofrecer de entrada una opción que casi nadie usa.
+ * sin mandar nada. El candado está **desde el primer momento** —antes salía solo
+ * al empezar a subir, y una opción que no se ve no existe: nadie descubre que
+ * puede soltar el dedo—; se agranda y se enciende según te acercas.
  */
 export function HoldToRecord({
   seconds,
@@ -36,7 +45,8 @@ export function HoldToRecord({
   // Cuanto más cerca de cancelar, más se apaga el texto: el aviso de que va a pasar.
   const fade = 1 - Math.min(1, -slide / CANCEL_AT)
   const lift = Math.max(dy, -LOCK_AT)
-  const locking = dy < -8
+  // Cuánto falta para fijar, de 0 a 1. Manda el tamaño y el color del candado.
+  const toLock = Math.min(1, -dy / LOCK_AT)
 
   return (
     <div className="bg-card border-t px-3 py-2.5">
@@ -63,12 +73,13 @@ export function HoldToRecord({
         <div
           aria-hidden
           className={cn(
-            'bg-secondary text-muted-foreground absolute right-1 bottom-14 flex flex-col items-center gap-1 rounded-full px-2 py-2.5 transition-opacity',
-            locking ? 'opacity-100' : 'opacity-0',
+            'bg-secondary absolute right-1 bottom-16 flex flex-col items-center gap-1 rounded-full px-2 py-2.5 transition-colors',
+            toLock >= 1 ? 'text-brand ring-brand/40 ring-2' : 'text-muted-foreground',
           )}
+          style={{ transform: `scale(${1 + toLock * 0.15})` }}
         >
-          <Lock className={cn('size-4', dy <= -LOCK_AT && 'text-brand')} />
-          <ChevronUp className="size-3 animate-bounce" />
+          <Lock className="size-4" />
+          <ChevronUp className={cn('size-3', toLock < 1 && 'animate-bounce')} />
         </div>
 
         <span

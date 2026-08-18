@@ -1780,9 +1780,10 @@ RMS por tramo y no el máximo: un golpe de mesa dispara el pico y deja el resto 
 aplastada, mientras que la media cuadrática dibuja el volumen que de verdad se oye. Dos decimales,
 porque a ojo se ven idénticos y la onda entera cabe en 130 bytes.
 
-**El backend todavía no los guarda** (`contract/HANDOFF-audio-historial.md`). El front ya calcula,
-guarda en el hilo y lee lo que llegue; sin esos campos la nota se ve como antes, plana hasta que
-suene.
+El backend las guarda y las devuelve (`waveform`, `audioSeconds`), y un valor malformado se ignora
+en vez de tumbar la petición — así se pidió en `contract/HANDOFF-audio-historial.md` y así llegó.
+Una nota sin onda guardada sigue viéndose plana hasta que suene, que es el caso de las anteriores
+a esto.
 
 **La transcripción no se enseña.** Una nota de voz con su texto debajo se lee dos veces y ocupa el
 doble para decir lo mismo: si mandaste un audio fue porque no querías escribir, y que Numi conteste
@@ -1806,7 +1807,30 @@ Manteniendo pulsado hay tres salidas, y la barra las dice mientras pasan: **solt
 **subir** fija la grabación — a partir de ahí el dedo sobra y manda la barra de siempre, la misma
 que usa el ratón. Un toque de menos de 0,7 s no es una grabación: se descarta y se dice por qué.
 
-**Los escuchas del puntero van en `window`, no en el botón.** El botón **desaparece** en cuanto
+**El candado se ve desde el primer momento**, no al empezar a subir. Una opción que no se ve no
+existe: nadie descubre solo que puede soltar el dedo. Se agranda y se enciende según te acercas, y
+así el gesto se explica mientras lo haces.
+
+### Cuatro cosas sin las que «mantener pulsado» no funciona en un móvil
+
+Ninguna se nota cuando está; todas se notan cuando falta, y las cuatro juntas son la diferencia
+entre un gesto que responde y uno que se cancela solo.
+
+1. **`touch-none` en el botón.** Es la de fondo. Sin ella el navegador entiende que el dedo quiere
+   desplazar el hilo, se queda con el gesto y manda `pointercancel` a los pocos píxeles: la
+   grabación moría al primer temblor y al candado no se llegaba nunca.
+2. **Zona muerta de 14 px.** Nadie sostiene el pulgar quieto mientras habla. Sin ella el pulso de
+   la mano contaba como deslizar.
+3. **Eje bloqueado.** El primer movimiento que sale de la zona muerta decide si esto es cancelar
+   (horizontal) o fijar (vertical), y el otro eje se ignora a partir de ahí. Un pulgar sube
+   torcido, y sin esto acumulaba desplazamiento a la izquierda y cancelaba a medio camino del
+   candado.
+4. **`pointercancel` no tira la grabación, la fija.** No es el usuario: es el sistema quedándose
+   con el gesto —una notificación, el gesto de volver del borde—. Perder lo que alguien acaba de
+   dictar porque el móvil vibró es el peor final posible; que siga grabando y decida en la barra es
+   el menos malo.
+
+**Y los escuchas del puntero van en `window`, no en el botón.** El botón **desaparece** en cuanto
 empieza el gesto —la barra de grabación sustituye al composer entero—, así que atado a él el primer
 `pointermove` ya no llega a nadie: ni cancelar, ni fijar, ni soltar hacían nada, y el micrófono se
 quedaba abierto. Es el mismo error que el arrastre del lanzador de Numi (§87.5) con otra cara.

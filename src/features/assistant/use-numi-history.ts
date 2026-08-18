@@ -9,15 +9,6 @@ import type { AudioUrl, Conversation, MessageList } from '@/api/generated/model'
 import type { ChatMessage } from './types'
 import { sanitizePeaks } from './waveform'
 
-/**
- * Lo que el backend va a mandar con cada mensaje dictado y el contrato todavía
- * no declara: la onda de la voz y su duración
- * (`contract/HANDOFF-audio-historial.md`).
- *
- * Se lee así, con un puente, y no con un `any`: el día que `pnpm api:gen` traiga
- * los campos, este tipo sobra y `flattenMessagePages` los lee directo. Hasta
- * entonces la nota se dibuja plana, que es exactamente lo de hoy.
- */
 const CONVERSATIONS_PAGE = 20
 const MESSAGES_PAGE = 30
 /**

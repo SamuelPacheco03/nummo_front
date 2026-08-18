@@ -41,6 +41,7 @@ const press = (el: Element, x = 200, y = 700) =>
 const moveTo = (x: number, y: number) =>
   window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y }))
 const release = () => window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+const systemSteals = () => window.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true }))
 
 beforeEach(stubRecorder)
 afterEach(() => {
@@ -77,6 +78,56 @@ test('con el dedo: deslizar a la izquierda cancela sin enviar', async () => {
 
   await waitFor(() => expect(screen.queryByText('Desliza para cancelar')).not.toBeInTheDocument())
   expect(onSendAudio).not.toHaveBeenCalled()
+})
+
+test('con el dedo: el pulso de la mano no cancela nada', async () => {
+  stubPointer('coarse')
+  const onSendAudio = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={onSendAudio} />)
+
+  const started = performance.now()
+  press(screen.getByRole('button', { name: /mantén pulsado/i }), 200, 700)
+  await screen.findByText('Desliza para cancelar')
+
+  // Nadie sostiene el pulgar quieto mientras habla.
+  moveTo(194, 703)
+  moveTo(206, 696)
+  moveTo(198, 701)
+  expect(screen.getByText('Desliza para cancelar')).toBeInTheDocument()
+
+  vi.spyOn(performance, 'now').mockReturnValue(started + 2000)
+  release()
+  await waitFor(() => expect(onSendAudio).toHaveBeenCalledTimes(1))
+})
+
+test('con el dedo: subir en diagonal fija, no cancela', async () => {
+  stubPointer('coarse')
+  const onSendAudio = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={onSendAudio} />)
+
+  press(screen.getByRole('button', { name: /mantén pulsado/i }), 200, 700)
+  await screen.findByText('Desliza para cancelar')
+  // Un pulgar sube torcido: 40 px arriba y 30 a la izquierda. Manda el eje del
+  // primer movimiento, así que esto es «fijar» y no «cancelar».
+  moveTo(190, 690)
+  moveTo(170, 660)
+  moveTo(160, 640)
+
+  expect(await screen.findByText('Grabando…')).toBeInTheDocument()
+  expect(onSendAudio).not.toHaveBeenCalled()
+})
+
+test('si el sistema se queda con el gesto, la grabación no se pierde', async () => {
+  stubPointer('coarse')
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  press(screen.getByRole('button', { name: /mantén pulsado/i }))
+  await screen.findByText('Desliza para cancelar')
+  systemSteals()
+
+  // Sigue grabando, con sus botones: quien decide si se tira es la persona.
+  expect(await screen.findByText('Grabando…')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Cancelar grabación' })).toBeInTheDocument()
 })
 
 test('con el dedo: subir fija la grabación y soltar no la manda', async () => {
