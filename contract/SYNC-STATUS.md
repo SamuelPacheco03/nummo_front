@@ -129,7 +129,7 @@ Ambos son **`multipart/form-data`** con el archivo en el campo **`audio`** y ace
 
 > Esta línea decía «el audio no se almacena». Dejó de ser cierto cuando el contrato incorporó `hasAudio` y el endpoint de reproducción; queda corregida. **Cableado en el front** (§32.1 de `context.md`).
 
-**Pendiente de backend:** guardar y devolver la **onda** (`waveform`) y la **duración** (`audioSeconds`) de cada nota de voz, para que el historial dibuje sus subidas y bajadas sin descargar el audio. Especificado en `contract/HANDOFF-audio-historial.md`; el front ya está listo para recibirlos.
+**Cerrado.** La onda (`waveform`) y la duración (`audioSeconds`) ya viajan con cada nota de voz — ver «La onda de las notas de voz viaja con el mensaje» arriba. El front las calcula al grabar, las manda y las dibuja sin descargar el audio.
 
 ### Configuración del modelo de voz (OWNER/ADMIN)
 

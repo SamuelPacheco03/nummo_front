@@ -1,8 +1,8 @@
 # HANDOFF — Onda de las notas de voz (Frontend → Backend)
 
-**Fecha:** 2026-08-17 · **Estado: bloqueado en el backend.** El frontend ya está terminado: calcula
-la onda al grabar, la guarda con el mensaje en memoria y la dibuja en cuanto llegue del servidor.
-Lo único que falta es **persistirla y devolverla**.
+**Fecha:** 2026-08-17 · **Estado: ✅ resuelto.** El backend lo implementó (migración 0014) y el
+front ya manda la onda al grabar y la dibuja al releer. Se conserva por lo que explica —el porqué
+de los 32 valores, el formato y las validaciones—, no como trabajo pendiente.
 
 ## El problema, en una frase
 
@@ -81,10 +81,10 @@ Ojo con dos cosas que ya nos pasaron en otro sitio:
   tipos (`PendingAudioFields`) porque el contrato aún no los declara; **el día que estén en
   `openapi.json`, `pnpm api:gen` y se borra el puente**, sin más cambios.
 
-**Lo único que no está encendido es el envío** (punto 2): mandar un campo que el backend todavía no
-espera puede hacer que rechace la petición, y eso rompería los mensajes de voz que hoy funcionan.
-Es una línea en `sendAudio` (`features/assistant/hooks.ts`), y se enciende en cuanto confirmes que
-el endpoint los acepta.
+**El envío está encendido** desde que el backend confirmó que un valor malformado se ignora en vez
+de tumbar la petición. Se dejó apagado a propósito hasta tener esa confirmación: mandar un campo
+que el servidor no espera podía hacer que rechazara la petición y romper los mensajes de voz que
+ya funcionaban.
 
 ## Por qué 32 valores
 
