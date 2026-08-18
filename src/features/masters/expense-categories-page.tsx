@@ -4,16 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
+import { FormDialog } from '@/components/ui/form-dialog'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
@@ -115,55 +107,46 @@ function CategoryDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar categoría' : 'Nueva categoría'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <div className="grid grid-cols-[1fr_2fr] gap-3">
-            <Field label="Código" htmlFor="ec-code" error={errors.code?.message}>
-              <Input id="ec-code" {...register('code')} />
-            </Field>
-            <Field label="Nombre" htmlFor="ec-name" required error={errors.name?.message}>
-              <Input id="ec-name" placeholder="Servicios públicos" {...register('name')} />
-            </Field>
-          </div>
-          <Field
-            label="Ámbito"
-            htmlFor="ec-scope"
-            info="Negocio: gastos de la operación. Personal: gastos personales del titular (para separarlos en informes)."
-            error={errors.scope?.message}
-          >
-            <NativeSelect id="ec-scope" {...register('scope')}>
-              {SCOPES.map((s) => (
-                <option key={s} value={s}>
-                  {SCOPE_LABELS[s]}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Field label="Descripción" htmlFor="ec-desc" error={errors.description?.message}>
-            <Textarea id="ec-desc" rows={2} {...register('description')} />
-          </Field>
-          {isEdit && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
-              Activo
-            </label>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader size="sm" />}
-              {isEdit ? 'Guardar' : 'Crear'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? 'Editar categoría' : 'Nueva categoría'}
+      submitLabel={isEdit ? 'Guardar' : 'Crear'}
+      loading={busy}
+      onSubmit={onSubmit}
+    >
+      <div className="grid grid-cols-[1fr_2fr] gap-3">
+        <Field label="Código" htmlFor="ec-code" error={errors.code?.message}>
+          <Input id="ec-code" {...register('code')} />
+        </Field>
+        <Field label="Nombre" htmlFor="ec-name" required error={errors.name?.message}>
+          <Input id="ec-name" placeholder="Servicios públicos" {...register('name')} />
+        </Field>
+      </div>
+      <Field
+        label="Ámbito"
+        htmlFor="ec-scope"
+        info="Negocio: gastos de la operación. Personal: gastos personales del titular (para separarlos en informes)."
+        error={errors.scope?.message}
+      >
+        <NativeSelect id="ec-scope" {...register('scope')}>
+          {SCOPES.map((s) => (
+            <option key={s} value={s}>
+              {SCOPE_LABELS[s]}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      <Field label="Descripción" htmlFor="ec-desc" error={errors.description?.message}>
+        <Textarea id="ec-desc" rows={2} {...register('description')} />
+      </Field>
+      {isEdit && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
+          Activo
+        </label>
+      )}
+    </FormDialog>
   )
 }
 

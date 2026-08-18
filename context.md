@@ -877,9 +877,15 @@ de acciones.
 se abre **sobre una lista**: una ficha que se comparte por URL, unos filtros que se aplican a lo
 que sigue ahí al fondo. En Configuración no hay lista: son tres campos y un botón. Ahí va
 `FormDialog` (`components/ui/form-dialog.tsx`), centrado en las dos orientaciones, con el pie
-siempre Cancelar + acción. Lo usan sedes, miembros y asistente; antes cada una repetía su propio
-`Dialog` + `<form className="space-y-4">` + `DialogFooter` con etiquetas distintas y un `Loader`
-que a veces estaba y a veces no.
+siempre Cancelar + acción. **Lo usa toda Configuración**: sedes, miembros, asistente y los cuatro
+catálogos. Antes cada pantalla repetía su propio `Dialog` + `<form className="space-y-4">` +
+`DialogFooter` con etiquetas distintas y un `Loader` que a veces estaba y a veces no.
+
+Los catálogos tardaron en llegar y enseñan algo: **crear el componente compartido no termina el
+trabajo**. `FormDialog` nació para borrar esa copia y solo se adoptó en tres de siete sitios, así
+que durante un tiempo el repositorio tuvo a la vez la pieza y el duplicado que venía a sustituir —
+que es peor que no tenerla, porque el siguiente copia del vecino que encuentre. Al extraer algo, se
+migran **todos** los llamadores en el mismo commit, o se anota cuáles faltan.
 
 En una palabra: **cuelga de una lista → cajón; es un formulario corto de ajustes → diálogo
 centrado.**

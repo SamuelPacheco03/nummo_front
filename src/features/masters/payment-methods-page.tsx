@@ -4,16 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
+import { FormDialog } from '@/components/ui/form-dialog'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -93,42 +85,33 @@ function MethodDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar método' : 'Nuevo método de pago'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field label="Nombre" htmlFor="pm-name" required error={errors.name?.message}>
-            <Input id="pm-name" placeholder="Nequi, Bancolombia…" {...register('name')} />
-          </Field>
-          <Field label="Tipo" htmlFor="pm-type" error={errors.methodType?.message}>
-            <NativeSelect id="pm-type" {...register('methodType')}>
-              {METHOD_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {METHOD_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          {isEdit && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
-              Activo
-            </label>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader size="sm" />}
-              {isEdit ? 'Guardar' : 'Crear'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? 'Editar método' : 'Nuevo método de pago'}
+      submitLabel={isEdit ? 'Guardar' : 'Crear'}
+      loading={busy}
+      onSubmit={onSubmit}
+    >
+      <Field label="Nombre" htmlFor="pm-name" required error={errors.name?.message}>
+        <Input id="pm-name" placeholder="Nequi, Bancolombia…" {...register('name')} />
+      </Field>
+      <Field label="Tipo" htmlFor="pm-type" error={errors.methodType?.message}>
+        <NativeSelect id="pm-type" {...register('methodType')}>
+          {METHOD_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {METHOD_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      {isEdit && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
+          Activo
+        </label>
+      )}
+    </FormDialog>
   )
 }
 

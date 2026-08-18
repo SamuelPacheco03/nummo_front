@@ -4,16 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
+import { FormDialog } from '@/components/ui/form-dialog'
 import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -116,50 +108,41 @@ function ConceptDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar concepto' : 'Nuevo concepto'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <div className="grid grid-cols-[1fr_2fr] gap-3">
-            <Field label="Código" htmlFor="bc-code" error={errors.code?.message}>
-              <Input id="bc-code" {...register('code')} />
-            </Field>
-            <Field label="Nombre" htmlFor="bc-name" required error={errors.name?.message}>
-              <Input id="bc-name" placeholder="Mensualidad" {...register('name')} />
-            </Field>
-          </div>
-          <MoneyField
-            control={control}
-            name="defaultAmount"
-            label="Monto por defecto"
-            id="bc-amount"
-            hint="Opcional"
-            error={errors.defaultAmount?.message}
-            info="Si lo defines, se sugerirá como monto al crear una cuenta por cobrar con este concepto. Podrás cambiarlo."
-          />
-          <Field label="Descripción" htmlFor="bc-desc" error={errors.description?.message}>
-            <Textarea id="bc-desc" rows={2} {...register('description')} />
-          </Field>
-          {isEdit && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
-              Activo
-            </label>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader size="sm" />}
-              {isEdit ? 'Guardar' : 'Crear'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? 'Editar concepto' : 'Nuevo concepto'}
+      submitLabel={isEdit ? 'Guardar' : 'Crear'}
+      loading={busy}
+      onSubmit={onSubmit}
+    >
+      <div className="grid grid-cols-[1fr_2fr] gap-3">
+        <Field label="Código" htmlFor="bc-code" error={errors.code?.message}>
+          <Input id="bc-code" {...register('code')} />
+        </Field>
+        <Field label="Nombre" htmlFor="bc-name" required error={errors.name?.message}>
+          <Input id="bc-name" placeholder="Mensualidad" {...register('name')} />
+        </Field>
+      </div>
+      <MoneyField
+        control={control}
+        name="defaultAmount"
+        label="Monto por defecto"
+        id="bc-amount"
+        hint="Opcional"
+        error={errors.defaultAmount?.message}
+        info="Si lo defines, se sugerirá como monto al crear una cuenta por cobrar con este concepto. Podrás cambiarlo."
+      />
+      <Field label="Descripción" htmlFor="bc-desc" error={errors.description?.message}>
+        <Textarea id="bc-desc" rows={2} {...register('description')} />
+      </Field>
+      {isEdit && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
+          Activo
+        </label>
+      )}
+    </FormDialog>
   )
 }
 

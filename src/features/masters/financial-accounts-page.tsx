@@ -4,16 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
+import { FormDialog } from '@/components/ui/form-dialog'
 import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -106,70 +98,61 @@ function AccountDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar cuenta' : 'Nueva cuenta'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field label="Nombre" htmlFor="fa-name" required error={errors.name?.message}>
-            <Input id="fa-name" placeholder="Caja general" {...register('name')} />
-          </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Tipo" htmlFor="fa-type" error={errors.accountType?.message}>
-              <NativeSelect id="fa-type" {...register('accountType')}>
-                {ACCOUNT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {ACCOUNT_TYPE_LABELS[t]}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-            <Field label="Moneda" htmlFor="fa-currency" hint="3 letras" error={errors.currency?.message}>
-              <Input id="fa-currency" maxLength={3} placeholder="COP" {...register('currency')} />
-            </Field>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MoneyField
-              control={control}
-              name="openingBalance"
-              label="Saldo inicial"
-              id="fa-balance"
-              error={errors.openingBalance?.message}
-              info="Saldo con el que arranca la cuenta. Después los saldos reales se calculan desde los movimientos."
-            />
-            <Field label="Fecha del saldo" htmlFor="fa-date" error={errors.openingBalanceDate?.message}>
-              <Input id="fa-date" type="date" {...register('openingBalanceDate')} />
-            </Field>
-          </div>
-          <Field label="Sede" htmlFor="fa-branch" error={errors.branchId?.message}>
-            <NativeSelect id="fa-branch" {...register('branchId')}>
-              <option value="">Sin sede</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          {isEdit && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
-              Activa
-            </label>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy && <Loader size="sm" />}
-              {isEdit ? 'Guardar' : 'Crear'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? 'Editar cuenta' : 'Nueva cuenta'}
+      submitLabel={isEdit ? 'Guardar' : 'Crear'}
+      loading={busy}
+      onSubmit={onSubmit}
+    >
+      <Field label="Nombre" htmlFor="fa-name" required error={errors.name?.message}>
+        <Input id="fa-name" placeholder="Caja general" {...register('name')} />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Tipo" htmlFor="fa-type" error={errors.accountType?.message}>
+          <NativeSelect id="fa-type" {...register('accountType')}>
+            {ACCOUNT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {ACCOUNT_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field label="Moneda" htmlFor="fa-currency" hint="3 letras" error={errors.currency?.message}>
+          <Input id="fa-currency" maxLength={3} placeholder="COP" {...register('currency')} />
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <MoneyField
+          control={control}
+          name="openingBalance"
+          label="Saldo inicial"
+          id="fa-balance"
+          error={errors.openingBalance?.message}
+          info="Saldo con el que arranca la cuenta. Después los saldos reales se calculan desde los movimientos."
+        />
+        <Field label="Fecha del saldo" htmlFor="fa-date" error={errors.openingBalanceDate?.message}>
+          <Input id="fa-date" type="date" {...register('openingBalanceDate')} />
+        </Field>
+      </div>
+      <Field label="Sede" htmlFor="fa-branch" error={errors.branchId?.message}>
+        <NativeSelect id="fa-branch" {...register('branchId')}>
+          <option value="">Sin sede</option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      {isEdit && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
+          Activa
+        </label>
+      )}
+    </FormDialog>
   )
 }
 
