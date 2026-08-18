@@ -3056,7 +3056,7 @@ Sustituir o añadir una pieza base requiere solicitud expresa (ver sección 63).
 | --- | --- | --- |
 | **Vitest** | 4.1 | Tests unitarios y de componente (entorno jsdom). |
 | **Testing Library** (react · user-event · jest-dom) | — | Tests desde el punto de vista del usuario. |
-| **Playwright** | 1.62 | E2E (`e2e/smoke.spec.ts`, `e2e/numi.spec.ts`). |
+| **Playwright** | 1.62 | E2E (`smoke`, `numi`, `flujo-maestro`). Contra el backend real. |
 | **oxlint** | 1.75 | Linter. Reglas activas: `react/rules-of-hooks`, `react/only-export-components`. |
 
 ## 86.6. Scripts
@@ -3390,7 +3390,31 @@ usa una máscara, por qué `--primary` no se aclara en hover). Sigue ese estilo:
 | Utilidades puras (`lib/`) | Vitest | Todos los caminos, incluidos los bordes (`format`, `csv`, `errors`) |
 | Lógica de dominio (`roles.ts`, `utils.ts`) | Vitest | Reglas de permiso y de negocio del front |
 | Componentes con comportamiento | Testing Library | Lo que el usuario ve y hace, no el estado interno |
-| Flujos completos | Playwright | Login, navegación, Numi |
+| Flujos completos | Playwright | Login, navegación, Numi y **el ciclo del dinero** (§92.3) |
+
+## 92.3. El E2E del flujo maestro
+
+`e2e/flujo-maestro.spec.ts` es el único test que **mueve dinero de verdad**, contra `nummo-api`
+en :4010: crea un pagador, le firma un acuerdo, genera su mensualidad, la cobra a medias, causa la
+mora y la condona. Luego el espejo del gasto, una transferencia y que la caja lo refleje.
+
+Los unitarios prueban cada pantalla con el API simulado; este prueba lo único que ninguno puede:
+**que las piezas encajen con el backend real, en orden, y que lo que una pantalla escribe otra lo
+lea.**
+
+Dos reglas que salieron de encontrarse el E2E anterior podrido:
+
+- **Crea sus propios datos, con un sello único por ejecución.** El anterior afirmaba sobre la
+  siembra —«María Gómez», «Banco Principal», «COP 1.465.775,00»— y sobre nombres de secciones que
+  el rediseño cambió. Se puede correr dos veces seguidas sin limpiar nada.
+- **Afirma sobre lo que la pantalla promete, no sobre lo que hoy dice.** El `auth.setup.ts`
+  esperaba un encabezado «Panel» que dejó de existir cuando el tablero pasó a saludar por el
+  nombre: con eso caído, **la suite entera no llegaba ni a autenticarse**. Ahora espera a que el
+  shell esté montado, que es lo que de verdad significa «entré».
+
+**Un E2E que no se corre no protege nada, y este no se corría.** Si el CI no lo levanta, hay que
+levantarlo a mano de vez en cuando — y el día que una pantalla se rediseñe, se actualiza en el
+mismo commit, como cualquier otra prueba.
 
 ## 92.2. Cómo se prueba
 

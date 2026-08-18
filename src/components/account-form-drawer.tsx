@@ -139,6 +139,7 @@ export function AccountFormDrawer({
           error={errors.contactId && copy.contactMissing}
         >
           <ContactPicker
+            label={copy.contact}
             orgId={orgId}
             value={contactId || null}
             onChange={(id) => setValue('contactId', id ?? '', { shouldValidate: true })}

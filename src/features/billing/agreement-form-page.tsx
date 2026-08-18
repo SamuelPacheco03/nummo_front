@@ -193,6 +193,7 @@ export function AgreementFormPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Pagador" required error={errors.payerContactId?.message}>
                 <ContactPicker
+                  label="Pagador"
                   orgId={oid}
                   value={payerId || null}
                   onChange={(id) => setValue('payerContactId', id ?? '', { shouldValidate: true })}
@@ -201,6 +202,7 @@ export function AgreementFormPage() {
               </Field>
               <Field label="Beneficiario" hint="Opcional (ej. el estudiante)">
                 <ContactPicker
+                  label="Beneficiario"
                   orgId={oid}
                   value={beneficiaryId || null}
                   onChange={(id) => setValue('beneficiaryContactId', id ?? '')}

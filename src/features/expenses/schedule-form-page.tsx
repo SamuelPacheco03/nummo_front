@@ -152,6 +152,7 @@ export function ScheduleFormPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Proveedor" required error={errors.supplierContactId?.message}>
             <ContactPicker
+              label={'Proveedor'}
               orgId={oid}
               value={supplierId || null}
               onChange={(id) => setValue('supplierContactId', id ?? '', { shouldValidate: true })}

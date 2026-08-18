@@ -241,7 +241,13 @@ export function SettlementDrawer({
           </Field>
         ) : (
           <Field label={copy.party} required>
-            <ContactPicker orgId={oid} value={partyId} onChange={onPartyChange} allowClear />
+            <ContactPicker
+              label={copy.party}
+              orgId={oid}
+              value={partyId}
+              onChange={onPartyChange}
+              allowClear
+            />
           </Field>
         )}
 

@@ -443,6 +443,7 @@ export function AccountsList({
 
         <FilterField label={copy.contact}>
           <ContactPicker
+            label={copy.contact}
             orgId={orgId ?? ''}
             value={values.contacto || null}
             onChange={(contacto) => filter({ contacto: contacto ?? '' })}

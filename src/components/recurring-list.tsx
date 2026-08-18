@@ -298,6 +298,7 @@ export function RecurringList({
 
         <FilterField label={copy.party}>
           <ContactPicker
+            label={copy.party}
             orgId={orgId ?? ''}
             value={values.contacto || null}
             onChange={(contacto) => filter({ contacto: contacto ?? '' })}

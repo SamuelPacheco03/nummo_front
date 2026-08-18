@@ -1,45 +1,68 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Smoke E2E del flujo maestro (read-only sobre el seed):
- * login → el dashboard "cuadra" con la cartera/pagos/mora/transferencia sembrados
- * → navegación por las áreas de negocio. No muta datos.
+ * Smoke de lectura: cada área de negocio abre, con su encabezado y su contenido.
+ * No muta nada — el ciclo del dinero vive en `flujo-maestro.spec.ts`.
+ *
+ * **Afirma sobre lo que la pantalla promete, no sobre el seed.** La versión
+ * anterior comprobaba «Cartera vencida», «Top deudores», «Movimientos
+ * recientes» y «Banco Principal»: nombres de secciones que el rediseño cambió y
+ * de datos concretos de la siembra. Un E2E que se rompe cuando se renombra una
+ * tarjeta o se resiembra la base deja de correrse, y uno que no se corre no
+ * protege nada.
  */
 
-test('el dashboard cuadra con el seed', async ({ page }) => {
+test('el panel carga y muestra sus cifras', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible()
-  // KPIs de cartera vencida (suma de las 3 mensualidades de María con mora).
-  await expect(page.getByText('Cartera vencida')).toBeVisible()
-  await expect(page.getByText('COP 1.465.775,00').first()).toBeVisible()
-  // Top deudores + gráficas + movimientos.
-  await expect(page.getByText('María Gómez').first()).toBeVisible()
-  await expect(page.getByText('Ingresos por concepto')).toBeVisible()
-  await expect(page.getByText('Movimientos recientes')).toBeVisible()
+  // Saluda por el nombre, así que lo estable es que haya un <h1> y las cifras.
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect(page.getByText('Saldo disponible')).toBeVisible()
+  await expect(page.getByText('Por cobrar').first()).toBeVisible()
+  await expect(page.getByText('Flujo · últimos 6 meses')).toBeVisible()
+  // Si el backend falló, el panel lo dice en vez de pintar ceros (§45.2b).
+  await expect(page.getByRole('alert')).toHaveCount(0)
 })
 
-test('contactos muestra el seed', async ({ page }) => {
+test('contactos', async ({ page }) => {
   await page.goto('/contactos')
   await expect(page.getByRole('heading', { name: 'Contactos' })).toBeVisible()
-  await expect(page.getByText('María Gómez').first()).toBeVisible()
+  await expect(page.getByPlaceholder(/buscar/i)).toBeVisible()
 })
 
-test('cartera: cuentas por cobrar vencidas', async ({ page }) => {
+test('las dos caras de la cartera', async ({ page }) => {
   await page.goto('/cartera/cxc')
   await expect(page.getByRole('heading', { name: 'Cuentas por cobrar' })).toBeVisible()
-  // La fila de la tabla (no la opción del filtro, que está oculta).
-  await expect(page.locator('table').getByText('Vencida').first()).toBeVisible()
-})
+  await expect(page.getByPlaceholder(/pagador/i)).toBeVisible()
 
-test('caja: saldos y transferencia demo', async ({ page }) => {
-  await page.goto('/caja/cuentas')
-  await expect(page.getByRole('heading', { name: 'Caja' })).toBeVisible()
-  await expect(page.getByText('Banco Principal')).toBeVisible()
-  await expect(page.getByText('Transferir')).toBeVisible()
-})
-
-test('gastos: cuentas por pagar', async ({ page }) => {
   await page.goto('/gastos/cxp')
   await expect(page.getByRole('heading', { name: 'Cuentas por pagar' })).toBeVisible()
-  await expect(page.getByText('Arrendador Demo')).toBeVisible()
+  await expect(page.getByPlaceholder(/proveedor/i)).toBeVisible()
+})
+
+test('pagos y egresos', async ({ page }) => {
+  await page.goto('/cartera/pagos')
+  await expect(page.getByRole('heading', { name: 'Pagos' })).toBeVisible()
+
+  await page.goto('/gastos/egresos')
+  await expect(page.getByRole('heading', { name: 'Egresos' })).toBeVisible()
+})
+
+test('caja: saldos y la puerta de la transferencia', async ({ page }) => {
+  await page.goto('/caja/cuentas')
+  await expect(page.getByRole('heading', { name: 'Caja' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /transferir/i })).toBeVisible()
+})
+
+test('resultados', async ({ page }) => {
+  await page.goto('/informes/resultados')
+  await expect(page.getByRole('heading', { name: 'Resultados' })).toBeVisible()
+  await expect(page.getByText('Neto del período')).toBeVisible()
+})
+
+test('configuración y ayuda abren su navegación', async ({ page }) => {
+  await page.goto('/config/empresa')
+  await expect(page.getByRole('heading', { name: 'Empresa' })).toBeVisible()
+
+  await page.goto('/ayuda')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })

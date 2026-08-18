@@ -12,6 +12,7 @@ export function ContactPicker({
   orgId,
   value,
   onChange,
+  label,
   placeholder = 'Seleccionar contacto…',
   allowClear,
   invalid,
@@ -19,6 +20,14 @@ export function ContactPicker({
   orgId: string
   value: string | null
   onChange: (id: string | null) => void
+  /**
+   * Cómo se llama este selector. **Obligatorio de hecho**: sin él el
+   * `combobox` se anuncia por su contenido —«Seleccionar contacto…»— y dos
+   * pickers juntos, como el pagador y el beneficiario de un acuerdo, suenan
+   * exactamente igual. El `Field` de al lado no puede prestárselo: es un
+   * `<label>` y esto es un botón, no un campo nativo.
+   */
+  label: string
   placeholder?: string
   allowClear?: boolean
   invalid?: boolean
@@ -44,6 +53,7 @@ export function ContactPicker({
           type="button"
           variant="outline"
           role="combobox"
+          aria-label={label}
           aria-invalid={invalid}
           className="w-full justify-between gap-2 font-normal"
         >
