@@ -3501,6 +3501,7 @@ siempre son palabras y un endpoint, así que viajan como props:
 | Espejo | Componente compartido | Qué aporta cada lado |
 | --- | --- | --- |
 | Cuentas por cobrar / por pagar | `AccountsList` | `copy`, un hook que consulta su endpoint y sus acciones propias |
+| Aplicar anticipo de pago / de egreso | `AdvanceAllocationDialog` | `copy` (dos frases) y dos hooks: sus cuentas abiertas y su endpoint de reparto |
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
 | Pagos / egresos | `SettlementList`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 | Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
@@ -3510,9 +3511,9 @@ formulario vive una vez y cada página son ~120 líneas: sus palabras, su consul
 abiertas y su llamada al contrato. La lógica que no es de pantalla —qué cuenta admite dinero, qué
 entrega el formulario— vive en `lib/settlement.ts`, donde se puede probar sin montar nada.
 
-`AccountsList` fue el **último de los cuatro en llegar, y el que más caro salió**. Cuentas por
-cobrar y por pagar eran dos archivos de ~500 líneas **idénticos en un 64%**: las mismas seis
-columnas en el mismo orden, los mismos filtros, el mismo CSV. Compartían las dieciséis piezas de
+`AccountsList` fue el **cuarto en llegar, y el que más caro salió**. Cuentas por cobrar y por
+pagar eran dos archivos de ~500 líneas **idénticos en un 64%**: las mismas seis columnas en el
+mismo orden, los mismos filtros, el mismo CSV. Compartían las dieciséis piezas de
 `components/` y aun así estaban duplicadas — lo copiado no eran las piezas, era el montaje. Hoy la
 pantalla vive una vez (`components/accounts-list.tsx`) y cada cara son ~130 líneas.
 
@@ -3527,6 +3528,15 @@ deriva:
 
 Comprobarlo importó: la primera lectura fue «cuentas por pagar perdió los contadores por deriva».
 Mirar el contrato antes de arreglarlo evitó inventar un número.
+
+`AdvanceAllocationDialog` fue el quinto y el más pequeño: dos diálogos de ~150 líneas idénticos
+en dos tercios. Repartían el mismo anticipo con la misma aritmética —qué cuenta sigue abierta, el
+reparto automático por vencimiento, el total asignado, no dejar pasar más crédito del que hay— y
+solo se diferenciaban en dos frases y en cómo llama cada API a la cuenta (`receivableId` /
+`expenseId`). Que la aritmética del dinero viviera dos veces era justo lo que no debía pasar: un
+ajuste en el redondeo de un lado y el otro repartiendo distinto. Hoy el reparto vive una vez y
+cada cara son ~75 líneas de traducción: de dónde salen sus cuentas y cómo se llama cada una en el
+cuerpo del POST.
 
 Y al revés: **si tocas un lado del espejo, revisa el otro en el mismo commit.**
 
@@ -3586,6 +3596,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
 | `AccountsList` | `components/accounts-list.tsx` | **La lista de una cartera**, de cobro o de pago (§94.0) |
+| `AdvanceAllocationDialog` | `components/advance-allocation-dialog.tsx` | **Repartir un anticipo** entre cuentas abiertas, de cobro o de pago (§94.0) |
 | `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
 | `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
 | `HoldToRecord` | `features/assistant/hold-to-record.tsx` | Lo que se ve mientras se mantiene pulsado el micrófono (§32.2) |
