@@ -3417,7 +3417,7 @@ siempre son palabras y un endpoint, así que viajan como props:
 
 | Espejo | Componente compartido | Qué aporta cada lado |
 | --- | --- | --- |
-| Cuentas por cobrar / por pagar | `BalanceKpis`, `FilterSortField`, `DataList` | Etiquetas y su consulta |
+| Cuentas por cobrar / por pagar | `AccountsList` | `copy`, un hook que consulta su endpoint y sus acciones propias |
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
 | Pagos / egresos | `SettlementList`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 | Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
@@ -3427,7 +3427,32 @@ formulario vive una vez y cada página son ~120 líneas: sus palabras, su consul
 abiertas y su llamada al contrato. La lógica que no es de pantalla —qué cuenta admite dinero, qué
 entrega el formulario— vive en `lib/settlement.ts`, donde se puede probar sin montar nada.
 
+`AccountsList` fue el **último de los cuatro en llegar, y el que más caro salió**. Cuentas por
+cobrar y por pagar eran dos archivos de ~500 líneas **idénticos en un 64%**: las mismas seis
+columnas en el mismo orden, los mismos filtros, el mismo CSV. Compartían las dieciséis piezas de
+`components/` y aun así estaban duplicadas — lo copiado no eran las piezas, era el montaje. Hoy la
+pantalla vive una vez (`components/accounts-list.tsx`) y cada cara son ~130 líneas.
+
+**Dos diferencias entre esas dos caras son reales y viajan explícitas**, que es distinto de la
+deriva:
+
+- **Causar mora**, solo en cobrar. Es de dominio: a un proveedor no se le cobran intereses. Va en
+  `actions`, la lista de operaciones periódicas propias de un lado.
+- **Los contadores de las fichas de estado**, solo en cobrar. `PayablesSummary` no firma
+  `pendingCount` ni `partialCount`, así que las fichas de pagar van sin número — y eso es lo
+  correcto (§70: un dato que no se tiene no se inventa), no un olvido.
+
+Comprobarlo importó: la primera lectura fue «cuentas por pagar perdió los contadores por deriva».
+Mirar el contrato antes de arreglarlo evitó inventar un número.
+
 Y al revés: **si tocas un lado del espejo, revisa el otro en el mismo commit.**
+
+**Cómo se extrae uno de estos sin romperlo:** primero una suite de pruebas contra las **dos**
+pantallas tal como están —lo que ve el usuario y lo que sale hacia el API, nunca estructura
+interna—, y **una sola suite parametrizada**, que escribirla dos veces sería repetir en los tests
+el duplicado que se está quitando. Después se extrae. Si la suite sigue pasando **sin tocarla**,
+la extracción fue fiel; si hay que retocarla, algo cambió de comportamiento. Es la diferencia
+entre refactorizar y reescribir con los dedos cruzados.
 
 | Propuesto (§64) | En el código hoy | Ruta |
 | --- | --- | --- |
@@ -3476,6 +3501,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
+| `AccountsList` | `components/accounts-list.tsx` | **La lista de una cartera**, de cobro o de pago (§94.0) |
 | `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
 | `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
 | `HoldToRecord` | `features/assistant/hold-to-record.tsx` | Lo que se ve mientras se mantiene pulsado el micrófono (§32.2) |
