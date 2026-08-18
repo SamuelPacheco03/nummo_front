@@ -1,6 +1,35 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas.**
+**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero.**
+
+## 🆕 Idempotencia en todas las mutaciones de dinero — regenera con `pnpm api:gen`
+
+Salió de una auditoría del backend. `POST /payments` y `POST /disbursements` ya aceptaban
+`Idempotency-Key`; **ocho rutas más que también mueven dinero no lo hacían**, y un doble clic
+o un reintento las duplicaba:
+
+- `POST /financial-accounts/transfers`
+- `POST /payments/:id/allocations` · `POST /payments/:id/reverse`
+- `POST /disbursements/:id/allocations` · `POST /disbursements/:id/reverse`
+- `POST /receivables/:id/adjustments` · `POST /receivables/:id/waivers`
+- `POST /receivables/accrue-interest`
+
+**No hay que cambiar nada para que sigan funcionando.** La cabecera es opcional: sin ella el
+comportamiento es exactamente el de hoy. Lo que cambia es que ahora *se puede* mandar, y el
+contrato lo declara (más un `409` cuando la misma clave llega con un cuerpo distinto).
+
+Cómo mandarla, ya que orval no la pone en la firma —es un parámetro de cabecera opcional—
+pero `customFetch` respeta las de `request`:
+
+```ts
+const transfer = usePostApiV1OrganizationsOrgIdFinancialAccountsTransfers({
+  request: { headers: { 'idempotency-key': crypto.randomUUID() } },
+})
+```
+
+La clave se genera **una vez por intento del usuario**, no por reintento: esa es justo la
+gracia — reenviar la misma clave devuelve la respuesta original en vez de mover el dinero otra
+vez. Vale la pena al menos en transferencias y reversas, que son las que más duelen duplicadas.
 
 ## 🆕 Cómo está cada cuenta — regenera con `pnpm api:gen`
 

@@ -703,15 +703,20 @@ export type postApiV1OrganizationsOrgIdReceivablesIdWaiversResponse201 = {
   status: 201
 }
 
+export type postApiV1OrganizationsOrgIdReceivablesIdWaiversResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
 export type postApiV1OrganizationsOrgIdReceivablesIdWaiversResponseDefault = {
   data: ErrorResponse
-  status: Exclude<HTTPStatusCodes, 201>
+  status: Exclude<HTTPStatusCodes, 201 | 409>
 }
 
 export type postApiV1OrganizationsOrgIdReceivablesIdWaiversResponseSuccess = (postApiV1OrganizationsOrgIdReceivablesIdWaiversResponse201) & {
   headers: Headers;
 };
-export type postApiV1OrganizationsOrgIdReceivablesIdWaiversResponseError = (postApiV1OrganizationsOrgIdReceivablesIdWaiversResponseDefault) & {
+export type postApiV1OrganizationsOrgIdReceivablesIdWaiversResponseError = (postApiV1OrganizationsOrgIdReceivablesIdWaiversResponse409 | postApiV1OrganizationsOrgIdReceivablesIdWaiversResponseDefault) & {
   headers: Headers;
 };
 
@@ -796,15 +801,20 @@ export const usePostApiV1OrganizationsOrgIdReceivablesIdWaivers = <TError = Erro
   status: 201
 }
 
+export type postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
 export type postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponseDefault = {
   data: ErrorResponse
-  status: Exclude<HTTPStatusCodes, 201>
+  status: Exclude<HTTPStatusCodes, 201 | 409>
 }
 
 export type postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponseSuccess = (postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponse201) & {
   headers: Headers;
 };
-export type postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponseError = (postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponseDefault) & {
+export type postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponseError = (postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponse409 | postApiV1OrganizationsOrgIdReceivablesIdAdjustmentsResponseDefault) & {
   headers: Headers;
 };
 

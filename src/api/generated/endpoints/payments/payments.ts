@@ -417,15 +417,20 @@ export type postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponse200 = {
   status: 200
 }
 
+export type postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
 export type postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponseDefault = {
   data: ErrorResponse
-  status: Exclude<HTTPStatusCodes, 200>
+  status: Exclude<HTTPStatusCodes, 200 | 409>
 }
 
 export type postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponseSuccess = (postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponse200) & {
   headers: Headers;
 };
-export type postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponseError = (postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponseDefault) & {
+export type postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponseError = (postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponse409 | postApiV1OrganizationsOrgIdPaymentsIdAllocationsResponseDefault) & {
   headers: Headers;
 };
 
@@ -509,15 +514,20 @@ export const usePostApiV1OrganizationsOrgIdPaymentsIdAllocations = <TError = Err
   status: 200
 }
 
+export type postApiV1OrganizationsOrgIdPaymentsIdReverseResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
 export type postApiV1OrganizationsOrgIdPaymentsIdReverseResponseDefault = {
   data: ErrorResponse
-  status: Exclude<HTTPStatusCodes, 200>
+  status: Exclude<HTTPStatusCodes, 200 | 409>
 }
 
 export type postApiV1OrganizationsOrgIdPaymentsIdReverseResponseSuccess = (postApiV1OrganizationsOrgIdPaymentsIdReverseResponse200) & {
   headers: Headers;
 };
-export type postApiV1OrganizationsOrgIdPaymentsIdReverseResponseError = (postApiV1OrganizationsOrgIdPaymentsIdReverseResponseDefault) & {
+export type postApiV1OrganizationsOrgIdPaymentsIdReverseResponseError = (postApiV1OrganizationsOrgIdPaymentsIdReverseResponse409 | postApiV1OrganizationsOrgIdPaymentsIdReverseResponseDefault) & {
   headers: Headers;
 };
 

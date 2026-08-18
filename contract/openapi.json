@@ -2944,6 +2944,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3099,6 +3106,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -3118,6 +3132,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReceivableAdjustment"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -3166,6 +3190,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -3185,6 +3216,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReceivableAdjustment"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -3721,6 +3762,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -3740,6 +3788,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaymentDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -3788,6 +3846,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3797,6 +3862,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaymentDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -5345,6 +5420,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -5364,6 +5446,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DisbursementDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -5412,6 +5504,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5421,6 +5520,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DisbursementDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -5603,6 +5712,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -5622,6 +5738,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AccountTransfer"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }

@@ -318,15 +318,20 @@ export type postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponse201 = {
   status: 201
 }
 
+export type postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
 export type postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponseDefault = {
   data: ErrorResponse
-  status: Exclude<HTTPStatusCodes, 201>
+  status: Exclude<HTTPStatusCodes, 201 | 409>
 }
 
 export type postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponseSuccess = (postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponse201) & {
   headers: Headers;
 };
-export type postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponseError = (postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponseDefault) & {
+export type postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponseError = (postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponse409 | postApiV1OrganizationsOrgIdFinancialAccountsTransfersResponseDefault) & {
   headers: Headers;
 };
 
