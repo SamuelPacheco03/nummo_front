@@ -1,179 +1,98 @@
-import { useMemo, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
-import { Ban, Coins, MoreHorizontal, XCircle } from 'lucide-react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
+import { useMemo } from 'react'
+import { useParams } from 'react-router'
+import { Coins } from 'lucide-react'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { StatusBadge } from '@/components/ui/status-badge'
-import { useContact } from '@/features/contacts/hooks'
+  AccountDetail,
+  type AccountDetailCopy,
+  type AccountDetailQuery,
+} from '@/components/account-detail'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
-import { formatAmount, formatDateHuman } from '@/lib/format'
-import { withReturn } from '@/lib/settlement'
 import { expenseStatus } from './labels'
 import { useCancelExpense, useExpense, useWriteOffExpense } from './hooks'
 
 const LIST = '/gastos/cxp'
-const CLOSED = new Set(['CANCELLED', 'WRITTEN_OFF'])
 
-/** Ficha de una cuenta por pagar. Abre como cajón sobre la lista. */
+const COPY: AccountDetailCopy = {
+  entity: 'Cuenta por pagar',
+  notFound: 'No se encontró el gasto.',
+  fallbackTitle: 'Gasto',
+  settleLabel: 'Registrar egreso',
+  issueLabel: 'Emitido',
+  cancelItem: 'Cancelar gasto',
+  cancelTitle: 'Cancelar gasto',
+  cancelDescription: 'El gasto dejará de estar activo. No se puede deshacer.',
+  canceled: 'Gasto cancelado',
+  writeOffTitle: 'Castigar gasto',
+  writeOffDescription: 'Se marca como no pagadero (write-off). No se puede deshacer.',
+  writtenOff: 'Gasto castigado',
+}
+
+/**
+ * Ficha de una cuenta por pagar. Abre como cajón sobre la lista.
+ *
+ * La ficha vive en `AccountDetail`, compartida con cuentas por cobrar (§94.0).
+ * Esto solo traduce: de dónde sale el gasto, su categoría y cómo se cierra. Sin
+ * mora ni ajustes — eso es de la otra cara.
+ */
 export function ExpenseDetailPage() {
   const { expenseId } = useParams()
-  const { pathname } = useLocation()
-  const { orgId, role } = useCurrentOrg()
-  const canPay = canEditContacts(role)
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
 
   const { detail, isPending, isError, error } = useExpense(orgId, expenseId)
-  const cancel = useCancelExpense(orgId ?? '')
-  const writeOff = useWriteOffExpense(orgId ?? '')
-  const [cancelOpen, setCancelOpen] = useState(false)
-  const [writeOffOpen, setWriteOffOpen] = useState(false)
-
   const e = detail?.expense
-  const { contact: supplier } = useContact(orgId, e?.supplierContactId)
+  const b = detail?.balance
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
     pageSize: 100,
     sort: 'name',
     order: 'asc',
   })
-  const categoryName = useMemo(
+  const catalogName = useMemo(
     () => categories.find((c) => c.id === e?.expenseCategoryId)?.name,
     [categories, e],
   )
 
-  if (isPending) return <DetailDrawer closeTo={LIST} loading />
-  if (isError || !detail || !e) {
-    return (
-      <DetailDrawer
-        closeTo={LIST}
-        title="Cuenta por pagar"
-        error={getErrorMessage(error, 'No se encontró el gasto.')}
-      />
-    )
+  const query: AccountDetailQuery = {
+    data:
+      detail && e
+        ? {
+            id: e.id,
+            contactId: e.supplierContactId,
+            catalogName,
+            status: b?.displayStatus ?? e.state,
+            currency: e.currency,
+            originalAmount: b?.originalAmount ?? e.originalAmount,
+            paidTotal: b?.paidTotal,
+            balance: b?.balance ?? e.originalAmount,
+            dueDate: e.dueDate,
+            issueDate: e.issueDate,
+            notes: e.notes,
+            cancellationReason: e.cancellationReason,
+          }
+        : undefined,
+    isPending,
+    isError,
+    error,
   }
 
-  const b = detail.balance
-  const status = b?.displayStatus ?? e.state
-  const isClosed = CLOSED.has(status)
-
-  const runClose = async (action: typeof cancel | typeof writeOff, okMsg: string, close: () => void) => {
-    try {
-      await action.mutateAsync({ orgId: orgId ?? '', id: e.id, data: {} })
-      toast.success(okMsg)
-      close()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
+  const cancel = useCancelExpense(orgId ?? '')
+  const writeOff = useWriteOffExpense(orgId ?? '')
+  const args = { orgId: orgId ?? '', id: expenseId ?? '', data: {} }
+  const close = {
+    cancel: { isPending: cancel.isPending, run: () => cancel.mutateAsync(args) },
+    writeOff: { isPending: writeOff.isPending, run: () => writeOff.mutateAsync(args) },
   }
 
   return (
-    <>
-      <DetailDrawer
-        closeTo={LIST}
-        title={supplier?.displayName ?? 'Gasto'}
-        meta={
-          <span className="flex items-center gap-2">
-            {categoryName ?? '—'}
-            <span className="text-border">·</span>
-            <StatusBadge {...expenseStatus(status)} />
-          </span>
-        }
-        // La cifra que se viene a consultar es el saldo, no el valor original.
-        amount={formatAmount(b?.balance ?? e.originalAmount, e.currency)}
-        actions={
-          <>
-            {canPay && !isClosed && (
-              <Button asChild size="sm">
-                <Link
-                  to={withReturn(`/gastos/egresos/nuevo?supplier=${e.supplierContactId}`, pathname)}
-                >
-                  <Coins aria-hidden className="size-4" />
-                  Registrar egreso
-                </Link>
-              </Button>
-            )}
-            {/*
-              Pagar es lo que se viene a hacer; cerrar la cuenta es la excepción
-              y no debe quedar a la misma altura visual (igual que en su espejo).
-            */}
-            {canManage && !isClosed && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <MoreHorizontal aria-hidden className="size-4" />
-                    Más
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => setCancelOpen(true)}>
-                    <XCircle className="size-4" />
-                    Cancelar gasto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
-                    <Ban className="size-4" />
-                    Castigar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </>
-        }
-      >
-        <DetailSection title="Saldo">
-          <DetailRows>
-            <DetailRow label="Valor original">
-              {formatAmount(b?.originalAmount ?? e.originalAmount, e.currency)}
-            </DetailRow>
-            {b && Number(b.paidTotal) !== 0 && (
-              <DetailRow label="Pagado">− {formatAmount(b.paidTotal, e.currency)}</DetailRow>
-            )}
-            <DetailRow label="Saldo" strong>
-              {formatAmount(b?.balance ?? e.originalAmount, e.currency)}
-            </DetailRow>
-          </DetailRows>
-        </DetailSection>
-
-        <DetailSection title="Detalle">
-          <DetailRows>
-            <DetailRow label="Vence">{formatDateHuman(e.dueDate)}</DetailRow>
-            <DetailRow label="Emitido">{formatDateHuman(e.issueDate)}</DetailRow>
-            <DetailRow label="Notas">{e.notes}</DetailRow>
-            <DetailRow label="Motivo cierre">{e.cancellationReason}</DetailRow>
-          </DetailRows>
-        </DetailSection>
-      </DetailDrawer>
-
-      <ConfirmDialog
-        open={cancelOpen}
-        onOpenChange={setCancelOpen}
-        title="Cancelar gasto"
-        description="El gasto dejará de estar activo. No se puede deshacer."
-        confirmLabel="Cancelar gasto"
-        destructive
-        loading={cancel.isPending}
-        onConfirm={() => runClose(cancel, 'Gasto cancelado', () => setCancelOpen(false))}
-      />
-      <ConfirmDialog
-        open={writeOffOpen}
-        onOpenChange={setWriteOffOpen}
-        title="Castigar gasto"
-        description="Se marca como no pagadero (write-off). No se puede deshacer."
-        confirmLabel="Castigar"
-        destructive
-        loading={writeOff.isPending}
-        onConfirm={() => runClose(writeOff, 'Gasto castigado', () => setWriteOffOpen(false))}
-      />
-    </>
+    <AccountDetail
+      listTo={LIST}
+      copy={COPY}
+      statusOf={expenseStatus}
+      settleTo={(supplierId) => `/gastos/egresos/nuevo?supplier=${supplierId}`}
+      settleIcon={Coins}
+      query={query}
+      close={close}
+    />
   )
 }

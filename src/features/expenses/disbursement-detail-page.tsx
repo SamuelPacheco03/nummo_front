@@ -1,172 +1,98 @@
-import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import { Undo2, Wallet } from 'lucide-react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { StatusBadge } from '@/components/ui/status-badge'
+import { useParams } from 'react-router'
 import {
-  DetailDrawer,
-  DetailEmpty,
-  DetailRow,
-  DetailRows,
-  DetailSection,
-} from '@/components/ui/detail-drawer'
-import { useContact } from '@/features/contacts/hooks'
-import { usePaymentMethods } from '@/features/masters/hooks'
+  SettlementDetail,
+  type SettlementDetailCopy,
+  type SettlementDetailQuery,
+} from '@/components/settlement-detail'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
-import { useIdempotencyKey } from '@/lib/idempotency'
-import { formatAmount, formatDateHuman } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
 import { ApplySupplierAdvanceDialog } from './apply-supplier-advance-dialog'
 import { useDisbursement, useReverseDisbursement } from './hooks'
 
 const LIST = '/gastos/egresos'
 
-/** Ficha de un egreso. Abre como cajón sobre la lista (ruta hija de /gastos/egresos). */
+const COPY: SettlementDetailCopy = {
+  entity: 'Egreso',
+  notFound: 'No se encontró el egreso.',
+  direct: 'Egreso directo',
+  dateLabel: 'Fecha',
+  allocationsTitle: 'Aplicado a gastos',
+  allocationLink: 'Ver gasto',
+  reverseTitle: 'Revertir egreso',
+  reverseDescription:
+    'Se genera un movimiento de reversión y el saldo se recalcula. No borra historia.',
+  reversed: 'Egreso reversado',
+}
+
+/**
+ * Ficha de un egreso. Abre como cajón sobre la lista (ruta hija de /gastos/egresos).
+ *
+ * Es el espejo de la ficha de pagos: la pantalla es la misma y vive en
+ * `SettlementDetail` (§94.0). Esto solo traduce de dónde sale el egreso, cómo se
+ * reversa y a dónde llevan sus aplicaciones.
+ */
 export function DisbursementDetailPage() {
   const { disbursementId } = useParams()
-  const { orgId, role } = useCurrentOrg()
-  const canReverse = canManageAgreements(role)
-  const canApply = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
 
   const { detail, isPending, isError, error } = useDisbursement(orgId, disbursementId)
-  const idem = useIdempotencyKey()
-  const reverse = useReverseDisbursement(orgId ?? '', idem.key)
-  const [reverseOpen, setReverseOpen] = useState(false)
-  const [applyOpen, setApplyOpen] = useState(false)
-
   const d = detail?.disbursement
-  const { contact: supplier } = useContact(orgId, d?.supplierContactId ?? undefined)
-  const { items: methods } = usePaymentMethods(orgId, {
-    page: 1,
-    pageSize: 100,
-    sort: 'name',
-    order: 'asc',
-  })
-  const methodName = useMemo(() => methods.find((m) => m.id === d?.paymentMethodId)?.name, [methods, d])
 
-  if (isPending) return <DetailDrawer closeTo={LIST} loading />
-  if (isError || !detail || !d) {
-    return (
-      <DetailDrawer
-        closeTo={LIST}
-        title="Egreso"
-        error={getErrorMessage(error, 'No se encontró el egreso.')}
-      />
-    )
+  const query: SettlementDetailQuery = {
+    data:
+      detail && d
+        ? {
+            id: d.id,
+            contactId: d.supplierContactId,
+            purposeLabel: DISBURSEMENT_PURPOSE_LABELS[d.purpose] ?? d.purpose,
+            status: d.status,
+            amount: d.amount,
+            date: d.disbursedAt,
+            paymentMethodId: d.paymentMethodId,
+            reference: d.reference,
+            notes: d.notes,
+            unallocatedAmount: detail.unallocated.unallocatedAmount,
+            allocations: detail.allocations.map((a) => ({
+              id: a.id,
+              targetId: a.expenseId,
+              allocatedAt: a.allocatedAt,
+              amount: a.amount,
+            })),
+          }
+        : undefined,
+    isPending,
+    isError,
+    error,
   }
 
-  const reversed = d.status === 'REVERSED'
-  const unassigned = Number(detail.unallocated.unallocatedAmount) || 0
-
-  const onReverse = async () => {
-    try {
-      await reverse.mutateAsync({ orgId: orgId ?? '', id: d.id })
-      toast.success('Egreso reversado')
-      idem.renew()
-      setReverseOpen(false)
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo reversar'))
+  const useReverse = (idempotencyKey: string) => {
+    const reverse = useReverseDisbursement(orgId ?? '', idempotencyKey)
+    return {
+      isPending: reverse.isPending,
+      reverse: () => reverse.mutateAsync({ orgId: orgId ?? '', id: disbursementId ?? '' }),
     }
   }
 
   return (
-    <>
-      <DetailDrawer
-        closeTo={LIST}
-        title={supplier?.displayName ?? 'Egreso directo'}
-        meta={
-          <span className="flex items-center gap-2">
-            {DISBURSEMENT_PURPOSE_LABELS[d.purpose] ?? d.purpose}
-            <span className="text-border">·</span>
-            <StatusBadge {...disbursementStatus(d.status)} />
-          </span>
-        }
-        amount={
-          <span className={cn(reversed && 'text-muted-foreground line-through')}>
-            {formatAmount(d.amount)}
-          </span>
-        }
-        actions={
-          <>
-            {canApply && !reversed && unassigned > 0 && d.supplierContactId && (
-              <Button size="sm" onClick={() => setApplyOpen(true)}>
-                <Wallet className="size-4" />
-                Aplicar anticipo
-              </Button>
-            )}
-            {canReverse && !reversed && (
-              <Button variant="outline" size="sm" onClick={() => setReverseOpen(true)}>
-                <Undo2 className="size-4" />
-                Revertir
-              </Button>
-            )}
-          </>
-        }
-      >
-        {unassigned > 0 && !reversed && (
-          <div className="border-warning/40 bg-warning/5 rounded-lg border px-3.5 py-2.5 text-sm">
-            Crédito sin asignar:{' '}
-            <span className="nums font-semibold">
-              {formatAmount(detail.unallocated.unallocatedAmount)}
-            </span>
-          </div>
-        )}
-
-        <DetailSection title="Resumen">
-          <DetailRows>
-            <DetailRow label="Fecha">{formatDateHuman(d.disbursedAt)}</DetailRow>
-            <DetailRow label="Método">{methodName ?? '—'}</DetailRow>
-            <DetailRow label="Referencia">{d.reference}</DetailRow>
-            <DetailRow label="Notas">{d.notes}</DetailRow>
-          </DetailRows>
-        </DetailSection>
-
-        <DetailSection title={`Aplicado a gastos (${detail.allocations.length})`}>
-          {detail.allocations.length === 0 ? (
-            <DetailEmpty>Sin asignaciones.</DetailEmpty>
-          ) : (
-            <DetailRows>
-              {detail.allocations.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 px-3.5 py-2.5 text-sm">
-                  <Link to={`/gastos/cxp/${a.expenseId}`} className="text-brand hover:underline">
-                    Ver gasto
-                  </Link>
-                  <span className="nums text-muted-foreground text-xs">
-                    {formatDateHuman(a.allocatedAt)}
-                  </span>
-                  <span className="nums ml-auto font-medium">{formatAmount(a.amount)}</span>
-                </div>
-              ))}
-            </DetailRows>
-          )}
-        </DetailSection>
-      </DetailDrawer>
-
-      {orgId && (
-        <ApplySupplierAdvanceDialog
-          orgId={orgId}
-          disbursementId={d.id}
-          supplierId={d.supplierContactId}
-          available={detail.unallocated.unallocatedAmount}
-          open={applyOpen}
-          onOpenChange={setApplyOpen}
-        />
-      )}
-      <ConfirmDialog
-        open={reverseOpen}
-        onOpenChange={setReverseOpen}
-        title="Revertir egreso"
-        description="Se genera un movimiento de reversión y el saldo se recalcula. No borra historia."
-        confirmLabel="Revertir"
-        destructive
-        loading={reverse.isPending}
-        onConfirm={onReverse}
-      />
-    </>
+    <SettlementDetail
+      listTo={LIST}
+      targetTo={(expenseId) => `/gastos/cxp/${expenseId}`}
+      copy={COPY}
+      statusOf={disbursementStatus}
+      query={query}
+      useReverse={useReverse}
+      applyDialog={(open, onOpenChange, disbursement) =>
+        orgId && (
+          <ApplySupplierAdvanceDialog
+            orgId={orgId}
+            disbursementId={disbursement.id}
+            supplierId={disbursement.contactId}
+            available={disbursement.unallocatedAmount}
+            open={open}
+            onOpenChange={onOpenChange}
+          />
+        )
+      }
+    />
   )
 }

@@ -3500,10 +3500,10 @@ siempre son palabras y un endpoint, así que viajan como props:
 
 | Espejo | Componente compartido | Qué aporta cada lado |
 | --- | --- | --- |
-| Cuentas por cobrar / por pagar | `AccountsList` | `copy`, un hook que consulta su endpoint y sus acciones propias |
+| Cuentas por cobrar / por pagar | `AccountsList` (lista), `AccountDetail` (ficha) | `copy`, un hook que consulta su endpoint y sus acciones propias |
 | Aplicar anticipo de pago / de egreso | `AdvanceAllocationDialog` | `copy` (dos frases) y dos hooks: sus cuentas abiertas y su endpoint de reparto |
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
-| Pagos / egresos | `SettlementList`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
+| Pagos / egresos | `SettlementList`, `SettlementDetail`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 | Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
 
 `SettlementDrawer` nació de dos archivos de ~310 líneas idénticos salvo por eso. Hoy el
@@ -3537,6 +3537,23 @@ solo se diferenciaban en dos frases y en cómo llama cada API a la cuenta (`rece
 ajuste en el redondeo de un lado y el otro repartiendo distinto. Hoy el reparto vive una vez y
 cada cara son ~75 líneas de traducción: de dónde salen sus cuentas y cómo se llama cada una en el
 cuerpo del POST.
+
+Las **fichas** llegaron después que las listas y con dos formas distintas de parecerse.
+
+`SettlementDetail` —la ficha de un pago y la de un egreso— eran dos archivos calcados línea por
+línea: el mismo encabezado, el mismo aviso de crédito sin asignar, la misma lista de
+aplicaciones y la misma reversión. Cambiaban una docena de palabras y a dónde apunta cada
+enlace. Ahí no había nada que decidir: se juntaron enteras.
+
+`AccountDetail` —la ficha de una cuenta por cobrar y la de una por pagar— es el caso
+interesante, porque **no son iguales y no debían serlo**. Comparten el esqueleto: encabezado con
+el saldo como cifra protagonista, desglose, detalle, el botón de saldar con su «volver» y el
+menú de cerrar la cuenta. Pero cobrar tiene mora, causaciones y ajustes, y pagar no —a un
+proveedor no se le cobran intereses—. La tentación era extraer «casi todo» y dejar la diferencia
+disimulada con banderas. Va al revés: el esqueleto se comparte y lo propio entra por **slots
+declarados** (`menuItems`, `afterBalance`, `afterDetail`, `dialogs`), que se leen desde fuera. Un
+slot vacío dice «esta cara no tiene esto»; una bandera diría «aquí pasa algo que no te voy a
+contar».
 
 Y al revés: **si tocas un lado del espejo, revisa el otro en el mismo commit.**
 
@@ -3596,6 +3613,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
 | `AccountsList` | `components/accounts-list.tsx` | **La lista de una cartera**, de cobro o de pago (§94.0) |
+| `AccountDetail` | `components/account-detail.tsx` | **La ficha de una cuenta**, de cobro o de pago; lo propio de cada cara entra por slots (§94.0) |
+| `SettlementDetail` | `components/settlement-detail.tsx` | **La ficha de un movimiento**, pago o egreso (§94.0) |
 | `AdvanceAllocationDialog` | `components/advance-allocation-dialog.tsx` | **Repartir un anticipo** entre cuentas abiertas, de cobro o de pago (§94.0) |
 | `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
 | `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
