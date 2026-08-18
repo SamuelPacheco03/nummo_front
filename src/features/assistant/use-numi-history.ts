@@ -18,8 +18,6 @@ import { sanitizePeaks } from './waveform'
  * los campos, este tipo sobra y `flattenMessagePages` los lee directo. Hasta
  * entonces la nota se dibuja plana, que es exactamente lo de hoy.
  */
-type PendingAudioFields = { waveform?: unknown; audioSeconds?: unknown }
-
 const CONVERSATIONS_PAGE = 20
 const MESSAGES_PAGE = 30
 /**
@@ -37,7 +35,6 @@ const AUDIO_URL_TTL = 5 * 60 * 1000
 export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
   return [...pages].reverse().flatMap((page) =>
     [...page.items].reverse().map((m) => {
-      const pending = m as typeof m & PendingAudioFields
       return {
         id: m.id,
         role: m.role,
@@ -45,8 +42,8 @@ export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
         at: m.createdAt,
         dictated: m.source === 'audio',
         hasAudio: m.hasAudio,
-        waveform: sanitizePeaks(pending.waveform),
-        audioSeconds: typeof pending.audioSeconds === 'number' ? pending.audioSeconds : undefined,
+        waveform: sanitizePeaks(m.waveform),
+        audioSeconds: m.audioSeconds ?? undefined,
       }
     }),
   )

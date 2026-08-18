@@ -13,4 +13,8 @@ export interface AssistantAudioChatForm {
   sessionId?: string;
   /** Pista de idioma ISO-639-1 (p. ej. `es`). Por defecto, el del servidor. */
   language?: string;
+  /** Onda de la nota, en JSON: entre 1 y 64 números de 0 a 1 (`"[0.12,0.34,…]"`). La calcula el cliente al grabar y el servidor la guarda tal cual. Un valor malformado se ignora y se guarda `null` — nunca hace fallar la petición. */
+  waveform?: string;
+  /** Duración en segundos, mayor que 0 y hasta 600. Se redondea a un decimal. Fuera de rango se ignora, igual que `waveform`. */
+  audioSeconds?: string;
 }

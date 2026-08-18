@@ -9959,6 +9959,16 @@
           "language": {
             "description": "Pista de idioma ISO-639-1 (p. ej. `es`). Por defecto, el del servidor.",
             "type": "string"
+          },
+          "waveform": {
+            "description": "Onda de la nota, en JSON: entre 1 y 64 números de 0 a 1 (`\"[0.12,0.34,…]\"`). La calcula el cliente al grabar y el servidor la guarda tal cual. Un valor malformado se ignora y se guarda `null` — nunca hace fallar la petición.",
+            "example": "[0.12,0.34,0.81,0.77]",
+            "type": "string"
+          },
+          "audioSeconds": {
+            "description": "Duración en segundos, mayor que 0 y hasta 600. Se redondea a un decimal. Fuera de rango se ignora, igual que `waveform`.",
+            "example": "3.4",
+            "type": "string"
           }
         },
         "required": [
@@ -13428,6 +13438,29 @@
           "hasAudio": {
             "type": "boolean"
           },
+          "waveform": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "audioSeconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -13440,6 +13473,8 @@
           "content",
           "source",
           "hasAudio",
+          "waveform",
+          "audioSeconds",
           "createdAt"
         ],
         "additionalProperties": false

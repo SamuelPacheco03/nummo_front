@@ -8,6 +8,8 @@ const msg = (id: string): MessageList['items'][number] => ({
   content: id,
   source: 'text',
   hasAudio: false,
+  waveform: null,
+  audioSeconds: null,
   createdAt: '2026-08-16T00:00:00.000Z',
 })
 

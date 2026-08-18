@@ -1377,6 +1377,12 @@ if(assistantAudioChatForm.sessionId !== undefined) {
 if(assistantAudioChatForm.language !== undefined) {
  formData.append(`language`, assistantAudioChatForm.language);
  }
+if(assistantAudioChatForm.waveform !== undefined) {
+ formData.append(`waveform`, assistantAudioChatForm.waveform);
+ }
+if(assistantAudioChatForm.audioSeconds !== undefined) {
+ formData.append(`audioSeconds`, assistantAudioChatForm.audioSeconds);
+ }
 
   return customFetch<postApiV1OrganizationsOrgIdAssistantChatAudioResponse>(getPostApiV1OrganizationsOrgIdAssistantChatAudioUrl(orgId),
   {

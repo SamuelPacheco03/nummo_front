@@ -110,19 +110,38 @@ export function useNumiChat() {
       const id = useNumiStore.getState().messages.at(-1)?.id
       /*
         La onda se saca del blob recién grabado —el único momento en que el
-        audio está en la mano sin costar una petición— y **sin hacer esperar a
-        la burbuja**: decodificar tarda poco, pero una nota de voz que aparece
-        medio segundo tarde se nota. Llega cuando llega (§32.1).
+        audio está en la mano sin costar una petición— y la burbuja ya está
+        pintada arriba, así que nadie espera por ella. Se decodifica una sola
+        vez: la misma promesa dibuja la nota en cuanto llega y viaja con la
+        petición para que el historial la conserve.
+
+        El `catch` no es adorno: `describeRecording` puede fallar antes de su
+        propio try (un navegador sin AudioContext), y ahora que se espera, una
+        onda rota se llevaría por delante el mensaje. Es decoración — nunca
+        puede impedir que la nota salga.
       */
+      const described = describeRecording(blob).catch(
+        () => [undefined, undefined] as [number[] | undefined, number | undefined],
+      )
       if (id) {
-        void describeRecording(blob).then(([waveform, audioSeconds]) => {
+        void described.then(([waveform, audioSeconds]) => {
           if (waveform) useNumiStore.getState().setWaveform(id, waveform, audioSeconds)
         })
       }
       store.setError(null)
       try {
         const { sessionId } = useNumiStore.getState()
-        const res = await audioChat.mutateAsync({ orgId, data: { audio: blob, sessionId } })
+        const [waveform, audioSeconds] = await described
+        const res = await audioChat.mutateAsync({
+          orgId,
+          // El servidor los guarda tal cual y descarta en silencio lo que no cuadre.
+          data: {
+            audio: blob,
+            sessionId,
+            waveform: waveform && JSON.stringify(waveform),
+            audioSeconds: audioSeconds === undefined ? undefined : String(audioSeconds),
+          },
+        })
         const { sessionId: nextSessionId, transcript, reply } = res.data as AssistantAudioChatResponse
         const s = useNumiStore.getState()
         if (id) s.setTranscript(id, transcript)

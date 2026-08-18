@@ -1,6 +1,21 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global.**
+**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz.**
+
+## 🆕 La onda de las notas de voz viaja con el mensaje — regenera con `pnpm api:gen`
+
+Responde al `contract/HANDOFF-audio-historial.md`. Requiere `pnpm db:migrate` (migración **0014**).
+
+- **`ChatMessage`** gana `waveform: number[] | null` y `audioSeconds: number | null`. Solo viajan
+  en los mensajes dictados; en los de Numi y en los escritos son `null`, como pediste.
+- **`POST /assistant/chat/audio`** acepta `waveform` (JSON, 1–64 números de 0 a 1) y
+  `audioSeconds` (> 0 y ≤ 600, se redondea a un decimal) como campos de texto del multipart.
+  Se toman **tal cual**, sin recalcular.
+- **Un valor malformado se ignora y se guarda `null`. Nunca hace fallar la petición** — hay un
+  test de integración que fija exactamente eso: mismo estado y mismo mensaje de error mande lo
+  que mande el cliente. Ya podéis encender el envío sin miedo (de hecho, ya está encendido).
+- La onda es **independiente del audio**: si se purga la grabación, la forma se queda y una nota
+  larga se sigue leyendo como larga.
 
 ## 🆕 Buscador global en un solo endpoint — regenera con `pnpm api:gen`
 
