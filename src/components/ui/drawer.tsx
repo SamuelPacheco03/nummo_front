@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
+import { useFocusReturn } from '@/lib/use-focus-return'
 import { Skeleton } from '@/components/ui/skeleton'
 import { InlineError } from '@/components/ui/error-state'
 import { cn } from '@/lib/utils'
@@ -65,6 +66,7 @@ export function Drawer({
   fit?: boolean
   children?: ReactNode
 }) {
+  const foco = useFocusReturn()
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -73,6 +75,7 @@ export function Drawer({
           // Sin descripción: el contenido ya cumple ese papel y Radix avisa por
           // consola si apuntamos a un id que no existe.
           aria-describedby={undefined}
+          {...foco}
           className={cn(
             'animate-drawer bg-card text-card-foreground fixed z-50 flex flex-col overflow-hidden border shadow-2xl',
             'inset-x-0 bottom-0 rounded-t-2xl',

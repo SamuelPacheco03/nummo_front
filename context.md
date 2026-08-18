@@ -2291,6 +2291,27 @@ Toda nueva interfaz debe incluir:
 - tamaños táctiles adecuados;
 - soporte de reduced motion.
 
+## 46.1. El foco vuelve a donde estaba
+
+Al cerrar cualquier diálogo o cajón —con Escape o con la X— **el foco vuelve al botón que lo
+abrió**. Lo hace `useFocusReturn` (`lib/use-focus-return.ts`), enganchado una sola vez en las dos
+envolturas por las que pasa todo lo que se abre encima: `Drawer` y `DialogContent`.
+
+No estaba, y se notaba: medido en el navegador, el foco se quedaba en `<body>` y el siguiente Tab
+caía en «Nummo — ir al panel», el primer elemento de la página. Quien abría los filtros con el
+teclado y los cerraba **volvía al principio de la app** y tenía que recorrer la barra lateral
+entera otra vez. Radix suele encargarse de esto solo; aquí no lo hacía, así que se resuelve a mano
+y en un solo sitio.
+
+**El destino sale de un rastro del último elemento enfocado fuera de un diálogo**, no de mirar
+`document.activeElement` cuando el panel se monta. Ese fue el primer intento y falla justo donde
+más se usa: la paleta de comandos tiene un campo con `autoFocus` que se lleva el foco antes, así
+que lo que se apuntaba era el propio campo que estaba a punto de desaparecer. El rastro funciona
+igual lo abra un clic o un atajo.
+
+Si quien abrió ya no está en la página —una fila que se borró— no se fuerza nada: se deja el
+comportamiento por defecto, que devolver el foco a un nodo desconectado no lleva a ninguna parte.
+
 La accesibilidad no se agrega después.
 
 ---
@@ -3547,6 +3568,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `Chart` · `DonutChart` | `components/ui/chart.tsx` | **Las gráficas de la app** (Recharts envuelto) |
 | `MonthlyFlowChart` | `components/monthly-flow-chart.tsx` | Flujo mensual, en barras o línea |
 | `BrandMark` · `BrandLockup` | `components/brand-mark.tsx` | Marca |
+| `ThemeProvider` · `ThemeToggle` | `components/theme-provider.tsx`, `theme-toggle.tsx` | Tema claro/oscuro/sistema y su selector |
 | `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
 | `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale |
