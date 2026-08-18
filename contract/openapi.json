@@ -6465,6 +6465,65 @@
         }
       }
     },
+    "/api/v1/organizations/{orgId}/reports/accounts": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "How each account stands: balance today, plus what moved in the period",
+        "description": "`balance` is what the account holds **today** (all-time, from the balances view); `inflow`, `outflow` and `movements` cover only the requested window. Accounts with no movement in the window still come back, with zeros. Ordered by balance, richest first.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accounts with balance and period movement.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountReport"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{orgId}/reports/receivables-summary": {
       "get": {
         "tags": [
@@ -12843,6 +12902,54 @@
           "income",
           "expense",
           "net"
+        ],
+        "additionalProperties": false
+      },
+      "AccountReport": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "accountType": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "balance": {
+            "type": "string"
+          },
+          "inflow": {
+            "type": "string"
+          },
+          "outflow": {
+            "type": "string"
+          },
+          "movements": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "accountType",
+          "currency",
+          "isActive",
+          "balance",
+          "inflow",
+          "outflow",
+          "movements"
         ],
         "additionalProperties": false
       },

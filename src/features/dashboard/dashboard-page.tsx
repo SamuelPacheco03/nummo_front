@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, Wallet } from 'lucide-reac
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
+import { AccountRows } from '@/features/reports/accounts-report'
 import { MonthlyFlowChart } from '@/components/monthly-flow-chart'
 import { KpiStrip, KpiTile } from '@/components/kpi-tile'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -18,6 +19,8 @@ import { formatDateHuman, formatMoney, plural } from '@/lib/format'
 import { balanceByCurrency, buildInsight, mergeUpcoming } from './insights'
 import { cn } from '@/lib/utils'
 import {
+  defaultPeriod,
+  useAccountsReport,
   useCashflowMonthly,
   usePayablesSummary,
   useReceivablesSummary,
@@ -175,6 +178,7 @@ export function DashboardPage() {
   const { summary: cxp, isPending: cxpLoading } = usePayablesSummary(orgId)
   const { balances, isPending: balancesLoading } = useAccountBalances(orgId)
   const { items: monthly, isPending: monthlyLoading } = useCashflowMonthly(orgId, 6)
+  const { accounts, isPending: accountsLoading } = useAccountsReport(orgId, defaultPeriod())
   const { debtors, isPending: debtorsLoading } = useTopDebtors(orgId, 1)
   const { upcoming, isPending: upcomingLoading } = useUpcomingReceivables(orgId, 14, ATTENTION_LIMIT)
   const { upcoming: upcomingPay, isPending: upcomingPayLoading } = useUpcomingPayables(
@@ -215,6 +219,7 @@ export function DashboardPage() {
     cxpLoading ||
     balancesLoading ||
     monthlyLoading ||
+    accountsLoading ||
     debtorsLoading ||
     upcomingLoading ||
     upcomingPayLoading ||
@@ -326,7 +331,20 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* 5 · Actividad reciente */}
+      {/* 5 · Las cuentas y lo que las movió, una al lado de la otra: el saldo
+          dice dónde está el dinero y la actividad, por qué. */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Panel
+          title="Tus cuentas"
+          action={
+            <Link to="/caja/cuentas" className="text-brand text-xs hover:underline">
+              Ver todas
+            </Link>
+          }
+        >
+          <AccountRows accounts={accounts} />
+        </Panel>
+
       <Panel
         title="Actividad reciente"
         action={
@@ -376,6 +394,7 @@ export function DashboardPage() {
           </ul>
         )}
       </Panel>
+      </div>
     </div>
   )
 }

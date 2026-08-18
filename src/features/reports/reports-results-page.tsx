@@ -11,9 +11,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatMoney, pctChange, plural, todayISODate } from '@/lib/format'
 import { AgingBucketBucket, type AgingBucket } from '@/api/generated/model'
+import { AccountsReport } from './accounts-report'
 import { ReportBreakdown } from './report-breakdown'
 import {
   defaultPeriod,
+  useAccountsReport,
   useCashflow,
   useCashflowMonthly,
   useExpensesByCategory,
@@ -44,6 +46,7 @@ export function ReportsResultsPage() {
 
   const { report: cashflow, isPending } = useCashflow(orgId, period)
   const { items: monthly, isPending: monthlyLoading } = useCashflowMonthly(orgId, 6)
+  const { accounts, isPending: accountsLoading } = useAccountsReport(orgId, period)
   const { items: income, isPending: incomeLoading } = useIncomeByConcept(orgId, period)
   const { items: expenses, isPending: expensesLoading } = useExpensesByCategory(orgId, period)
 
@@ -76,6 +79,7 @@ export function ReportsResultsPage() {
       cxpLoading ||
       cxcAgingLoading ||
       cxpAgingLoading ||
+      accountsLoading ||
       recurringLoading) &&
     !cashflow
 
@@ -175,7 +179,14 @@ export function ReportsResultsPage() {
         <MonthlyFlowChart items={monthly} currency={currency} height={280} />
       </Panel>
 
-      {/* 3 · De dónde sale y en qué se va. */}
+      {/* 3 · Dónde quedó: qué tiene cada cuenta y qué se movió por ella. */}
+      <AccountsReport
+        accounts={accounts}
+        currency={currency}
+        csvFile={`cuentas_${period.from}_${period.to}.csv`}
+      />
+
+      {/* 4 · De dónde sale y en qué se va. */}
       <div className="grid gap-4 lg:grid-cols-2">
         <ReportBreakdown
           title="Ingresos por concepto"

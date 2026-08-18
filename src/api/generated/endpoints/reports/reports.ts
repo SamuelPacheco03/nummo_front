@@ -21,10 +21,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountReport,
   AgingBucket,
   CashflowReport,
   Creditor,
   Debtor,
+  GetApiV1OrganizationsOrgIdReportsAccountsParams,
   GetApiV1OrganizationsOrgIdReportsCashflowMonthlyParams,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
   GetApiV1OrganizationsOrgIdReportsExpensesByCategoryParams,
@@ -306,6 +308,134 @@ export function useGetApiV1OrganizationsOrgIdReportsCashflowMonthly<TData = Awai
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiV1OrganizationsOrgIdReportsCashflowMonthlyQueryOptions(orgId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdReportsAccountsResponse200 = {
+  data: AccountReport[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdReportsAccountsResponseSuccess = (getApiV1OrganizationsOrgIdReportsAccountsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiV1OrganizationsOrgIdReportsAccountsResponse = (getApiV1OrganizationsOrgIdReportsAccountsResponseSuccess)
+
+export const getGetApiV1OrganizationsOrgIdReportsAccountsUrl = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/organizations/${orgId}/reports/accounts?${stringifiedParams}` : `/api/v1/organizations/${orgId}/reports/accounts`
+}
+
+/**
+ * `balance` is what the account holds **today** (all-time, from the balances view); `inflow`, `outflow` and `movements` cover only the requested window. Accounts with no movement in the window still come back, with zeros. Ordered by balance, richest first.
+ * @summary How each account stands: balance today, plus what moved in the period
+ */
+export const getApiV1OrganizationsOrgIdReportsAccounts = async (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdReportsAccountsResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdReportsAccountsResponse>(getGetApiV1OrganizationsOrgIdReportsAccountsUrl(orgId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdReportsAccountsQueryKey = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams,) => {
+    return [
+    `/api/v1/organizations/${orgId}/reports/accounts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdReportsAccountsQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError = unknown>(orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdReportsAccountsQueryKey(orgId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>> = ({ signal }) => getApiV1OrganizationsOrgIdReportsAccounts(orgId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdReportsAccountsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>>
+export type GetApiV1OrganizationsOrgIdReportsAccountsQueryError = unknown
+
+
+export function useGetApiV1OrganizationsOrgIdReportsAccounts<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError = unknown>(
+ orgId: string,
+    params: undefined |  GetApiV1OrganizationsOrgIdReportsAccountsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsAccounts<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdReportsAccounts<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary How each account stands: balance today, plus what moved in the period
+ */
+
+export function useGetApiV1OrganizationsOrgIdReportsAccounts<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError = unknown>(
+ orgId: string,
+    params?: GetApiV1OrganizationsOrgIdReportsAccountsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdReportsAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdReportsAccountsQueryOptions(orgId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

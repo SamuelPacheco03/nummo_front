@@ -1,6 +1,23 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz.**
+**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas.**
+
+## 🆕 Cómo está cada cuenta — regenera con `pnpm api:gen`
+
+- **`GET /api/v1/organizations/:orgId/reports/accounts?from&to`** → por cuenta:
+  `accountId`, `name`, `accountType`, `currency`, `isActive`, `balance`, `inflow`,
+  `outflow` y `movements`. Cualquier miembro autenticado.
+- **`balance` es de siempre; `inflow`/`outflow`/`movements` son del período.** «Qué hay» y
+  «qué se movió» son preguntas distintas y la pantalla necesita las dos: un saldo recortado a
+  la ventana no significaría nada.
+- Una cuenta **sin movimientos en el período sigue apareciendo**, con ceros. Existe y no se
+  movió: eso es información, no una fila que sobra.
+- Ordena por saldo, la más llena primero. La ventana usa la zona horaria de la organización,
+  como el resto de reportes.
+
+Nace porque el front no podía responderlo sin mentir: el saldo solo estaba agregado por
+moneda, y las entradas y salidas habrían salido de sumar el libro de movimientos desde la
+página visible.
 
 ## 🆕 La onda de las notas de voz viaja con el mensaje — regenera con `pnpm api:gen`
 

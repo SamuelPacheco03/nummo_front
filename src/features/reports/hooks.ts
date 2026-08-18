@@ -4,6 +4,7 @@ import { useContacts } from '@/features/contacts/hooks'
 import { useExpenseSchedules } from '@/features/expenses/hooks'
 import {
   useGetApiV1OrganizationsOrgIdReportsCashflow,
+  useGetApiV1OrganizationsOrgIdReportsAccounts,
   useGetApiV1OrganizationsOrgIdReportsCashflowMonthly,
   useGetApiV1OrganizationsOrgIdReportsExpensesByCategory,
   useGetApiV1OrganizationsOrgIdReportsIncomeByConcept,
@@ -17,10 +18,12 @@ import {
   useGetApiV1OrganizationsOrgIdReportsUpcomingReceivables,
 } from '@/api/generated/endpoints/reports/reports'
 import type {
+  AccountReport,
   AgingBucket,
   CashflowReport,
   Creditor,
   Debtor,
+  GetApiV1OrganizationsOrgIdReportsAccountsParams,
   GetApiV1OrganizationsOrgIdReportsCashflowParams,
   MonthlyCashflow,
   NamedAmount,
@@ -60,6 +63,22 @@ export function useCashflow(orgId: string | undefined, period: Period) {
 export function useCashflowMonthly(orgId: string | undefined, months = 6) {
   const query = useGetApiV1OrganizationsOrgIdReportsCashflowMonthly(orgId ?? '', { months }, enabled(orgId))
   return { ...query, items: asArray<MonthlyCashflow>(query.data?.data) }
+}
+
+/**
+ * Cómo está cada cuenta: lo que tiene hoy y lo que se movió en el período.
+ *
+ * El saldo es de siempre y el movimiento del período — dos preguntas distintas
+ * que el backend responde juntas justo para esto. Antes había que sumar el libro
+ * de movimientos desde la página visible, que es una cifra que nadie firma (§70).
+ */
+export function useAccountsReport(orgId: string | undefined, period: Period) {
+  const params: GetApiV1OrganizationsOrgIdReportsAccountsParams = {
+    from: period.from,
+    to: period.to,
+  }
+  const query = useGetApiV1OrganizationsOrgIdReportsAccounts(orgId ?? '', params, enabled(orgId))
+  return { ...query, accounts: asArray<AccountReport>(query.data?.data) }
 }
 
 export function useReceivablesSummary(orgId: string | undefined) {
