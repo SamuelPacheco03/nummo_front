@@ -1152,6 +1152,81 @@
         }
       }
     },
+    "/api/v1/plans": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Los planes en venta, en orden de presentación",
+        "description": "Catálogo público para la pantalla de precios y el upsell. Devuelve solo los planes marcados como públicos y no archivados, con el catálogo completo de features y topes resueltos: lo que anuncia esta tabla es exactamente lo que aplican los guards. `price` en null significa que el plan no tiene precio publicado («consultar»), no que sea gratis — el plan gratuito trae precio 0.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans on sale.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicPlan"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/platform-access": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "¿Esta cuenta administra la plataforma?",
+        "description": "Sirve para decidir si se ofrece la consola de superadmin en la interfaz. Es orientativo: `/api/v1/admin/*` vuelve a comprobarlo en cada petición, así que un cliente que se mienta a sí mismo solo consigue un 403.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether the caller administers the platform.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAccess"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/organizations": {
       "get": {
         "tags": [
@@ -9031,6 +9106,23 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
+          "priceAmount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priceCurrency": {
+            "default": "COP",
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
           "features": {
             "default": {},
             "$ref": "#/components/schemas/FeaturePatch"
@@ -10915,7 +11007,19 @@
             "type": "object",
             "properties": {
               "code": {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "VALIDATION",
+                  "NOT_FOUND",
+                  "CONFLICT",
+                  "UNAUTHENTICATED",
+                  "FORBIDDEN",
+                  "ORGANIZATION_SUSPENDED",
+                  "FEATURE_NOT_AVAILABLE",
+                  "LIMIT_EXCEEDED",
+                  "RATE_LIMITED",
+                  "INTERNAL"
+                ]
               },
               "message": {
                 "type": "string"
@@ -11539,6 +11643,93 @@
         ],
         "additionalProperties": false
       },
+      "PublicPlan": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "price": {
+            "$ref": "#/components/schemas/PlanPrice"
+          },
+          "features": {
+            "$ref": "#/components/schemas/FeatureMap"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LimitMap"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "description",
+          "sortOrder",
+          "price",
+          "features",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "PlanPrice": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "PlatformAccess": {
+        "type": "object",
+        "properties": {
+          "isPlatformAdmin": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isPlatformAdmin"
+        ],
+        "additionalProperties": false
+      },
       "AdminOrganizationPage": {
         "type": "object",
         "properties": {
@@ -11932,6 +12123,20 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "priceAmount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priceCurrency": {
+            "type": "string"
+          },
           "features": {
             "$ref": "#/components/schemas/FeaturePatch"
           },
@@ -11945,6 +12150,8 @@
           "description",
           "isPublic",
           "sortOrder",
+          "priceAmount",
+          "priceCurrency",
           "features",
           "limits"
         ],
@@ -15342,6 +15549,52 @@
           "receivableOverdue",
           "openReceivables",
           "lastPaymentAt"
+        ],
+        "additionalProperties": false
+      },
+      "FeatureNotAvailableDetails": {
+        "type": "object",
+        "properties": {
+          "feature": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "feature",
+          "plan"
+        ],
+        "additionalProperties": false
+      },
+      "LimitExceededDetails": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "string"
+          },
+          "max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "plan": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "limit",
+          "max",
+          "used"
         ],
         "additionalProperties": false
       }

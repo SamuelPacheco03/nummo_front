@@ -1,6 +1,6 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-18 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma.**
+**Fecha:** 2026-08-19 (contrato traído de `dev`, 103 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola.**
 
 ## ⚠️ ROMPE — el estado de la organización salió de `PATCH /organizations/:orgId`
 
@@ -76,6 +76,39 @@ reinician por mes. Ojo con uno que no viene de un plan: `limit: "free_organizati
 anti-abuso de organizaciones gratuitas por usuario, y falla igual que los demás a propósito —
 no tenéis que distinguirlo.
 
+## 🆕 `error.code` es un enum cerrado, y los dos payloads de plan tienen esquema
+
+`ErrorResponse.error.code` sale del contrato como enum de diez valores —`VALIDATION`,
+`NOT_FOUND`, `CONFLICT`, `UNAUTHENTICATED`, `FORBIDDEN`, `ORGANIZATION_SUSPENDED`,
+`FEATURE_NOT_AVAILABLE`, `LIMIT_EXCEEDED`, `RATE_LIMITED`, `INTERNAL`—, así que un `switch`
+sobre él puede ser exhaustivo y el compilador avisa si aparece uno nuevo.
+
+`LimitExceededDetails` y `FeatureNotAvailableDetails` se publican como **esquemas con nombre**:
+la forma de `error.details` deja de adivinarse en los dos casos donde importa.
+
+## 🆕 El catálogo de planes — `GET /api/v1/plans`
+
+Los planes en venta, en orden de presentación (`sortOrder`). **No es tenant-scoped y pide
+sesión**: la app vive detrás del login y los precios no se publican a quien encuentre la URL.
+Devuelve solo los públicos y no archivados —hoy Free, Básico y Pro; Empresa existe pero **no
+está a la venta**—, cada uno con el catálogo completo de features y topes resueltos: lo que
+anuncia la tabla es exactamente lo que aplican los guards.
+
+**Ojo con `price`: `null` significa «consultar», no gratis.** Free llega con
+`{ amount: "0.00", currency: "COP" }`; Básico y Pro siguen sin precio fijado y llegan en `null`
+hasta que se definan desde la consola. La pantalla tiene que saber pintar ese caso.
+
+## 🆕 ¿Esta cuenta administra la plataforma? — `GET /api/v1/me/platform-access`
+
+`{ isPlatformAdmin: boolean }`. Endpoint propio y no un campo de `/auth/me`, para no hacer que
+`auth` —el módulo del que dependen todos— dependa de `platform`. Se llama **en paralelo con
+`/auth/me`** al arrancar.
+
+Es **orientativo, no autorización**: sirve para no ofrecer un menú que va a fallar. Cada
+petición a `/admin/*` lo vuelve a comprobar contra la tabla, así que un cliente que se mienta a
+sí mismo solo consigue un 403. Y ningún rol de organización da acceso: ser OWNER de la tuya no
+te hace superadmin.
+
 ## 🆕 El contrato nombra el permiso de cada ruta (`x-required-permission`)
 
 Las 62 rutas que mutan datos salen anotadas con el permiso que exigen, derivado del router real
@@ -109,11 +142,11 @@ miembros en una escalada de privilegios. El primer superadmin se da de alta por 
 | `PUT /admin/organizations/:orgId/status` | Suspende o reactiva |
 | `GET /admin/plans` · `PUT /admin/plans/:code` | Lista y guarda planes |
 
-Los hooks ya están generados (`src/api/generated/endpoints/platform-admin/`), pero **no hay
-pantalla todavía**: es una consola interna y decidiréis vosotros si vive en esta app o aparte.
-Un detalle por si la construís: editar un plan **no cambia nada para nadie** hasta que se
-recalcula explícitamente — es a propósito, permite subir un tope solo para quien entre desde
-ahora sin tocar a los clientes actuales.
+Los hooks ya están generados (`src/api/generated/endpoints/platform-admin/`) y la consola va
+**en esta misma app, como ruta protegida** — se ofrece o no según `/me/platform-access`. Un
+detalle al construirla: editar un plan **no cambia nada para nadie** hasta que se recalcula
+explícitamente (`applyToExisting`) — es a propósito, permite subir un tope solo para quien entre
+desde ahora sin tocar a los clientes actuales.
 
 ## 🆕 Idempotencia en todas las mutaciones de dinero — regenera con `pnpm api:gen`
 
@@ -349,7 +382,7 @@ El alta de cuentas es **registro público** (decidido). **Implementado en el fro
 - ✅ **Rate-limit** (429) manejado con mensaje amable (vía `getErrorMessage`).
 
 ## Aviso
-El backend terminó todas sus fases. El contrato `openapi.json` está **congelado como v1.0.0** con **73 endpoints**. Regenera tu cliente:
+El contrato `openapi.json` sigue en **v1.0.0** y hoy trae **103 paths / 127 operaciones**. Regenera tu cliente:
 
 ```bash
 pnpm api:gen
@@ -362,7 +395,7 @@ pnpm api:gen
 - **Docs interactivos:** `http://localhost:4010/docs` (Scalar).
 
 ## Handoffs disponibles (léelos por área)
-`HANDOFF-fase-0..8.md` en esta carpeta. Resumen de lo que ya puedes construir:
+`HANDOFF-fase-0..9.md` en esta carpeta. Resumen de lo que ya puedes construir:
 
 | Área | Endpoints base | Handoff |
 |---|---|---|

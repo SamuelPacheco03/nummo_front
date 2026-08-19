@@ -3371,9 +3371,9 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, 73 endpoints) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, 103 paths / 127 operaciones) y en vivo en
   `http://localhost:4010/openapi.json`.
-- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-8.md`, y el
+- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`, y el
   resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
 - Cuando el backend publica un contrato nuevo: se copia el `openapi.json` a `contract/` y se
   corre `pnpm api:gen`.
