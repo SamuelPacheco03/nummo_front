@@ -2214,86 +2214,19 @@ como la fila de reacciones de WhatsApp. El gesto se cancela al mover el dedo, po
 desplazar el hilo no es elegir, y se le quita el menú del sistema, que si no se lleva la
 pulsación larga para seleccionar texto.
 
-**Citar es solo para lo que dijo Numi**, no para lo tuyo: sirve para preguntarle de dónde
-sale un número. La cita se ve sobre la caja de escribir y **viaja aparte del texto**, no
-dentro de él. Es a propósito: si fuera parte de lo escrito, quitarla obligaría a adivinar
-dónde acaba la cita y empieza la pregunta. Sale con el mensaje en formato `>` de
-markdown, que Numi ya entiende de leerlo, y se limpia al enviar. Al quitarla el foco
-vuelve a la caja: el botón desaparece con ella, y sin devolver el foco la siguiente tecla
-no iría a ninguna parte.
+**La cita se pinta como bloque**, con barra de color, quién lo dijo y un recorte de lo
+dicho — el de WhatsApp. Pero **viaja dentro del texto del mensaje**, en formato `>` de
+markdown, y no como un campo aparte: así **Numi la lee**. Un campo `replyTo` obligaría a
+inyectarla en el prompt a mano, y lo que se quiere es justo que el modelo vea a qué se
+refiere la pregunta. Quien la dibuja la vuelve a partir al pintar.
 
-## 32.8. Buscar en las conversaciones
+Lleva el autor —`> Numi:` o `> Tú:`— por lo mismo: sin él el modelo no sabe si se le cita
+a él o al propio usuario, que es lo que la pregunta suele estar distinguiendo. Y al leerla
+de vuelta **se exige el autor, no solo el `>`**: alguien puede empezar un mensaje con «> »
+porque sí, y pintarlo como cita sería inventarle un origen que no tiene.
 
-El buscador vive **en la vista de conversaciones**, no en el hilo: se busca para llegar a
-algo que no se tiene delante, y lo que se encuentra puede estar en otra conversación.
-Mientras hay término escrito, los resultados sustituyen a la lista y «Nueva conversación»
-se quita de en medio.
-
-Cada resultado trae **de qué conversación salió, quién lo dijo y el trozo alrededor de lo
-buscado**. Los tres hacen falta: sin el título no se sabe adónde lleva la fila, sin el
-«Numi:» no se deduce quién habló —fuera del hilo no hay lado de burbuja que lo diga— y sin
-el extracto centrado veinte resultados se ven todos iguales.
-
-**Se pregunta al dejar de escribir** (300 ms, con el `useDebouncedValue` que ya usa el
-selector de contactos) y **nunca con menos de dos caracteres**: el servidor lo rechazaría,
-y una letra suelta traería medio historial.
-
-**Abrir un resultado lleva la conversación a ese mensaje**, no al final. El backend lo
-sirve con `until`: esa página termina en el mensaje buscado, que es justo donde el hilo
-empieza a leerse, así que no hace falta una segunda forma de cargar mensajes ni centrar
-nada. Por dónde se abrió queda anotado en el store (`historyUntil`) porque el scroll hacia
-arriba lo necesita: sin él, subir pediría la página más nueva y devolvería al usuario al
-final del historial que acababa de esquivar.
-
-## 32.9. El pulgar sobre las respuestas de Numi
-
-Es la única señal de si el asistente contesta bien: nada más en el producto lo dice.
-Deliberadamente binaria — un pulgar se pulsa, una encuesta no se contesta.
-
-**Solo sobre las respuestas de Numi.** Puntuar lo que tú escribiste no significa nada, y
-el backend lo rechaza además de que la interfaz no lo ofrezca.
-
-Los dos pulgares viven en el mismo grupo que copiar y citar, y aparecen igual: al pasar
-por encima, con el foco, y siempre en táctil. Con una diferencia — **el pulgar elegido se
-queda visible aunque el ratón se vaya**, porque ya no es una acción disponible sino un
-estado del mensaje. Lo dice el relleno del icono y lo dice `aria-pressed`, que es lo que
-queda para quien no ve el relleno.
-
-**Se pinta antes de preguntar.** Es una opinión, no una operación: esperar medio segundo
-por un dibujo no tiene sentido. Pero si el servidor lo rechaza **se deshace**, porque una
-opinión que se ve guardada y no lo está es peor que no poder darla — el usuario creería
-que ya avisó de que la respuesta era mala.
-
-Volver a pulsar el mismo pulgar retira la opinión, y retirarla es mandar `null`: el
-endpoint es un `PUT` porque el valor es el estado completo de una sola cosa.
-
-## 32.10. El mismo hilo en todos tus dispositivos
-
-Lo que escribes en el móvil aparece en el escritorio, y al revés. La pieza que lo hace
-posible no es el transporte: es que **el servidor devuelve los ids con los que archivó
-cada turno**. Hasta que los tuvo, un mensaje enviado vivía con un id inventado por el
-cliente, así que cualquier novedad traída del servidor lo veía como uno distinto y lo
-pintaba dos veces.
-
-**Los avisos llegan por SSE y son señales, no datos.** El flujo dice que una conversación
-se movió; el hilo va a buscarlo con `after`. Se eligió así porque esa es **la misma llamada
-que se hace al abrir el panel**: ponerse al día tras un rato cerrado y ponerse al día tras
-un aviso son el mismo camino, y hay uno solo por el que entran mensajes al hilo. Un aviso
-perdido mientras el móvil no tenía cobertura da igual.
-
-Se usa `EventSource` y no `fetch`: la cookie viaja sola, leer no necesita CSRF y
-**reconectar lo hace el navegador**. Y no se reintenta a mano al fallar, precisamente para
-no perder esa reconexión.
-
-**El flujo vive lo que vive el panel.** Con el chat cerrado no hay nada que actualizar y
-una conexión de más se paga en el servidor; por eso al abrir se pregunta una vez, que es
-lo que cubre el rato sin flujo.
-
-Un detalle que parece menor y no lo es: al preguntar «qué hay después de X» solo se usa un
-id **que el servidor podría conocer**, comprobado por su forma de UUID. La versión fácil
-—«no lleva el prefijo del cliente»— acepta cualquier id que no encaje en ninguno de los dos
-moldes, y entonces el servidor responde con todo lo que ya se tenía. Ante la duda, no
-preguntar.
+**Se cita a cualquiera, también a uno mismo.** Volver sobre lo que pediste hace veinte
+mensajes es tan útil como volver sobre lo que Numi contestó.
 
 ---
 

@@ -8,6 +8,7 @@ import {
 import { ArrowUp, Mic, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTouchInput } from '@/lib/use-touch-input'
+import { withQuote, type QuoteAuthor } from './quote'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
 import {
@@ -90,11 +91,11 @@ export function ChatComposer({
    */
   busy?: boolean
   /**
-   * Lo que se está citando de Numi, si algo. Viaja aparte del texto para que la cita
-   * no se pueda romper escribiendo dentro de ella, y para poder quitarla sin borrar de
-   * paso lo que ya se había escrito.
+   * Lo que se está citando, si algo. Viaja aparte del texto para que la cita no se pueda
+   * romper escribiendo dentro de ella, y para poder quitarla sin borrar de paso lo que ya
+   * se había escrito.
    */
-  quoted?: string | null
+  quoted?: { author: QuoteAuthor; quote: string } | null
   onClearQuote?: () => void
   autoFocus?: boolean
 }) {
@@ -192,10 +193,7 @@ export function ChatComposer({
     const text = value.trim()
     setValue('')
     onClearQuote?.()
-    // El formato de cita de markdown, que es el que Numi ya entiende de leerlo.
-    onSend(quoted ? `> ${quoted}
-
-${text}` : text)
+    onSend(quoted ? withQuote(quoted, text) : text)
   }
 
   const startRecording = async () => {
@@ -425,7 +423,10 @@ ${text}` : text)
     >
       {quoted && (
         <div className="bg-secondary/60 border-brand mb-2 flex items-start gap-2 rounded-md border-l-2 px-2.5 py-1.5">
-          <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs italic">{quoted}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-brand text-xs font-medium">{quoted.author}</p>
+            <p className="text-muted-foreground truncate text-xs">{quoted.quote}</p>
+          </div>
           <button
             type="button"
             onClick={() => {

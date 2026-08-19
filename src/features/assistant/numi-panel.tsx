@@ -7,6 +7,7 @@ import { ChatThread } from './chat-thread'
 import { ConversationList } from './conversation-list'
 import { NumiAvatar } from './numi-avatar'
 import { useNumiChat } from './hooks'
+import { trimQuote, type QuoteAuthor } from './quote'
 
 /** Botón de la cabecera: icono suelto, sin peso visual. */
 function HeaderAction({
@@ -75,7 +76,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = messages.find((m) => m.id === selectedId) ?? null
   /** Lo que se está citando de Numi. Vive aquí porque lo escribe el hilo y lo lee el composer. */
-  const [quoted, setQuoted] = useState<string | null>(null)
+  const [quoted, setQuoted] = useState<{ author: QuoteAuthor; quote: string } | null>(null)
 
   const copy = (text: string) => {
     // Sin portapapeles —contexto no seguro, o un navegador viejo— se dice, en vez de
@@ -91,7 +92,8 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
   }
 
   /** Una cita es una referencia, no el mensaje entero: lo justo para reconocerlo. */
-  const quote = (text: string) => setQuoted(text.length > 160 ? `${text.slice(0, 159)}…` : text)
+  const quote = (author: QuoteAuthor, text: string) =>
+    setQuoted({ author, quote: trimQuote(text) })
 
   const openFromList = async (id: string, messageId?: string) => {
     await openConversation(id, messageId)
@@ -130,12 +132,12 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
                 setSelectedId(null)
               }}
             />
-            {selected.role === 'assistant' && (
+            {(
               <HeaderAction
                 label="Citar mensaje"
                 Icon={Quote}
                 onClick={() => {
-                  quote(selected.content)
+                  quote(selected.role === 'user' ? 'Tú' : 'Numi', selected.content)
                   setSelectedId(null)
                 }}
               />
@@ -197,6 +199,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             onCopy={copy}
             onQuote={quote}
             onRate={(id, feedback) => void rateMessage(id, feedback)}
+            conversationId={conversationId}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onLeave={onClose}

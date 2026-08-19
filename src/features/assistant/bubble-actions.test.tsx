@@ -105,8 +105,10 @@ test('citar no manda nada todavía: prepara la pregunta', async () => {
 
   await elegir(user, 'Citar')
 
-  // La cita se ve encima de la caja, y hasta ahí. Nada ha salido.
-  expect(await screen.findByText(/Ana Torres te debe/, { selector: 'p.italic' })).toBeInTheDocument()
+  // La cita se ve encima de la caja —con quién lo dijo— y hasta ahí. Nada ha salido.
+  // El texto también está en la burbuja, así que se mira el de la vista previa.
+  expect(await screen.findByText('Numi', { selector: 'p.text-brand' })).toBeInTheDocument()
+  expect(screen.getAllByText(/Ana Torres te debe/).length).toBeGreaterThan(1)
   expect(m.enviados).toEqual([])
 })
 
@@ -120,9 +122,11 @@ test('la cita viaja con la pregunta, para que Numi sepa de qué se le habla', as
   await user.keyboard('{Enter}')
 
   await waitFor(() => expect(m.enviados).toHaveLength(1))
-  expect(m.enviados[0]).toBe('> Ana Torres te debe 120.000 pesos.\n\n¿de dónde sale?')
+  // Lleva quién lo dijo: sin eso, Numi no sabe si se le cita a él o al usuario.
+  expect(m.enviados[0]).toBe('> Numi: Ana Torres te debe 120.000 pesos.\n\n¿de dónde sale?')
   // Y al salir se va con ella: la siguiente pregunta no arrastra la cita anterior.
-  expect(screen.queryByText(/Ana Torres te debe/, { selector: 'p.italic' })).not.toBeInTheDocument()
+  // La del bloque de la burbuja sí queda; la de la caja se fue con el envío.
+  expect(screen.queryAllByText('Numi', { selector: 'p.text-brand' })).toHaveLength(1)
 })
 
 test('quitar la cita no borra lo que ya se había escrito', async () => {
@@ -184,4 +188,54 @@ test('abrir el menú no bloquea el scroll de la página', async () => {
 
   expect(document.body).not.toHaveAttribute('data-scroll-locked')
   expect(document.body.style.overflow).not.toBe('hidden')
+})
+
+test('también se cita lo que dijo uno mismo', async () => {
+  /*
+    Volver sobre lo que pediste hace veinte mensajes es tan útil como volver sobre lo que
+    Numi contestó, y el bloque dice «Tú» para que la pregunta no quede ambigua.
+  */
+  const user = userEvent.setup()
+  pintar()
+  useNumiStore.setState({
+    isOpen: true,
+    orgId: 'o1',
+    sessionId: 's1',
+    hydrated: true,
+    messages: [
+      { id: 'mia', role: 'user', content: 'registra el pago de Ana', at: new Date().toISOString() },
+    ],
+  })
+
+  await elegir(user, 'Citar')
+  await user.type(screen.getByLabelText('Mensaje para Numi'), '¿quedó?')
+  await user.keyboard('{Enter}')
+
+  await waitFor(() => expect(m.enviados).toHaveLength(1))
+  expect(m.enviados[0]).toBe('> Tú: registra el pago de Ana\n\n¿quedó?')
+})
+
+test('la cita se pinta como bloque, no como un «mayor que» suelto', async () => {
+  pintar()
+  useNumiStore.setState({
+    isOpen: true,
+    orgId: 'o1',
+    sessionId: 's1',
+    hydrated: true,
+    messages: [
+      {
+        id: 'con-cita',
+        role: 'user',
+        content: '> Numi: Ana debe algo\n\n¿de dónde sale?',
+        at: new Date().toISOString(),
+      },
+    ],
+  })
+
+  // Lo citado va en su bloque, con su autor…
+  expect(await screen.findByText('Numi', { selector: 'p.text-brand' })).toBeInTheDocument()
+  expect(screen.getByText('Ana debe algo')).toBeInTheDocument()
+  // …y el mensaje debajo, sin el «>» del formato a la vista.
+  expect(screen.getByText('¿de dónde sale?')).toBeInTheDocument()
+  expect(screen.queryByText(/^> Numi:/)).not.toBeInTheDocument()
 })

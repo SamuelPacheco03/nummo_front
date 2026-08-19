@@ -13,6 +13,7 @@ import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
 import { TypingIndicator } from './typing-indicator'
+import { splitQuote, type QuoteAuthor } from './quote'
 import { formatTime } from './utils'
 import type { ChatFeedback, ChatMessage, ChatMessageStatus } from './types'
 
@@ -220,6 +221,21 @@ function Rating({
   )
 }
 
+/**
+ * Lo citado, dentro de la burbuja de quien responde.
+ *
+ * Barra de color, quién lo dijo y un recorte de lo dicho — el bloque de WhatsApp. Sale
+ * del propio texto del mensaje, que es donde viaja la cita para que Numi también la lea.
+ */
+function QuotedBlock({ author, quote }: { author: string; quote: string }) {
+  return (
+    <div className="border-brand bg-foreground/[0.06] mb-1.5 rounded border-l-2 px-2 py-1">
+      <p className="text-brand text-xs font-medium">{author}</p>
+      <p className="line-clamp-2 text-xs opacity-80">{quote}</p>
+    </div>
+  )
+}
+
 /** Ancho que la hora reserva al final de la última línea del mensaje. */
 const TIME_SLOT = 'inline-block w-[3.4rem] align-baseline'
 
@@ -254,10 +270,12 @@ export function ChatMessageItem({
   /** Mantener pulsado lo selecciona. Solo se ofrece donde se toca con el dedo. */
   onSelect?: (id: string) => void
   /** Solo en las respuestas de Numi: llevar esto al composer para preguntar por ello. */
-  onQuote?: (text: string) => void
+  onQuote?: (author: QuoteAuthor, text: string) => void
 }) {
   const isUser = message.role === 'user'
   const touch = useTouchInput()
+  // La cita viaja dentro del texto; aquí se vuelve a separar para pintarla como bloque.
+  const quoted = isUser ? splitQuote(message.content) : null
   const spacer = <span aria-hidden className={TIME_SLOT} />
 
   /*
@@ -287,13 +305,16 @@ export function ChatMessageItem({
           at={message.at}
         />
       ) : isUser ? (
-        <p className="whitespace-pre-wrap">
-          {message.dictated && (
-            <Mic aria-label="Mensaje dictado" className="mr-1 inline size-3 shrink-0 align-[-0.1em] opacity-70" />
-          )}
-          {message.content}
-          {spacer}
-        </p>
+        <>
+          {quoted && <QuotedBlock author={quoted.author} quote={quoted.quote} />}
+          <p className="whitespace-pre-wrap">
+            {message.dictated && (
+              <Mic aria-label="Mensaje dictado" className="mr-1 inline size-3 shrink-0 align-[-0.1em] opacity-70" />
+            )}
+            {quoted ? quoted.text : message.content}
+            {spacer}
+          </p>
+        </>
       ) : message.content === '' ? (
         // Numi ya tiene turno pero todavía no ha dicho nada. Los puntos viven dentro de
         // su burbuja para que la primera palabra los sustituya en el sitio, en vez de
@@ -322,9 +343,14 @@ export function ChatMessageItem({
   */
   const actionable = !playable && message.content !== '' && Boolean(onCopy)
   const copy = () => onCopy?.(message.content)
-  // Citar es para preguntarle a Numi por lo que dijo; citarte a ti mismo no lleva a
-  // ninguna parte.
-  const quote = !isUser && onQuote ? () => onQuote(message.content) : undefined
+  /*
+    Se cita a cualquiera, también a uno mismo: volver sobre lo que pediste hace veinte
+    mensajes es tan útil como volver sobre lo que Numi contestó. Lo que se cita es el
+    texto limpio — citar una cita anidaría bloques sin decir nada nuevo.
+  */
+  const quote = onQuote
+    ? () => onQuote(isUser ? 'Tú' : 'Numi', quoted ? quoted.text : message.content)
+    : undefined
   const rateable = !isUser && Boolean(onRate)
 
   /*

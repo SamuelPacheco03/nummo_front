@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { useCan } from '@/features/platform/permissions'
@@ -6,6 +6,7 @@ import { Loader, NumiLoader } from '@/components/ui/loader'
 import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
 import { isRetryable } from './numi-error'
+import type { QuoteAuthor } from './quote'
 import { buildThreadRows } from './utils'
 import type { ChatFeedback, ChatMessage, NumiError } from './types'
 
@@ -153,11 +154,16 @@ export interface ChatThreadProps {
   onCopy: (text: string) => void
   /** Pulgar sobre una respuesta de Numi. */
   onRate: (messageId: string, feedback: ChatFeedback) => void
+  /**
+   * Conversación abierta. Es lo que dispara el aterrizaje abajo: cambiarla es entrar a
+   * otro hilo, y un hilo se entra por el final.
+   */
+  conversationId: string | undefined
   /** Mensaje seleccionado con el dedo; en escritorio siempre null. */
   selectedId: string | null
   onSelect: (id: string) => void
-  /** Lleva lo que dijo Numi al composer, para preguntarle por ello. */
-  onQuote: (text: string) => void
+  /** Lleva un mensaje al composer para preguntar por él. */
+  onQuote: (author: QuoteAuthor, text: string) => void
   /** El enlace a Configuración sale del panel, así que hay que cerrarlo al seguirlo. */
   onLeave: () => void
 }
@@ -179,6 +185,7 @@ export function ChatThread({
   loadOlder,
   send,
   retryMessage,
+  conversationId,
   loadAudio,
   onCopy,
   onQuote,
@@ -230,6 +237,31 @@ export function ChatThread({
   // Cada fila depende de la anterior (mismo día, mismo lado), así que se resuelve la
   // lista de una vez en vez de mirar hacia atrás dentro del map.
   const rows = useMemo(() => buildThreadRows(messages), [messages])
+
+  /*
+    **Entrar a un hilo es entrar por el final.**
+
+    El efecto de abajo ya pega la vista al fondo en cada cambio, pero al montar —o al
+    cambiar de conversación— no basta: en ese momento el contenido todavía puede crecer
+    después de medirlo (la fuente que termina de cargar, un bloque citado que ocupa dos
+    líneas), y lo que era el fondo deja de serlo. Se vuelve a bajar tras pintar, que es
+    cuando la altura ya es la definitiva.
+  */
+  useEffect(() => {
+    let frame = 0
+    const bajar = () => {
+      const el = listRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    }
+    bajar()
+    frame = requestAnimationFrame(() => {
+      bajar()
+      // Dos veces: la primera pasada corrige el alto, la segunda lo que esa corrección
+      // haya movido. Es barato y quita el caso de quedarse a media pantalla.
+      frame = requestAnimationFrame(bajar)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [conversationId, isHydrating])
 
   // Y lo natural: llegar arriba trae lo anterior sin pedirlo.
   const onScroll = useCallback(() => {
