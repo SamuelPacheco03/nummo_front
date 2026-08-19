@@ -5,6 +5,7 @@ import { Panel } from '@/components/panel'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Note } from '@/components/ui/note'
+import { GestureProbe } from './gesture-probe'
 import { useInstallPrompt } from '@/pwa/use-install-prompt'
 import { applyUpdate, checkForUpdate, clearAppCache, useAppUpdate } from '@/pwa/app-update'
 
@@ -118,6 +119,10 @@ export function AppPage() {
             Vaciar y recargar
           </Button>
         </div>
+      </Panel>
+
+      <Panel title="Diagnóstico del gesto de grabar">
+        <GestureProbe />
       </Panel>
 
       <p className="text-muted-foreground text-xs">

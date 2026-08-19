@@ -1905,11 +1905,15 @@ era el mismo `pointercancel` con dos finales.
    del botón, con un escucha **no pasivo** puesto a mano (los que registra React son pasivos y ahí
    `preventDefault` no hace nada).
 
-   Y por si acaso, dos fuentes para el mismo dedo: `pointercancel` no se escucha y el gesto se
-   sigue también por `touchmove`, así que si el puntero muere por otra razón el gesto continúa y
-   termina en `touchend`. El sistema quedándose con el gesto **de verdad** llega por `touchcancel`
-   —una llamada, el gesto de volver del borde—: con algo ya dictado se fija (perderlo sería el
-   peor final), y en los primeros instantes se descarta callando.
+   Y por si acaso, **dos fuentes para el mismo dedo**, porque táctil y puntero son secuencias
+   independientes y el sistema puede llevarse una y dejar la otra. `pointercancel` no se escucha
+   siquiera; un `touchcancel` no decide nada por sí solo: **espera a ver si la otra secuencia
+   sigue hablando** y, si llega cualquier cosa —un movimiento, un dedo que se levanta—, el gesto
+   continúa como si nada. Solo cuando no llega nada por ningún lado se da el rastro por perdido.
+
+   Y perder el rastro **nunca descarta**. Que el sistema interrumpa no es la persona diciendo
+   «tira esto»: la grabación queda fijada, con sus botones, y decide quien habló. Descartar en
+   silencio fue justo lo que hacía que sostener el micrófono pareciera cancelarlo solo.
 
 6. **Fijar cuesta 72 px, y el candado se dibuja justo ahí.** El dedo acaba encima de él: lo que se
    ve es a dónde hay que ir. Dos centímetros de pulgar se recorren queriendo y no se recorren
@@ -1936,6 +1940,14 @@ pruebas y moría en el teléfono. Hay que mandar toques de verdad
 Y hay que probar **el pulgar que no quiere nada**: un toque que se sostiene mientras se va yendo
 hacia arriba unos pocos píxeles cada décima. Ese es el que descubrió que 56 px se recorrían sin
 querer, y no lo encuentra ningún toque que va directo del punto A al B.
+
+**Lo que el arnés no puede ver.** La emulación táctil de un navegador de escritorio no ejecuta lo
+que Android hace con una pulsación larga, así que hay una clase entera de fallo —el sistema
+llevándose el gesto mientras el dedo sigue puesto— que aquí sale siempre en verde y en el teléfono
+no. Se rompió cuatro veces seguidas por adivinar la causa desde este lado. Para eso está
+`features/config/gesture-probe.tsx`, en Configuración → Aplicación: apunta con marca de tiempo qué
+eventos llegan al sostener un botón **en el aparato donde pasa**. Es herramienta de soporte y se
+quita cuando el gesto esté cerrado.
 
 ## 32.3. El hilo no se pierde, y avisa cuando contesta
 

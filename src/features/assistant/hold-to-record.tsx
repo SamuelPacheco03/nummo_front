@@ -35,6 +35,16 @@ export const DEAD_ZONE = 14
 export const MIN_SECONDS = 0.7
 
 /**
+ * Cuánto se espera al dedo cuando el sistema se queda con la secuencia táctil.
+ *
+ * La de puntero es otra secuencia y puede seguir viva: si en este rato llega
+ * algo de ella —un movimiento, un dedo que se levanta—, el gesto continúa como
+ * si nada. Si no llega nada, se da por perdido el rastro y la grabación queda
+ * fijada; nunca se descarta.
+ */
+export const TOUCH_GRACE = 1500
+
+/**
  * Cuánto tiene que mandar un eje sobre el otro para robarle el gesto.
  *
  * El eje no se decide para siempre en los primeros catorce píxeles —ahí solo hay
