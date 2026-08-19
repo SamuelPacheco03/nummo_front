@@ -76,9 +76,12 @@ export function FilterChips({
           >
             {choice.label}
             {choice.count !== undefined && (
-              <span className={cn('nums text-[0.72rem]', isActive ? 'opacity-70' : 'opacity-55')}>
-                {choice.count}
-              </span>
+              <>
+                {/* El espacio es real: sin él el nombre accesible sale «Todas1». */}{' '}
+                <span className={cn('nums text-[0.72rem]', isActive ? 'opacity-70' : 'opacity-55')}>
+                  {choice.count}
+                </span>
+              </>
             )}
           </button>
         )

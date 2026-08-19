@@ -164,29 +164,66 @@ export function AccountsList({
   const catalogMap = useMemo(() => new Map(catalog.map((c) => [c.id, c.name])), [catalog])
 
   /*
+   * **Cada ficha cuenta lo suyo, preguntándoselo al propio listado.**
+   *
+   * Antes los números salían del resumen, y eso dejaba dos agujeros. Uno: el
+   * resumen de cuentas por pagar solo firma el de vencidas (`PayablesSummary`),
+   * así que ese lado enseñaba una ficha con número y tres sin. Y dos: los
+   * números del resumen no eran los de las fichas — su `pendingCount` es «lo que
+   * está sin pagar», vencidas incluidas, mientras que la ficha «Pendientes»
+   * filtra por `displayStatus=PENDING`, que las excluye. La ficha prometía ocho
+   * y abría seis.
+   *
+   * El listado sí sabe contar cualquier estado, en los dos lados y para
+   * cualquier filtro: se le pide una página de un elemento y se lee el `total`.
+   * Son cuatro consultas diminutas, cacheadas por TanStack Query, y a cambio el
+   * número de una ficha es **exactamente** lo que se ve al pulsarla, con los
+   * filtros avanzados que haya puestos. No se inventa nada (§70): se pregunta.
+   *
+   * Las cifras de cabecera **no** se tocan: siguen saliendo del resumen y son de
+   * toda la cartera. Un dinero sin filtrar junto a un contador filtrado serían
+   * dos cosas distintas en la misma tarjeta.
+   */
+  const countParams = {
+    page: 1,
+    pageSize: 1,
+    q: q || undefined,
+    sort: sortField,
+    order: (desc ? 'desc' : 'asc') as AccountsQuery['order'],
+    contactId: values.contacto || undefined,
+    catalogId: values.catalogo || undefined,
+    dueAfter: values.desde || undefined,
+    dueBefore: values.hasta || undefined,
+  }
+  const allCount = useList(countParams)
+  const overdueCount = useList({ ...countParams, status: 'OVERDUE' })
+  const pendingCount = useList({ ...countParams, status: 'PENDING' })
+  const partialCount = useList({ ...countParams, status: 'PARTIAL' })
+
+  /** Mientras no se sepa, la ficha va sin número: un cero diría otra cosa. */
+  const countOf = (result: AccountsListResult) =>
+    result.isPending || result.isError ? undefined : result.total
+
+  /*
    * Solo los estados de trabajo diario van a la vista. Pagadas, canceladas y
    * castigadas son consulta ocasional y viven en los filtros avanzados: sacarlas
    * de aquí es lo que permite que las fichas quepan en dos líneas sin desplazarse
    * en horizontal (§21).
-   *
-   * Los contadores salen del resumen del API, y **cuentas por pagar no los
-   * tiene**: `PayablesSummary` solo firma el de vencidas. Sus fichas van sin
-   * número, que es mejor que un número inventado (§70). «Todas» va sin número en
-   * los dos lados: sumar los tres estados daría un total que el backend no firma
-   * —una cuenta parcial y vencida cuenta en uno solo—.
    */
   const statusChoices: FilterChoice[] = [
-    { value: '', label: 'Todas' },
-    { value: 'OVERDUE', label: 'Vencidas', count: summary?.overdueCount },
-    { value: 'PENDING', label: 'Pendientes', count: summary?.pendingCount },
-    { value: 'PARTIAL', label: 'Parciales', count: summary?.partialCount },
+    { value: '', label: 'Todas', count: countOf(allCount) },
+    { value: 'OVERDUE', label: 'Vencidas', count: countOf(overdueCount) },
+    { value: 'PENDING', label: 'Pendientes', count: countOf(pendingCount) },
+    { value: 'PARTIAL', label: 'Parciales', count: countOf(partialCount) },
   ]
   // Si el estado activo salió de los avanzados, se muestra igualmente: si no, el
-  // usuario vería la lista filtrada y ninguna ficha marcada.
+  // usuario vería la lista filtrada y ninguna ficha marcada. Su número ya lo
+  // tenemos: es el total del listado que se está viendo.
   if (values.estado && !statusChoices.some((c) => c.value === values.estado)) {
     statusChoices.push({
       value: values.estado,
       label: statusLabels[values.estado] ?? values.estado,
+      count: isPending ? undefined : total,
     })
   }
 

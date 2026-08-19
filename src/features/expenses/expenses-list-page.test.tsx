@@ -32,7 +32,9 @@ vi.mock('@/features/reports/hooks', () => ({
 }))
 vi.mock('./hooks', () => ({
   useExpenses: (_orgId: string, params: Record<string, unknown>) => {
-    ultimosParams = params
+    // La pantalla pide además una página de un elemento por cada ficha, solo
+    // para contar (§21.2). Lo que se comprueba aquí es el listado que se ve.
+    if (Number(params.pageSize) > 1) ultimosParams = params
     const vacia = window.__listaVacia || window.__listaFalla
     return {
       items: vacia ? [] : [FILA],

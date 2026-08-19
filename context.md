@@ -1478,6 +1478,27 @@ Mostrar filtros activos de forma clara.
 
 Debe ser fácil limpiar todos los filtros.
 
+## 21.2. Cada ficha de estado cuenta lo que va a enseñar
+
+Las fichas llevan número, **todas y en los dos lados de la cartera**. Un número al lado dice el
+reparto de la lista sin filtrar nada, que es medio motivo por el que las fichas sustituyeron al
+desplegable.
+
+**El número sale del propio listado, no del resumen.** Es una diferencia que se nota, porque
+cuentan cosas distintas: el resumen de cuentas por cobrar firma un `pendingCount` que es «lo que
+está sin pagar» —vencidas incluidas—, mientras que la ficha «Pendientes» filtra por
+`displayStatus=PENDING`, que las excluye. La ficha prometía ocho cuentas y abría seis. Y el
+resumen de cuentas por pagar no firma más contador que el de vencidas, así que ese lado enseñaba
+una ficha con número y tres sin.
+
+Preguntándoselo al listado —una página de un elemento por ficha, y se lee el `total`— el número
+es **exactamente** lo que se ve al pulsarla, cuenta igual en los dos lados y respeta los filtros
+avanzados que haya puestos: filtrar por un pagador reparte las fichas de ese pagador. Son cuatro
+consultas diminutas y TanStack Query las cachea; se paga poco por no mentir.
+
+Las **cifras de cabecera** siguen saliendo del resumen y son de toda la cartera, sin filtrar. Un
+dinero global junto a un contador filtrado serían dos cosas distintas en la misma tarjeta.
+
 ---
 
 # 22. Formularios
@@ -3541,17 +3562,19 @@ mismo orden, los mismos filtros, el mismo CSV. Compartían las dieciséis piezas
 `components/` y aun así estaban duplicadas — lo copiado no eran las piezas, era el montaje. Hoy la
 pantalla vive una vez (`components/accounts-list.tsx`) y cada cara son ~130 líneas.
 
-**Dos diferencias entre esas dos caras son reales y viajan explícitas**, que es distinto de la
-deriva:
+**Una diferencia entre esas dos caras es real y viaja explícita**, que es distinto de la deriva:
+**causar mora**, solo en cobrar. Es de dominio —a un proveedor no se le cobran intereses— y va en
+`actions`, la lista de operaciones periódicas propias de un lado.
 
-- **Causar mora**, solo en cobrar. Es de dominio: a un proveedor no se le cobran intereses. Va en
-  `actions`, la lista de operaciones periódicas propias de un lado.
-- **Los contadores de las fichas de estado**, solo en cobrar. `PayablesSummary` no firma
-  `pendingCount` ni `partialCount`, así que las fichas de pagar van sin número — y eso es lo
-  correcto (§70: un dato que no se tiene no se inventa), no un olvido.
+Hubo una segunda durante un tiempo, y vale la pena contar cómo se cerró. Los números de las fichas
+de estado salían del resumen, y `PayablesSummary` solo firma el de vencidas: cuentas por pagar
+enseñaba una ficha con número y tres sin. Se leyó primero como deriva, se comprobó contra el
+contrato y se dejó así a propósito (§70: un dato que no se tiene no se inventa) — mirar el
+contrato antes de «arreglarlo» evitó inventar un número.
 
-Comprobarlo importó: la primera lectura fue «cuentas por pagar perdió los contadores por deriva».
-Mirar el contrato antes de arreglarlo evitó inventar un número.
+Pero «no se inventa» no es lo mismo que «no se puede saber». El dato existía en otro sitio: el
+propio listado cuenta cualquier estado, en los dos lados. Hoy los números salen de ahí (§21.2) y
+la diferencia ya no existe.
 
 `AdvanceAllocationDialog` fue el quinto y el más pequeño: dos diálogos de ~150 líneas idénticos
 en dos tercios. Repartían el mismo anticipo con la misma aritmética —qué cuenta sigue abierta, el

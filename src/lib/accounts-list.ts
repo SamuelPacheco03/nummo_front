@@ -8,8 +8,8 @@ import type { ListResult } from '@/lib/list-result'
  * pagos/egresos ya compartían `SettlementList` y acuerdos/recurrentes
  * `RecurringList`, mientras estas dos seguían siendo dos archivos de quinientas
  * líneas idénticos en un 64%. Lo que cambia entre ellas son las palabras, el
- * endpoint y **dos cosas de verdad** (§94.0): cobrar puede causar mora, y solo
- * cobrar recibe del contrato los contadores por estado.
+ * endpoint y **una cosa de verdad** (§94.0): cobrar puede causar mora, y a un
+ * proveedor no se le cobran intereses.
  */
 
 /** Criterios que viajan en la URL. En español, como las rutas (§87.5). */
@@ -79,9 +79,12 @@ export interface AccountsSummary {
   overdueAmount?: string
   overdueCount?: number
   /**
-   * Solo cobrar. `PayablesSummary` no los trae, así que las fichas de estado de
-   * cuentas por pagar van sin número — y eso es lo correcto: §70 dice que un
-   * dato que no se tiene no se inventa.
+   * Solo cobrar: `PayablesSummary` no los trae. Suman las **cuentas abiertas**
+   * de la cabecera, y por eso ese subtítulo se calla en cuentas por pagar (§70:
+   * un dato que no se tiene no se inventa).
+   *
+   * Los números de las fichas de estado **no** salen de aquí: los cuenta el
+   * propio listado, que sabe hacerlo en los dos lados (§21.2).
    */
   pendingCount?: number
   partialCount?: number

@@ -70,7 +70,9 @@ export function runAccountsListSuite(c: AccountsListCase) {
 
     expect(screen.getByPlaceholderText(c.buscarPor)).toBeInTheDocument()
     for (const chip of ['Todas', 'Vencidas', 'Pendientes', 'Parciales']) {
-      expect(screen.getByRole('radio', { name: new RegExp(chip) })).toBeInTheDocument()
+      // Las cuatro llevan número, en los dos lados: cada una cuenta lo que
+      // enseñará al pulsarla (§21.2).
+      expect(screen.getByRole('radio', { name: new RegExp(`^${chip} \\d+$`) })).toBeInTheDocument()
     }
     expect(screen.getByRole('button', { name: /filtros/i })).toBeInTheDocument()
   })
