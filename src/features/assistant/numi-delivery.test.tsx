@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import { NumiWidget } from './numi-widget'
 import { useNumiStore } from './numi-store'
+import { json, tenantApiResponse } from '@/test/tenant-api'
 
 /*
   El arnés propio de este archivo: aquí hace falta **decidir cuándo contesta Numi**,
@@ -16,32 +17,18 @@ const m = vi.hoisted(() => ({
   turnos: [] as { message: string; responder: (r: Response) => void }[],
 }))
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  })
-}
-
-const ORG = {
-  organization: { id: '11111111-1111-4111-8111-111111111111', name: 'Demo', type: 'GENERIC' },
-  role: 'OWNER',
-}
-
 function stubApi() {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url)
-      if (u.includes('/auth/csrf')) return json({ csrfToken: 'tok' })
       if (u.includes('/assistant/chat')) {
         const body = JSON.parse(String(init?.body ?? '{}')) as { message: string }
         return new Promise<Response>((resolve) => {
           m.turnos.push({ message: body.message, responder: resolve })
         })
       }
-      if (u.includes('/api/v1/organizations')) return json([ORG])
-      return json({})
+      return tenantApiResponse(u) ?? json({})
     }),
   )
 }
@@ -156,7 +143,9 @@ test('quedarse sin cuota no se ve como un fallo de red, y no ofrece reintentar',
 
   // Dice qué se acabó y cuánto era. «No se pudo contactar a Numi» era mentira.
   expect(await screen.findByText('Llevas 2000 de 2000 mensajes con Numi este mes.')).toBeInTheDocument()
-  expect(screen.getByText(/Amplía el plan/)).toBeInTheDocument()
+  // `findBy` y no `getBy`: qué se ofrece depende de las capacidades, que llegan
+  // por su propia petición y pueden no haber vuelto cuando llega el error.
+  expect(await screen.findByText(/Amplía el plan/)).toBeInTheDocument()
 
   /*
     Y sobre todo: ni un botón de reintentar. La cuota no se va a rellenar por volver a

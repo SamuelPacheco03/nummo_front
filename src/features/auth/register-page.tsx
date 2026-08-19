@@ -11,6 +11,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { InlineError } from '@/components/ui/error-state'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { AuthLayout } from './auth-layout'
 import { PageLoader } from '@/components/ui/loader'
 import { useAuth, useRegister } from './hooks'
@@ -63,7 +64,7 @@ export function RegisterPage() {
       toast.success('Cuenta creada. Inicia sesión para continuar.')
       navigate('/login', { replace: true, state: { email: values.email } })
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo crear la cuenta'))
+      toastApiError(err, 'No se pudo crear la cuenta')
     }
   })
 

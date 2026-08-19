@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { AccountFormDrawer, type AccountFormCopy } from '@/components/account-form-drawer'
 import { useBillingConcepts } from '@/features/masters/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useCreateReceivable } from './hooks'
 
 const COPY: AccountFormCopy = {
@@ -62,7 +62,7 @@ export function CreateReceivableDialog({
           toast.success('Cuenta por cobrar creada')
           onOpenChange(false)
         } catch (err) {
-          toast.error(getErrorMessage(err, 'No se pudo crear'))
+          toastApiError(err, 'No se pudo crear')
         }
       }}
     />

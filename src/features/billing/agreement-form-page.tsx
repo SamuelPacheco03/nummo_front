@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -18,8 +17,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
+import { useCan } from '@/features/platform/permissions'
+import { toastApiError } from '@/features/platform/errors'
 import { todayISODate } from '@/lib/format'
 import type { BillingAgreement } from '@/api/generated/model'
 import { useAgreement, useCreateAgreement, useInterestPolicies, useUpdateAgreement } from './hooks'
@@ -77,8 +77,9 @@ export function AgreementFormPage() {
   const { agreementId } = useParams()
   const isEdit = !!agreementId
   const navigate = useNavigate()
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('agreements.manage')
   const oid = orgId ?? ''
 
   const { agreement, isPending: loadingAgreement } = useAgreement(orgId, agreementId)
@@ -128,9 +129,7 @@ export function AgreementFormPage() {
     },
   })
 
-  useEffect(() => {
-    if (isEdit && agreement) reset(toForm(agreement))
-  }, [isEdit, agreement, reset])
+  useHydrateOnce(isEdit ? agreement?.id : undefined, agreement, (a) => reset(toForm(a)))
 
   const payerId = watch('payerContactId')
   const beneficiaryId = watch('beneficiaryContactId')
@@ -166,7 +165,7 @@ export function AgreementFormPage() {
         navigate(`/cartera/acuerdos/${created.id}`)
       }
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar el acuerdo'))
+      toastApiError(err, 'No se pudo guardar el acuerdo')
     }
   })
 

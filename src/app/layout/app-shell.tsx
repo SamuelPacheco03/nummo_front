@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, Outlet, useNavigate } from 'react-router'
 import { Search } from 'lucide-react'
 import { PageLoader } from '@/components/ui/loader'
 import { BrandMark } from '@/components/brand-mark'
@@ -10,11 +10,13 @@ import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage } from '@/lib/errors'
-import { toast } from 'sonner'
+import { ReadOnlyBanner } from '@/features/platform/read-only-banner'
+import { usePlatformAccess } from '@/features/platform/hooks'
+import { toastApiError } from '@/features/platform/errors'
 import { CommandBar } from '@/features/search/command-bar'
 import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
 import { PageScrollRestoration } from '@/app/page-scroll'
+import { setAppNavigate } from '@/lib/navigate'
 import { BottomNav } from './bottom-nav'
 import { Brand, SidebarBody } from './sidebar'
 
@@ -22,13 +24,16 @@ function NoOrgOnboarding() {
   const navigate = useNavigate()
   const logout = useLogout()
   const [open, setOpen] = useState(false)
+  // Un superadmin puede no ser miembro de ninguna organización: administra
+  // todas. Sin esta salida, esta pantalla sería un callejón para él.
+  const { isPlatformAdmin } = usePlatformAccess()
 
   const onLogout = async () => {
     try {
       await logout.mutateAsync()
       navigate('/login', { replace: true })
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastApiError(err)
     }
   }
 
@@ -44,6 +49,14 @@ function NoOrgOnboarding() {
         </div>
         <div className="flex flex-col items-center gap-2">
           <Button onClick={() => setOpen(true)}>Crear organización</Button>
+          {isPlatformAdmin && (
+            <Link
+              to="/plataforma"
+              className="text-brand text-sm font-medium underline-offset-4 hover:underline"
+            >
+              Ir a la consola de plataforma
+            </Link>
+          )}
           <button
             type="button"
             onClick={onLogout}
@@ -63,6 +76,18 @@ export function AppShell() {
   const [commandOpen, setCommandOpen] = useState(false)
   const openCommand = useCallback(() => setCommandOpen(true), [])
   useCommandBarShortcut(openCommand)
+  const navigate = useNavigate()
+
+  /*
+    El shell vive dentro del router y los avisos no (el `Toaster` se monta por
+    encima, en `providers.tsx`). Prestarle aquí el navegador es lo que permite
+    que el botón «Ver planes» de un error de plan lleve a algún sitio sin
+    recargar la página (§45.5).
+  */
+  useEffect(() => {
+    setAppNavigate(navigate)
+    return () => setAppNavigate(null)
+  }, [navigate])
 
   if (isLoading) return <PageLoader />
   if (hasNoOrgs) return <NoOrgOnboarding />
@@ -127,6 +152,9 @@ export function AppShell() {
         */}
         <main className="flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8">
           <div className="mx-auto w-full max-w-6xl">
+            {/* Antes que cualquier pantalla: explica por qué no se puede guardar
+                nada, en vez de dejar que se descubra botón a botón. */}
+            <ReadOnlyBanner />
             <Outlet />
           </div>
         </main>

@@ -29,8 +29,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusDot } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { cn } from '@/lib/utils'
 import type { ContactRelationship } from '@/api/generated/model'
 import { AddRelationshipDialog } from './add-relationship-dialog'
@@ -45,8 +46,10 @@ const LIST = '/contactos'
  */
 export function ContactDetailPage() {
   const { contactId } = useParams()
-  const { orgId, role } = useCurrentOrg()
-  const canEdit = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canEdit = can('contacts.write')
+  const canArchive = can('contacts.archive')
 
   const { contact, isPending, isError, error } = useContact(orgId, contactId)
   const { relationships, isPending: relPending } = useRelationships(orgId, contactId)
@@ -74,7 +77,7 @@ export function ContactDetailPage() {
       toast.success('Contacto archivado')
       setArchiveOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo archivar'))
+      toastApiError(err, 'No se pudo archivar')
     }
   }
 
@@ -89,7 +92,7 @@ export function ContactDetailPage() {
       toast.success('Relación eliminada')
       setRemovingRel(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo eliminar la relación'))
+      toastApiError(err, 'No se pudo eliminar la relación')
     }
   }
 
@@ -119,7 +122,7 @@ export function ContactDetailPage() {
                 </Link>
               </Button>
               {/* Archivar es la excepción, no lo que se viene a hacer. */}
-              {contact.isActive && (
+              {canArchive && contact.isActive && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">

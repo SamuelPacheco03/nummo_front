@@ -18,7 +18,7 @@ import {
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { initials, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { useListFilters } from '@/lib/use-list-filters'
@@ -139,8 +139,9 @@ const columns = column.columns([
  * no firma (§70). Un KPI que miente es peor que ninguno.
  */
 export function ContactsListPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canEdit = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canEdit = can('contacts.write')
   const navigate = useNavigate()
 
   const { values, set, clear } = useListFilters<FilterKey>('nummo:contactos:filtros', FILTER_KEYS)

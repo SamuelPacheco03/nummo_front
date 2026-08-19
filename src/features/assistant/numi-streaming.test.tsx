@@ -5,25 +5,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import { NumiWidget } from './numi-widget'
 import { useNumiStore } from './numi-store'
+import { json, tenantApiResponse } from '@/test/tenant-api'
 import { sseChannel, type SseChannel } from '@/test/sse'
 
 const m = vi.hoisted(() => ({ canal: null as SseChannel | null, abortada: false }))
-
-const ORG = {
-  organization: { id: '11111111-1111-4111-8111-111111111111', name: 'Demo', type: 'GENERIC' },
-  role: 'OWNER',
-}
 
 function stubApi() {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url)
-      if (u.includes('/auth/csrf')) {
-        return new Response(JSON.stringify({ csrfToken: 'tok' }), {
-          headers: { 'content-type': 'application/json' },
-        })
-      }
       if (u.includes('/assistant/chat/stream')) {
         // Detener es abortar la petición: aquí se anota para poder comprobarlo, porque
         // es lo único que ve el servidor y lo que le hace dejar de gastar tokens.
@@ -34,12 +25,7 @@ function stubApi() {
         m.canal = sseChannel()
         return m.canal.response
       }
-      if (u.includes('/api/v1/organizations')) {
-        return new Response(JSON.stringify([ORG]), {
-          headers: { 'content-type': 'application/json' },
-        })
-      }
-      return new Response('{}', { headers: { 'content-type': 'application/json' } })
+      return tenantApiResponse(u) ?? json({})
     }),
   )
 }

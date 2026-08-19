@@ -5,6 +5,7 @@ import {
   type SettlementDetailQuery,
 } from '@/components/settlement-detail'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useCan } from '@/features/platform/permissions'
 import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
 import { ApplyAdvanceDialog } from './apply-advance-dialog'
 import { usePayment, useReversePayment } from './hooks'
@@ -34,6 +35,7 @@ const COPY: SettlementDetailCopy = {
 export function PaymentDetailPage() {
   const { paymentId } = useParams()
   const { orgId } = useCurrentOrg()
+  const can = useCan()
 
   const { detail, isPending, isError, error } = usePayment(orgId, paymentId)
   const p = detail?.payment
@@ -79,6 +81,8 @@ export function PaymentDetailPage() {
       targetTo={(receivableId) => `/cartera/cxc/${receivableId}`}
       copy={COPY}
       statusOf={paymentStatus}
+      canReverse={can('payments.reverse')}
+      canApply={can('payments.allocate')}
       query={query}
       useReverse={useReverse}
       applyDialog={(open, onOpenChange, payment) =>

@@ -2,7 +2,7 @@ import { SettlementList } from '@/components/settlement-list'
 import type { SortChoice } from '@/components/ui/filter-sheet'
 import { LEDGER_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import type {
   SettlementListCopy,
   SettlementListResult,
@@ -12,6 +12,7 @@ import type {
   GetApiV1OrganizationsOrgIdPaymentsParams,
   GetApiV1OrganizationsOrgIdPaymentsSort,
 } from '@/api/generated/model'
+import { PAYMENT_STATUSES } from '@/lib/settlement-list'
 import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
 import { usePayments } from './hooks'
 
@@ -78,7 +79,7 @@ function usePaymentRows(params: SettlementQuery): SettlementListResult {
  * (`SettlementList`) y solo aporta lo suyo: las palabras y su endpoint.
  */
 export function PaymentsListPage() {
-  const { role } = useCurrentOrg()
+  const can = useCan()
 
   return (
     <SettlementList
@@ -90,9 +91,10 @@ export function PaymentsListPage() {
       purposes={PURPOSES}
       purposeLabels={PAYMENT_PURPOSE_LABELS}
       sortChoices={SORT_CHOICES}
+      statuses={PAYMENT_STATUSES}
       statusOf={paymentStatus}
       kpi={{ kind: 'income', label: 'Cobrado este mes', previousLabel: 'El mes pasado' }}
-      canRegister={canEditContacts(role)}
+      canRegister={can('payments.create')}
       useList={usePaymentRows}
     />
   )

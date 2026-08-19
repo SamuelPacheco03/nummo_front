@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router'
 import { LogOut } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { initials } from '@/lib/format'
 import { useAuth, useLogout } from './hooks'
 
@@ -26,7 +25,7 @@ export function UserMenu() {
       await logout.mutateAsync()
       navigate('/login', { replace: true })
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo cerrar sesión'))
+      toastApiError(err, 'No se pudo cerrar sesión')
     }
   }
 

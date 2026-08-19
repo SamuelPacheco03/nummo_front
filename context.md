@@ -748,10 +748,11 @@ no es una sección de trabajo».
 Como `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que también cuelgan de ella,
 el enlace se marca activo con `isSettingsPath` y no solo con el `NavLink`.
 
-**«Estado del sistema» (`/estado`) ya no se enlaza.** La salud del backend es cosa de quien lo
-opera, no de quien lleva las cuentas de un jardín infantil: su sitio es el rol de
-superadministrador, que todavía no existe. La ruta sigue viva —soporte puede pedirla por URL— y
-el enlace volverá al pie detrás de ese permiso cuando el rol llegue.
+**«Estado del sistema» (`/estado`) solo se enlaza para quien administra la plataforma**, junto a
+la consola (§47.2). La salud del backend es cosa de quien lo opera, no de quien lleva las cuentas
+de un jardín infantil: el enlace estuvo retirado del pie mientras no existió el superadmin, y
+volvió ahí detrás de esa señal en cuanto existió. La ruta sigue viva para todos —soporte puede
+pedirla por URL—; lo que está gateado es ofrecerla.
 
 El resto del pie es lo del **dispositivo y la sesión**: instalar la app, el aviso de sin conexión,
 el tema y la cuenta.
@@ -816,7 +817,7 @@ un botón «Secciones». Es **un solo componente**, `SectionedLayout`
 que la segunda copia empezara a divergir.
 
 Antes era una **tira horizontal desplazable**, y era el error que §21.1 reprocha en los filtros:
-de once destinos se veían tres, los otros ocho quedaban detrás de un gesto que nadie ve, y al
+de doce destinos se veían tres, los otros nueve quedaban detrás de un gesto que nadie ve, y al
 aplanar la lista se perdían los títulos de grupo. Un `select` con `<optgroup>` los recupera en
 una sola línea, pero **tiene que mostrar el destino actual** —repitiendo el `<h1>` que va justo
 debajo— y en tablet se estira a lo ancho hasta parecer un campo de formulario vacío. El botón no
@@ -1904,11 +1905,15 @@ era el mismo `pointercancel` con dos finales.
    del botón, con un escucha **no pasivo** puesto a mano (los que registra React son pasivos y ahí
    `preventDefault` no hace nada).
 
-   Y por si acaso, dos fuentes para el mismo dedo: `pointercancel` no se escucha y el gesto se
-   sigue también por `touchmove`, así que si el puntero muere por otra razón el gesto continúa y
-   termina en `touchend`. El sistema quedándose con el gesto **de verdad** llega por `touchcancel`
-   —una llamada, el gesto de volver del borde—: con algo ya dictado se fija (perderlo sería el
-   peor final), y en los primeros instantes se descarta callando.
+   Y por si acaso, **dos fuentes para el mismo dedo**, porque táctil y puntero son secuencias
+   independientes y el sistema puede llevarse una y dejar la otra. `pointercancel` no se escucha
+   siquiera; un `touchcancel` no decide nada por sí solo: **espera a ver si la otra secuencia
+   sigue hablando** y, si llega cualquier cosa —un movimiento, un dedo que se levanta—, el gesto
+   continúa como si nada. Solo cuando no llega nada por ningún lado se da el rastro por perdido.
+
+   Y perder el rastro **nunca descarta**. Que el sistema interrumpa no es la persona diciendo
+   «tira esto»: la grabación queda fijada, con sus botones, y decide quien habló. Descartar en
+   silencio fue justo lo que hacía que sostener el micrófono pareciera cancelarlo solo.
 
 6. **Fijar cuesta 72 px, y el candado se dibuja justo ahí.** El dedo acaba encima de él: lo que se
    ve es a dónde hay que ir. Dos centímetros de pulgar se recorren queriendo y no se recorren
@@ -1935,6 +1940,14 @@ pruebas y moría en el teléfono. Hay que mandar toques de verdad
 Y hay que probar **el pulgar que no quiere nada**: un toque que se sostiene mientras se va yendo
 hacia arriba unos pocos píxeles cada décima. Ese es el que descubrió que 56 px se recorrían sin
 querer, y no lo encuentra ningún toque que va directo del punto A al B.
+
+**Lo que el arnés no puede ver.** La emulación táctil de un navegador de escritorio no ejecuta lo
+que Android hace con una pulsación larga, así que hay una clase entera de fallo —el sistema
+llevándose el gesto mientras el dedo sigue puesto— que aquí sale siempre en verde y en el teléfono
+no. Se rompió cuatro veces seguidas por adivinar la causa desde este lado. Para eso está
+`features/config/gesture-probe.tsx`, en Configuración → Aplicación: apunta con marca de tiempo qué
+eventos llegan al sostener un botón **en el aparato donde pasa**. Es herramienta de soporte y se
+quita cuando el gesto esté cerrado.
 
 ## 32.3. El hilo no se pierde, y avisa cuando contesta
 
@@ -2559,8 +2572,10 @@ comprueba el permiso ella misma**, y si no lo hay enseña un `EmptyState` con ca
 formulario y sin pie de acciones. El API sigue siendo el guard de verdad (§48); esto es no ofrecer
 lo que no se puede hacer.
 
-Ojo con quién puede qué, que no es «todo o nada»: un **operador** edita contactos pero **no**
-firma acuerdos. Se comprueba con las funciones de `roles.ts`, nunca comparando el rol a mano.
+Ojo con quién puede qué, que no es «todo o nada»: quien registra pagos no tiene por qué poder
+reversarlos. Se comprueba con `useCan('payments.reverse')` (§88.5), **nunca comparando el rol a
+mano**: el backend autoriza por permiso, y el rol dejará de predecir lo que alguien puede hacer en
+cuanto existan roles personalizados.
 
 ## 45.2b. Un fallo no se pinta con ceros
 
@@ -2579,6 +2594,132 @@ la pantalla es un `ErrorState` con reintentar. No un cero, no un vacío. El «en
 Ojo con la condición: `isError && !dato`. Con el dato viejo en mano se prefiere enseñarlo a
 vaciar la pantalla —un informe de hace un minuto sigue siendo cierto—, y en una lista un fallo al
 pasar de página no debe borrar lo que ya se estaba leyendo.
+
+## 45.4. Solo lectura es un modo, no un error
+
+Una organización **suspendida o archivada** queda en solo lectura: consultar y exportar siguen
+funcionando —eso no se gatea nunca— y **cualquier** mutación responde `403
+ORGANIZATION_SUSPENDED`. Solo la plataforma puede revertirlo; el propietario ya no puede cambiar
+el estado de la suya.
+
+Eso no es el fallo de una pantalla, así que **no se cuenta con un aviso**. Un toast por cada clic
+diría veinte veces lo mismo y siempre **después** del intento. La forma es al revés:
+
+1. `useCan` apaga las acciones **antes**, leyendo el estado de la organización y no el error
+   (§88.5). Los permisos que terminan en `.read` siguen concedidos; los demás, no.
+2. `ReadOnlyBanner` lo explica una vez, en la cabecera de todas las pantallas, con `Note` en tono
+   de advertencia — el mismo aparte de siempre, no un invento nuevo (§11.1.5).
+3. El aviso, si llega a haberlo, dice lo que **sí** se puede: consultar y exportar.
+
+## 45.5. Cuando lo que falla es el plan
+
+Dos errores nuevos que no significan «algo salió mal»:
+
+| Código | HTTP | Qué pasó | Qué se ofrece |
+| --- | --- | --- | --- |
+| `FEATURE_NOT_AVAILABLE` | 403 | El plan no lo incluye | Mejorar de plan |
+| `LIMIT_EXCEEDED` | 409 | Sí lo incluye, pero se acabó el cupo | Liberar espacio **o** mejorar |
+
+Los dos traen `details` con esquema propio, así que el mensaje lleva **cifras**: «Tienes 200 de
+200». `used` es lo ya gastado, nunca lo que queda.
+
+Y no son el mismo caso: un **aforo** (`max_contacts`, `max_users`, `max_branches`) se libera
+archivando; una **cuota mensual** (`ai_messages_monthly`, `voice_minutes_monthly`) se renueva
+sola, así que esperar también es una salida. `isPeriodicLimit` distingue las dos.
+
+Todo esto vive en **un sitio**, `toastApiError` (`features/platform/errors.ts`), que es la forma
+de contar que una mutación falló: si el error es de plan dice lo de arriba, y si no, lo de
+siempre. Ninguna pantalla se tiene que acordar de los dos códigos, que es justo lo que no habría
+pasado con 44 `toast.error` repartidos.
+
+**Y el aviso no se queda en el diagnóstico:** lleva un botón «Ver planes» a `/config/plan`
+(§45.6). Decirle a alguien que se quedó sin cupo y dejarlo buscando dónde se arregla es media
+respuesta.
+
+Cómo llega ahí es lo único con truco. El `Toaster` se monta en `providers.tsx`, **por encima del
+`RouterProvider`**, así que un `<Link>` dentro de un aviso no tendría router del que colgar; y
+llamar al router desde `errors.ts` cerraría un ciclo de imports —`router.tsx` monta el shell y el
+shell acaba importando quien avisa—. La salida es la misma que ya usa el 401: el shell **presta**
+su `navigate` (`setAppNavigate`, `lib/navigate.ts`) y quien avisa lo pide. Sin nadie registrado
+cae a una navegación del navegador: recarga, que es peor, pero un botón que no hace nada es mucho
+peor.
+
+**Ojo con uno que no viene de un plan:** `limit: "free_organizations"` es el tope anti-abuso de
+organizaciones gratuitas por usuario. Llega por la misma vía y se nombra igual —por eso el
+mensaje no dice «de tu plan»—, y no hay que distinguirlo.
+
+## 45.6. Dónde se ve el plan
+
+`/config/plan` («Plan y consumo») es el destino de los dos errores de arriba: cuando el backend
+dice «no te alcanza», aquí se ve por qué y qué haría falta.
+
+Tres cosas que hay que hacer bien y se hacen mal solas:
+
+1. **Un tope en `null` es «sin límite», nunca cero.** Y un `price` en `null` es **«Consultar»**,
+   tampoco cero: el plan gratuito trae `0.00` de verdad, así que pintar el vacío como gratis
+   promete algo que nadie ha decidido.
+2. **Los dos tipos de tope no salen del mismo sitio.** Las cuotas mensuales (Numi, voz) las lleva
+   el servidor en `usage`, que es donde se cobran. Los aforos (contactos, miembros, sedes) cuentan
+   filas que existen ahora, así que el conteo lo tiene la propia lista — y contactos va con
+   `isActive: 'true'`, porque **lo archivado no gasta cupo**.
+3. **`period` es el mes de la organización, no el del navegador.** Viene resuelto en su zona
+   horaria; no se recalcula aquí.
+
+Los planes van en **tarjetas y no en una tabla comparativa**: cuatro planes por once filas no
+caben en 360 px sin desplazarse en horizontal, que es el gesto que §11.1.3 prohíbe para lo que hay
+que leer entero. Y solo se listan las features que **algún** plan incluye: las otras cuatro
+existen como clave y se encenderán al construirse, así que hoy serían cuatro «✗» que no comparan
+nada.
+
+Cuatro decisiones de la tarjeta, que es lo que se copia mal de una página de precios cualquiera:
+
+1. **El que destaca es el plan contratado, no un «Recomendado».** El contrato no publica esa
+   señal, y ponerla aquí sería una decisión de precio escrita en el front (§70).
+2. **Sin la micro-etiqueta «PLANES» en versalitas** encima del título, ni el conmutador
+   mensual/anual: la primera es el tic que §11.1 prohíbe, y el segundo anunciaría un precio anual
+   que el contrato no tiene.
+3. **Cada tope con su icono**, al tamaño del texto y sin pastilla detrás — el cuadradito tintado
+   por fila es el otro tic de §11.1. Es lo que deja leer la lista de un vistazo.
+4. **El botón no finge un carrito.** Mover una organización de plan es una acción de la consola de
+   plataforma (§47.2), así que «Consultar Pro» abre un diálogo que dice qué pasa de verdad, y el
+   plan contratado no lleva botón sino una marca.
+
+**Estar al tope no se pinta en rojo.** El medidor pasa a ámbar desde el 80 % y, al llenarse, lo
+dice con palabras («sin cupo») en vez de subir a `destructive`: el rojo de §7 es para lo vencido y
+lo que falló, y un plan Free con «1 de 1 miembros» lo tendría encendido para siempre — que es
+exactamente el aviso que se aprende a ignorar.
+
+## 45.7. Un formulario no se rellena dos veces
+
+El patrón que sale solo al escribir una pantalla de edición es este:
+
+```ts
+useEffect(() => { if (registro) reset(toForm(registro)) }, [registro, reset])
+```
+
+y tiene un fallo que **no se ve leyéndolo**: `registro` no cambia solo cuando se abre otro, sino
+cada vez que la consulta trae datos nuevos. Si alguien edita ese mismo registro desde otro sitio,
+o si algo invalida la caché mientras se escribe, el efecto se dispara otra vez y el formulario se
+rellena de nuevo — **lo escrito desaparece sin decir nada**. Y si el hook reconstruye su resultado
+en cada render, el efecto entra en bucle: es literalmente cómo se descubrió, previsualizando el
+editor de roles.
+
+**`useHydrateOnce` (`lib/use-hydrate-once.ts`) es la forma de hacerlo**, y lo usan las siete
+pantallas que editan algo cargado: contacto, acuerdo, gasto recurrente, empresa, rol, umbral de
+aprobación y el tema por defecto. La clave la pone quien llama —no todo lo que se edita tiene
+`id`; los ajustes van por `organizationId`— y es ella, no la identidad del objeto, la que decide.
+
+Dos consecuencias que hay que tener presentes:
+
+1. **Si la pantalla se queda tras guardar**, hay que marcarla limpia a mano con lo que se guardó
+   (`reset(values)`): ya no va a refrescarse sola. Los cajones que navegan al detalle no lo
+   necesitan.
+2. **Un diálogo que debe abrir siempre con lo de hoy se monta solo mientras está abierto**
+   (`{abierto && <Dialog … />}`), y entonces el estado de partida lo ponen los inicializadores y
+   no hace falta efecto. Es lo que hacen el editor de planes y el de condiciones negociadas.
+
+Lo que **no** entra aquí: los diálogos que se rellenan desde estado local (`editing` de un
+catálogo) ni los que resetean a vacío al abrirse. Ahí la dependencia no la mueve el servidor.
 
 ## 45.2. La puerta de entrada no parpadea
 
@@ -2633,19 +2774,136 @@ La accesibilidad no se agrega después.
 
 # 47. Roles y permisos
 
-La UI debe respetar los permisos del usuario.
-
-Roles:
-
-- Dueño;
-- Administrador;
-- Contador;
-- Operador;
-- Consulta.
+La UI debe respetar los permisos del usuario. **Se decide por permiso, no por nombre de rol**
+(§88.5): el rol sigue siendo el paquete de siempre —Dueño, Administrador, Contador, Operador,
+Consulta— pero lo que gatea un botón es `can('payments.reverse')`, no `role === 'ADMIN'`.
 
 No mostrar acciones ejecutables que el usuario no puede realizar, salvo que exista una razón UX concreta para mostrarlas deshabilitadas con explicación.
 
 Numi debe respetar exactamente los mismos permisos.
+
+## 47.1. El superadmin de plataforma no es un rol de organización
+
+Vive fuera del tenant y en su propia superficie (`/plataforma`, §47.2). Meterlo en el enum de
+roles habría convertido la gestión de miembros en una escalada de privilegios, así que **ser
+propietario de tu organización no te hace superadmin** — ni al revés.
+
+Se decide con `GET /me/platform-access`, que se pide **en paralelo** con la sesión. Es
+**orientativo**: sirve para no ofrecer un menú que va a fallar, y cada petición a `/admin/*` lo
+vuelve a comprobar contra la tabla.
+
+## 47.2. La consola de plataforma
+
+Vive **en esta misma app** como ruta protegida, no en un panel aparte: es la misma persona con la
+misma sesión, y montar una segunda aplicación para siete endpoints habría duplicado el cliente
+HTTP y el sistema visual entero. Su ficha cuelga de la lista como cualquier otra (§87.5) y su
+navegación es `SectionedLayout`, la misma de Configuración y Ayuda (§11.1.3).
+
+**Pero cuelga fuera de `AppShell`, y esto costó una captura de pantalla descubrirlo.** El shell de
+la aplicación empieza por «¿a qué organización perteneces?» y enseña el onboarding de «Crea tu
+organización» a quien no pertenece a ninguna. Un superadmin **no tiene por qué tener
+organización**: administra todas, no es miembro de ninguna. Con la consola dentro, esa puerta se
+cerraba antes de que la ruta llegara a montarse, así que `/plataforma` acababa en «Crea tu
+organización» — parecía una redirección y era una pantalla tapando a la otra.
+
+Es también lo coherente con el backend: `requirePlatformAdmin` corre **fuera** de `requireTenant`.
+Si allí no hace falta un inquilino, aquí tampoco. De ahí que `PlatformShell` lleve el cromo
+mínimo —marca, tema, cuenta y una salida a la app si la tiene—: la navegación del negocio no
+significa nada mirando la plataforma, y el selector de organización estaría vacío.
+
+Y por si alguien aterriza en el onboarding de todas formas, esa pantalla ofrece la consola cuando
+`isPlatformAdmin`: era el único callejón sin salida que quedaba.
+
+| Ruta | Qué hace |
+| --- | --- |
+| `/plataforma/organizaciones` | Todas, con su plan, su estado y su consumo del período |
+| `/plataforma/organizaciones/:id` | La ficha: topes efectivos, condiciones negociadas, cambiar plan, suspender |
+| `/plataforma/planes` | Editar los planes, que son filas y no una constante del código |
+
+Tres cosas de aquí que se hacen mal solas:
+
+1. **Un override tiene tres estados, no dos.** «Lo que diga el plan» no es «sin límite», y «sin
+   límite» no es cero. Por eso cada tope lleva un selector y no una casilla, y lo que se deja
+   heredado **deja de estar negociado** — se manda el conjunto entero.
+2. **Guardar un plan obliga a decir si alcanza a quien ya lo tiene.** El contrato lo pide sin
+   valor por defecto a propósito: cambiar topes o precios sin querer a los clientes actuales es de
+   las pocas cosas realmente difíciles de deshacer. El desplegable arranca vacío y no se envía sin
+   elegir.
+3. **Suspender no borra nada.** Deja a la organización en solo lectura (§45.4). Es una medida
+   comercial o antiabuso, no dejar a nadie fuera de su propia contabilidad.
+
+Y la consola invalida también el catálogo **público** de planes al guardar: editar el precio de
+Pro y que «Plan y consumo» siga enseñando el viejo sería el peor sitio para una caché rancia.
+
+## 47.3. Roles propios de una organización
+
+Los cinco de siempre siguen ahí, y encima una organización puede definir los suyos. Tres reglas
+que cambian cómo se piensa la pantalla de miembros:
+
+1. **Un rol propio reemplaza los permisos del rol base, no se suma a ellos.** «Qué puede hacer
+   esta persona» tiene que tener una sola respuesta. El rol base se conserva como **etiqueta** —y
+   es lo que sigue contando propietarios activos—, así que un miembro tiene rol y, opcionalmente,
+   rol propio: dos desplegables, no uno.
+2. **Escribirlos se vende con el plan (`custom_roles`); leerlos no.** Quien baja de plan conserva
+   los que definió y sus miembros siguen trabajando. Por eso la lista se enseña igual y lo que
+   desaparece es el botón: esconderla entera diría lo contrario de lo que hace el backend
+   —bloquear crear, nunca borrar—.
+3. **El editor ofrece el catálogo entero**, incluidos los tres permisos que el backend reserva al
+   propietario. No se filtran aquí porque **el contrato no publica cuáles son**, y escribir esa
+   lista en el front sería la segunda fuente de verdad que §88.5 existe para evitar. El backend
+   los rechaza nombrándolos, así que el error dice cuál sobra. *(Anotado como petición de
+   contrato en `SYNC-STATUS.md`.)*
+
+**Los 53 permisos no se nombran uno a uno.** Todos tienen la forma `recurso.acción`, así que dos
+tablas pequeñas —24 recursos y 13 verbos— los componen todos y **componen el que venga**:
+`payments.reverse` → «Pagos · Reversar». Una tabla de 53 entradas se queda coja a la primera clave
+nueva y nadie se entera; con esto, un recurso desconocido cae en «Otros» con su clave a la vista.
+
+En el editor van **agrupados por área** —la de la navegación, §14— y dentro por recurso, con el
+contador y el «Todo» **en el área**: un rol se piensa así («lleva la cartera»), no casilla por
+casilla, y «Cartera 3 de 12» responde la cobertura sin abrir nada.
+
+**Una caja por área, no una por recurso.** Veinticuatro rectángulos con borde apilados son la sopa
+de tarjetas de §11.1: separan sin jerarquizar. Dentro, los recursos se separan con una línea, que
+es lo que ya hace `DetailRows`. Y las casillas van **apiladas bajo su recurso**, no en una columna
+de etiquetas al lado: el cajón mide 30rem y una columna fija dejaría a los cuatro verbos de
+«Egresos» sin sitio.
+
+En la lista, cada rol se resume por **las áreas que toca**, en fichas. Con recursos salían siete
+nombres unidos por `·` que se desbordaban a dos renglones y había que leerlos todos para saber de
+qué iba el rol. Y un rol **sin miembros** se lee distinto —«Sin miembros» en gris frente a la
+insignia—, porque es el único que se puede archivar sin mover a nadie antes.
+
+Va en **cajón y no en diálogo centrado**: cuelga de la lista de roles y no es un formulario corto.
+§11.1.3 mira las dos cosas y aquí apuntan al mismo sitio.
+
+## 47.4. Aprobación de egresos
+
+«Todo egreso mayor a $5.000.000 requiere aprobación» **no lo resuelve un permiso**: necesita
+estado en la entidad, y ahí está lo que hay que entender antes de pintar nada.
+
+**El estado vive en el desembolso, no en el gasto.** Un gasto es una obligación; el egreso es el
+dinero saliendo, y es eso lo que se aprueba. Por encima del umbral **no se mueve un peso** hasta
+que alguien firma, así que un `PENDING_APPROVAL` no es un egreso a medias: es una **solicitud**.
+Solo `POSTED` y `REVERSED` tienen movimiento financiero.
+
+De ahí las tres decisiones de pantalla:
+
+1. **La ficha opera sobre `POSTED`**, no sobre «no está reversado» (§94.0). Un pendiente no tiene
+   nada que revertir ni anticipo que repartir.
+2. **`disbursements.approve` es condición necesaria, no suficiente**: el backend comprueba además
+   que quien aprueba no sea quien registró. El contrato **no publica el autor**, así que eso no se
+   puede anticipar — el botón se ofrece y el error lo dice. Es la excepción consciente a «no
+   ofrecer lo que va a fallar».
+3. **El rechazo pide motivo**, que se guarda con quién decidió. No se borra nada.
+
+El umbral va en Configuración › Gastos › **Aprobación de egresos**, hermana de las políticas de
+interés en cartera: es una política, no un catálogo, tiene endpoint propio y va detrás de la
+feature `approvals`. **Vacío la apaga** — es «sin umbral», no «umbral cero», que haría pasar por
+aprobación hasta el café.
+
+**Sin notificaciones**, y la pantalla lo dice: quien aprueba los encuentra filtrando la lista de
+egresos por «Espera aprobación».
 
 ---
 
@@ -3571,9 +3829,9 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, 73 endpoints) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, 111 paths / 141 operaciones) y en vivo en
   `http://localhost:4010/openapi.json`.
-- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-8.md`, y el
+- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`, y el
   resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
 - Cuando el backend publica un contrato nuevo: se copia el `openapi.json` a `contract/` y se
   corre `pnpm api:gen`.
@@ -3626,11 +3884,44 @@ sola:
 de éxito — ojo con las que tienen dos acciones, que la clave es de una sola: en cuentas por cobrar
 se renueva al causar mora, no al generar mensualidades.
 
-## 88.5. El front no es frontera de seguridad
+## 88.5. Permisos: qué se ofrece y qué no
 
-Zod valida en cliente para dar buen feedback. El backend revalida todo. Los permisos de rol
-(`features/organizations/roles.ts`) sirven para **no mostrar** acciones imposibles, no para
-protegerlas.
+El backend **dejó de autorizar por nombre de rol**. Cada operación del contrato viene anotada con
+`x-required-permission` (62 de las 127) y `GET /organizations/:orgId/me/capabilities` responde de
+una vez lo que la UI necesita: rol, `permissions[]`, plan, features, topes, período y consumo.
+
+En el front eso es **una sola pieza**:
+
+```ts
+const can = useCan()               // features/platform/permissions.ts
+const canReverse = can('payments.reverse')
+```
+
+Tres reglas que la sostienen:
+
+1. **El permiso lo dice el contrato, no una tabla nuestra.** El que se pasa a `can()` es el
+   `x-required-permission` del endpoint que el botón va a llamar. El tipo `Permission` sale del
+   enum generado, así que un permiso renombrado rompe `tsc` en vez de dejar un botón gateado
+   contra una cadena muerta.
+2. **Nada de agrupar por comodidad.** Aquí vivían tres predicados de rol —`canManageOrg`,
+   `canEditContacts`, `canManageAgreements`— y el primero cubría **nueve** permisos distintos: la
+   pantalla de sedes y la de catálogos se gateaban igual aunque el API las separa. Registrar un
+   pago (`payments.create`) y registrar un egreso (`disbursements.create`) son dos permisos, no
+   uno.
+3. **Un componente compartido no decide autorización.** `AccountDetail` y `SettlementDetail`
+   reciben `canSettle` / `canManage` / `canReverse` / `canApply` **como props**, porque el permiso
+   es distinto en cada cara del espejo (§87.2).
+
+4. **`useCan` también apaga lo que la organización no puede hacer.** Si no está `ACTIVE`, todo lo
+   que no termine en `.read` devuelve `false`: es el mismo corte que hace `requireTenant` en el
+   backend, y se aplica **antes** del intento (§45.4).
+
+De `roles.ts` solo queda el **nombre** de un rol (`roleLabel`, `ASSIGNABLE_ROLES`): lo que se
+enseña y lo que se asigna en la pantalla de miembros.
+
+**Y sigue sin ser una frontera de seguridad.** Zod valida en cliente para dar buen feedback y
+`useCan` decide qué se dibuja; el backend revalida todo. Ocultar un botón no protege nada —solo
+evita ofrecer lo que va a responder 403—.
 
 ---
 
@@ -3739,7 +4030,7 @@ usa una máscara, por qué `--primary` no se aclara en hover). Sigue ese estilo:
 | Capa | Herramienta | Qué se cubre |
 | --- | --- | --- |
 | Utilidades puras (`lib/`) | Vitest | Todos los caminos, incluidos los bordes (`format`, `csv`, `errors`) |
-| Lógica de dominio (`roles.ts`, `utils.ts`) | Vitest | Reglas de permiso y de negocio del front |
+| Lógica de dominio (`permissions.ts`, `quick-actions.ts`, `utils.ts`) | Vitest | Reglas de permiso y de negocio del front |
 | Componentes con comportamiento | Testing Library | Lo que el usuario ve y hace, no el estado interno |
 | Flujos completos | Playwright | Login, navegación, Numi y **el ciclo del dinero** (§92.3) |
 
@@ -3832,11 +4123,19 @@ mismo orden, los mismos filtros, el mismo CSV. Compartían las dieciséis piezas
 `components/` y aun así estaban duplicadas — lo copiado no eran las piezas, era el montaje. Hoy la
 pantalla vive una vez (`components/accounts-list.tsx`) y cada cara son ~130 líneas.
 
-**Una diferencia entre esas dos caras es real y viaja explícita**, que es distinto de la deriva:
-**causar mora**, solo en cobrar. Es de dominio —a un proveedor no se le cobran intereses— y va en
-`actions`, la lista de operaciones periódicas propias de un lado.
+**Las diferencias reales entre esas dos caras viajan explícitas**, que es distinto de la deriva.
+Hoy son dos:
 
-Hubo una segunda durante un tiempo, y vale la pena contar cómo se cerró. Los números de las fichas
+- **Causar mora**, solo en cobrar. Es de dominio —a un proveedor no se le cobran intereses— y va
+  en `actions`, la lista de operaciones periódicas propias de un lado.
+- **Los estados de un movimiento**: un egreso puede quedar `PENDING_APPROVAL` o `REJECTED` —las
+  aprobaciones por umbral—, y un pago que entra no lo aprueba nadie. Por eso `SettlementList`
+  recibe sus `statuses` como prop: una lista común con los cuatro le ofrecería a pagos dos
+  filtros que su endpoint rechaza. Y `SettlementDetail` opera sobre `POSTED`, no sobre «no está
+  reversado»: un egreso que espera firma no movió un peso, así que no hay nada que revertir ni
+  anticipo que repartir.
+
+Hubo una tercera que lo parecía y no lo era, y vale la pena contar cómo se cerró. Los números de las fichas
 de estado salían del resumen, y `PayablesSummary` solo firma el de vencidas: cuentas por pagar
 enseñaba una ficha con número y tres sin. Se leyó primero como deriva, se comprobó contra el
 contrato y se dejó así a propósito (§70: un dato que no se tiene no se inventa) — mirar el
@@ -3949,6 +4248,27 @@ Todos son parte del sistema y deben reutilizarse:
 | `FilterSheet` · `FilterSheetTrigger` · `FilterField` · `FilterSortField` | `components/ui/filter-sheet.tsx` | Filtros avanzados y orden, en hoja inferior / cajón |
 | `BalanceKpis` | `components/balance-kpis.tsx` | Total, vencido y al día de una cartera |
 | `SectionSwitch` | `components/section-switch.tsx` | Salto entre pantallas espejo, solo en móvil |
+| `useCapabilities` | `features/platform/hooks.ts` | Rol, permisos, plan, topes y consumo — **una llamada al entrar** |
+| `useCan` | `features/platform/permissions.ts` | **El único gate de la UI**: `can('payments.reverse')` (§88.5) |
+| `useOrgReadOnly` | `features/platform/permissions.ts` | ¿La organización está suspendida o archivada? (§45.4) |
+| `ReadOnlyBanner` | `features/platform/read-only-banner.tsx` | El aviso persistente de solo lectura, en todas las pantallas |
+| `toastApiError` | `features/platform/errors.ts` | **Cómo se cuenta que una mutación falló**, plan incluido (§45.5) |
+| `setAppNavigate` · `navigateApp` | `lib/navigate.ts` | Navegar desde fuera de React (avisos, §45.5) |
+| `usePlans` | `features/platform/hooks.ts` | El catálogo de planes en venta (§45.6) |
+| `useLimitUsage` | `features/platform/use-limit-usage.ts` | Cuánto llevas de cada tope — aparte, que el sidebar no lo necesita |
+| `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
+| `useFeature` | `features/platform/permissions.ts` | ¿El plan incluye esta feature? Orientativo, como `useCan` |
+| `permissionLabel` · `groupPermissions` | `features/platform/permission-labels.ts` | Los 53 permisos en palabras, **compuestos** (§47.3) |
+| `RolesPage` · `RoleFormPage` | `features/config/` | Roles propios de la organización y su editor (§47.3) |
+| `ApprovalPolicyPage` | `features/config/approval-policy-page.tsx` | El umbral de aprobación de egresos (§47.4) |
+| `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
+| `PlatformShell` | `features/admin/platform-shell.tsx` | Shell de la consola, **fuera de `AppShell`** (§47.2) |
+| `AdminOrganizationsPage` · `AdminOrganizationDetailPage` | `features/admin/` | Las organizaciones de la plataforma y su ficha |
+| `OverridesDialog` | `features/admin/overrides-dialog.tsx` | Negociar features y topes: **tres** estados, no dos |
+| `AdminPlansPage` | `features/admin/plans-page.tsx` | Editar planes, con la decisión de si alcanzan a los actuales |
+| `planLabel` · `featureLabel` · `limitLabel` | `features/platform/labels.ts` | Planes, features y topes en las palabras del usuario |
+| `orgStatus` | `features/organizations/labels.ts` | Tono y nombre del estado de una organización |
+| `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
 
@@ -4129,7 +4449,7 @@ Vale la pena dejarlo escrito para no "arreglarlo":
 - Listas: tabla densa en escritorio → tarjetas con jerarquía en móvil (§11.1.3b), desde un solo
   modelo de columnas ✅
 - Esqueletos de carga en listas; `NumiLoader` reservado a esperas significativas ✅
-- Permisos aplicados en UI (`roles.ts`) antes de mostrar acciones ✅
+- Permisos aplicados en UI por **permiso del contrato** (`useCan`), no por nombre de rol ✅
 - Fechas en lenguaje natural con fallback exacto ✅
 - Code-splitting en todas las rutas ✅
 - Filtros conservados al volver del detalle (detalle como ruta hija) ✅
@@ -4182,7 +4502,7 @@ actualización de este documento.
 
 1. `features/config/settings-layout.tsx`: shell de Configuración con sub-navegación propia
    —columna fija en escritorio; por debajo de `lg` fue una tira horizontal desplazable y hoy es
-   el `Drawer` detrás de «Secciones» (§11.1.3)— que absorbe las once pantallas de ajustes. El
+   el `Drawer` detrás de «Secciones» (§11.1.3)— que absorbe las doce pantallas de ajustes. El
    sidebar pasa de 21 a 13 enlaces. → 95.1
 2. "Maestros" → **"Catálogos"** de cara al usuario, también en la guía (`/ayuda`), que apuntaba
    a una sección con el nombre viejo.
@@ -4338,6 +4658,74 @@ sitio — y se notó: la paleta se pudo componer entera reutilizando catálogos 
 
 ---
 
+## Fase 7 — Permisos del contrato ✅ **completada**
+
+**Por qué aquí:** el backend dejó de autorizar por nombre de rol (Fase 9 del API), y todo lo que
+viene después —planes, consola— se apoya en `/me/capabilities`.
+
+1. `features/platform/`: `useCapabilities` (una llamada al entrar) y `useCan`, el **único** gate
+   de la UI, tipado contra el enum generado. → §88.5
+2. Los tres predicados de rol de `roles.ts` desaparecen y sus **28 llamadores** piden el permiso
+   de su propio endpoint. `canManageOrg` cubría nueve permisos distintos.
+3. `AccountDetail` y `SettlementDetail` reciben los predicados **como props**: el permiso es
+   distinto en cada cara del espejo (§87.2).
+4. Las pruebas que fijaban un rol ahora fijan permisos, que es lo que la pantalla mira.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 244 tests en verde.
+
+---
+
+## Fase 8 — Los tres estados nuevos ✅ **completada**
+
+1. **Solo lectura como modo** (§45.4): `useCan` apaga toda escritura si la organización no está
+   `ACTIVE`, y `ReadOnlyBanner` lo explica una vez en la cabecera de todas las pantallas.
+2. **Los dos errores de plan** (§45.5) con cifras y salidas concretas, en un solo sitio:
+   `toastApiError` sustituye los 44 `toast.error(getErrorMessage(…))`.
+3. `lib/errors.ts` gana los lectores tipados sobre el enum cerrado del contrato.
+
+**Verificación:** typecheck limpio, 0 warnings, 255 tests en verde.
+
+---
+
+## Fase 9 — Plan y consumo ✅ **completada**
+
+`/config/plan`: el plan actual, cuánto llevas de cada tope y el catálogo en venta (§45.6). Es el
+destino al que apuntan los dos errores de la fase anterior.
+
+**Verificación:** typecheck limpio, 0 warnings, 260 tests en verde.
+
+---
+
+## Fase 10 — Consola de plataforma ✅ **completada**
+
+`/plataforma`, detrás de `GET /me/platform-access` (§47.1, §47.2): organizaciones con su plan y su
+consumo, ficha con condiciones negociadas, cambio de plan, suspensión y edición de planes. De paso
+vuelve al pie del sidebar el enlace a «Estado del sistema», que §11.1.1 dejó anotado esperando
+justo a esto.
+
+**Verificación:** typecheck limpio, 0 warnings, 271 tests en verde, build OK.
+
+---
+
+## Fase 11 — Roles propios ✅ **completada**
+
+Configuración › Roles y su editor (§47.3), y la asignación en Miembros. Los 53 permisos se
+componen de dos tablas pequeñas en vez de nombrarse uno a uno, así que el catálogo puede crecer
+sin que nadie se acuerde de esta pantalla.
+
+**Verificación:** typecheck limpio, 0 warnings, 334 tests en verde.
+
+---
+
+## Fase 12 — Aprobación de egresos ✅ **completada**
+
+El umbral en Configuración › Gastos y el aprobar/rechazar en la ficha del egreso (§47.4), por un
+slot nuevo de `SettlementDetail` — porque un pago que entra no lo aprueba nadie.
+
+**Verificación:** typecheck limpio, 0 warnings, 341 tests en verde, build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -4348,6 +4736,12 @@ sitio — y se notó: la paleta se pudo componer entera reutilizando catálogos 
 | ✅ 4 | Dashboard | medio | 1, 2 |
 | ✅ 5 | Listados, detalles y Numi | medio | 1, 4 |
 | ✅ 6 | Command bar y pulido | medio-alto | todas |
+| ✅ 7 | Permisos del contrato | medio | — (contrato) |
+| ✅ 8 | Suspensión y errores de plan | medio | 7 |
+| ✅ 9 | Plan y consumo | bajo | 7, 8 |
+| ✅ 10 | Consola de plataforma | medio | 7, 9 |
+| ✅ 11 | Roles propios de la organización | medio | 7 |
+| ✅ 12 | Aprobación de egresos | medio | 7, 9 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

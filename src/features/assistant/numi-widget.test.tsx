@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import { NumiWidget } from './numi-widget'
 import { useNumiStore } from './numi-store'
+import { json, tenantApiResponse } from '@/test/tenant-api'
 import { sseChannel } from '@/test/sse'
 
 /** Turno completo en un solo gesto: la conversación, el texto y el cierre. */
@@ -16,31 +17,17 @@ function replyStream(sessionId: string, text: string): Response {
   return sse.response
 }
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  })
-}
-
-const ORG = {
-  organization: { id: '11111111-1111-4111-8111-111111111111', name: 'Demo', type: 'GENERIC' },
-  role: 'OWNER',
-}
-
 /** `fetch` con la lista de organizaciones y el chat; `onChat` decide la respuesta. */
 function stubApi(onChat: (message: string) => Promise<Response>) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url)
-      if (u.includes('/auth/csrf')) return json({ csrfToken: 'tok' })
       if (u.includes('/assistant/chat')) {
         const body = JSON.parse(String(init?.body ?? '{}')) as { message: string }
         return onChat(body.message)
       }
-      if (u.includes('/api/v1/organizations')) return json([ORG])
-      return json({})
+      return tenantApiResponse(u) ?? json({})
     }),
   )
 }

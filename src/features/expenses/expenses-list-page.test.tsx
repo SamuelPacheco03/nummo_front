@@ -18,8 +18,11 @@ const FILA = {
 
 let ultimosParams: Record<string, unknown> | undefined
 
+// Los permisos tienen su propia prueba: aquí se conceden todos para mirar
+// la pantalla, que es lo que este archivo comprueba.
+vi.mock('@/features/platform/permissions', () => ({ useCan: () => () => true }))
 vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' }, role: 'OWNER' }),
+  useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' } }),
 }))
 vi.mock('@/features/masters/hooks', () => ({
   useExpenseCategories: () => ({ items: [{ id: 'g1', name: 'Mensualidad' }] }),

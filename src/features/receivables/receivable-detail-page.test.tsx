@@ -10,7 +10,7 @@ const m = vi.hoisted(() => ({
   avisos: [] as { tono: string; texto: string }[],
   falla: false,
   cerrada: false,
-  rol: 'OWNER',
+  permisos: new Set<string>(['receivables.adjust', 'receivables.manage', 'payments.create']),
   mora: '0',
 }))
 
@@ -39,6 +39,9 @@ const detalle = () => ({
   ],
 })
 
+vi.mock('@/features/platform/permissions', () => ({
+  useCan: () => (permiso: string) => m.permisos.has(permiso),
+}))
 vi.mock('sonner', () => ({
   toast: {
     success: (texto: string) => m.avisos.push({ tono: 'success', texto }),
@@ -50,7 +53,7 @@ vi.mock('react-router', async () => {
   return { ...real, useParams: () => ({ receivableId: 'a1' }) }
 })
 vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ orgId: 'o1', role: m.rol }),
+  useCurrentOrg: () => ({ orgId: 'o1' }),
 }))
 vi.mock('@/features/contacts/hooks', () => ({
   useContact: () => ({ contact: { displayName: 'Ana Torres' } }),
@@ -80,7 +83,7 @@ beforeEach(() => {
   m.avisos.length = 0
   m.falla = false
   m.cerrada = false
-  m.rol = 'OWNER'
+  m.permisos = new Set(['receivables.adjust', 'receivables.manage', 'payments.create'])
   m.mora = '0'
 })
 afterEach(cleanup)
@@ -106,7 +109,7 @@ runAccountDetailSuite({
     m.cerrada = true
   },
   soloLectura: () => {
-    m.rol = 'VIEWER'
+    m.permisos = new Set()
   },
 })
 

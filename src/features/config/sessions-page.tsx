@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRevokeOtherSessions, useRevokeSession, useSessions } from '@/features/auth/hooks'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { formatDateHuman } from '@/lib/format'
 
 /** Etiqueta amable del dispositivo a partir del user-agent. */
@@ -51,7 +52,7 @@ export function SessionsPage() {
       await revoke.mutateAsync({ id })
       toast.success('Sesión cerrada')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo cerrar la sesión'))
+      toastApiError(err, 'No se pudo cerrar la sesión')
     }
   }
 
@@ -61,7 +62,7 @@ export function SessionsPage() {
       setConfirmOthers(false)
       toast.success('Se cerraron las demás sesiones')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudieron cerrar'))
+      toastApiError(err, 'No se pudieron cerrar')
     }
   }
 

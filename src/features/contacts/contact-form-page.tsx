@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -13,8 +12,9 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
+import { useCan } from '@/features/platform/permissions'
+import { toastApiError } from '@/features/platform/errors'
 import { cn } from '@/lib/utils'
 import type { Contact } from '@/api/generated/model'
 import { useContact, useCreateContact, useUpdateContact } from './hooks'
@@ -88,8 +88,9 @@ export function ContactFormPage() {
   const { contactId } = useParams()
   const isEdit = !!contactId
   const navigate = useNavigate()
-  const { orgId, role } = useCurrentOrg()
-  const canEdit = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canEdit = can('contacts.write')
   const { contact, isPending: loadingContact } = useContact(orgId, contactId)
   const create = useCreateContact(orgId ?? '')
   const update = useUpdateContact(orgId ?? '')
@@ -103,9 +104,7 @@ export function ContactFormPage() {
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: EMPTY })
 
-  useEffect(() => {
-    if (isEdit && contact) reset(toForm(contact))
-  }, [isEdit, contact, reset])
+  useHydrateOnce(isEdit ? contact?.id : undefined, contact, (c) => reset(toForm(c)))
 
   const contactType = watch('contactType')
   const busy = create.isPending || update.isPending
@@ -136,7 +135,7 @@ export function ContactFormPage() {
         navigate(`/contactos/${created.id}`)
       }
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar el contacto'))
+      toastApiError(err, 'No se pudo guardar el contacto')
     }
   })
 

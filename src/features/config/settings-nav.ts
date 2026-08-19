@@ -2,11 +2,14 @@ import {
   Bot,
   Building2,
   CreditCard,
+  Gauge,
+  KeyRound,
   MapPin,
   MonitorSmartphone,
   Palette,
   Percent,
   ReceiptText,
+  ShieldCheck,
   RefreshCw,
   Tags,
   UserCog,
@@ -27,6 +30,8 @@ export const GROUPS: SectionGroup[] = [
       { to: '/config/empresa', label: 'Empresa', Icon: Building2 },
       { to: '/config/sedes', label: 'Sedes', Icon: MapPin },
       { to: '/config/miembros', label: 'Miembros', Icon: UserCog },
+      { to: '/config/roles', label: 'Roles', Icon: KeyRound },
+      { to: '/config/plan', label: 'Plan y consumo', Icon: Gauge },
       { to: '/config/sesiones', label: 'Sesiones', Icon: MonitorSmartphone },
     ],
   },
@@ -51,6 +56,11 @@ export const GROUPS: SectionGroup[] = [
   {
     title: 'Cartera',
     items: [{ to: '/cartera/interes', label: 'Políticas de interés', Icon: Percent }],
+  },
+  {
+    // Su hermana del otro lado del dinero: una política, no un catálogo.
+    title: 'Gastos',
+    items: [{ to: '/gastos/aprobacion', label: 'Aprobación de egresos', Icon: ShieldCheck }],
   },
 ]
 

@@ -11,8 +11,9 @@ import { FormDialog } from '@/components/ui/form-dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type {
   AiProviderCatalogEntryProvider,
   AiVoiceProviderCatalogEntryProvider,
@@ -201,7 +202,7 @@ function ProviderSection<P extends string>({
       toast.success(`${editing.label} conectado`)
       setEditing(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   }
 
@@ -210,7 +211,7 @@ function ProviderSection<P extends string>({
       await actions.activate(entry.provider)
       toast.success(`Ahora se usa ${entry.label}`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo activar'))
+      toastApiError(err, 'No se pudo activar')
     }
   }
 
@@ -221,7 +222,7 @@ function ProviderSection<P extends string>({
       toast.success(`${removing.label} desconectado`)
       setRemoving(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo desconectar'))
+      toastApiError(err, 'No se pudo desconectar')
     }
   }
 
@@ -404,8 +405,9 @@ function VoiceSection({
 }
 
 export function AssistantPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageOrg(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('assistant.settings.manage')
   const { settings, isPending, isError, error } = useAssistantSettings(canManage ? orgId : undefined)
 
   return (

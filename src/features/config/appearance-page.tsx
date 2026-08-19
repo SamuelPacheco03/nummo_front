@@ -1,14 +1,14 @@
-import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { Check, Monitor, Moon, Sun } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { useThemeStore, type ThemeMode } from '@/stores/theme'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { OrganizationSettingsThemeMode } from '@/api/generated/model'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { cn } from '@/lib/utils'
 import { useOrgSettings, useUpdateSettings } from './hooks'
 
@@ -30,21 +30,18 @@ const OPTIONS: { mode: ThemeMode; label: string; description: string; Icon: Luci
 ]
 
 export function AppearancePage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
   const { settings } = useOrgSettings(orgId)
   const mode = useThemeStore((s) => s.mode)
   const setMode = useThemeStore((s) => s.setMode)
   const updateSettings = useUpdateSettings(orgId ?? '')
-  const canManage = canManageOrg(role)
+  const can = useCan()
+  const canManage = can('organization.manage')
 
-  // Refleja el tema por defecto de la organización una vez al cargar.
-  const syncedRef = useRef(false)
-  useEffect(() => {
-    if (settings && !syncedRef.current) {
-      syncedRef.current = true
-      setMode(ENUM_TO_MODE[settings.themeMode])
-    }
-  }, [settings, setMode])
+  // Refleja el tema por defecto de la organización una vez al cargar, y **solo**
+  // una: repetirlo al refrescar los ajustes pisaría el tema que se acabe de
+  // elegir a mano.
+  useHydrateOnce(settings?.organizationId, settings, (s) => setMode(ENUM_TO_MODE[s.themeMode]))
 
   const choose = async (m: ThemeMode) => {
     setMode(m)
@@ -53,7 +50,7 @@ export function AppearancePage() {
         await updateSettings.mutateAsync({ orgId, data: { themeMode: MODE_TO_ENUM[m] } })
         toast.success('Tema de la organización actualizado')
       } catch (err) {
-        toast.error(getErrorMessage(err, 'No se pudo guardar el tema'))
+        toastApiError(err, 'No se pudo guardar el tema')
       }
     }
   }

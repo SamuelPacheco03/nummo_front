@@ -1,10 +1,10 @@
 import { toast } from 'sonner'
 import { AccountsList } from '@/components/accounts-list'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { usePayablesSummary } from '@/features/reports/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { AccountsListCopy, AccountsQuery } from '@/lib/accounts-list'
 import type {
   GenerateExpensesResult,
@@ -46,7 +46,8 @@ const COPY: AccountsListCopy = {
  * vencidas. Las dos ausencias son del dominio y del contrato, no un olvido.
  */
 export function ExpensesListPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
   const { summary, isPending: summaryLoading } = usePayablesSummary(orgId)
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
@@ -62,7 +63,7 @@ export function ExpensesListPage() {
       const r = res.data as GenerateExpensesResult
       toast.success(`${r.created} generadas · ${r.skipped} ya existían`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudieron generar'))
+      toastApiError(err, 'No se pudieron generar')
     }
   }
 
@@ -105,8 +106,8 @@ export function ExpensesListPage() {
       statusOf={expenseStatus}
       summary={summary}
       summaryLoading={summaryLoading}
-      canCreate={canEditContacts(role)}
-      canGenerate={canManageAgreements(role)}
+      canCreate={can('expenses.create')}
+      canGenerate={can('expenses.manage')}
       onGenerate={() => void onGenerate()}
       generating={generate.isPending}
       createDialog={(open, onOpenChange) =>

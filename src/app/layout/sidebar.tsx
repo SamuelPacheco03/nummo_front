@@ -1,11 +1,13 @@
 import { Link, NavLink, useLocation } from 'react-router'
-import { HelpCircle, Settings } from 'lucide-react'
+import { Activity, HelpCircle, Settings, ShieldCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/features/auth/user-menu'
 import { OrgSwitcher } from '@/features/organizations/org-switcher'
 import { isSettingsPath } from '@/features/config/settings-nav'
+import { isPlatformPath } from '@/features/admin/platform-nav'
+import { usePlatformAccess } from '@/features/platform/hooks'
 import { SECTIONS } from '@/features/navigation/sections'
 import { InstallAppButton } from '@/pwa/install-app-button'
 import { OfflineIndicator } from '@/pwa/offline-indicator'
@@ -106,6 +108,7 @@ function FooterLink({
  */
 export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation()
+  const { isPlatformAdmin } = usePlatformAccess()
 
   return (
     <>
@@ -139,12 +142,32 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         />
         <FooterLink to="/ayuda" label="Ayuda" Icon={HelpCircle} onNavigate={onNavigate} />
         {/*
-          «Estado del sistema» (`/estado`) **no se enlaza**: la salud del backend
-          es cosa de quien lo opera, no de quien lleva las cuentas de un jardín
-          infantil. Su sitio será el rol de superadministrador, que todavía no
-          existe. La ruta sigue viva y se llega por URL, así que soporte puede
-          pedirla; cuando llegue el rol, el enlace vuelve aquí tras su permiso.
+          La consola de plataforma y «Estado del sistema» (`/estado`) solo se
+          enlazan para quien administra Nummo. La salud del backend es cosa de
+          quien lo opera, no de quien lleva las cuentas de un jardín infantil —
+          por eso el enlace estuvo retirado hasta que existió el superadmin, y
+          por eso vuelve aquí ahora, detrás de esa señal.
+
+          `isPlatformAdmin` es **orientativo, no autorización**: sirve para no
+          ofrecer un menú que va a fallar. El backend revalida cada petición.
         */}
+        {isPlatformAdmin && (
+          <>
+            <FooterLink
+              to="/plataforma"
+              label="Plataforma"
+              Icon={ShieldCheck}
+              onNavigate={onNavigate}
+              forceActive={isPlatformPath(pathname)}
+            />
+            <FooterLink
+              to="/estado"
+              label="Estado del sistema"
+              Icon={Activity}
+              onNavigate={onNavigate}
+            />
+          </>
+        )}
         <InstallAppButton className="text-sidebar-muted-foreground hover:text-sidebar-foreground px-3 transition-colors" />
         <OfflineIndicator />
         {/*

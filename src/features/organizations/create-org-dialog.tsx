@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useCreateOrganization } from './hooks'
 
 const schema = z.object({
@@ -64,7 +64,7 @@ export function CreateOrgDialog({
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo crear la organización'))
+      toastApiError(err, 'No se pudo crear la organización')
     }
   })
 

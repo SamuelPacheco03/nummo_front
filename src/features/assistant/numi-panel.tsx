@@ -50,7 +50,6 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     error,
     isTyping,
     isHydrating,
-    role,
     orgId,
     orgName,
     conversationId,
@@ -155,7 +154,6 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             error={error}
             isTyping={isTyping}
             isHydrating={isHydrating}
-            role={role}
             hasOlder={hasOlder}
             isLoadingOlder={isLoadingOlder}
             loadOlder={() => void loadOlder()}

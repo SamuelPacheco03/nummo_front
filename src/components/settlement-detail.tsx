@@ -15,9 +15,10 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { usePaymentMethods } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
+import { isVoidedSettlement } from '@/lib/settlement-list'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -100,6 +101,10 @@ export function SettlementDetail({
   targetTo,
   copy,
   statusOf,
+  canReverse,
+  canApply,
+  actions,
+  afterDetail,
   query,
   useReverse,
   applyDialog,
@@ -110,6 +115,21 @@ export function SettlementDetail({
   targetTo: (targetId: string) => string
   copy: SettlementDetailCopy
   statusOf: (status: string) => { tone: StatusTone; label: string }
+  /**
+   * Quién puede deshacer y quién puede repartir el anticipo. Vienen de fuera
+   * porque el permiso **es distinto en cada cara** —`payments.reverse` no es
+   * `disbursements.reverse`— y porque un componente compartido no decide
+   * autorización (§87.2).
+   */
+  canReverse: boolean
+  canApply: boolean
+  /**
+   * Acciones propias de una cara, antes de las comunes. Hoy las de aprobación:
+   * un pago que entra no lo aprueba nadie, así que no tienen espejo (§94.0).
+   */
+  actions?: ReactNode
+  /** Secciones propias de una cara, al pie de la ficha. */
+  afterDetail?: ReactNode
   /** El movimiento ya cargado y traducido. */
   query: SettlementDetailQuery
   /**
@@ -124,9 +144,7 @@ export function SettlementDetail({
     settlement: SettlementDetailData,
   ) => ReactNode
 }) {
-  const { orgId, role } = useCurrentOrg()
-  const canReverse = canManageAgreements(role)
-  const canApply = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
 
   const { data, isPending, isError, error } = query
   const idem = useIdempotencyKey()
@@ -157,7 +175,17 @@ export function SettlementDetail({
     )
   }
 
-  const reversed = data.status === 'REVERSED'
+  /*
+    Dos nociones, no una. Con las aprobaciones por umbral, «no está reversado» ya
+    no significa «se puede operar»: un egreso que espera firma no movió un peso,
+    así que no hay nada que revertir ni anticipo que repartir; y uno rechazado
+    tampoco lo moverá nunca.
+
+    Para un pago las dos siguen siendo la de antes —solo tiene POSTED y
+    REVERSED—, así que esta cara no cambia en nada.
+  */
+  const posted = data.status === 'POSTED'
+  const voided = isVoidedSettlement(data.status)
   const unassigned = Number(data.unallocatedAmount) || 0
 
   const onReverse = async () => {
@@ -167,7 +195,7 @@ export function SettlementDetail({
       idem.renew()
       setReverseOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo reversar'))
+      toastApiError(err, 'No se pudo reversar')
     }
   }
 
@@ -184,19 +212,20 @@ export function SettlementDetail({
           </span>
         }
         amount={
-          <span className={cn(reversed && 'text-muted-foreground line-through')}>
+          <span className={cn(voided && 'text-muted-foreground line-through')}>
             {formatAmount(data.amount)}
           </span>
         }
         actions={
           <>
-            {canApply && !reversed && unassigned > 0 && data.contactId && (
+            {actions}
+            {canApply && posted && unassigned > 0 && data.contactId && (
               <Button size="sm" onClick={() => setApplyOpen(true)}>
                 <Wallet className="size-4" />
                 Aplicar anticipo
               </Button>
             )}
-            {canReverse && !reversed && (
+            {canReverse && posted && (
               <Button variant="outline" size="sm" onClick={() => setReverseOpen(true)}>
                 <Undo2 className="size-4" />
                 Revertir
@@ -205,7 +234,7 @@ export function SettlementDetail({
           </>
         }
       >
-        {unassigned > 0 && !reversed && (
+        {unassigned > 0 && posted && (
           <div className="border-warning/40 bg-warning/5 rounded-lg border px-3.5 py-2.5 text-sm">
             Crédito sin asignar:{' '}
             <span className="nums font-semibold">{formatAmount(data.unallocatedAmount)}</span>
@@ -240,6 +269,8 @@ export function SettlementDetail({
             </DetailRows>
           )}
         </DetailSection>
+
+        {afterDetail}
       </DetailDrawer>
 
       {applyDialog(applyOpen, setApplyOpen, data)}

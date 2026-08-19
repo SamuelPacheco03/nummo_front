@@ -5,6 +5,7 @@ import {
   formatDateHuman,
   formatMoney,
   formatMonthLabel,
+  formatMonthName,
   groupAmountDisplay,
   parseAmountInput,
   plural,
@@ -190,4 +191,15 @@ describe('plural', () => {
     expect(plural(1, 'cuenta vencida', 'cuentas vencidas')).toBe('1 cuenta vencida')
     expect(plural(3, 'cuenta vencida', 'cuentas vencidas')).toBe('3 cuentas vencidas')
   })
+})
+
+it('formatMonthName nombra el mes para leerlo en una frase', () => {
+  // `formatMonthLabel` abrevia porque nació para los ejes de una gráfica: en
+  // «Consumo de ago» esa abreviatura se lee como un error de la aplicación.
+  expect(formatMonthName('2026-08')).toBe('agosto de 2026')
+  expect(formatMonthName('2026-01')).toBe('enero de 2026')
+  // En UTC: el período viene resuelto en la zona de la organización y aquí solo
+  // se nombra; construirlo en la del navegador lo correría un mes.
+  expect(formatMonthName('2026-12')).toBe('diciembre de 2026')
+  expect(formatMonthName('vacío')).toBe('vacío')
 })

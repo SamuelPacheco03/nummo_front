@@ -9,7 +9,15 @@ import { ArrowUp, Mic, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
-import { AXIS_MARGIN, CANCEL_AT, DEAD_ZONE, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
+import {
+  AXIS_MARGIN,
+  CANCEL_AT,
+  DEAD_ZONE,
+  HoldToRecord,
+  LOCK_AT,
+  MIN_SECONDS,
+  TOUCH_GRACE,
+} from './hold-to-record'
 import { RecordingBar } from './recording-bar'
 import { useAudioRecorder } from './use-audio-recorder'
 
@@ -143,13 +151,22 @@ export function ChatComposer({
   const [locked, setLocked] = useState(false)
   const detach = useRef<(() => void) | null>(null)
   const micRef = useRef<HTMLButtonElement>(null)
+  /** Temporizador de «se perdió el rastro del dedo» (ver `stolen`). */
+  const lost = useRef(0)
 
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
   useEffect(() => () => detach.current?.(), [])
 
+  /*
+    El foco automático, **solo donde hay teclado de verdad**. En un móvil abre el
+    teclado al entrar: tapa media conversación antes de que nadie haya pedido
+    escribir, y mueve el suelo bajo el dedo justo cuando se va a mantener pulsado
+    el micrófono —el navegador cancela los gestos vivos al redimensionarse la
+    ventana—.
+  */
   useEffect(() => {
-    if (autoFocus) ref.current?.focus()
-  }, [autoFocus])
+    if (autoFocus && !touch) ref.current?.focus()
+  }, [autoFocus, touch])
 
   // Auto-alto: hay que medir el DOM, no se puede calcular en render.
   useEffect(() => {
@@ -247,6 +264,7 @@ ${text}` : text)
     const moved = (cx: number, cy: number) => {
       const from = origin.current
       if (!from) return
+      alive()
       const mx = cx - from.x
       const my = cy - from.y
 
@@ -289,6 +307,7 @@ ${text}` : text)
 
     const lifted = () => {
       if (!origin.current) return
+      alive()
       const held = performance.now() - startedAt.current
       endHold()
       // Un toque no es una grabación: sin esto, rozar el micrófono manda un
@@ -311,16 +330,34 @@ ${text}` : text)
       primeros instantes no había nada que salvar, y una barra fijada ahí se lee
       como «pulsar el micrófono bloquea la grabación solo»: se descarta callando.
     */
+    /*
+      El sistema se queda con la **secuencia táctil**. No se termina el gesto de
+      inmediato: la secuencia de puntero es otra y puede seguir viva, y mientras
+      siga llegando algo de ella el dedo está ahí y el gesto continúa como si
+      nada. Solo si tampoco llega nada por ahí se da por perdido el rastro.
+
+      Y perder el rastro **nunca descarta**. Que el sistema interrumpa no es la
+      persona diciendo «tira esto»: la grabación queda fijada, con sus botones,
+      y decide quien habló. Descartar en silencio fue lo que hacía que sostener
+      el micrófono pareciera cancelarlo solo.
+    */
+    const giveUp = () => {
+      if (!origin.current) return
+      endHold()
+      setLocked(true)
+    }
+
     const stolen = () => {
       if (!origin.current) return
-      const held = performance.now() - startedAt.current
-      endHold()
-      if (held < MIN_SECONDS * 1000) {
-        abandoned.current = true
-        recorder.cancel()
-        return
-      }
-      setLocked(true)
+      window.clearTimeout(lost.current)
+      lost.current = window.setTimeout(giveUp, TOUCH_GRACE)
+    }
+
+    /** Llegó algo del dedo: el rastro no estaba perdido. */
+    const alive = () => {
+      if (!lost.current) return
+      window.clearTimeout(lost.current)
+      lost.current = 0
     }
 
     const onPointerMove = (ev: PointerEvent) => moved(ev.clientX, ev.clientY)
@@ -350,6 +387,8 @@ ${text}` : text)
     window.addEventListener('touchend', lifted)
     window.addEventListener('touchcancel', stolen)
     detach.current = () => {
+      window.clearTimeout(lost.current)
+      lost.current = 0
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', lifted)
       window.removeEventListener('touchmove', onTouchMove)

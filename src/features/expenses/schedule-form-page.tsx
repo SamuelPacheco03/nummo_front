@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,7 +14,8 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
+import { toastApiError } from '@/features/platform/errors'
 import { todayISODate } from '@/lib/format'
 import type { ExpenseSchedule } from '@/api/generated/model'
 import { useCreateSchedule, useExpenseSchedule, useUpdateSchedule } from './hooks'
@@ -98,9 +98,7 @@ export function ScheduleFormPage() {
     },
   })
 
-  useEffect(() => {
-    if (isEdit && schedule) reset(toForm(schedule))
-  }, [isEdit, schedule, reset])
+  useHydrateOnce(isEdit ? schedule?.id : undefined, schedule, (s) => reset(toForm(s)))
 
   const supplierId = watch('supplierContactId')
   const busy = create.isPending || update.isPending
@@ -131,7 +129,7 @@ export function ScheduleFormPage() {
         navigate(`/gastos/recurrentes/${created.id}`)
       }
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 

@@ -3,14 +3,22 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
-import type { AnyRole } from '@/features/organizations/roles'
 import { useNumiStore } from '@/features/assistant/numi-store'
 
-// El shell de la barra solo necesita saber el rol; montar la organización real
-// arrastraría el cliente HTTP y la sesión, que no son lo que se está probando.
-const role = vi.hoisted(() => ({ current: 'OWNER' as AnyRole }))
-vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ role: role.current, orgId: 'org-1', organization: undefined }),
+// Las acciones se filtran por permiso, no por nombre de rol: el shell solo
+// necesita el predicado. Montar las capacidades reales arrastraría el cliente
+// HTTP y la sesión, que no son lo que se está probando.
+const TODOS = [
+  'payments.create',
+  'disbursements.create',
+  'receivables.create',
+  'contacts.write',
+  'agreements.manage',
+  'treasury.transfer',
+]
+const permisos = vi.hoisted(() => ({ current: new Set<string>() }))
+vi.mock('@/features/platform/permissions', () => ({
+  useCan: () => (permiso: string) => permisos.current.has(permiso),
 }))
 // SidebarBody arrastra el selector de organización y el menú de usuario.
 vi.mock('./sidebar', () => ({
@@ -21,7 +29,7 @@ vi.mock('./sidebar', () => ({
 const { BottomNav } = await import('./bottom-nav')
 
 beforeEach(() => {
-  role.current = 'OWNER'
+  permisos.current = new Set(TODOS)
   useNumiStore.setState({ isOpen: false })
 })
 afterEach(cleanup)
@@ -57,15 +65,15 @@ test('"Nuevo" abre las acciones de registro', async () => {
   expect(screen.getByRole('button', { name: /transferencia/i })).toBeInTheDocument()
 })
 
-test('las acciones respetan el rol: un lector no ve el botón "Nuevo"', () => {
-  role.current = 'VIEWER'
+test('las acciones respetan el permiso: sin ninguno no se dibuja "Nuevo"', () => {
+  permisos.current = new Set()
   renderNav()
 
   expect(screen.queryByRole('button', { name: /nuevo/i })).not.toBeInTheDocument()
 })
 
-test('un operador no puede crear acuerdos, pero sí registrar pagos', async () => {
-  role.current = 'OPERATOR'
+test('sin el permiso de acuerdos no se ofrece crear uno, pero sí registrar un pago', async () => {
+  permisos.current = new Set(TODOS.filter((p) => p !== 'agreements.manage'))
   renderNav()
   await userEvent.click(screen.getByRole('button', { name: /nuevo/i }))
 

@@ -17,8 +17,9 @@ import { useContact } from '@/features/contacts/hooks'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { RECURRENCE_LABELS, agreementStatus } from './labels'
 import {
@@ -39,8 +40,9 @@ const LIST = '/cartera/acuerdos'
  */
 export function AgreementDetailPage() {
   const { agreementId } = useParams()
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('agreements.manage')
 
   const { agreement, isPending, isError, error } = useAgreement(orgId, agreementId)
   const pause = usePauseAgreement(orgId ?? '')
@@ -97,7 +99,7 @@ export function AgreementDetailPage() {
       toast.success(okMsg)
       setEndOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastApiError(err)
     }
   }
 

@@ -12,8 +12,8 @@ import { DetailEmpty, DetailSection } from '@/components/ui/detail-drawer'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
+import { useCan } from '@/features/platform/permissions'
+import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AddAdjustmentDialog } from './add-adjustment-dialog'
@@ -55,9 +55,10 @@ const COPY: AccountDetailCopy = {
  */
 export function ReceivableDetailPage() {
   const { receivableId } = useParams()
-  const { orgId, role } = useCurrentOrg()
-  const canAdjust = canEditContacts(role)
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canAdjust = can('receivables.adjust')
+  const canManage = can('receivables.manage')
 
   const { detail, isPending, isError, error } = useReceivable(orgId, receivableId)
   const { accruals } = useAccruals(orgId, receivableId)
@@ -120,7 +121,7 @@ export function ReceivableDetailPage() {
       await reverseAdj.mutateAsync({ orgId: orgId ?? '', id: receivableId ?? '', adjustmentId })
       toast.success('Ajuste reversado')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo reversar'))
+      toastApiError(err, 'No se pudo reversar')
     } finally {
       setReversingId(null)
     }
@@ -133,6 +134,8 @@ export function ReceivableDetailPage() {
       statusOf={receivableStatus}
       settleTo={(payerId) => `/cartera/pagos/nuevo?payer=${payerId}`}
       settleIcon={Banknote}
+      canSettle={can('payments.create')}
+      canManage={canManage}
       query={query}
       close={close}
       menuItems={

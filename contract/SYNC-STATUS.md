@@ -1,6 +1,6 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-18 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma.**
+**Fecha:** 2026-08-19 (contrato traído de `dev`, 111 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral.**
 
 ## ⚠️ ROMPE — el estado de la organización salió de `PATCH /organizations/:orgId`
 
@@ -76,6 +76,93 @@ reinician por mes. Ojo con uno que no viene de un plan: `limit: "free_organizati
 anti-abuso de organizaciones gratuitas por usuario, y falla igual que los demás a propósito —
 no tenéis que distinguirlo.
 
+## 🆕 `error.code` es un enum cerrado, y los dos payloads de plan tienen esquema
+
+`ErrorResponse.error.code` sale del contrato como enum de diez valores —`VALIDATION`,
+`NOT_FOUND`, `CONFLICT`, `UNAUTHENTICATED`, `FORBIDDEN`, `ORGANIZATION_SUSPENDED`,
+`FEATURE_NOT_AVAILABLE`, `LIMIT_EXCEEDED`, `RATE_LIMITED`, `INTERNAL`—, así que un `switch`
+sobre él puede ser exhaustivo y el compilador avisa si aparece uno nuevo.
+
+`LimitExceededDetails` y `FeatureNotAvailableDetails` se publican como **esquemas con nombre**:
+la forma de `error.details` deja de adivinarse en los dos casos donde importa.
+
+## 🆕 El catálogo de planes — `GET /api/v1/plans`
+
+Los planes en venta, en orden de presentación (`sortOrder`). **No es tenant-scoped y pide
+sesión**: la app vive detrás del login y los precios no se publican a quien encuentre la URL.
+Devuelve solo los públicos y no archivados —hoy Free, Básico y Pro; Empresa existe pero **no
+está a la venta**—, cada uno con el catálogo completo de features y topes resueltos: lo que
+anuncia la tabla es exactamente lo que aplican los guards.
+
+**Ojo con `price`: `null` significa «consultar», no gratis.** Free llega con
+`{ amount: "0.00", currency: "COP" }`; Básico y Pro siguen sin precio fijado y llegan en `null`
+hasta que se definan desde la consola. La pantalla tiene que saber pintar ese caso.
+
+## 🆕 ¿Esta cuenta administra la plataforma? — `GET /api/v1/me/platform-access`
+
+`{ isPlatformAdmin: boolean }`. Endpoint propio y no un campo de `/auth/me`, para no hacer que
+`auth` —el módulo del que dependen todos— dependa de `platform`. Se llama **en paralelo con
+`/auth/me`** al arrancar.
+
+Es **orientativo, no autorización**: sirve para no ofrecer un menú que va a fallar. Cada
+petición a `/admin/*` lo vuelve a comprobar contra la tabla, así que un cliente que se mienta a
+sí mismo solo consigue un 403. Y ningún rol de organización da acceso: ser OWNER de la tuya no
+te hace superadmin.
+
+## 🆕 Roles personalizados — `/organizations/:orgId/roles`
+
+Cinco rutas nuevas (`GET`, `POST`, `GET/:id`, `PATCH/:id`, `DELETE/:id`) más
+`PUT /members/:membershipId/custom-role`. Dos cosas que cambian cómo hay que pensar la pantalla
+de miembros:
+
+- **Un rol propio *reemplaza* los permisos del rol base, no se suma.** «Qué puede hacer esta
+  persona» tiene una sola respuesta. El rol base se conserva como etiqueta y es lo que sigue
+  contando `countActiveOwners`, así que un miembro tiene **rol y, opcionalmente, rol propio**:
+  `Member` gana `customRole`.
+- **Escribir roles se vende con el plan** (`custom_roles`, en Pro); **leerlos no**. Quien baja de
+  plan conserva los que definió y sus miembros siguen trabajando: se bloquea crear, nunca borrar.
+
+Tres cosas que el backend rechaza y conviene no ofrecer: conceder permisos reservados al
+propietario (los rechaza **nombrándolos**, no los filtra en silencio), archivar un rol que
+todavía tiene miembros, y mover al propietario a un rol propio.
+
+> **Petición de contrato.** De las tres, la primera es la única que el front no puede evitar
+> ofrecer: el enum de `CreateCustomRoleInput.permissions` trae los **53**, incluidos los tres
+> reservados al propietario. Para no ofrecerlos habría que escribir esa lista en el front, que es
+> justo la segunda fuente de verdad que la Fase 1 vino a quitar. Bastaría con publicar el
+> subconjunto asignable —o anotar cuáles no lo son— y el editor deja de enseñar tres casillas que
+> siempre fallan.
+
+**Y un aviso que afecta a lo que ya está construido:** el backend puso guard `.read` a **31
+lecturas** que no lo tenían. Para los cinco roles predefinidos no cambia nada —todos tienen todos
+los `.read`—, pero desde ahora un rol propio **sí** puede no tenerlos, así que una pantalla de
+solo lectura puede empezar a responder 403. La única lectura sin guard es `me/capabilities`:
+pedir permiso para preguntar qué permisos tienes sería circular.
+
+## 🆕 Aprobaciones por umbral — el egreso puede quedar esperando firma
+
+`ROMPE` de forma silenciosa si no se mira: **`DisbursementStatus` pasa de dos valores a cuatro**
+(`PENDING_APPROVAL`, `POSTED`, `REJECTED`, `REVERSED`) y el filtro `status` de
+`GET /disbursements` acepta los cuatro. Un `Record<string, string>` de etiquetas seguirá
+compilando y pintará `PENDING_APPROVAL` crudo en la lista.
+
+**El estado vive en el desembolso, no en el gasto**: un gasto es una obligación y el egreso es el
+dinero saliendo, que es lo que se aprueba. Por encima del umbral **no se mueve un peso** hasta que
+alguien firma, así que un pendiente no es un egreso a medias: es una solicitud. Solo `POSTED` y
+`REVERSED` tienen movimiento financiero — lo sostiene un `CHECK` en la tabla.
+
+| Ruta | Qué hace |
+| --- | --- |
+| `POST /disbursements/:id/approve` | Aprueba y ejecuta. Revalida bajo lock: la solicitud pudo esperar un día |
+| `POST /disbursements/:id/reject` | Rechaza con motivo, que se guarda |
+| `PUT /organizations/:orgId/approval-policy` | El umbral (`disbursementApprovalThreshold` en settings) |
+
+Dos reglas del backend que la UI debería reflejar: **quien registra no aprueba** (se compara
+contra `createdBy`, así que `disbursements.approve` es condición necesaria y no suficiente), y la
+política va detrás de la feature **`approvals`**, que pasa a estar encendida en Pro y Empresa.
+
+Sin notificaciones: quien aprueba se entera filtrando por `status=PENDING_APPROVAL`.
+
 ## 🆕 El contrato nombra el permiso de cada ruta (`x-required-permission`)
 
 Las 62 rutas que mutan datos salen anotadas con el permiso que exigen, derivado del router real
@@ -109,11 +196,11 @@ miembros en una escalada de privilegios. El primer superadmin se da de alta por 
 | `PUT /admin/organizations/:orgId/status` | Suspende o reactiva |
 | `GET /admin/plans` · `PUT /admin/plans/:code` | Lista y guarda planes |
 
-Los hooks ya están generados (`src/api/generated/endpoints/platform-admin/`), pero **no hay
-pantalla todavía**: es una consola interna y decidiréis vosotros si vive en esta app o aparte.
-Un detalle por si la construís: editar un plan **no cambia nada para nadie** hasta que se
-recalcula explícitamente — es a propósito, permite subir un tope solo para quien entre desde
-ahora sin tocar a los clientes actuales.
+Los hooks ya están generados (`src/api/generated/endpoints/platform-admin/`) y la consola va
+**en esta misma app, como ruta protegida** — se ofrece o no según `/me/platform-access`. Un
+detalle al construirla: editar un plan **no cambia nada para nadie** hasta que se recalcula
+explícitamente (`applyToExisting`) — es a propósito, permite subir un tope solo para quien entre
+desde ahora sin tocar a los clientes actuales.
 
 ## 🆕 Idempotencia en todas las mutaciones de dinero — regenera con `pnpm api:gen`
 
@@ -349,7 +436,7 @@ El alta de cuentas es **registro público** (decidido). **Implementado en el fro
 - ✅ **Rate-limit** (429) manejado con mensaje amable (vía `getErrorMessage`).
 
 ## Aviso
-El backend terminó todas sus fases. El contrato `openapi.json` está **congelado como v1.0.0** con **73 endpoints**. Regenera tu cliente:
+El contrato `openapi.json` sigue en **v1.0.0** y hoy trae **111 paths / 141 operaciones**. Regenera tu cliente:
 
 ```bash
 pnpm api:gen
@@ -362,7 +449,7 @@ pnpm api:gen
 - **Docs interactivos:** `http://localhost:4010/docs` (Scalar).
 
 ## Handoffs disponibles (léelos por área)
-`HANDOFF-fase-0..8.md` en esta carpeta. Resumen de lo que ya puedes construir:
+`HANDOFF-fase-0..9.md` en esta carpeta. Resumen de lo que ya puedes construir:
 
 | Área | Endpoints base | Handoff |
 |---|---|---|

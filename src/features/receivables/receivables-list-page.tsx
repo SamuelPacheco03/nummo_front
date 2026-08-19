@@ -2,10 +2,10 @@ import { Percent } from 'lucide-react'
 import { toast } from 'sonner'
 import { AccountsList } from '@/components/accounts-list'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { useReceivablesSummary } from '@/features/reports/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, plural } from '@/lib/format'
 import type { AccountsListCopy, AccountsQuery } from '@/lib/accounts-list'
@@ -47,7 +47,8 @@ const COPY: AccountsListCopy = {
  * hacer y la otra no — a un proveedor no se le cobran intereses de mora.
  */
 export function ReceivablesListPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
   const { summary, isPending: summaryLoading } = useReceivablesSummary(orgId)
   const { items: concepts } = useBillingConcepts(orgId, {
     page: 1,
@@ -63,7 +64,7 @@ export function ReceivablesListPage() {
       const r = res.data as GenerateReceivablesResult
       toast.success(`${r.created} generadas · ${r.skipped} ya existían`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudieron generar'))
+      toastApiError(err, 'No se pudieron generar')
     }
   }
 
@@ -79,7 +80,7 @@ export function ReceivablesListPage() {
       // Causar mora dos veces a propósito son dos operaciones, no un reintento.
       idem.renew()
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo causar la mora'))
+      toastApiError(err, 'No se pudo causar la mora')
     }
   }
 
@@ -122,8 +123,8 @@ export function ReceivablesListPage() {
       statusOf={receivableStatus}
       summary={summary}
       summaryLoading={summaryLoading}
-      canCreate={canEditContacts(role)}
-      canGenerate={canManageAgreements(role)}
+      canCreate={can('receivables.create')}
+      canGenerate={can('receivables.manage')}
       onGenerate={() => void onGenerate()}
       generating={generate.isPending}
       actions={[

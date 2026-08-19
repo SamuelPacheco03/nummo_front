@@ -4,12 +4,12 @@
 
 ## Contexto
 
-**Nummo** es un sistema web genérico multiempresa/multisede de administración financiera y cartera (primer caso: jardín infantil). Trabajamos en **dos repos separados sincronizados por un contrato OpenAPI**. Tú construyes **este** repo (React). El **backend está COMPLETO (V1, Fases 0–8)**: auth + multi-tenancy, contactos/maestros, cartera con mora, pagos, gastos/egresos, caja/transferencias y reportes. Contrato congelado en **v1.0.0 (73 endpoints)**.
+**Nummo** es un sistema web genérico multiempresa/multisede de administración financiera y cartera (primer caso: jardín infantil). Trabajamos en **dos repos separados sincronizados por un contrato OpenAPI**. Tú construyes **este** repo (React). El **backend está COMPLETO (V1, Fases 0–8)**: auth + multi-tenancy, contactos/maestros, cartera con mora, pagos, gastos/egresos, caja/transferencias y reportes. Contrato en **v1.0.0 (111 paths / 141 operaciones)**, con las seis fases de autorización: permisos, planes, consola de plataforma, roles personalizados y aprobaciones por umbral (Fase 9).
 
 - **Backend:** `C:\Dev\Projects\Node\nummo-api`, corre en `http://localhost:4010` (`pnpm dev` allá; DB en Docker).
 - **Contrato (fuente de verdad):** `./contract/openapi.json` (copiado aquí) y en vivo en `http://localhost:4010/openapi.json`. Regeneras tu cliente desde ahí.
 - **Estado de sync:** lee **`./contract/SYNC-STATUS.md`** (resumen de todo lo disponible y qué falta).
-- **Handoffs con endpoints/flujos/tokens:** `./contract/HANDOFF-fase-0.md` … `HANDOFF-fase-8.md`. **Léelos por área.**
+- **Handoffs con endpoints/flujos/tokens:** `./contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`. **Léelos por área.**
 
 ## Stack (acordado, seguir tal cual)
 
@@ -31,4 +31,4 @@ React 19.2 · Vite 8.1 · TypeScript strict · React Router 8 (`react-router` + 
 
 ## Sincronización
 
-El backend ya cerró **todas sus fases (V1)**: `openapi.json` aquí incluido está en **v1.0.0 con 73 endpoints** (auth, orgs, contactos/maestros, cartera, pagos, mora, gastos/egresos, caja/transferencias, reportes). Corre `pnpm api:gen` para regenerar el cliente. Detalle en **`./contract/SYNC-STATUS.md`**. Si el backend hace algún ajuste puntual, se recopiará `openapi.json` y se actualizará ese archivo.
+El backend ya cerró **todas sus fases (V1)**: `openapi.json` aquí incluido está en **v1.0.0 con 111 paths / 141 operaciones** (auth, orgs, contactos/maestros, cartera, pagos, mora, gastos/egresos, caja/transferencias, reportes). Corre `pnpm api:gen` para regenerar el cliente. Detalle en **`./contract/SYNC-STATUS.md`**. Si el backend hace algún ajuste puntual, se recopiará `openapi.json` y se actualizará ese archivo.

@@ -4,10 +4,13 @@ import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AgreementFormPage } from './agreement-form-page'
 
-let rol = 'VIEWER'
+let puedeGestionar = false
 
 vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' }, role: rol }),
+  useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' } }),
+}))
+vi.mock('@/features/platform/permissions', () => ({
+  useCan: () => (permiso: string) => permiso === 'agreements.manage' && puedeGestionar,
 }))
 vi.mock('@/features/masters/hooks', () => ({ useBillingConcepts: () => ({ items: [] }) }))
 vi.mock('@/features/config/hooks', () => ({ useBranches: () => ({ branches: [] }) }))
@@ -35,21 +38,15 @@ afterEach(cleanup)
   se rellena entero y el 403 llega al final. Los permisos son un estado de
   pantalla (§45), no una sorpresa al enviar.
 */
-test('un lector no recibe el formulario de acuerdo', () => {
-  rol = 'VIEWER'
+test('sin el permiso de acuerdos no se recibe el formulario', () => {
+  puedeGestionar = false
   pintar()
   expect(screen.getByText('No puedes gestionar acuerdos')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /crear acuerdo/i })).not.toBeInTheDocument()
 })
 
-test('un operador tampoco: los acuerdos son de quien lleva la cartera', () => {
-  rol = 'OPERATOR'
-  pintar()
-  expect(screen.getByText('No puedes gestionar acuerdos')).toBeInTheDocument()
-})
-
-test('el contador sí lo recibe', async () => {
-  rol = 'ACCOUNTANT'
+test('con `agreements.manage` sí lo recibe', async () => {
+  puedeGestionar = true
   pintar()
   expect(await screen.findByRole('button', { name: /crear acuerdo/i })).toBeInTheDocument()
   expect(screen.queryByText('No puedes gestionar acuerdos')).not.toBeInTheDocument()

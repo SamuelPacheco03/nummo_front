@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
-import { getErrorMessage } from '@/lib/errors'
+import { useCan } from '@/features/platform/permissions'
+import { toastApiError } from '@/features/platform/errors'
 import type { ListResult } from '@/lib/list-result'
 import type { ExpenseCategory } from '@/api/generated/model'
 import { MasterCrud, type Column } from './master-crud'
@@ -102,7 +102,7 @@ function CategoryDialog({
       }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 
@@ -157,8 +157,9 @@ function useExpenseCategoryRows(params: MasterParams): ListResult<ExpenseCategor
 }
 
 export function ExpenseCategoriesPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageOrg(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('expense_categories.manage')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ExpenseCategory | null>(null)
 

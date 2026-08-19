@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { AccountFormDrawer, type AccountFormCopy } from '@/components/account-form-drawer'
 import { useExpenseCategories } from '@/features/masters/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useCreateExpense } from './hooks'
 
 const COPY: AccountFormCopy = {
@@ -62,7 +62,7 @@ export function CreateExpenseDialog({
           toast.success('Gasto creado')
           onOpenChange(false)
         } catch (err) {
-          toast.error(getErrorMessage(err, 'No se pudo crear'))
+          toastApiError(err, 'No se pudo crear')
         }
       }}
     />

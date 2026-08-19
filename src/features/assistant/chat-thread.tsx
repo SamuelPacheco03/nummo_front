@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, Sparkles } from 'lucide-react'
-import { canManageOrg, type AnyRole } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { Loader, NumiLoader } from '@/components/ui/loader'
 import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
@@ -90,20 +90,19 @@ function OlderMessages({ loading, onLoad }: { loading: boolean; onLoad: () => vo
  * reenviar. Y solo aparece cuando puede funcionar — sin proveedor, sin cuota o sin
  * plan, volver a mandar lo mismo falla igual.
  */
-function ThreadError({
-  error,
-  role,
-  onLeave,
-}: {
-  error: NumiError
-  role: AnyRole | undefined
-  onLeave: () => void
-}) {
-  const manages = canManageOrg(role)
+function ThreadError({ error, onLeave }: { error: NumiError; onLeave: () => void }) {
+  /*
+    Dos permisos y no uno: configurar el asistente lo hace quien administra la
+    organización, y el plan lo lleva quien es su propietario. Eran el mismo
+    predicado de rol y el contrato los separa (§88.5).
+  */
+  const can = useCan()
+  const canSetUp = can('assistant.settings.manage')
+  const canUpgrade = can('subscription.manage')
   return (
     <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border px-3 py-2 text-xs">
       <p>{error.message}</p>
-      {error.kind === 'setup' && manages && (
+      {error.kind === 'setup' && canSetUp && (
         <Link
           to="/config/asistente"
           onClick={onLeave}
@@ -114,9 +113,9 @@ function ThreadError({
       )}
       {(error.kind === 'quota' || error.kind === 'plan') && (
         <p className="mt-1 opacity-90">
-          {manages
+          {canUpgrade
             ? 'Amplía el plan de la organización para seguir usando esto.'
-            : 'Pídele a quien administra la organización que amplíe el plan.'}
+            : 'Pídeselo a quien lleve el plan de la organización.'}
         </p>
       )}
     </div>
@@ -144,7 +143,6 @@ export interface ChatThreadProps {
   error: NumiError | null
   isTyping: boolean
   isHydrating: boolean
-  role: AnyRole | undefined
   hasOlder: boolean
   isLoadingOlder: boolean
   loadOlder: () => void
@@ -173,7 +171,6 @@ export function ChatThread({
   error,
   isTyping,
   isHydrating,
-  role,
   hasOlder,
   isLoadingOlder,
   loadOlder,
@@ -274,7 +271,7 @@ export function ChatThread({
         </>
       )}
 
-      {error && <ThreadError error={error} role={role} onLeave={onLeave} />}
+      {error && <ThreadError error={error} onLeave={onLeave} />}
     </div>
   )
 }

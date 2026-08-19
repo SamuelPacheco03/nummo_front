@@ -10,7 +10,7 @@ const m = vi.hoisted(() => ({
   reversado: false,
   sinCredito: false,
   sinAplicaciones: false,
-  rol: 'OWNER',
+  permisos: new Set<string>(['payments.reverse', 'payments.allocate']),
 }))
 
 const detalle = () => ({
@@ -31,6 +31,9 @@ const detalle = () => ({
     : [{ id: 'x1', receivableId: 'r1', allocatedAt: '2026-08-06', amount: '300000' }],
 })
 
+vi.mock('@/features/platform/permissions', () => ({
+  useCan: () => (permiso: string) => m.permisos.has(permiso),
+}))
 vi.mock('sonner', () => ({
   toast: {
     success: (texto: string) => m.avisos.push({ tono: 'success', texto }),
@@ -42,7 +45,7 @@ vi.mock('react-router', async () => {
   return { ...real, useParams: () => ({ paymentId: 'm1' }) }
 })
 vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ orgId: 'o1', role: m.rol }),
+  useCurrentOrg: () => ({ orgId: 'o1' }),
 }))
 vi.mock('@/features/contacts/hooks', () => ({
   useContact: () => ({ contact: { displayName: 'Ana Torres' } }),
@@ -69,7 +72,7 @@ beforeEach(() => {
   m.reversado = false
   m.sinCredito = false
   m.sinAplicaciones = false
-  m.rol = 'OWNER'
+  m.permisos = new Set(['payments.reverse', 'payments.allocate'])
 })
 afterEach(cleanup)
 
@@ -97,6 +100,6 @@ runSettlementDetailSuite({
     m.sinAplicaciones = true
   },
   soloLectura: () => {
-    m.rol = 'VIEWER'
+    m.permisos = new Set()
   },
 })

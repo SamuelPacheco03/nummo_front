@@ -10,7 +10,7 @@ import {
 } from '@/lib/settlement'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type {
   DisbursementDetail,
   RegisterDisbursementAllocationsItem,
@@ -109,7 +109,7 @@ export function RegisterDisbursementPage() {
       toast.success('Egreso registrado')
       navigate(back ?? `${LIST}/${detail.disbursement.id}`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo registrar el egreso'))
+      toastApiError(err, 'No se pudo registrar el egreso')
     }
   }
 

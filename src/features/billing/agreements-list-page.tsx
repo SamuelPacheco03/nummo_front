@@ -3,7 +3,7 @@ import { RecurringList } from '@/components/recurring-list'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { RECURRING_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import type {
   RecurringListCopy,
   RecurringListResult,
@@ -77,7 +77,7 @@ function useAgreementRows(params: RecurringQuery): RecurringListResult {
  * endpoint.
  */
 export function AgreementsListPage() {
-  const { role } = useCurrentOrg()
+  const can = useCan()
 
   return (
     <RecurringList
@@ -88,7 +88,7 @@ export function AgreementsListPage() {
       detailTo={(id) => `/cartera/acuerdos/${id}`}
       statusOf={agreementStatus}
       recurrenceLabels={RECURRENCE_LABELS}
-      canManage={canManageAgreements(role)}
+      canManage={can('agreements.manage')}
       useList={useAgreementRows}
     />
   )

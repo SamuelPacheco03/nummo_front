@@ -16,12 +16,21 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/features/auth/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { ASSIGNABLE_ROLES, canManageOrg, roleLabel } from '@/features/organizations/roles'
+import { ASSIGNABLE_ROLES, roleLabel } from '@/features/organizations/roles'
+import { useCan, useFeature } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { initials } from '@/lib/format'
 import type { AnyRole } from '@/features/organizations/roles'
 import type { Member } from '@/api/generated/model'
-import { useAddMember, useMembers, useRemoveMember, useUpdateMemberRole } from './hooks'
+import {
+  useAddMember,
+  useAssignCustomRole,
+  useCustomRoles,
+  useMembers,
+  useRemoveMember,
+  useUpdateMemberRole,
+} from './hooks'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -62,7 +71,7 @@ function AddMemberDialog({
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo agregar el miembro'))
+      toastApiError(err, 'No se pudo agregar el miembro')
     }
   })
 
@@ -98,12 +107,21 @@ function AddMemberDialog({
 }
 
 export function MembersPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
   const { user } = useAuth()
   const { members, isPending, isError, error } = useMembers(orgId)
   const updateRole = useUpdateMemberRole(orgId ?? '')
+  const assignCustomRole = useAssignCustomRole(orgId ?? '')
+  const { roles: customRoles } = useCustomRoles(orgId)
   const removeMember = useRemoveMember(orgId ?? '')
-  const canManage = canManageOrg(role)
+  const can = useCan()
+  const canManage = can('organization.members.manage')
+  // El hook va suelto y no dentro del `&&`: con el corto-circuito dejaría de
+  // llamarse en cuanto `canManage` fuera falso, y el orden de los hooks cambiaría
+  // entre renders.
+  const hasCustomRoles = useFeature('custom_roles')
+  // Asignar un rol propio se vende con el plan; el rol base, no.
+  const canAssignCustom = canManage && hasCustomRoles && customRoles.length > 0
 
   const [addOpen, setAddOpen] = useState(false)
   const [removing, setRemoving] = useState<Member | null>(null)
@@ -116,7 +134,28 @@ export function MembersPage() {
       await updateRole.mutateAsync({ orgId: orgId ?? '', membershipId: member.id, data: { role: nextRole } })
       toast.success('Rol actualizado')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo cambiar el rol'))
+      toastApiError(err, 'No se pudo cambiar el rol')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  /**
+   * Poner o quitar el rol propio. **Reemplaza** los permisos del rol base, no se
+   * suma a ellos: «qué puede hacer esta persona» tiene una sola respuesta.
+   */
+  const changeCustomRole = async (member: Member, customRoleId: string) => {
+    setBusyId(member.id)
+    try {
+      await assignCustomRole.mutateAsync({
+        orgId: orgId ?? '',
+        membershipId: member.id,
+        data: { customRoleId: customRoleId || null },
+      })
+      toast.success(customRoleId ? 'Rol propio asignado' : 'Vuelve a su rol base')
+    } catch (err) {
+      // El backend rechaza mover al propietario a un rol propio, y lo dice.
+      toastApiError(err, 'No se pudo asignar el rol')
     } finally {
       setBusyId(null)
     }
@@ -129,7 +168,7 @@ export function MembersPage() {
       toast.success('Miembro removido')
       setRemoving(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo remover el miembro'))
+      toastApiError(err, 'No se pudo remover el miembro')
     }
   }
 
@@ -192,6 +231,22 @@ export function MembersPage() {
                           </option>
                         ))}
                       </NativeSelect>
+                      {canAssignCustom && (
+                        <NativeSelect
+                          className="h-8 w-40"
+                          value={member.customRole?.id ?? ''}
+                          disabled={busyId === member.id}
+                          onChange={(e) => changeCustomRole(member, e.target.value)}
+                          aria-label={`Rol propio de ${member.fullName}`}
+                        >
+                          <option value="">Sin rol propio</option>
+                          {customRoles.map((role) => (
+                            <option key={role.id} value={role.id}>
+                              {role.name}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -202,7 +257,10 @@ export function MembersPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Badge variant="secondary">{roleLabel(member.role)}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{roleLabel(member.role)}</Badge>
+                      {member.customRole && <Badge variant="outline">{member.customRole.name}</Badge>}
+                    </div>
                   )}
                 </CardContent>
               </Card>

@@ -11,7 +11,7 @@ import {
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useReceivables } from '@/features/receivables/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { PaymentDetail, RegisterPaymentAllocationsItem } from '@/api/generated/model'
 import { PAYMENT_PURPOSE_LABELS } from './labels'
 import { useRegisterPayment } from './hooks'
@@ -107,7 +107,7 @@ export function RegisterPaymentPage() {
       toast.success('Pago registrado')
       navigate(back ?? `${LIST}/${detail.payment.id}`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo registrar el pago'))
+      toastApiError(err, 'No se pudo registrar el pago')
     }
   }
 

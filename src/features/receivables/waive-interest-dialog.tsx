@@ -16,7 +16,7 @@ import {
 import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
 import { Textarea } from '@/components/ui/textarea'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount } from '@/lib/format'
 import { useWaiveInterest } from './hooks'
@@ -74,7 +74,7 @@ export function WaiveInterestDialog({
       idem.renew()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo condonar'))
+      toastApiError(err, 'No se pudo condonar')
     }
   })
 

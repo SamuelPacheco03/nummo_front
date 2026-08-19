@@ -26,6 +26,48 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      /*
+        La consola **fuera de `AppShell`**: ese shell empieza por «¿a qué
+        organización perteneces?» y enseña el onboarding a quien no pertenece a
+        ninguna, y un superadmin no tiene por qué tener una — administra todas.
+        Con la consola dentro, `/plataforma` acababa en «Crea tu organización».
+
+        Es lo mismo que hace el backend: `requirePlatformAdmin` corre fuera de
+        `requireTenant`.
+      */
+      {
+        path: 'plataforma',
+        lazy: async () => ({
+          Component: (await import('@/features/admin/platform-shell')).PlatformShell,
+        }),
+        children: [
+          { index: true, element: <Navigate to="/plataforma/organizaciones" replace /> },
+          {
+            path: 'organizaciones',
+            lazy: async () => ({
+              Component: (await import('@/features/admin/organizations-page'))
+                .AdminOrganizationsPage,
+            }),
+            // La ficha es hija: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':orgId',
+                handle: OVERLAY,
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/organization-detail-page'))
+                    .AdminOrganizationDetailPage,
+                }),
+              },
+            ],
+          },
+          {
+            path: 'planes',
+            lazy: async () => ({
+              Component: (await import('@/features/admin/plans-page')).AdminPlansPage,
+            }),
+          },
+        ],
+      },
       {
         element: <AppShell />,
         children: [
@@ -261,6 +303,14 @@ export const router = createBrowserRouter([
               },
 
               {
+                path: 'gastos/aprobacion',
+                lazy: async () => ({
+                  Component: (await import('@/features/config/approval-policy-page'))
+                    .ApprovalPolicyPage,
+                }),
+              },
+
+              {
                 path: 'maestros/conceptos',
                 lazy: async () => ({
                   Component: (await import('@/features/masters/billing-concepts-page')).BillingConceptsPage,
@@ -298,6 +348,31 @@ export const router = createBrowserRouter([
               {
                 path: 'config/miembros',
                 lazy: async () => ({ Component: (await import('@/features/config/members-page')).MembersPage }),
+              },
+              {
+                path: 'config/roles',
+                lazy: async () => ({ Component: (await import('@/features/config/roles-page')).RolesPage }),
+                // El editor cuelga de la lista: abre en cajón sobre ella.
+                children: [
+                  {
+                    path: 'nuevo',
+                    handle: OVERLAY,
+                    lazy: async () => ({
+                      Component: (await import('@/features/config/role-form-page')).RoleFormPage,
+                    }),
+                  },
+                  {
+                    path: ':roleId',
+                    handle: OVERLAY,
+                    lazy: async () => ({
+                      Component: (await import('@/features/config/role-form-page')).RoleFormPage,
+                    }),
+                  },
+                ],
+              },
+              {
+                path: 'config/plan',
+                lazy: async () => ({ Component: (await import('@/features/platform/plan-page')).PlanPage }),
               },
               {
                 path: 'config/apariencia',
