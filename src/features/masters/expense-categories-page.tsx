@@ -11,7 +11,7 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { ListResult } from '@/lib/list-result'
 import type { ExpenseCategory } from '@/api/generated/model'
 import { MasterCrud, type Column } from './master-crud'
@@ -102,7 +102,7 @@ function CategoryDialog({
       }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 

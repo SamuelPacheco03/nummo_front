@@ -4,7 +4,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { usePayablesSummary } from '@/features/reports/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { AccountsListCopy, AccountsQuery } from '@/lib/accounts-list'
 import type {
   GenerateExpensesResult,
@@ -63,7 +63,7 @@ export function ExpensesListPage() {
       const r = res.data as GenerateExpensesResult
       toast.success(`${r.created} generadas · ${r.skipped} ya existían`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudieron generar'))
+      toastApiError(err, 'No se pudieron generar')
     }
   }
 

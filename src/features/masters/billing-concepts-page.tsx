@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { ListResult } from '@/lib/list-result'
 import { formatAmount } from '@/lib/format'
 import type { BillingConcept } from '@/api/generated/model'
@@ -103,7 +103,7 @@ function ConceptDialog({
       }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 

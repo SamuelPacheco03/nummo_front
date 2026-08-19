@@ -3,7 +3,6 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { toast } from 'sonner'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
@@ -11,6 +10,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { InlineError } from '@/components/ui/error-state'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { AuthLayout } from './auth-layout'
 import { PageLoader } from '@/components/ui/loader'
 import { useAuth, useLogin } from './hooks'
@@ -71,7 +71,7 @@ export function LoginPage() {
       const from = state?.from
       navigate(from && from !== '/login' ? from : '/', { replace: true })
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo iniciar sesión'))
+      toastApiError(err, 'No se pudo iniciar sesión')
     }
   })
 

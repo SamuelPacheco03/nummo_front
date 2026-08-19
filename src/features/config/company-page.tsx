@@ -13,12 +13,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { orgStatus } from '@/features/organizations/labels'
 import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { formatDateHuman } from '@/lib/format'
-import type { Organization, OrganizationStatus, ProvisionSummary } from '@/api/generated/model'
+import type { Organization, ProvisionSummary } from '@/api/generated/model'
 import { useApplyTemplate, useOrgDetail, useUpdateOrg } from './hooks'
 
 const schema = z.object({
@@ -30,17 +32,6 @@ const schema = z.object({
   locale: z.string().trim().max(20).optional(),
 })
 type Values = z.infer<typeof schema>
-
-/**
- * El estado dejó de editarse aquí: lo administra la plataforma. Se sigue mostrando
- * porque cambia lo que la organización puede hacer — suspendida se consulta y se
- * exporta, pero no admite movimientos nuevos.
- */
-const STATUS_BADGE: Record<OrganizationStatus, { tone: StatusTone; label: string }> = {
-  ACTIVE: { tone: 'success', label: 'Activa' },
-  SUSPENDED: { tone: 'warning', label: 'Suspendida' },
-  ARCHIVED: { tone: 'muted', label: 'Archivada' },
-}
 
 const ORG_TYPES = ['SCHOOL', 'SHOP', 'PERSONAL', 'GENERIC'] as const
 const ORG_TYPE_LABELS: Record<Values['type'], string> = {
@@ -75,7 +66,7 @@ function ProvisionCard({ orgId, initialType }: { orgId: string; initialType: Val
       setConfirmOpen(false)
       toast.success('Plantilla aplicada')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo aplicar la plantilla'))
+      toastApiError(err, 'No se pudo aplicar la plantilla')
     }
   }
 
@@ -174,7 +165,7 @@ export function CompanyPage() {
       })
       toast.success('Empresa actualizada')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 
@@ -212,7 +203,7 @@ export function CompanyPage() {
             </Field>
             <Field label="Estado" hint="Lo administra Nummo; no se cambia desde aquí.">
               <div className="flex h-9 items-center">
-                <StatusBadge {...STATUS_BADGE[organization.status]} />
+                <StatusBadge {...orgStatus(organization.status)} />
               </div>
             </Field>
           </div>

@@ -21,6 +21,7 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { withReturn } from '@/lib/settlement'
 
@@ -170,7 +171,7 @@ export function AccountDetail({
       toast.success(okMsg)
       hide()
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastApiError(err)
     }
   }
 

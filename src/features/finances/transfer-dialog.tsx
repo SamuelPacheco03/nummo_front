@@ -17,7 +17,7 @@ import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { useCreateTransfer } from './hooks'
 
@@ -80,7 +80,7 @@ export function TransferDialog({
       idem.renew()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo transferir'))
+      toastApiError(err, 'No se pudo transferir')
     }
   })
 

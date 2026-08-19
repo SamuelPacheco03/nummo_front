@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
-import type { CapabilitiesDtoPermissionsItem } from '@/api/generated/model'
+import type { CapabilitiesDtoPermissionsItem, OrganizationStatus } from '@/api/generated/model'
+import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCapabilities } from './hooks'
 
 /**
@@ -10,6 +11,38 @@ import { useCapabilities } from './hooks'
  * cadena muerta que nadie vuelve a mirar.
  */
 export type Permission = CapabilitiesDtoPermissionsItem
+
+/**
+ * Una organización que no está `ACTIVE` queda en **solo lectura**: consultar y
+ * exportar siguen funcionando —eso no se gatea nunca— y cualquier mutación
+ * responde `403 ORGANIZATION_SUSPENDED`.
+ *
+ * Se lee del estado de la organización y no del error, para poder deshabilitar
+ * **antes** del intento: es un modo de la aplicación entera, no el fallo de una
+ * pantalla, y avisar con un toast por cada clic sería contarlo veinte veces.
+ * Solo la plataforma puede revertirlo.
+ *
+ * Mientras la organización carga no hay modo que declarar: `false`.
+ */
+export function useOrgReadOnly(): { isReadOnly: boolean; status: OrganizationStatus | undefined } {
+  const { organization } = useCurrentOrg()
+  return {
+    isReadOnly: organization != null && organization.status !== 'ACTIVE',
+    status: organization?.status,
+  }
+}
+
+/**
+ * Los permisos de lectura terminan en `.read`; los demás escriben.
+ *
+ * Es la convención del propio catálogo del backend, no una lista nuestra que
+ * mantener: `requireTenant` bloquea todo lo que no sea un GET cuando la
+ * organización no está activa, y eso es exactamente este conjunto —`assistant.use`
+ * incluido, que es un POST aunque no se llame `.write`—.
+ */
+function isReadPermission(permission: Permission): boolean {
+  return permission.endsWith('.read')
+}
 
 /**
  * ¿Se puede ofrecer esta acción?
@@ -33,6 +66,15 @@ export type Permission = CapabilitiesDtoPermissionsItem
  */
 export function useCan(): (permission: Permission) => boolean {
   const { capabilities } = useCapabilities()
+  const { isReadOnly } = useOrgReadOnly()
   const granted = useMemo(() => new Set(capabilities?.permissions), [capabilities?.permissions])
-  return useCallback((permission: Permission) => granted.has(permission), [granted])
+
+  return useCallback(
+    (permission: Permission) => {
+      if (!granted.has(permission)) return false
+      // Suspendida: se sigue mirando todo, no se toca nada.
+      return isReadPermission(permission) || !isReadOnly
+    },
+    [granted, isReadOnly],
+  )
 }

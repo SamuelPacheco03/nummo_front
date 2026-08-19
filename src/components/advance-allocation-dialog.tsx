@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { MoneyInput } from '@/components/ui/money-input'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -137,7 +137,7 @@ export function AdvanceAllocationDialog({
       setAlloc({})
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo aplicar'))
+      toastApiError(err, 'No se pudo aplicar')
     }
   }
 

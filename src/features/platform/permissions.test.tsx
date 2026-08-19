@@ -1,19 +1,28 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
-import type { CapabilitiesDto } from '@/api/generated/model'
+import type { CapabilitiesDto, OrganizationStatus } from '@/api/generated/model'
 
 const caps = vi.hoisted(() => ({ current: undefined as CapabilitiesDto | undefined }))
+const estado = vi.hoisted(() => ({ current: 'ACTIVE' as OrganizationStatus }))
+
 vi.mock('./hooks', () => ({
   useCapabilities: () => ({ capabilities: caps.current, isLoading: false, isError: false }),
 }))
+vi.mock('@/features/organizations/hooks', () => ({
+  useCurrentOrg: () => ({ orgId: 'o1', organization: { status: estado.current } }),
+}))
 
-const { useCan } = await import('./permissions')
+const { useCan, useOrgReadOnly } = await import('./permissions')
+
+const SONDAS = ['payments.create', 'payments.reverse', 'payments.read'] as const
 
 function Sonda() {
   const can = useCan()
+  const { isReadOnly } = useOrgReadOnly()
   return (
     <ul>
-      {(['payments.create', 'payments.reverse'] as const).map((p) => (
+      <li>{`solo lectura: ${isReadOnly ? 'sí' : 'no'}`}</li>
+      {SONDAS.map((p) => (
         <li key={p}>{`${p}: ${can(p) ? 'sí' : 'no'}`}</li>
       ))}
     </ul>
@@ -22,6 +31,7 @@ function Sonda() {
 
 afterEach(() => {
   caps.current = undefined
+  estado.current = 'ACTIVE'
   cleanup()
 })
 
@@ -55,7 +65,7 @@ test('concede exactamente lo que trae `permissions`, no lo que sugiere el rol', 
   // Un OPERATOR de hoy sí registra pagos y no los reversa; lo que decide es la
   // lista, de modo que un rol personalizado con otra mezcla funciona sin tocar
   // una línea de pantalla.
-  caps.current = capacidades(['payments.create'])
+  caps.current = capacidades(['payments.create', 'payments.read'])
   render(<Sonda />)
 
   expect(screen.getByText('payments.create: sí')).toBeInTheDocument()
@@ -68,5 +78,28 @@ test('mientras no hay capacidades no concede nada', () => {
   render(<Sonda />)
 
   expect(screen.getByText('payments.create: no')).toBeInTheDocument()
+  expect(screen.getByText('payments.read: no')).toBeInTheDocument()
+})
+
+test('suspendida: se sigue leyendo todo y no se escribe nada', () => {
+  // Lo que el backend hace en `requireTenant`: bloquea lo que no es un GET. La
+  // UI lo refleja **antes** del intento, para que no haya que chocar con un 403
+  // por cada botón.
+  caps.current = capacidades(['payments.create', 'payments.reverse', 'payments.read'])
+  estado.current = 'SUSPENDED'
+  render(<Sonda />)
+
+  expect(screen.getByText('solo lectura: sí')).toBeInTheDocument()
+  expect(screen.getByText('payments.read: sí')).toBeInTheDocument()
+  expect(screen.getByText('payments.create: no')).toBeInTheDocument()
   expect(screen.getByText('payments.reverse: no')).toBeInTheDocument()
+})
+
+test('archivada cuenta igual que suspendida', () => {
+  caps.current = capacidades(['payments.create'])
+  estado.current = 'ARCHIVED'
+  render(<Sonda />)
+
+  expect(screen.getByText('solo lectura: sí')).toBeInTheDocument()
+  expect(screen.getByText('payments.create: no')).toBeInTheDocument()
 })

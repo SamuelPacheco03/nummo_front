@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { cn } from '@/lib/utils'
 import type { Contact } from '@/api/generated/model'
 import { useContact, useCreateContact, useUpdateContact } from './hooks'
@@ -137,7 +137,7 @@ export function ContactFormPage() {
         navigate(`/contactos/${created.id}`)
       }
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar el contacto'))
+      toastApiError(err, 'No se pudo guardar el contacto')
     }
   })
 

@@ -14,7 +14,7 @@ import {
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { SearchInput } from '@/components/search-input'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
 import { useAddRelationship, useContacts } from './hooks'
@@ -66,7 +66,7 @@ export function AddRelationshipDialog({
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo agregar la relación'))
+      toastApiError(err, 'No se pudo agregar la relación')
     }
   }
 

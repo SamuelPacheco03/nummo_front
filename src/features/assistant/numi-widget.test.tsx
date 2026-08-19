@@ -14,7 +14,14 @@ function json(body: unknown, status = 200) {
 }
 
 const ORG = {
-  organization: { id: '11111111-1111-4111-8111-111111111111', name: 'Demo', type: 'GENERIC' },
+  // `status` no es decorativo: una organización que no está activa queda en
+  // solo lectura y el enlace a Configuración no se ofrece (§45.4).
+  organization: {
+    id: '11111111-1111-4111-8111-111111111111',
+    name: 'Demo',
+    type: 'GENERIC',
+    status: 'ACTIVE',
+  },
   role: 'OWNER',
 }
 

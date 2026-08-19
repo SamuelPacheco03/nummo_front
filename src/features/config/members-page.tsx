@@ -19,6 +19,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { ASSIGNABLE_ROLES, roleLabel } from '@/features/organizations/roles'
 import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { initials } from '@/lib/format'
 import type { AnyRole } from '@/features/organizations/roles'
 import type { Member } from '@/api/generated/model'
@@ -63,7 +64,7 @@ function AddMemberDialog({
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo agregar el miembro'))
+      toastApiError(err, 'No se pudo agregar el miembro')
     }
   })
 
@@ -118,7 +119,7 @@ export function MembersPage() {
       await updateRole.mutateAsync({ orgId: orgId ?? '', membershipId: member.id, data: { role: nextRole } })
       toast.success('Rol actualizado')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo cambiar el rol'))
+      toastApiError(err, 'No se pudo cambiar el rol')
     } finally {
       setBusyId(null)
     }
@@ -131,7 +132,7 @@ export function MembersPage() {
       toast.success('Miembro removido')
       setRemoving(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo remover el miembro'))
+      toastApiError(err, 'No se pudo remover el miembro')
     }
   }
 

@@ -16,7 +16,7 @@ import { Field } from '@/components/ui/field'
 import { MoneyField } from '@/components/money-field'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { ADJUSTMENT_TYPE_LABELS, CREATE_ADJUSTMENT_TYPES } from './labels'
 import { useAddAdjustment } from './hooks'
@@ -70,7 +70,7 @@ export function AddAdjustmentDialog({
       idem.renew()
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo agregar el ajuste'))
+      toastApiError(err, 'No se pudo agregar el ajuste')
     }
   })
 

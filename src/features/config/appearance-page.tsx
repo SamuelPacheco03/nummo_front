@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { useThemeStore, type ThemeMode } from '@/stores/theme'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { OrganizationSettingsThemeMode } from '@/api/generated/model'
 import { cn } from '@/lib/utils'
 import { useOrgSettings, useUpdateSettings } from './hooks'
@@ -54,7 +54,7 @@ export function AppearancePage() {
         await updateSettings.mutateAsync({ orgId, data: { themeMode: MODE_TO_ENUM[m] } })
         toast.success('Tema de la organización actualizado')
       } catch (err) {
-        toast.error(getErrorMessage(err, 'No se pudo guardar el tema'))
+        toastApiError(err, 'No se pudo guardar el tema')
       }
     }
   }

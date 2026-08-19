@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { ListResult } from '@/lib/list-result'
 import type { MasterParams } from '@/features/masters/hooks'
 import { MasterCrud, type Column } from '@/features/masters/master-crud'
@@ -134,7 +134,7 @@ function PolicyDialog({
       }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 

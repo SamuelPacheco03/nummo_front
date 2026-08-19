@@ -11,6 +11,7 @@ import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { RECURRENCE_LABELS, scheduleStatus } from './labels'
 import { useEndSchedule, useExpenseSchedule, usePauseSchedule, useResumeSchedule } from './hooks'
@@ -60,7 +61,7 @@ export function ScheduleDetailPage() {
       toast.success(okMsg)
       setEndOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastApiError(err)
     }
   }
 

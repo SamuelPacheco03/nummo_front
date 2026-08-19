@@ -12,7 +12,7 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { useBranches } from '@/features/config/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import type { ListResult } from '@/lib/list-result'
 import { formatAmount } from '@/lib/format'
 import type { FinancialAccount } from '@/api/generated/model'
@@ -93,7 +93,7 @@ function AccountDialog({
       }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar'))
+      toastApiError(err, 'No se pudo guardar')
     }
   })
 

@@ -5,7 +5,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { useReceivablesSummary } from '@/features/reports/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, plural } from '@/lib/format'
 import type { AccountsListCopy, AccountsQuery } from '@/lib/accounts-list'
@@ -64,7 +64,7 @@ export function ReceivablesListPage() {
       const r = res.data as GenerateReceivablesResult
       toast.success(`${r.created} generadas · ${r.skipped} ya existían`)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudieron generar'))
+      toastApiError(err, 'No se pudieron generar')
     }
   }
 
@@ -80,7 +80,7 @@ export function ReceivablesListPage() {
       // Causar mora dos veces a propósito son dos operaciones, no un reintento.
       idem.renew()
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo causar la mora'))
+      toastApiError(err, 'No se pudo causar la mora')
     }
   }
 

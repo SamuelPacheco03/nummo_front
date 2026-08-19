@@ -31,6 +31,7 @@ import { StatusDot } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { cn } from '@/lib/utils'
 import type { ContactRelationship } from '@/api/generated/model'
 import { AddRelationshipDialog } from './add-relationship-dialog'
@@ -76,7 +77,7 @@ export function ContactDetailPage() {
       toast.success('Contacto archivado')
       setArchiveOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo archivar'))
+      toastApiError(err, 'No se pudo archivar')
     }
   }
 
@@ -91,7 +92,7 @@ export function ContactDetailPage() {
       toast.success('Relación eliminada')
       setRemovingRel(null)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo eliminar la relación'))
+      toastApiError(err, 'No se pudo eliminar la relación')
     }
   }
 

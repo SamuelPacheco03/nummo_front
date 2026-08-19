@@ -19,7 +19,7 @@ import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
-import { getErrorMessage } from '@/lib/errors'
+import { toastApiError } from '@/features/platform/errors'
 import { todayISODate } from '@/lib/format'
 import type { BillingAgreement } from '@/api/generated/model'
 import { useAgreement, useCreateAgreement, useInterestPolicies, useUpdateAgreement } from './hooks'
@@ -167,7 +167,7 @@ export function AgreementFormPage() {
         navigate(`/cartera/acuerdos/${created.id}`)
       }
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo guardar el acuerdo'))
+      toastApiError(err, 'No se pudo guardar el acuerdo')
     }
   })
 

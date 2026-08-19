@@ -10,8 +10,8 @@ import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage } from '@/lib/errors'
-import { toast } from 'sonner'
+import { ReadOnlyBanner } from '@/features/platform/read-only-banner'
+import { toastApiError } from '@/features/platform/errors'
 import { CommandBar } from '@/features/search/command-bar'
 import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
 import { PageScrollRestoration } from '@/app/page-scroll'
@@ -28,7 +28,7 @@ function NoOrgOnboarding() {
       await logout.mutateAsync()
       navigate('/login', { replace: true })
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      toastApiError(err)
     }
   }
 
@@ -127,6 +127,9 @@ export function AppShell() {
         */}
         <main className="flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8">
           <div className="mx-auto w-full max-w-6xl">
+            {/* Antes que cualquier pantalla: explica por qué no se puede guardar
+                nada, en vez de dejar que se descubra botón a botón. */}
+            <ReadOnlyBanner />
             <Outlet />
           </div>
         </main>

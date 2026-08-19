@@ -2382,6 +2382,47 @@ Ojo con la condición: `isError && !dato`. Con el dato viejo en mano se prefiere
 vaciar la pantalla —un informe de hace un minuto sigue siendo cierto—, y en una lista un fallo al
 pasar de página no debe borrar lo que ya se estaba leyendo.
 
+## 45.4. Solo lectura es un modo, no un error
+
+Una organización **suspendida o archivada** queda en solo lectura: consultar y exportar siguen
+funcionando —eso no se gatea nunca— y **cualquier** mutación responde `403
+ORGANIZATION_SUSPENDED`. Solo la plataforma puede revertirlo; el propietario ya no puede cambiar
+el estado de la suya.
+
+Eso no es el fallo de una pantalla, así que **no se cuenta con un aviso**. Un toast por cada clic
+diría veinte veces lo mismo y siempre **después** del intento. La forma es al revés:
+
+1. `useCan` apaga las acciones **antes**, leyendo el estado de la organización y no el error
+   (§88.5). Los permisos que terminan en `.read` siguen concedidos; los demás, no.
+2. `ReadOnlyBanner` lo explica una vez, en la cabecera de todas las pantallas, con `Note` en tono
+   de advertencia — el mismo aparte de siempre, no un invento nuevo (§11.1.5).
+3. El aviso, si llega a haberlo, dice lo que **sí** se puede: consultar y exportar.
+
+## 45.5. Cuando lo que falla es el plan
+
+Dos errores nuevos que no significan «algo salió mal»:
+
+| Código | HTTP | Qué pasó | Qué se ofrece |
+| --- | --- | --- | --- |
+| `FEATURE_NOT_AVAILABLE` | 403 | El plan no lo incluye | Mejorar de plan |
+| `LIMIT_EXCEEDED` | 409 | Sí lo incluye, pero se acabó el cupo | Liberar espacio **o** mejorar |
+
+Los dos traen `details` con esquema propio, así que el mensaje lleva **cifras**: «Tienes 200 de
+200». `used` es lo ya gastado, nunca lo que queda.
+
+Y no son el mismo caso: un **aforo** (`max_contacts`, `max_users`, `max_branches`) se libera
+archivando; una **cuota mensual** (`ai_messages_monthly`, `voice_minutes_monthly`) se renueva
+sola, así que esperar también es una salida. `isPeriodicLimit` distingue las dos.
+
+Todo esto vive en **un sitio**, `toastApiError` (`features/platform/errors.ts`), que es la forma
+de contar que una mutación falló: si el error es de plan dice lo de arriba, y si no, lo de
+siempre. Ninguna pantalla se tiene que acordar de los dos códigos, que es justo lo que no habría
+pasado con 44 `toast.error` repartidos.
+
+**Ojo con uno que no viene de un plan:** `limit: "free_organizations"` es el tope anti-abuso de
+organizaciones gratuitas por usuario. Llega por la misma vía y se nombra igual —por eso el
+mensaje no dice «de tu plan»—, y no hay que distinguirlo.
+
 ## 45.2. La puerta de entrada no parpadea
 
 Mientras `GET /auth/me` está en vuelo **no se sabe** si hay sesión, y `isAuthenticated` todavía es
@@ -3456,6 +3497,10 @@ Tres reglas que la sostienen:
    reciben `canSettle` / `canManage` / `canReverse` / `canApply` **como props**, porque el permiso
    es distinto en cada cara del espejo (§87.2).
 
+4. **`useCan` también apaga lo que la organización no puede hacer.** Si no está `ACTIVE`, todo lo
+   que no termine en `.read` devuelve `false`: es el mismo corte que hace `requireTenant` en el
+   backend, y se aplica **antes** del intento (§45.4).
+
 De `roles.ts` solo queda el **nombre** de un rol (`roleLabel`, `ASSIGNABLE_ROLES`): lo que se
 enseña y lo que se asigna en la pantalla de miembros.
 
@@ -3782,6 +3827,11 @@ Todos son parte del sistema y deben reutilizarse:
 | `SectionSwitch` | `components/section-switch.tsx` | Salto entre pantallas espejo, solo en móvil |
 | `useCapabilities` | `features/platform/hooks.ts` | Rol, permisos, plan, topes y consumo — **una llamada al entrar** |
 | `useCan` | `features/platform/permissions.ts` | **El único gate de la UI**: `can('payments.reverse')` (§88.5) |
+| `useOrgReadOnly` | `features/platform/permissions.ts` | ¿La organización está suspendida o archivada? (§45.4) |
+| `ReadOnlyBanner` | `features/platform/read-only-banner.tsx` | El aviso persistente de solo lectura, en todas las pantallas |
+| `toastApiError` | `features/platform/errors.ts` | **Cómo se cuenta que una mutación falló**, plan incluido (§45.5) |
+| `planLabel` · `featureLabel` · `limitLabel` | `features/platform/labels.ts` | Planes, features y topes en las palabras del usuario |
+| `orgStatus` | `features/organizations/labels.ts` | Tono y nombre del estado de una organización |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
 
