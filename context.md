@@ -1941,6 +1941,14 @@ Y hay que probar **el pulgar que no quiere nada**: un toque que se sostiene mien
 hacia arriba unos pocos píxeles cada décima. Ese es el que descubrió que 56 px se recorrían sin
 querer, y no lo encuentra ningún toque que va directo del punto A al B.
 
+**Lo que el arnés no puede ver.** La emulación táctil de un navegador de escritorio no ejecuta lo
+que Android hace con una pulsación larga, así que hay una clase entera de fallo —el sistema
+llevándose el gesto mientras el dedo sigue puesto— que aquí sale siempre en verde y en el teléfono
+no. Se rompió cuatro veces seguidas por adivinar la causa desde este lado. Para eso está
+`features/config/gesture-probe.tsx`, en Configuración → Aplicación: apunta con marca de tiempo qué
+eventos llegan al sostener un botón **en el aparato donde pasa**. Es herramienta de soporte y se
+quita cuando el gesto esté cerrado.
+
 ## 32.3. El hilo no se pierde, y avisa cuando contesta
 
 **Cerrar el chat nunca debe perder lo dicho.** El hilo vive fuera del árbol de rutas, así que

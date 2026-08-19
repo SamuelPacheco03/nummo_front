@@ -148,9 +148,16 @@ export function ChatComposer({
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
   useEffect(() => () => detach.current?.(), [])
 
+  /*
+    El foco automático, **solo donde hay teclado de verdad**. En un móvil abre el
+    teclado al entrar: tapa media conversación antes de que nadie haya pedido
+    escribir, y mueve el suelo bajo el dedo justo cuando se va a mantener pulsado
+    el micrófono —el navegador cancela los gestos vivos al redimensionarse la
+    ventana—.
+  */
   useEffect(() => {
-    if (autoFocus) ref.current?.focus()
-  }, [autoFocus])
+    if (autoFocus && !touch) ref.current?.focus()
+  }, [autoFocus, touch])
 
   // Auto-alto: hay que medir el DOM, no se puede calcular en render.
   useEffect(() => {
