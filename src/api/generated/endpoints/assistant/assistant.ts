@@ -35,11 +35,13 @@ import type {
   AssistantTranscribeForm,
   AssistantTranscription,
   AudioUrl,
+  Conversation,
   ConversationList,
   ErrorResponse,
   GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesParams,
   GetApiV1OrganizationsOrgIdAssistantConversationsParams,
   MessageList,
+  RenameConversationInput,
   UpsertAiProviderCredential
 } from '../../model';
 
@@ -961,7 +963,192 @@ export function useGetApiV1OrganizationsOrgIdAssistantConversations<TData = Awai
 
 
 
-export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesResponse200 = {
+export type patchApiV1OrganizationsOrgIdAssistantConversationsIdResponse200 = {
+  data: Conversation
+  status: 200
+}
+
+export type patchApiV1OrganizationsOrgIdAssistantConversationsIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type patchApiV1OrganizationsOrgIdAssistantConversationsIdResponseSuccess = (patchApiV1OrganizationsOrgIdAssistantConversationsIdResponse200) & {
+  headers: Headers;
+};
+export type patchApiV1OrganizationsOrgIdAssistantConversationsIdResponseError = (patchApiV1OrganizationsOrgIdAssistantConversationsIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type patchApiV1OrganizationsOrgIdAssistantConversationsIdResponse = (patchApiV1OrganizationsOrgIdAssistantConversationsIdResponseSuccess | patchApiV1OrganizationsOrgIdAssistantConversationsIdResponseError)
+
+export const getPatchApiV1OrganizationsOrgIdAssistantConversationsIdUrl = (orgId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/conversations/${id}`
+}
+
+/**
+ * Cambia el título de una conversación del usuario autenticado. El título que trae por defecto lo deriva Numi del primer mensaje; esto lo reemplaza.
+ * @summary Renombrar una conversación propia
+ */
+export const patchApiV1OrganizationsOrgIdAssistantConversationsId = async (orgId: string,
+    id: string,
+    renameConversationInput: RenameConversationInput, options?: Parameters<typeof customFetch>[1]): Promise<patchApiV1OrganizationsOrgIdAssistantConversationsIdResponse> => {
+
+  return customFetch<patchApiV1OrganizationsOrgIdAssistantConversationsIdResponse>(getPatchApiV1OrganizationsOrgIdAssistantConversationsIdUrl(orgId,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(renameConversationInput)
+  }
+);}
+
+
+
+
+
+export const getPatchApiV1OrganizationsOrgIdAssistantConversationsIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdAssistantConversationsId>>, TError,{orgId: string;id: string;data: RenameConversationInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdAssistantConversationsId>>, TError,{orgId: string;id: string;data: RenameConversationInput}, TContext> => {
+
+const mutationKey = ['patchApiV1OrganizationsOrgIdAssistantConversationsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdAssistantConversationsId>>, {orgId: string;id: string;data: RenameConversationInput}> = (props) => {
+          const {orgId,id,data} = props ?? {};
+
+          return  patchApiV1OrganizationsOrgIdAssistantConversationsId(orgId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchApiV1OrganizationsOrgIdAssistantConversationsIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdAssistantConversationsId>>>
+    export type PatchApiV1OrganizationsOrgIdAssistantConversationsIdMutationBody = RenameConversationInput
+    export type PatchApiV1OrganizationsOrgIdAssistantConversationsIdMutationError = ErrorResponse
+
+    /**
+ * @summary Renombrar una conversación propia
+ */
+export const usePatchApiV1OrganizationsOrgIdAssistantConversationsId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdAssistantConversationsId>>, TError,{orgId: string;id: string;data: RenameConversationInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdAssistantConversationsId>>,
+        TError,
+        {orgId: string;id: string;data: RenameConversationInput},
+        TContext
+      > => {
+      return useMutation(getPatchApiV1OrganizationsOrgIdAssistantConversationsIdMutationOptions(options), queryClient);
+    }
+    export type deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponseSuccess = (deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponse204) & {
+  headers: Headers;
+};
+export type deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponseError = (deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponse = (deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponseSuccess | deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponseError)
+
+export const getDeleteApiV1OrganizationsOrgIdAssistantConversationsIdUrl = (orgId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/conversations/${id}`
+}
+
+/**
+ * Quita la conversación de la lista del usuario: deja de aparecer y sus mensajes dejan de ser accesibles. Enviar un mensaje con ese `sessionId` abre una conversación nueva.
+ * @summary Borrar una conversación propia
+ */
+export const deleteApiV1OrganizationsOrgIdAssistantConversationsId = async (orgId: string,
+    id: string, options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponse> => {
+
+  return customFetch<deleteApiV1OrganizationsOrgIdAssistantConversationsIdResponse>(getDeleteApiV1OrganizationsOrgIdAssistantConversationsIdUrl(orgId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteApiV1OrganizationsOrgIdAssistantConversationsIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantConversationsId>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantConversationsId>>, TError,{orgId: string;id: string}, TContext> => {
+
+const mutationKey = ['deleteApiV1OrganizationsOrgIdAssistantConversationsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantConversationsId>>, {orgId: string;id: string}> = (props) => {
+          const {orgId,id} = props ?? {};
+
+          return  deleteApiV1OrganizationsOrgIdAssistantConversationsId(orgId,id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiV1OrganizationsOrgIdAssistantConversationsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantConversationsId>>>
+
+    export type DeleteApiV1OrganizationsOrgIdAssistantConversationsIdMutationError = ErrorResponse
+
+    /**
+ * @summary Borrar una conversación propia
+ */
+export const useDeleteApiV1OrganizationsOrgIdAssistantConversationsId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantConversationsId>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantConversationsId>>,
+        TError,
+        {orgId: string;id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteApiV1OrganizationsOrgIdAssistantConversationsIdMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesResponse200 = {
   data: MessageList
   status: 200
 }

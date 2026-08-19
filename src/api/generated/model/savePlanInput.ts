@@ -21,6 +21,12 @@ export interface SavePlanInput {
      * @maximum 9007199254740991
      */
   sortOrder?: number;
+  priceAmount?: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  priceCurrency?: string;
   features?: FeaturePatch;
   limits?: LimitPatch;
   applyToExisting: boolean;

@@ -80,6 +80,11 @@ interface NumiState {
   setError: (error: NumiError | null) => void
   /** Siembra el hilo con la conversación persistida más reciente (una sola vez). */
   hydrate: (sessionId: string | undefined, messages: ChatMessage[]) => void
+  /**
+   * Se cambia a otra conversación de la lista. Sustituye el hilo entero, no lo
+   * mezcla: son dos conversaciones distintas y ninguna continúa a la otra.
+   */
+  openThread: (conversationId: string, messages: ChatMessage[]) => void
   /** Empieza de cero: olvida el hilo del servidor y limpia la vista. */
   newConversation: () => void
   /** Ata el hilo a una organización; si cambia, la conversación se reinicia. */
@@ -169,6 +174,17 @@ export const useNumiStore = create<NumiState>()(
           // que lo anterior a lo que se ve continúa estando a un scroll.
           if (s.messages.length > 0) return { hydrated: true, historyId: s.sessionId ?? null }
           return { hydrated: true, historyId: sessionId ?? null, sessionId, messages }
+        }),
+
+      openThread: (conversationId, messages) =>
+        set({
+          sessionId: conversationId,
+          // Viene del servidor, así que lo anterior a esto se puede ir a buscar.
+          historyId: conversationId,
+          messages,
+          error: null,
+          hydrated: true,
+          unread: false,
         }),
 
       // Hilo limpio, pero marcado como hidratado para no recargar la conversación

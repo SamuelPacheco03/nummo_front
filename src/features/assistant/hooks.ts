@@ -10,7 +10,12 @@ import { getErrorMessage, isApiStatus } from '@/lib/errors'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
 import { describeRecording } from './waveform'
-import { useMessageAudioLoader, useNumiConversations, useNumiMessages } from './use-numi-history'
+import {
+  useConversationOpener,
+  useMessageAudioLoader,
+  useNumiConversations,
+  useNumiMessages,
+} from './use-numi-history'
 import { shouldRefreshData } from './utils'
 
 /**
@@ -89,6 +94,16 @@ export function useNumiChat() {
   const conversationId = useNumiStore((s) => s.sessionId)
   const loadAudio = useMessageAudioLoader(orgId, conversationId)
   const { hasOlder, isLoadingOlder, loadOlder } = useOlderThread(orgId)
+  const fetchThread = useConversationOpener(orgId)
+
+  /** Se cambia a una conversación de la lista y la deja abierta en el hilo. */
+  const openConversation = useCallback(
+    async (conversationId: string) => {
+      const messages = await fetchThread(conversationId)
+      useNumiStore.getState().openThread(conversationId, messages)
+    },
+    [fetchThread],
+  )
 
   // El hilo pertenece a una organización: si el usuario cambia de empresa, la
   // conversación anterior habla de datos que ya no son los de esta pantalla.
@@ -217,6 +232,9 @@ export function useNumiChat() {
     /** Trae la página anterior y la pone por delante del hilo. */
     loadOlder,
     canChat: !!orgId,
+    orgId,
+    /** La conversación abierta; la lista la señala y de ella cuelgan los audios. */
+    conversationId,
     role,
     /** Nombre de la organización: el hilo habla de SUS datos, y eso se ve en la cabecera. */
     orgName: organization?.name,
@@ -224,6 +242,8 @@ export function useNumiChat() {
     sendAudio,
     retry,
     newConversation,
+    /** Abre otra conversación del historial en el hilo. */
+    openConversation,
     /** Pide la URL firmada de una nota de voz archivada (§«Numi»). */
     loadAudio,
   }

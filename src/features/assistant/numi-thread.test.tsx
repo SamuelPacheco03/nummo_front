@@ -18,6 +18,8 @@ vi.mock('./use-numi-history', () => ({
   useNumiConversations: () => ({ conversations: [], isLoading: false }),
   useNumiMessages: () => ({ messages: [], older: [], isLoading: false, hasOlder: false }),
   useMessageAudioLoader: () => undefined,
+  useConversationOpener: () => async () => [],
+  useConversationActions: () => ({ rename: vi.fn(), remove: vi.fn() }),
 }))
 vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({
   usePostApiV1OrganizationsOrgIdAssistantChat: () => ({

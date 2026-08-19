@@ -4,6 +4,8 @@ import {
   getApiV1OrganizationsOrgIdAssistantConversations,
   getApiV1OrganizationsOrgIdAssistantConversationsIdMessages,
   getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio,
+  useDeleteApiV1OrganizationsOrgIdAssistantConversationsId,
+  usePatchApiV1OrganizationsOrgIdAssistantConversationsId,
 } from '@/api/generated/endpoints/assistant/assistant'
 import type { AudioUrl, Conversation, MessageList } from '@/api/generated/model'
 import type { ChatMessage } from './types'
@@ -43,7 +45,7 @@ export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
 /** The caller's Numi conversations (chat list), most recent first, with cursor paging. */
 export function useNumiConversations(orgId: string | undefined) {
   const query = useInfiniteQuery({
-    queryKey: ['numi', 'conversations', orgId],
+    queryKey: conversationsKey(orgId),
     enabled: Boolean(orgId),
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam, signal }) => {
@@ -68,6 +70,40 @@ export function useNumiConversations(orgId: string | undefined) {
   }
 }
 
+/** Clave de la lista de conversaciones: lo que hay que refrescar al renombrar o borrar. */
+const conversationsKey = (orgId: string | undefined) => ['numi', 'conversations', orgId]
+
+/**
+ * Definición única de la query paginada de mensajes.
+ *
+ * La comparten el hilo abierto y la apertura de una conversación desde la lista. Si
+ * cada uno tuviera la suya, abrir una conversación llenaría una caché que el scroll
+ * hacia arriba no mira, y la primera página se pediría dos veces.
+ */
+function messagesQuery(orgId: string, conversationId: string) {
+  return {
+    queryKey: ['numi', 'messages', orgId, conversationId],
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({
+      pageParam,
+      signal,
+    }: {
+      pageParam?: string
+      signal?: AbortSignal
+    }): Promise<MessageList> => {
+      const res = await getApiV1OrganizationsOrgIdAssistantConversationsIdMessages(
+        orgId,
+        conversationId,
+        { limit: MESSAGES_PAGE, before: pageParam },
+        { signal },
+      )
+      // customFetch throws on non-2xx, so on success this is always a MessageList.
+      return res.data as MessageList
+    },
+    getNextPageParam: (lastPage: MessageList) => lastPage.nextCursor ?? undefined,
+  }
+}
+
 /**
  * A conversation's messages with WhatsApp-style scroll-up. Pages load newest-first;
  * `messages` is the oldest→newest transcript ready to render. Call `loadOlder()` (near the
@@ -75,20 +111,8 @@ export function useNumiConversations(orgId: string | undefined) {
  */
 export function useNumiMessages(orgId: string | undefined, conversationId: string | undefined) {
   const query = useInfiniteQuery({
-    queryKey: ['numi', 'messages', orgId, conversationId],
+    ...messagesQuery(orgId ?? '', conversationId ?? ''),
     enabled: Boolean(orgId && conversationId),
-    initialPageParam: undefined as string | undefined,
-    queryFn: async ({ pageParam, signal }) => {
-      const res = await getApiV1OrganizationsOrgIdAssistantConversationsIdMessages(
-        orgId ?? '',
-        conversationId ?? '',
-        { limit: MESSAGES_PAGE, before: pageParam },
-        { signal },
-      )
-      // customFetch throws on non-2xx, so on success this is always a MessageList.
-      return res.data as MessageList
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
 
   const pages = query.data?.pages
@@ -117,6 +141,60 @@ export function useNumiMessages(orgId: string | undefined, conversationId: strin
     isLoadingOlder: query.isFetchingNextPage,
     loadOlder: query.fetchNextPage,
   }
+}
+
+/**
+ * Abre una conversación de la lista: trae su última página y la devuelve como hilo.
+ *
+ * Va por `fetchInfiniteQuery` y no por un fetch suelto para dejar la caché en el
+ * mismo sitio del que luego tira el scroll hacia arriba: al abrirla, su primera
+ * página ya está puesta y el cursor apunta a lo anterior.
+ */
+export function useConversationOpener(orgId: string | undefined) {
+  const queryClient = useQueryClient()
+
+  return useCallback(
+    async (conversationId: string): Promise<ChatMessage[]> => {
+      if (!orgId) return []
+      const data = await queryClient.fetchInfiniteQuery(messagesQuery(orgId, conversationId))
+      return flattenMessagePages(data.pages)
+    },
+    [queryClient, orgId],
+  )
+}
+
+/**
+ * Ponerle nombre a una conversación y quitarla de la lista.
+ *
+ * Las dos invalidan la lista al terminar, que es la vista que cambia. Borrar además
+ * tira la caché de sus mensajes: el servidor ya no los sirve, y dejarlos ahí haría
+ * que la conversación reapareciese entera si algo volviera a montar ese hilo.
+ */
+export function useConversationActions(orgId: string | undefined) {
+  const queryClient = useQueryClient()
+  const renameMutation = usePatchApiV1OrganizationsOrgIdAssistantConversationsId()
+  const removeMutation = useDeleteApiV1OrganizationsOrgIdAssistantConversationsId()
+
+  const rename = useCallback(
+    async (conversationId: string, title: string) => {
+      if (!orgId) return
+      await renameMutation.mutateAsync({ orgId, id: conversationId, data: { title } })
+      await queryClient.invalidateQueries({ queryKey: conversationsKey(orgId) })
+    },
+    [orgId, renameMutation, queryClient],
+  )
+
+  const remove = useCallback(
+    async (conversationId: string) => {
+      if (!orgId) return
+      await removeMutation.mutateAsync({ orgId, id: conversationId })
+      queryClient.removeQueries({ queryKey: ['numi', 'messages', orgId, conversationId] })
+      await queryClient.invalidateQueries({ queryKey: conversationsKey(orgId) })
+    },
+    [orgId, removeMutation, queryClient],
+  )
+
+  return { rename, remove, isRenaming: renameMutation.isPending, isRemoving: removeMutation.isPending }
 }
 
 /**

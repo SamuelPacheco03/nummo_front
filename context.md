@@ -1973,6 +1973,39 @@ sitio al que hay que ir. Se apaga al abrir, sin más ceremonia. El rótulo del b
 —«Abrir el chat con Numi · respuesta nueva»—: un punto de color no existe para quien no lo ve
 (§7).
 
+## 32.4. Una conversación por tema, y todo lo anterior a un scroll
+
+El hilo enseñaba solo el último tramo de la última conversación. Lo demás existía en el
+servidor y no había forma de llegar: ni de subir a leer lo de ayer, ni de volver a una
+conversación anterior. El panel tiene ahora **dos vistas** y una lleva a la otra.
+
+**Subir trae lo anterior.** Al llegar arriba del hilo entra la página previa, de treinta en
+treinta, y también hay un botón —«Ver mensajes anteriores»— porque con teclado no existe
+«subir». Lo delicado no es traerlos, es **no mover la vista**: insertar mensajes por arriba
+empuja hacia abajo todo lo demás, así que se guarda dónde estaba la lectura y se restaura
+antes de pintar. Corregirlo después se vería como un salto.
+
+Solo se mezclan las páginas **de la segunda en adelante**. La primera es la que ya sembró el
+hilo al abrir, y un mensaje enviado vive con un id de cliente hasta que el servidor le da el
+suyo: si la app se cerró antes de esa respuesta, mezclar la primera página pondría el mismo
+mensaje dos veces sin que las dos copias se reconozcan.
+
+**La lista de conversaciones vive en el panel**, como en WhatsApp, no como barra lateral: en
+25rem de ancho una barra dejaría el hilo en nada. Se entra por la cabecera y se vuelve con la
+flecha. Cada fila abre al pulsarla —el objetivo grande es el que se usa— y sus acciones,
+renombrar y borrar, van en un menú aparte: un «borrar» que se pulsa al querer abrir es justo
+el error que no se puede deshacer.
+
+El nombre que trae cada conversación lo deriva Numi del primer mensaje, cortado por palabra;
+**es un punto de partida, no una decisión**, y renombrar es lo que la convierte en «Cobros del
+colegio». Borrar la saca de la lista para siempre, y el diálogo lo dice entero: lo que Numi
+haya registrado se queda, porque los movimientos no se borran nunca (§ historia inmutable).
+
+**Qué conversación se está leyendo es del hilo; qué vista se está mirando es de la pantalla.**
+Lo primero se guarda —tiene que sobrevivir a cerrar el chat—; lo segundo no: volver a abrir
+en el hilo es lo que se espera de un asistente. Y borrar la conversación abierta empieza una
+nueva en el acto, que es lo que el backend haría igualmente con un id que ya no reconoce.
+
 ---
 
 # 33. Cards dentro del chat
