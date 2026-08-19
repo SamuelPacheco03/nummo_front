@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { DetailDrawer, DetailSection } from '@/components/ui/detail-drawer'
+import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
@@ -92,8 +92,17 @@ export function RoleFormPage() {
   const [description, setDescription] = useState('')
   const [granted, setGranted] = useState<Set<Permission>>(new Set())
 
+  /*
+    Se rellena **una vez por rol**, no cada vez que `role` cambia de identidad.
+    Con la dependencia a secas, un refetch en segundo plano —volver a la pestaña,
+    invalidar tras guardar otra cosa— borraría lo que se está eligiendo a medio
+    formulario. Y si el hook devolviera un objeto nuevo por render, el efecto se
+    dispararía en bucle.
+  */
+  const hydratedFor = useRef<string | null>(null)
   useEffect(() => {
-    if (!role) return
+    if (!role || hydratedFor.current === role.id) return
+    hydratedFor.current = role.id
     setName(role.name)
     setDescription(role.description ?? '')
     setGranted(new Set(role.permissions))
@@ -107,8 +116,11 @@ export function RoleFormPage() {
       return next
     })
 
-  /** Marcar o desmarcar un recurso entero: es como se piensa un rol, no casilla a casilla. */
-  const toggleResource = (permissions: Permission[]) =>
+  /**
+   * Marcar o desmarcar un área entera: es como se piensa un rol —«lleva la
+   * cartera»—, no casilla por casilla.
+   */
+  const toggleAll = (permissions: Permission[]) =>
     setGranted((prev) => {
       const next = new Set(prev)
       const todos = permissions.every((p) => next.has(p))
@@ -200,24 +212,47 @@ export function RoleFormPage() {
             />
           </Field>
 
-          {GROUPS.map((group) => (
-            <DetailSection key={group.area} title={group.area}>
-              <div className="space-y-3">
-                {group.resources.map((resource) => {
-                  const todos = resource.permissions.every((p) => granted.has(p))
-                  return (
-                    <div key={resource.resource} className="rounded-lg border p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium">{resource.label}</p>
-                        <button
-                          type="button"
-                          onClick={() => toggleResource(resource.permissions)}
-                          className="text-brand focus-visible:ring-ring/50 rounded text-xs underline-offset-4 hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-                        >
-                          {todos ? 'Quitar todo' : 'Todo'}
-                        </button>
-                      </div>
-                      <div className="mt-1 grid gap-0.5 sm:grid-cols-2">
+          {GROUPS.map((group) => {
+            const delArea = group.resources.flatMap((r) => r.permissions)
+            const elegidos = delArea.filter((p) => granted.has(p)).length
+            const todos = elegidos === delArea.length
+
+            return (
+              <section key={group.area} className="space-y-2">
+                {/*
+                  El contador por área es lo que deja ver la cobertura sin abrir
+                  nada: «Cartera 3 de 12» responde «¿este rol lleva la cartera?».
+                */}
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="text-sm font-medium">{group.area}</h3>
+                  <div className="flex items-baseline gap-3">
+                    <span className="nums text-muted-foreground text-xs">
+                      {elegidos} de {delArea.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleAll(delArea)}
+                      className="text-brand focus-visible:ring-ring/50 rounded text-xs underline-offset-4 hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
+                    >
+                      {todos ? 'Quitar todo' : 'Todo'}
+                    </button>
+                  </div>
+                </div>
+
+                {/*
+                  **Una caja por área, no una por recurso.** Veinticuatro
+                  rectángulos con borde apilados son la sopa de tarjetas que
+                  §11.1 prohíbe: separan sin jerarquizar. Dentro, los recursos se
+                  separan con una línea, que es lo que ya hace `DetailRows`.
+                */}
+                <div className="divide-y rounded-lg border">
+                  {group.resources.map((resource) => (
+                    // Apilado y no en dos columnas: el cajón mide 30rem en
+                    // escritorio, así que una columna de etiqueta dejaría a los
+                    // cuatro verbos de «Egresos» sin sitio y los partiría igual.
+                    <div key={resource.resource} className="space-y-1 px-3 py-2.5">
+                      <p className="text-muted-foreground text-sm">{resource.label}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5">
                         {resource.permissions.map((permission) => (
                           <PermissionToggle
                             key={permission}
@@ -229,11 +264,11 @@ export function RoleFormPage() {
                         ))}
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            </DetailSection>
-          ))}
+                  ))}
+                </div>
+              </section>
+            )
+          })}
         </form>
       )}
     </DetailDrawer>

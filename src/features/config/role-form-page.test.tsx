@@ -73,21 +73,37 @@ test('un rol sin nombre tampoco', async () => {
   expect(m.avisos.at(-1)).toMatch(/necesita un nombre/)
 })
 
-test('«Todo» marca el recurso entero, que es como se piensa un rol', async () => {
+test('«Todo» marca el área entera, que es como se piensa un rol', async () => {
+  // «Lleva la cartera», no «ver pagos, registrar pagos, repartir anticipos…».
   pintar()
-  await userEvent.type(screen.getByLabelText(/Nombre/), 'Cajero')
+  await userEvent.type(screen.getByLabelText(/Nombre/), 'Auxiliar')
 
-  // Pagos: ver, registrar, repartir anticipos y reversar.
-  const pagos = screen.getByText('Pagos').closest('div')!.parentElement!
-  await userEvent.click(within(pagos).getByRole('button', { name: 'Todo' }))
+  const contactos = screen.getByRole('heading', { name: 'Contactos' }).parentElement!
+  await userEvent.click(within(contactos).getByRole('button', { name: 'Todo' }))
   await userEvent.click(screen.getByRole('button', { name: 'Crear rol' }))
 
   expect(m.crear).toHaveBeenCalledTimes(1)
   const enviado = m.crear.mock.calls[0][0].data
   expect(enviado.permissions.sort()).toEqual(
-    ['payments.allocate', 'payments.create', 'payments.read', 'payments.reverse'].sort(),
+    ['contacts.archive', 'contacts.read', 'contacts.write'].sort(),
   )
   expect(m.rutas.at(-1)).toBe('/config/roles')
+})
+
+test('cada área dice cuánto lleva marcado, sin abrir nada', () => {
+  m.role = {
+    id: 'r1',
+    name: 'Cajero',
+    description: null,
+    permissions: ['contacts.read'],
+    membersCount: 0,
+    createdAt: '2026-08-01T00:00:00.000Z',
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  }
+  pintar('/config/roles/r1')
+
+  const contactos = screen.getByRole('heading', { name: 'Contactos' }).parentElement!
+  expect(within(contactos).getByText('1 de 3')).toBeInTheDocument()
 })
 
 test('editar llega con lo que el rol ya tenía marcado', () => {

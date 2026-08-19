@@ -62,12 +62,22 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 
-test('un rol se resume por lo que toca, no por su lista de claves', () => {
+test('un rol se resume por las áreas que toca, no por su lista de claves', () => {
+  // Con recursos salían siete etiquetas que se desbordaban a dos renglones y
+  // había que leerlas todas para saber de qué iba el rol.
   pintar()
 
   expect(screen.getByText('Cajero')).toBeInTheDocument()
-  expect(screen.getByText('2 permisos · 2 miembros')).toBeInTheDocument()
-  expect(screen.getByText('Pagos')).toBeInTheDocument()
+  expect(screen.getByText('2 permisos')).toBeInTheDocument()
+  expect(screen.getByText('2 miembros')).toBeInTheDocument()
+  expect(screen.getByText('Cartera')).toBeInTheDocument()
+})
+
+test('un rol sin miembros se lee distinto: es el que se puede archivar sin mover a nadie', () => {
+  m.roles = [rol({ membersCount: 0 })]
+  pintar()
+
+  expect(screen.getByText('Sin miembros')).toBeInTheDocument()
 })
 
 test('sin la feature se sigue viendo lo que hay, y solo desaparece el botón', () => {

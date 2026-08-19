@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { CustomRole } from '@/api/generated/model'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -13,15 +14,98 @@ import { Note } from '@/components/ui/note'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toastApiError } from '@/features/platform/errors'
 import { useCan, useFeature } from '@/features/platform/permissions'
-import { permissionResource } from '@/features/platform/permission-labels'
+import { groupPermissions } from '@/features/platform/permission-labels'
 import { plural } from '@/lib/format'
 import { useCustomRoles, useDeleteCustomRole } from './hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 
-/** Los recursos que toca un rol, sin repetir: «Contactos · Pagos · Informes». */
-function resourceSummary(role: CustomRole): string {
-  const seen = new Set(role.permissions.map((p) => permissionResource(p)))
-  return [...seen].join(' · ')
+/**
+ * **Las áreas que toca un rol**, no sus recursos.
+ *
+ * Con recursos salían siete etiquetas que se desbordaban a dos renglones y había
+ * que leerlas todas para saber de qué iba el rol. Las áreas son tres o cuatro y
+ * responden la pregunta de un vistazo: «lleva la cartera», «solo mira».
+ */
+function roleAreas(role: CustomRole): string[] {
+  return groupPermissions(role.permissions).map((group) => group.area)
+}
+
+/**
+ * Una ficha por rol: el nombre manda, y debajo lo que hace y a quién alcanza.
+ *
+ * Las áreas van en fichas y no en una línea unida por `·`: siete nombres
+ * seguidos se desbordan y se leen como un párrafo, no como una lista de sitios.
+ */
+function RoleCard({
+  role,
+  canManage,
+  onEdit,
+  onArchive,
+}: {
+  role: CustomRole
+  canManage: boolean
+  onEdit: () => void
+  onArchive: () => void
+}) {
+  return (
+    <Card className="gap-0 py-0">
+      <CardContent className="space-y-2 px-4 py-3.5 sm:px-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-medium">{role.name}</h3>
+              {/*
+                Un rol que no lleva nadie no se lee igual que uno con tres: es el
+                que se puede archivar sin mover a nadie antes.
+              */}
+              {role.membersCount > 0 ? (
+                <Badge variant="secondary">
+                  {plural(role.membersCount, 'miembro', 'miembros')}
+                </Badge>
+              ) : (
+                <span className="text-muted-foreground text-xs">Sin miembros</span>
+              )}
+            </div>
+            {role.description && (
+              <p className="text-muted-foreground text-sm">{role.description}</p>
+            )}
+          </div>
+
+          {canManage && (
+            <div className="flex shrink-0 gap-1">
+              <Button variant="ghost" size="icon" aria-label={`Editar ${role.name}`} onClick={onEdit}>
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Archivar ${role.name}`}
+                onClick={onArchive}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <KeyRound aria-hidden className="size-3.5" />
+            {plural(role.permissions.length, 'permiso', 'permisos')}
+          </span>
+          <span className="bg-border h-3 w-px" aria-hidden />
+          {roleAreas(role).map((area) => (
+            <span
+              key={area}
+              className="bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs"
+            >
+              {area}
+            </span>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 /**
@@ -110,43 +194,13 @@ export function RolesPage() {
       ) : (
         <div className="space-y-3">
           {roles.map((role) => (
-            <Card key={role.id}>
-              <CardContent className="flex items-start justify-between gap-4 py-4">
-                <div className="min-w-0 space-y-1">
-                  <p className="font-medium">{role.name}</p>
-                  {role.description && (
-                    <p className="text-muted-foreground text-sm">{role.description}</p>
-                  )}
-                  <p className="text-muted-foreground text-xs">
-                    {plural(role.permissions.length, 'permiso', 'permisos')} ·{' '}
-                    {plural(role.membersCount, 'miembro', 'miembros')}
-                  </p>
-                  {role.permissions.length > 0 && (
-                    <p className="text-muted-foreground text-xs">{resourceSummary(role)}</p>
-                  )}
-                </div>
-                {canCreate && (
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${role.name}`}
-                      onClick={() => navigate(`/config/roles/${role.id}`)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Archivar ${role.name}`}
-                      onClick={() => setDeleting(role)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <RoleCard
+              key={role.id}
+              role={role}
+              canManage={canCreate}
+              onEdit={() => navigate(`/config/roles/${role.id}`)}
+              onArchive={() => setDeleting(role)}
+            />
           ))}
         </div>
       )}

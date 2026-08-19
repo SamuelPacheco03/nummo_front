@@ -2713,8 +2713,20 @@ tablas pequeñas —24 recursos y 13 verbos— los componen todos y **componen e
 `payments.reverse` → «Pagos · Reversar». Una tabla de 53 entradas se queda coja a la primera clave
 nueva y nadie se entera; con esto, un recurso desconocido cae en «Otros» con su clave a la vista.
 
-En el editor van **agrupados por área** —la de la navegación, §14— y dentro por recurso, con un
-«Todo» por bloque: un rol se piensa por áreas («lleva la cartera»), no casilla por casilla.
+En el editor van **agrupados por área** —la de la navegación, §14— y dentro por recurso, con el
+contador y el «Todo» **en el área**: un rol se piensa así («lleva la cartera»), no casilla por
+casilla, y «Cartera 3 de 12» responde la cobertura sin abrir nada.
+
+**Una caja por área, no una por recurso.** Veinticuatro rectángulos con borde apilados son la sopa
+de tarjetas de §11.1: separan sin jerarquizar. Dentro, los recursos se separan con una línea, que
+es lo que ya hace `DetailRows`. Y las casillas van **apiladas bajo su recurso**, no en una columna
+de etiquetas al lado: el cajón mide 30rem y una columna fija dejaría a los cuatro verbos de
+«Egresos» sin sitio.
+
+En la lista, cada rol se resume por **las áreas que toca**, en fichas. Con recursos salían siete
+nombres unidos por `·` que se desbordaban a dos renglones y había que leerlos todos para saber de
+qué iba el rol. Y un rol **sin miembros** se lee distinto —«Sin miembros» en gris frente a la
+insignia—, porque es el único que se puede archivar sin mover a nadie antes.
 
 Va en **cajón y no en diálogo centrado**: cuelga de la lista de roles y no es un formulario corto.
 §11.1.3 mira las dos cosas y aquí apuntan al mismo sitio.
