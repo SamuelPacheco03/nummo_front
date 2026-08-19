@@ -16,7 +16,7 @@ vi.mock('@/features/organizations/hooks', () => ({
 }))
 vi.mock('./use-numi-history', () => ({
   useNumiConversations: () => ({ conversations: [], isLoading: false }),
-  useNumiMessages: () => ({ messages: [], isLoading: false }),
+  useNumiMessages: () => ({ messages: [], older: [], isLoading: false, hasOlder: false }),
   useMessageAudioLoader: () => undefined,
 }))
 vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({

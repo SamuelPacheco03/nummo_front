@@ -39,6 +39,32 @@ function useHydrateThread(orgId: string | undefined) {
 }
 
 /**
+ * Lo anterior a lo que se ve: subir en el hilo trae la página previa del servidor.
+ *
+ * Hidratar siembra el final de la conversación y esto continúa hacia atrás, de
+ * treinta en treinta. Va contra la misma clave de react-query que usó la hidratación,
+ * así que la primera página ya está en caché y volver a montarla no cuesta una
+ * petición.
+ */
+function useOlderThread(orgId: string | undefined) {
+  // `historyId` es la precondición del hook: solo una conversación que ya existía en
+  // el servidor tiene algo por encima. Sin él esto pediría una página inexistente
+  // cada vez que alguien estrena conversación.
+  const historyId = useNumiStore((s) => s.historyId)
+  const prependOlder = useNumiStore((s) => s.prependOlder)
+  const { older, hasOlder, isLoadingOlder, loadOlder } = useNumiMessages(
+    historyId ? orgId : undefined,
+    historyId ?? undefined,
+  )
+
+  useEffect(() => {
+    if (older.length > 0) prependOlder(older)
+  }, [older, prependOlder])
+
+  return { hasOlder, isLoadingOlder, loadOlder }
+}
+
+/**
  * Conversación con Numi: envío, estado "escribiendo", errores y refresco de
  * datos. Es el único punto que conoce el endpoint; la UI solo consume esto.
  */
@@ -62,6 +88,7 @@ export function useNumiChat() {
   // La conversación viva del hilo: de ella cuelgan los audios archivados.
   const conversationId = useNumiStore((s) => s.sessionId)
   const loadAudio = useMessageAudioLoader(orgId, conversationId)
+  const { hasOlder, isLoadingOlder, loadOlder } = useOlderThread(orgId)
 
   // El hilo pertenece a una organización: si el usuario cambia de empresa, la
   // conversación anterior habla de datos que ya no son los de esta pantalla.
@@ -184,6 +211,11 @@ export function useNumiChat() {
     isTyping: pending,
     /** Cargando el historial persistido al abrir: se muestra un loader, no el saludo. */
     isHydrating: !hydrated && !!orgId,
+    /** Queda conversación por encima de lo que se ve. */
+    hasOlder,
+    isLoadingOlder,
+    /** Trae la página anterior y la pone por delante del hilo. */
+    loadOlder,
     canChat: !!orgId,
     role,
     /** Nombre de la organización: el hilo habla de SUS datos, y eso se ve en la cabecera. */

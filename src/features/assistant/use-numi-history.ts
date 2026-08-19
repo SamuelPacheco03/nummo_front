@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getApiV1OrganizationsOrgIdAssistantConversations,
@@ -91,8 +91,26 @@ export function useNumiMessages(orgId: string | undefined, conversationId: strin
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
 
+  const pages = query.data?.pages
+
+  // `flattenMessagePages` construye un array nuevo en cada render, y de él cuelgan
+  // efectos: sin memoizar, cada render dispararía el siguiente.
+  const messages = useMemo(() => flattenMessagePages(pages ?? []), [pages])
+
+  /**
+   * Solo lo que hay **por encima** de la primera página.
+   *
+   * La primera es la que ya sembró el hilo al abrir, y volver a mezclarla duplicaría
+   * lo que el usuario acaba de escribir: un mensaje enviado vive en el hilo con un id
+   * de cliente hasta que el servidor le da el suyo, así que las dos copias no se
+   * reconocen entre sí. De la segunda página en adelante no existe esa ambigüedad —
+   * son mensajes estrictamente más viejos que los de la pantalla.
+   */
+  const older = useMemo(() => flattenMessagePages((pages ?? []).slice(1)), [pages])
+
   return {
-    messages: flattenMessagePages(query.data?.pages ?? []),
+    messages,
+    older,
     error: query.error,
     isLoading: query.isLoading,
     hasOlder: query.hasNextPage,

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, RotateCcw, Sparkles, X } from 'lucide-react'
 import { canManageOrg } from '@/features/organizations/roles'
@@ -9,7 +9,7 @@ import { ChatComposer } from './chat-composer'
 import { NumiAvatar } from './numi-avatar'
 import { TypingIndicator } from './typing-indicator'
 import { useNumiChat } from './hooks'
-import { NumiLoader } from '@/components/ui/loader'
+import { Loader, NumiLoader } from '@/components/ui/loader'
 
 /** Botón de la cabecera: icono suelto, sin peso visual. */
 function HeaderAction({
@@ -79,6 +79,35 @@ function QuickStart({ onPick }: { onPick: (text: string) => void }) {
   )
 }
 
+/** A qué distancia del borde superior se empieza a traer la página anterior. */
+const LOAD_OLDER_MARGIN = 80
+
+/**
+ * Aviso de que arriba queda conversación. Es un botón de verdad, no solo un
+ * indicador: subir con el dedo la trae sola, pero con teclado no hay «subir».
+ */
+function OlderMessages({ loading, onLoad }: { loading: boolean; onLoad: () => void }) {
+  if (loading) {
+    return (
+      <p className="text-muted-foreground flex items-center justify-center gap-2 py-1 text-xs">
+        <Loader size="sm" />
+        Cargando mensajes anteriores…
+      </p>
+    )
+  }
+  return (
+    <div className="flex justify-center py-1">
+      <button
+        type="button"
+        onClick={onLoad}
+        className="text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+      >
+        Ver mensajes anteriores
+      </button>
+    </div>
+  )
+}
+
 /**
  * Panel del chat. En móvil ocupa la pantalla; desde `sm` es una tarjeta anclada
  * a la esquina inferior derecha, sobre el contenido (no lo tapa ni lo bloquea:
@@ -97,15 +126,48 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     retry,
     newConversation,
     loadAudio,
+    hasOlder,
+    isLoadingOlder,
+    loadOlder,
   } = useNumiChat()
 
   const listRef = useRef<HTMLDivElement>(null)
+  /**
+   * Dónde estaba la vista justo antes de pedir la página anterior. Insertar
+   * mensajes por arriba empuja hacia abajo todo lo demás: sin esto, subir a leer
+   * lo de ayer te deja mirando un punto distinto del que estabas leyendo.
+   */
+  const anchor = useRef<{ height: number; top: number; count: number } | null>(null)
 
-  // El hilo siempre pegado abajo: hay que escribir el scroll del DOM.
-  useEffect(() => {
+  const onLoadOlder = useCallback(() => {
     const el = listRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el) anchor.current = { height: el.scrollHeight, top: el.scrollTop, count: messages.length }
+    void loadOlder()
+  }, [loadOlder, messages.length])
+
+  // Antes de pintar, no después: corregir el scroll en un `useEffect` se vería
+  // como un salto.
+  useLayoutEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    const held = anchor.current
+    if (held) {
+      // Todavía no ha llegado nada; quedarse quieto es lo correcto, y bajar al
+      // fondo sería justo lo contrario de lo que se pidió.
+      if (messages.length === held.count) return
+      el.scrollTop = held.top + (el.scrollHeight - held.height)
+      anchor.current = null
+      return
+    }
+    el.scrollTop = el.scrollHeight
   }, [messages, isTyping, error])
+
+  // Y lo natural: llegar arriba trae lo anterior sin pedirlo.
+  const onScroll = useCallback(() => {
+    const el = listRef.current
+    if (!el || !hasOlder || isLoadingOlder) return
+    if (el.scrollTop < LOAD_OLDER_MARGIN) onLoadOlder()
+  }, [hasOlder, isLoadingOlder, onLoadOlder])
 
   return (
     <div
@@ -133,6 +195,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
 
       <div
         ref={listRef}
+        onScroll={onScroll}
         role="log"
         aria-live="polite"
         aria-label="Conversación con Numi"
@@ -148,7 +211,12 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             <QuickStart onPick={(text) => void send(text)} />
           </>
         ) : (
-          messages.map((m) => <ChatMessageItem key={m.id} message={m} loadAudio={loadAudio} />)
+          <>
+            {hasOlder && <OlderMessages loading={isLoadingOlder} onLoad={onLoadOlder} />}
+            {messages.map((m) => (
+              <ChatMessageItem key={m.id} message={m} loadAudio={loadAudio} />
+            ))}
+          </>
         )}
 
         {isTyping && (

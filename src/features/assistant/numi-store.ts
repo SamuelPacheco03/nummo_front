@@ -47,6 +47,15 @@ interface NumiState {
   error: NumiError | null
   /** Ya se intentó cargar el historial persistido (evita recargarlo en bucle). */
   hydrated: boolean
+  /**
+   * Conversación cuya historia vive en el servidor y se puede seguir hacia atrás.
+   *
+   * No es lo mismo que `sessionId`: una conversación empezada en esta pantalla ya
+   * tiene id en cuanto Numi contesta, pero todo lo suyo está a la vista y no hay
+   * nada que ir a buscar. Distinguirlas es lo que evita pedir una página que no
+   * existe cada vez que alguien estrena conversación.
+   */
+  historyId: string | null
   /** Numi contestó con el chat cerrado y todavía no se ha visto. */
   unread: boolean
   /** Hay un turno en marcha: el hilo muestra «escribiendo…». */
@@ -57,6 +66,11 @@ interface NumiState {
   appendMessage: (role: ChatRole, content: string) => void
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
   appendAudio: (audio: { audioUrl: string; waveform?: number[]; audioSeconds?: number }) => void
+  /**
+   * Añade historia por arriba: lo que el servidor tenía antes de lo que ya se ve.
+   * Es la otra mitad del hilo — `hydrate` siembra el final y esto trae lo anterior.
+   */
+  prependOlder: (messages: ChatMessage[]) => void
   /** Rellena la transcripción de una nota de voz cuando el backend responde. */
   setTranscript: (id: string, transcript: string) => void
   /** Pinta la onda de una nota en cuanto se termina de decodificar. */
@@ -94,6 +108,7 @@ export const useNumiStore = create<NumiState>()(
       isOpen: false,
       orgId: null,
       hydrated: false,
+      historyId: null,
       unread: false,
       pending: false,
       ...EMPTY,
@@ -112,6 +127,20 @@ export const useNumiStore = create<NumiState>()(
             { id: nextId(), role: 'user', content: '', at: new Date().toISOString(), dictated: true, ...audio },
           ],
         })),
+
+      /*
+        Se descarta lo que ya está por id, y si no queda nada nuevo se devuelve el
+        estado tal cual: el efecto que llama a esto vuelve a correr cada vez que
+        react-query rehace su array de páginas, y devolver un `messages` nuevo
+        idéntico al anterior sería un render en bucle.
+      */
+      prependOlder: (older) =>
+        set((s) => {
+          const known = new Set(s.messages.map((m) => m.id))
+          const fresh = older.filter((m) => !known.has(m.id))
+          if (fresh.length === 0) return s
+          return { messages: [...fresh, ...s.messages] }
+        }),
 
       setTranscript: (id, transcript) =>
         set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, content: transcript } : m)) })),
@@ -136,19 +165,24 @@ export const useNumiStore = create<NumiState>()(
         set((s) => {
           if (s.hydrated) return s
           // Si el usuario ya empezó a escribir antes de que llegara el historial,
-          // se respeta su hilo nuevo y solo se marca como hidratado.
-          if (s.messages.length > 0) return { hydrated: true }
-          return { hydrated: true, sessionId, messages }
+          // se respeta su hilo nuevo. La conversación sigue siendo la misma, así
+          // que lo anterior a lo que se ve continúa estando a un scroll.
+          if (s.messages.length > 0) return { hydrated: true, historyId: s.sessionId ?? null }
+          return { hydrated: true, historyId: sessionId ?? null, sessionId, messages }
         }),
 
       // Hilo limpio, pero marcado como hidratado para no recargar la conversación
       // que el usuario acaba de dejar.
-      newConversation: () => set({ ...EMPTY, hydrated: true, unread: false }),
+      newConversation: () => set({ ...EMPTY, hydrated: true, historyId: null, unread: false }),
 
       // Cambiar de organización reinicia el hilo y vuelve a hidratar con las
       // conversaciones de la nueva empresa.
       switchOrg: (orgId) =>
-        set((s) => (s.orgId === orgId ? s : { orgId, ...EMPTY, hydrated: false, unread: false })),
+        set((s) =>
+          s.orgId === orgId
+            ? s
+            : { orgId, ...EMPTY, hydrated: false, historyId: null, unread: false },
+        ),
 
       setPending: (pending) => set({ pending }),
     }),
