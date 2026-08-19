@@ -107,6 +107,13 @@ function MessageStatus({ status, onRetry }: { status?: ChatMessageStatus; onRetr
   )
 }
 
+/*
+  Los menús del chat van con `modal={false}`. Por defecto Radix bloquea el scroll del
+  documento mientras uno está abierto, y al desaparecer la barra la página se ensancha y
+  salta: abrir un menú movía todo lo de detrás. Además aquí no hay nada que aislar — el
+  panel es flotante y lo de atrás se sigue pudiendo leer y usar, que es justo el punto de
+  este chat.
+*/
 /**
  * **El menú del mensaje, en escritorio.**
  *
@@ -124,7 +131,7 @@ function BubbleMenu({
   onQuote?: () => void
 }) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"

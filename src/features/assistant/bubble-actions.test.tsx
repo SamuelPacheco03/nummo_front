@@ -168,3 +168,20 @@ test('lo dictado no ofrece copiar: de una nota de voz lo que hay es audio', asyn
   const hilo = await screen.findByRole('log')
   expect(within(hilo).queryByRole('button', { name: 'Opciones del mensaje' })).not.toBeInTheDocument()
 })
+
+test('abrir el menú no bloquea el scroll de la página', async () => {
+  /*
+    Radix lo bloquea por defecto, y al desaparecer la barra de la derecha la página se
+    ensancha y salta: abrir un menú del chat movía todo lo de detrás. Y aquí no hay nada
+    que aislar — el panel es flotante y lo de atrás se sigue leyendo, que es el punto.
+  */
+  const user = userEvent.setup()
+  pintar()
+  sembrar()
+
+  await user.click(await screen.findByRole('button', { name: 'Opciones del mensaje' }))
+  await screen.findByRole('menuitem', { name: 'Copiar' })
+
+  expect(document.body).not.toHaveAttribute('data-scroll-locked')
+  expect(document.body.style.overflow).not.toBe('hidden')
+})

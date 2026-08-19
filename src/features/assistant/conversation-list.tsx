@@ -23,6 +23,13 @@ import { useConversationActions, useMessageSearch, useNumiConversations } from '
 import { formatConversationStamp } from './utils'
 import type { MessageHit } from '@/api/generated/model'
 
+/*
+  Los menús del chat van con `modal={false}`. Por defecto Radix bloquea el scroll del
+  documento mientras uno está abierto, y al desaparecer la barra la página se ensancha y
+  salta: abrir un menú movía todo lo de detrás. Además aquí no hay nada que aislar — el
+  panel es flotante y lo de atrás se sigue pudiendo leer y usar, que es justo el punto de
+  este chat.
+*/
 /**
  * Una conversación de la lista.
  *
@@ -65,7 +72,7 @@ function ConversationRow({
       </button>
 
       <div className="absolute top-1.5 right-1.5">
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
