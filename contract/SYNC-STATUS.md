@@ -126,6 +126,13 @@ Tres cosas que el backend rechaza y conviene no ofrecer: conceder permisos reser
 propietario (los rechaza **nombrándolos**, no los filtra en silencio), archivar un rol que
 todavía tiene miembros, y mover al propietario a un rol propio.
 
+> **Petición de contrato.** De las tres, la primera es la única que el front no puede evitar
+> ofrecer: el enum de `CreateCustomRoleInput.permissions` trae los **53**, incluidos los tres
+> reservados al propietario. Para no ofrecerlos habría que escribir esa lista en el front, que es
+> justo la segunda fuente de verdad que la Fase 1 vino a quitar. Bastaría con publicar el
+> subconjunto asignable —o anotar cuáles no lo son— y el editor deja de enseñar tres casillas que
+> siempre fallan.
+
 **Y un aviso que afecta a lo que ya está construido:** el backend puso guard `.read` a **31
 lecturas** que no lo tenían. Para los cinco roles predefinidos no cambia nada —todos tienen todos
 los `.read`—, pero desde ahora un rol propio **sí** puede no tenerlos, así que una pantalla de

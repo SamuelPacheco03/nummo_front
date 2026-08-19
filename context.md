@@ -2689,6 +2689,36 @@ Tres cosas de aquí que se hacen mal solas:
 Y la consola invalida también el catálogo **público** de planes al guardar: editar el precio de
 Pro y que «Plan y consumo» siga enseñando el viejo sería el peor sitio para una caché rancia.
 
+## 47.3. Roles propios de una organización
+
+Los cinco de siempre siguen ahí, y encima una organización puede definir los suyos. Tres reglas
+que cambian cómo se piensa la pantalla de miembros:
+
+1. **Un rol propio reemplaza los permisos del rol base, no se suma a ellos.** «Qué puede hacer
+   esta persona» tiene que tener una sola respuesta. El rol base se conserva como **etiqueta** —y
+   es lo que sigue contando propietarios activos—, así que un miembro tiene rol y, opcionalmente,
+   rol propio: dos desplegables, no uno.
+2. **Escribirlos se vende con el plan (`custom_roles`); leerlos no.** Quien baja de plan conserva
+   los que definió y sus miembros siguen trabajando. Por eso la lista se enseña igual y lo que
+   desaparece es el botón: esconderla entera diría lo contrario de lo que hace el backend
+   —bloquear crear, nunca borrar—.
+3. **El editor ofrece el catálogo entero**, incluidos los tres permisos que el backend reserva al
+   propietario. No se filtran aquí porque **el contrato no publica cuáles son**, y escribir esa
+   lista en el front sería la segunda fuente de verdad que §88.5 existe para evitar. El backend
+   los rechaza nombrándolos, así que el error dice cuál sobra. *(Anotado como petición de
+   contrato en `SYNC-STATUS.md`.)*
+
+**Los 53 permisos no se nombran uno a uno.** Todos tienen la forma `recurso.acción`, así que dos
+tablas pequeñas —24 recursos y 13 verbos— los componen todos y **componen el que venga**:
+`payments.reverse` → «Pagos · Reversar». Una tabla de 53 entradas se queda coja a la primera clave
+nueva y nadie se entera; con esto, un recurso desconocido cae en «Otros» con su clave a la vista.
+
+En el editor van **agrupados por área** —la de la navegación, §14— y dentro por recurso, con un
+«Todo» por bloque: un rol se piensa por áreas («lleva la cartera»), no casilla por casilla.
+
+Va en **cajón y no en diálogo centrado**: cuelga de la lista de roles y no es un formulario corto.
+§11.1.3 mira las dos cosas y aquí apuntan al mismo sitio.
+
 ---
 
 # 48. Seguridad UX
@@ -4041,6 +4071,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `usePlans` | `features/platform/hooks.ts` | El catálogo de planes en venta (§45.6) |
 | `useLimitUsage` | `features/platform/use-limit-usage.ts` | Cuánto llevas de cada tope — aparte, que el sidebar no lo necesita |
 | `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
+| `useFeature` | `features/platform/permissions.ts` | ¿El plan incluye esta feature? Orientativo, como `useCan` |
+| `permissionLabel` · `groupPermissions` | `features/platform/permission-labels.ts` | Los 53 permisos en palabras, **compuestos** (§47.3) |
+| `RolesPage` · `RoleFormPage` | `features/config/` | Roles propios de la organización y su editor (§47.3) |
 | `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
 | `PlatformShell` | `features/admin/platform-shell.tsx` | Shell de la consola, **fuera de `AppShell`** (§47.2) |
 | `AdminOrganizationsPage` · `AdminOrganizationDetailPage` | `features/admin/` | Las organizaciones de la plataforma y su ficha |

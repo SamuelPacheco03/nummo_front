@@ -342,6 +342,27 @@ export const router = createBrowserRouter([
                 lazy: async () => ({ Component: (await import('@/features/config/members-page')).MembersPage }),
               },
               {
+                path: 'config/roles',
+                lazy: async () => ({ Component: (await import('@/features/config/roles-page')).RolesPage }),
+                // El editor cuelga de la lista: abre en cajón sobre ella.
+                children: [
+                  {
+                    path: 'nuevo',
+                    handle: OVERLAY,
+                    lazy: async () => ({
+                      Component: (await import('@/features/config/role-form-page')).RoleFormPage,
+                    }),
+                  },
+                  {
+                    path: ':roleId',
+                    handle: OVERLAY,
+                    lazy: async () => ({
+                      Component: (await import('@/features/config/role-form-page')).RoleFormPage,
+                    }),
+                  },
+                ],
+              },
+              {
                 path: 'config/plan',
                 lazy: async () => ({ Component: (await import('@/features/platform/plan-page')).PlanPage }),
               },

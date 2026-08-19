@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
-import type { CapabilitiesDtoPermissionsItem, OrganizationStatus } from '@/api/generated/model'
+import { CapabilitiesDtoPermissionsItem } from '@/api/generated/model'
+import type { FeatureMap, OrganizationStatus } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCapabilities } from './hooks'
 
@@ -77,4 +78,25 @@ export function useCan(): (permission: Permission) => boolean {
     },
     [granted, isReadOnly],
   )
+}
+
+/**
+ * Todos los permisos del catálogo, en el orden en que el contrato los publica —
+ * que ya viene ordenado de lecturas a escrituras y de menos a más poder.
+ *
+ * Sale del enum generado: el editor de roles ofrece **lo que el contrato dice
+ * que existe**, nunca una lista escrita aquí que se quede corta en cuanto el
+ * backend estrene uno (§88.5).
+ */
+export const ALL_PERMISSIONS = Object.values(CapabilitiesDtoPermissionsItem) as Permission[]
+
+/**
+ * ¿El plan incluye esta feature?
+ *
+ * Igual que `useCan`, esto **no autoriza**: sirve para no ofrecer lo que va a
+ * responder `FEATURE_NOT_AVAILABLE` (§45.5). Mientras carga devuelve `false`.
+ */
+export function useFeature(feature: keyof FeatureMap): boolean {
+  const { capabilities } = useCapabilities()
+  return capabilities?.features[feature] === true
 }
