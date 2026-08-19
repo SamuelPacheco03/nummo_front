@@ -26,6 +26,8 @@ import {
   useGetApiV1OrganizationsOrgIdDisbursementsId,
   usePostApiV1OrganizationsOrgIdDisbursements,
   usePostApiV1OrganizationsOrgIdDisbursementsIdAllocations,
+  usePostApiV1OrganizationsOrgIdDisbursementsIdApprove,
+  usePostApiV1OrganizationsOrgIdDisbursementsIdReject,
   usePostApiV1OrganizationsOrgIdDisbursementsIdReverse,
 } from '@/api/generated/endpoints/disbursements/disbursements'
 import type {
@@ -217,5 +219,29 @@ export function useReverseDisbursement(orgId: string, idempotencyKey: string) {
   return usePostApiV1OrganizationsOrgIdDisbursementsIdReverse({
     mutation: { onSuccess: (_r, vars) => invDisb(qc, orgId, vars.id) },
     request: { headers: { 'Idempotency-Key': idempotencyKey } },
+  })
+}
+
+/**
+ * **Aprobar un egreso que espera firma**, que es lo que lo ejecuta: por encima
+ * del umbral no se mueve un peso hasta aquí.
+ *
+ * El backend revalida bajo lock —la solicitud pudo esperar un día y el gasto
+ * pudo pagarse por otro lado— y comprueba que **quien registra no aprueba**. Eso
+ * último no se puede anticipar desde el front: el contrato no publica quién lo
+ * creó, así que el botón se ofrece y el error lo dice.
+ */
+export function useApproveDisbursement(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdDisbursementsIdApprove({
+    mutation: { onSuccess: (_r, vars) => invDisb(qc, orgId, vars.id) },
+  })
+}
+
+/** Rechazar. El motivo se guarda con quién decidió: no se borra nada. */
+export function useRejectDisbursement(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdDisbursementsIdReject({
+    mutation: { onSuccess: (_r, vars) => invDisb(qc, orgId, vars.id) },
   })
 }

@@ -2719,6 +2719,34 @@ En el editor van **agrupados por área** —la de la navegación, §14— y dent
 Va en **cajón y no en diálogo centrado**: cuelga de la lista de roles y no es un formulario corto.
 §11.1.3 mira las dos cosas y aquí apuntan al mismo sitio.
 
+## 47.4. Aprobación de egresos
+
+«Todo egreso mayor a $5.000.000 requiere aprobación» **no lo resuelve un permiso**: necesita
+estado en la entidad, y ahí está lo que hay que entender antes de pintar nada.
+
+**El estado vive en el desembolso, no en el gasto.** Un gasto es una obligación; el egreso es el
+dinero saliendo, y es eso lo que se aprueba. Por encima del umbral **no se mueve un peso** hasta
+que alguien firma, así que un `PENDING_APPROVAL` no es un egreso a medias: es una **solicitud**.
+Solo `POSTED` y `REVERSED` tienen movimiento financiero.
+
+De ahí las tres decisiones de pantalla:
+
+1. **La ficha opera sobre `POSTED`**, no sobre «no está reversado» (§94.0). Un pendiente no tiene
+   nada que revertir ni anticipo que repartir.
+2. **`disbursements.approve` es condición necesaria, no suficiente**: el backend comprueba además
+   que quien aprueba no sea quien registró. El contrato **no publica el autor**, así que eso no se
+   puede anticipar — el botón se ofrece y el error lo dice. Es la excepción consciente a «no
+   ofrecer lo que va a fallar».
+3. **El rechazo pide motivo**, que se guarda con quién decidió. No se borra nada.
+
+El umbral va en Configuración › Gastos › **Aprobación de egresos**, hermana de las políticas de
+interés en cartera: es una política, no un catálogo, tiene endpoint propio y va detrás de la
+feature `approvals`. **Vacío la apaga** — es «sin umbral», no «umbral cero», que haría pasar por
+aprobación hasta el café.
+
+**Sin notificaciones**, y la pantalla lo dice: quien aprueba los encuentra filtrando la lista de
+egresos por «Espera aprobación».
+
 ---
 
 # 48. Seguridad UX
@@ -4074,6 +4102,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `useFeature` | `features/platform/permissions.ts` | ¿El plan incluye esta feature? Orientativo, como `useCan` |
 | `permissionLabel` · `groupPermissions` | `features/platform/permission-labels.ts` | Los 53 permisos en palabras, **compuestos** (§47.3) |
 | `RolesPage` · `RoleFormPage` | `features/config/` | Roles propios de la organización y su editor (§47.3) |
+| `ApprovalPolicyPage` | `features/config/approval-policy-page.tsx` | El umbral de aprobación de egresos (§47.4) |
 | `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
 | `PlatformShell` | `features/admin/platform-shell.tsx` | Shell de la consola, **fuera de `AppShell`** (§47.2) |
 | `AdminOrganizationsPage` · `AdminOrganizationDetailPage` | `features/admin/` | Las organizaciones de la plataforma y su ficha |

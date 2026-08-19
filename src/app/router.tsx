@@ -303,6 +303,14 @@ export const router = createBrowserRouter([
               },
 
               {
+                path: 'gastos/aprobacion',
+                lazy: async () => ({
+                  Component: (await import('@/features/config/approval-policy-page'))
+                    .ApprovalPolicyPage,
+                }),
+              },
+
+              {
                 path: 'maestros/conceptos',
                 lazy: async () => ({
                   Component: (await import('@/features/masters/billing-concepts-page')).BillingConceptsPage,

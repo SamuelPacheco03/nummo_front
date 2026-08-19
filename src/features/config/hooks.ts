@@ -22,6 +22,7 @@ import {
   usePostApiV1OrganizationsOrgIdBranches,
   usePostApiV1OrganizationsOrgIdMembers,
   usePostApiV1OrganizationsOrgIdRoles,
+  usePutApiV1OrganizationsOrgIdApprovalPolicy,
   usePutApiV1OrganizationsOrgIdMembersMembershipIdCustomRole,
   usePutApiV1OrganizationsOrgIdSettings,
 } from '@/api/generated/endpoints/organizations/organizations'
@@ -211,6 +212,25 @@ export function useAssignCustomRole(orgId: string) {
   const invalidate = useInvalidateRoles(orgId)
   return usePutApiV1OrganizationsOrgIdMembersMembershipIdCustomRole({
     mutation: { onSuccess: invalidate },
+  })
+}
+
+/**
+ * El umbral por encima del cual un egreso necesita aprobación.
+ *
+ * Endpoint propio y no un campo de `PUT /settings`: es una política, va detrás
+ * de la feature `approvals` y se audita aparte. `null` la apaga.
+ */
+export function useUpdateApprovalPolicy(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdApprovalPolicy({
+    mutation: {
+      onSuccess: async () => {
+        await qc.invalidateQueries({
+          queryKey: getGetApiV1OrganizationsOrgIdSettingsQueryKey(orgId),
+        })
+      },
+    },
   })
 }
 

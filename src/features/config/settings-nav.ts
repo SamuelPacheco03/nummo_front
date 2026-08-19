@@ -9,6 +9,7 @@ import {
   Palette,
   Percent,
   ReceiptText,
+  ShieldCheck,
   RefreshCw,
   Tags,
   UserCog,
@@ -55,6 +56,11 @@ export const GROUPS: SectionGroup[] = [
   {
     title: 'Cartera',
     items: [{ to: '/cartera/interes', label: 'Políticas de interés', Icon: Percent }],
+  },
+  {
+    // Su hermana del otro lado del dinero: una política, no un catálogo.
+    title: 'Gastos',
+    items: [{ to: '/gastos/aprobacion', label: 'Aprobación de egresos', Icon: ShieldCheck }],
   },
 ]
 

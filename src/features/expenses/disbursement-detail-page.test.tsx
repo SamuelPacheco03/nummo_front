@@ -1,18 +1,25 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { runSettlementDetailSuite } from '@/test/settlement-detail-suite'
 import { DisbursementDetailPage } from './disbursement-detail-page'
 
 const m = vi.hoisted(() => ({
   revertir: vi.fn(),
+  aprobar: vi.fn(),
+  rechazar: vi.fn(),
   avisos: [] as { tono: string; texto: string }[],
   falla: false,
   reversado: false,
   estado: '' as string,
   sinCredito: false,
   sinAplicaciones: false,
-  permisos: new Set<string>(['disbursements.reverse', 'disbursements.allocate']),
+  permisos: new Set<string>([
+    'disbursements.reverse',
+    'disbursements.allocate',
+    'disbursements.approve',
+  ]),
 }))
 
 const detalle = () => ({
@@ -64,18 +71,26 @@ vi.mock('./hooks', () => ({
     error: m.falla ? { code: 'NOT_FOUND' } : null,
   }),
   useReverseDisbursement: () => ({ mutateAsync: m.revertir, isPending: false }),
+  useApproveDisbursement: () => ({ mutateAsync: m.aprobar, isPending: false }),
+  useRejectDisbursement: () => ({ mutateAsync: m.rechazar, isPending: false }),
 }))
 vi.mock('./apply-supplier-advance-dialog', () => ({ ApplySupplierAdvanceDialog: () => null }))
 
 beforeEach(() => {
   m.revertir.mockReset().mockResolvedValue({})
+  m.aprobar.mockReset().mockResolvedValue({})
+  m.rechazar.mockReset().mockResolvedValue({})
   m.avisos.length = 0
   m.falla = false
   m.reversado = false
   m.estado = ''
   m.sinCredito = false
   m.sinAplicaciones = false
-  m.permisos = new Set(['disbursements.reverse', 'disbursements.allocate'])
+  m.permisos = new Set([
+    'disbursements.reverse',
+    'disbursements.allocate',
+    'disbursements.approve',
+  ])
 })
 afterEach(cleanup)
 
@@ -126,6 +141,53 @@ test('un egreso que espera aprobación no ofrece revertir ni repartir', () => {
   expect(screen.queryByRole('button', { name: /aplicar anticipo/i })).not.toBeInTheDocument()
   // Y no va tachado: esperar no es lo mismo que estar anulado.
   expect(screen.getByText('$800.000,00')).not.toHaveClass('line-through')
+})
+
+test('un egreso que espera firma se aprueba o se rechaza desde su ficha', async () => {
+  m.estado = 'PENDING_APPROVAL'
+  render(
+    <MemoryRouter initialEntries={['/ficha']}>
+      <DisbursementDetailPage />
+    </MemoryRouter>,
+  )
+
+  await userEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+  expect(m.aprobar).toHaveBeenCalledWith({ orgId: 'o1', id: 'm1' })
+  expect(m.avisos.at(-1)?.texto).toBe('Egreso aprobado')
+})
+
+test('rechazar sin motivo no se manda: el motivo se guarda y no se borra', async () => {
+  m.estado = 'PENDING_APPROVAL'
+  render(
+    <MemoryRouter initialEntries={['/ficha']}>
+      <DisbursementDetailPage />
+    </MemoryRouter>,
+  )
+
+  await userEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Rechazar', hidden: false }))
+  expect(m.rechazar).not.toHaveBeenCalled()
+
+  await userEvent.type(screen.getByLabelText(/Motivo/), 'Falta la factura')
+  await userEvent.click(screen.getAllByRole('button', { name: 'Rechazar' }).at(-1)!)
+  expect(m.rechazar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    id: 'm1',
+    data: { reason: 'Falta la factura' },
+  })
+})
+
+test('sin permiso de aprobar no se ofrece decidir', () => {
+  m.estado = 'PENDING_APPROVAL'
+  m.permisos = new Set(['disbursements.reverse'])
+  render(
+    <MemoryRouter initialEntries={['/ficha']}>
+      <DisbursementDetailPage />
+    </MemoryRouter>,
+  )
+
+  expect(screen.queryByRole('button', { name: 'Aprobar' })).not.toBeInTheDocument()
+  expect(screen.getByText(/Espera aprobación: no ha salido dinero/)).toBeInTheDocument()
 })
 
 test('un egreso rechazado se tacha, como el reversado', () => {

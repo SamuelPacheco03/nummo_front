@@ -103,6 +103,8 @@ export function SettlementDetail({
   statusOf,
   canReverse,
   canApply,
+  actions,
+  afterDetail,
   query,
   useReverse,
   applyDialog,
@@ -121,6 +123,13 @@ export function SettlementDetail({
    */
   canReverse: boolean
   canApply: boolean
+  /**
+   * Acciones propias de una cara, antes de las comunes. Hoy las de aprobación:
+   * un pago que entra no lo aprueba nadie, así que no tienen espejo (§94.0).
+   */
+  actions?: ReactNode
+  /** Secciones propias de una cara, al pie de la ficha. */
+  afterDetail?: ReactNode
   /** El movimiento ya cargado y traducido. */
   query: SettlementDetailQuery
   /**
@@ -209,6 +218,7 @@ export function SettlementDetail({
         }
         actions={
           <>
+            {actions}
             {canApply && posted && unassigned > 0 && data.contactId && (
               <Button size="sm" onClick={() => setApplyOpen(true)}>
                 <Wallet className="size-4" />
@@ -259,6 +269,8 @@ export function SettlementDetail({
             </DetailRows>
           )}
         </DetailSection>
+
+        {afterDetail}
       </DetailDrawer>
 
       {applyDialog(applyOpen, setApplyOpen, data)}
