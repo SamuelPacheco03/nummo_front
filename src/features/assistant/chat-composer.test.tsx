@@ -238,3 +238,20 @@ test('con ratón: un clic empieza y el botón de enviar termina', async () => {
   screen.getByRole('button', { name: 'Enviar nota de voz' }).click()
   await waitFor(() => expect(onSendAudio).toHaveBeenCalledTimes(1))
 })
+
+test('sostener el micrófono no cuenta como pulsación larga', () => {
+  stubPointer('coarse')
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  const mic = screen.getByRole('button', { name: /mantén pulsado/i })
+  const toque = new Event('touchstart', { bubbles: true, cancelable: true })
+  mic.dispatchEvent(toque)
+
+  /*
+    Android decide a los ~500 ms que un toque quieto va a ser una pulsación
+    larga y cancela el gesto: sostener el micrófono sin moverse mataba la
+    grabación sola. Impedir el comportamiento por defecto del toque es lo que
+    lo evita, y solo funciona con un escucha no pasivo puesto a mano.
+  */
+  expect(toque.defaultPrevented).toBe(true)
+})

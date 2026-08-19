@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type Ref,
+} from 'react'
 import { ArrowUp, Mic, Paperclip } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -32,16 +38,19 @@ function ComposerAction({
   Icon,
   disabled = false,
   onClick,
+  ref,
   ...pointer
 }: {
   label: string
   Icon: typeof Mic
   disabled?: boolean
   onClick?: () => void
+  ref?: Ref<HTMLButtonElement>
   onPointerDown?: (e: ReactPointerEvent<HTMLButtonElement>) => void
 }) {
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       {...pointer}
@@ -119,6 +128,7 @@ export function ChatComposer({
   // que ya puede soltarlo.
   const [locked, setLocked] = useState(false)
   const detach = useRef<(() => void) | null>(null)
+  const micRef = useRef<HTMLButtonElement>(null)
 
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
   useEffect(() => () => detach.current?.(), [])
@@ -141,6 +151,28 @@ export function ChatComposer({
   const canSend = hasText && !disabled
   const remaining = MAX_MESSAGE_LENGTH - value.length
   const canRecord = !!onSendAudio && !disabled
+
+  /*
+    **Que sostener el micrófono no sea una pulsación larga.**
+
+    Android decide a los ~500 ms que un toque quieto va a ser una pulsación
+    larga —la de seleccionar texto— y cancela el gesto: sin esto, mantener
+    pulsado sin moverse mataba la grabación sola, y moverse un poco lo evitaba
+    porque mover descarta la pulsación larga. Se quita impidiendo el
+    comportamiento por defecto del toque.
+
+    Y tiene que ser un escucha **no pasivo**, puesto a mano: los que registra
+    React son pasivos y ahí `preventDefault` no hace nada. Se vuelve a poner
+    cuando el botón cambia —con texto escrito, el micrófono deja su sitio al de
+    enviar—.
+  */
+  useEffect(() => {
+    const el = micRef.current
+    if (!el) return
+    const noLongPress = (e: TouchEvent) => e.preventDefault()
+    el.addEventListener('touchstart', noLongPress, { passive: false })
+    return () => el.removeEventListener('touchstart', noLongPress)
+  }, [hasText])
 
   const submit = () => {
     if (!canSend) return
@@ -408,6 +440,7 @@ export function ChatComposer({
           </button>
         ) : (
           <ComposerAction
+            ref={micRef}
             label={touch ? 'Mantén pulsado para grabar una nota de voz' : 'Grabar nota de voz'}
             Icon={Mic}
             disabled={!canRecord}

@@ -12,11 +12,17 @@ export const CANCEL_AT = 120
  * borde de abajo de la pantalla y rueda hacia arriba mientras habla, así que
  * «mantener pulsado» acababa en el candado sin que nadie lo hubiera pedido.
  *
- * Es también **hasta dónde se sube**: el candado se dibuja justo ahí (`LOCK_OFFSET`),
- * a la altura de siempre. Subir más de lo que se ve sería pedir algo que la
- * pantalla no enseña.
+ * Es también **hasta dónde se sube**: el candado se dibuja justo ahí, así que el
+ * dedo aterriza encima de él al fijar. Subir más de lo que se ve sería pedir
+ * algo que la pantalla no enseña.
+ *
+ * Setenta y dos píxeles son dos centímetros de pulgar: se recorren queriendo y
+ * no se recorren sosteniendo. Estuvo en 104 buscando margen contra el bloqueo
+ * accidental, pero el bloqueo accidental no era distancia — era el eje
+ * congelado y el puntero cancelado (§32.2), y con eso resuelto la distancia
+ * puede volver a ser cómoda.
  */
-export const LOCK_AT = 104
+export const LOCK_AT = 72
 /**
  * Lo que el dedo puede moverse sin que signifique nada.
  *
@@ -37,16 +43,16 @@ export const MIN_SECONDS = 0.7
  */
 export const AXIS_MARGIN = 1.6
 
-/** Cuánto sube el micrófono respecto al dedo, para quedar justo bajo el candado. */
-const MIC_FOLLOW = 0.6
 /**
- * Altura del candado sobre el micrófono: donde estuvo siempre.
+ * Cuánto sube el micrófono respecto al dedo.
  *
- * Atarlo al umbral lo mandó al doble de lejos cuando el umbral creció, y un
- * candado a dos dedos de distancia deja de leerse como el destino del gesto.
- * Ocho píxeles por debajo del umbral: se sube hasta él y ahí queda fijada.
+ * Poco a propósito: el candado está justo donde acaba el gesto, y un micrófono
+ * que siguiera al dedo entero se le montaría encima antes de llegar. Se mueve
+ * lo justo para no parecer una pegatina.
  */
-const LOCK_OFFSET = 96
+const MIC_FOLLOW = 0.25
+/** El candado se dibuja **en el punto donde se fija**: el dedo acaba sobre él. */
+const LOCK_OFFSET = LOCK_AT
 
 /**
  * **Lo que se ve mientras se mantiene pulsado el micrófono.**

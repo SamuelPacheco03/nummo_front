@@ -1890,29 +1890,34 @@ era el mismo `pointercancel` con dos finales.
    nunca — se podía grabar y se podía cancelar, pero fijar era imposible. El eje cambia cuando el
    otro manda con holgura (1,6×), que es suficiente margen para que subir torcido siga siendo
    subir.
-5. **`pointercancel` no se escucha; el dedo se sigue por eventos táctiles.** Android cancela el
-   puntero cuando cree que una pulsación quieta va a ser una **pulsación larga** —la de
-   seleccionar texto—. El menú no llega a salir, así que desde fuera solo se ve que el gesto se
-   muere solo medio segundo después de presionar, y que moverse un poco lo evita (mover descarta
-   la pulsación larga). Reaccionar a ese evento estaba mal de las dos maneras posibles: tirando la
-   grabación parecía que presionar la cancelara, y fijándola parecía que presionar la bloqueara.
-   Las dos eran mentira — el dedo seguía ahí—.
+5. **Sostener el micrófono no puede ser una pulsación larga.** Android decide a los ~500 ms que un
+   toque quieto va a ser una **pulsación larga** —la de seleccionar texto— y cancela el gesto. El
+   menú no llega a salir, así que desde fuera solo se ve que la grabación se muere sola medio
+   segundo después de presionar, y que moverse un poco lo evita (mover descarta la pulsación
+   larga). Fue el fallo más largo de esta pantalla y se disfrazó de tres cosas distintas: «se
+   cancela con cualquier movimiento», «se bloquea de una» y «si lo dejo quieto se cancela»,
+   según lo que hiciéramos al recibir la cancelación.
 
-   Los eventos táctiles no se cancelan por eso. Van en paralelo diciendo lo mismo, así que si el
-   puntero muere el gesto continúa por `touchmove` y termina en `touchend`. El sistema quedándose
-   con el gesto **de verdad** llega por `touchcancel` —una llamada, el gesto de volver del borde—:
-   con algo ya dictado se fija (perderlo sería el peor final), y en los primeros instantes se
-   descarta callando, que no había nada que salvar.
+   Reaccionar a ella estaba mal de las dos maneras posibles —tirar la grabación parecía que
+   presionar la cancelara; fijarla, que presionar la bloqueara—, porque las dos eran mentira: el
+   dedo seguía ahí. **Lo que hay que hacer es que no ocurra**: `preventDefault` en el `touchstart`
+   del botón, con un escucha **no pasivo** puesto a mano (los que registra React son pasivos y ahí
+   `preventDefault` no hace nada).
 
-6. **Fijar cuesta 104 px, no 56.** Es la distancia que separa «subir a propósito» de «sostener el
-   móvil». Estuvo en 56 —unos ocho milímetros— y sostener el micrófono ya la cubría: el pulgar se
-   apoya en el borde de abajo de la pantalla y rueda hacia arriba mientras se habla, así que
-   mantener pulsado acababa en el candado sin que nadie lo hubiera pedido. Con 104 px una deriva
-   de 90 no fija nada y una subida de 130 sí.
+   Y por si acaso, dos fuentes para el mismo dedo: `pointercancel` no se escucha y el gesto se
+   sigue también por `touchmove`, así que si el puntero muere por otra razón el gesto continúa y
+   termina en `touchend`. El sistema quedándose con el gesto **de verdad** llega por `touchcancel`
+   —una llamada, el gesto de volver del borde—: con algo ya dictado se fija (perderlo sería el
+   peor final), y en los primeros instantes se descarta callando.
 
-   **El candado se queda donde estaba**, a 96 px del micrófono. Atarlo al umbral lo mandó al doble
-   de lejos en cuanto el umbral creció, y un candado a dos dedos de distancia deja de leerse como
-   el destino del gesto: se sube hasta el que se ve, y ahí queda fijada.
+6. **Fijar cuesta 72 px, y el candado se dibuja justo ahí.** El dedo acaba encima de él: lo que se
+   ve es a dónde hay que ir. Dos centímetros de pulgar se recorren queriendo y no se recorren
+   sosteniendo — con toques de verdad, una deriva de 65 px no fija nada y una subida de 80 sí.
+
+   Estuvo en 56 y se fijaba sin querer, así que subió a 110 buscando margen; a esa distancia el
+   candado quedaba a dos dedos y el gesto se hacía incómodo. **El bloqueo accidental no era
+   distancia**: era el eje congelado y el puntero cancelado, los puntos 4 y 5. Arreglados esos, la
+   distancia puede volver a ser la cómoda.
 
 **Y los escuchas del puntero van en `window`, no en el botón**, para que el gesto no dependa de
 sobre qué elemento está el dedo. Es el mismo cuidado que el arrastre del lanzador de Numi (§87.5).
