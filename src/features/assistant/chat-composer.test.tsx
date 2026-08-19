@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { ChatComposer } from './chat-composer'
+import { TOUCH_GRACE } from './hold-to-record'
 
 /** jsdom no tiene micrófono: se finge uno que graba y devuelve un blob. */
 function stubRecorder() {
@@ -137,22 +138,6 @@ test('con el dedo: subir en diagonal fija, no cancela', async () => {
   expect(onSendAudio).not.toHaveBeenCalled()
 })
 
-test('si el sistema se queda con un dictado en marcha, no se pierde', async () => {
-  stubPointer('coarse')
-  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
-
-  const started = performance.now()
-  press(screen.getByRole('button', { name: /mantén pulsado/i }))
-  await screen.findByText('Desliza para cancelar')
-  // Ya hay algo dicho cuando llega la notificación que roba el gesto.
-  vi.spyOn(performance, 'now').mockReturnValue(started + 4000)
-  systemSteals()
-
-  // Sigue grabando, con sus botones: quien decide si se tira es la persona.
-  expect(await screen.findByText('Fijada')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Descartar grabación' })).toBeInTheDocument()
-})
-
 test('que Android cancele el puntero no rompe el gesto', async () => {
   stubPointer('coarse')
   const onSendAudio = vi.fn()
@@ -168,28 +153,49 @@ test('que Android cancele el puntero no rompe el gesto', async () => {
   */
   pointerDies()
   expect(screen.getByText('Desliza para cancelar')).toBeInTheDocument()
-  expect(screen.queryByText('Fijada')).not.toBeInTheDocument()
 
-  // Y termina donde tiene que terminar: al levantar el dedo, mandando.
   vi.spyOn(performance, 'now').mockReturnValue(started + 2000)
   window.dispatchEvent(new Event('touchend', { bubbles: true }))
   await waitFor(() => expect(onSendAudio).toHaveBeenCalledTimes(1))
 })
 
-test('si el gesto se rompe al instante, no aparece una grabación fijada', async () => {
+test('que se lleve el táctil tampoco, si el puntero sigue vivo', async () => {
   stubPointer('coarse')
-  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+  const onSendAudio = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={onSendAudio} />)
+
+  const started = performance.now()
+  press(screen.getByRole('button', { name: /mantén pulsado/i }))
+  await screen.findByText('Desliza para cancelar')
+
+  // Las dos secuencias son independientes: mientras una siga hablando, el dedo
+  // está ahí y no hay nada que decidir.
+  systemSteals()
+  moveTo(200, 695)
+  expect(screen.getByText('Desliza para cancelar')).toBeInTheDocument()
+
+  vi.spyOn(performance, 'now').mockReturnValue(started + 2000)
+  release()
+  await waitFor(() => expect(onSendAudio).toHaveBeenCalledTimes(1))
+})
+
+test('si además se pierde el rastro del dedo, la grabación se fija, no se tira', async () => {
+  stubPointer('coarse')
+  const onSendAudio = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={onSendAudio} />)
 
   press(screen.getByRole('button', { name: /mantén pulsado/i }))
   await screen.findByText('Desliza para cancelar')
   systemSteals()
 
   /*
-    No había nada que salvar, y una barra fijada ahí se lee como «pulsar el
-    micrófono bloquea la grabación sola», que es justo lo que no hace.
+    Ni el táctil ni el puntero vuelven a decir nada: no hay forma de saber
+    dónde está el dedo. Que el sistema interrumpa no es la persona diciendo
+    «tira esto», así que la grabación queda fijada y decide quien habló.
   */
-  await waitFor(() => expect(screen.queryByText('Desliza para cancelar')).not.toBeInTheDocument())
-  expect(screen.queryByText('Fijada')).not.toBeInTheDocument()
+  expect(await screen.findByText('Fijada', undefined, { timeout: TOUCH_GRACE + 1000 })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Descartar grabación' })).toBeInTheDocument()
+  expect(onSendAudio).not.toHaveBeenCalled()
 })
 
 test('con el dedo: subir fija la grabación y soltar no la manda', async () => {

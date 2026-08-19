@@ -161,3 +161,57 @@ test('si Numi contesta con el chat cerrado, el icono lo dice', async () => {
   await user.click(screen.getByRole('button', { name: /respuesta nueva/ }))
   expect(useNumiStore.getState().unread).toBe(false)
 })
+
+/** jsdom no tiene micrófono: se finge uno que graba y devuelve un blob. */
+function stubRecorder() {
+  const track = { stop: vi.fn() }
+  vi.stubGlobal(
+    'MediaRecorder',
+    class {
+      static isTypeSupported = () => true
+      state = 'inactive'
+      stream = { getTracks: () => [track] }
+      mimeType = 'audio/webm'
+      ondataavailable: ((e: { data: Blob }) => void) | null = null
+      onstop: (() => void) | null = null
+      start() {
+        this.state = 'recording'
+        this.ondataavailable?.({ data: new Blob(['x'], { type: 'audio/webm' }) })
+      }
+      stop() {
+        this.state = 'inactive'
+        this.onstop?.()
+      }
+    },
+  )
+  Object.defineProperty(navigator, 'mediaDevices', {
+    configurable: true,
+    value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [track] }) },
+  })
+  return track
+}
+
+test('con el panel abierto, sostener el micrófono no cancela la grabación', async () => {
+  const track = stubRecorder()
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((q: string) => ({
+      matches: q.includes('coarse'),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  )
+  pintar()
+  useNumiStore.getState().open()
+
+  const mic = await screen.findByRole('button', { name: /mantén pulsado/i })
+  mic.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 700 }))
+  expect(await screen.findByText('Desliza para cancelar')).toBeInTheDocument()
+
+  // Un segundo sosteniendo, sin mover un dedo, y con todo el panel montado
+  // alrededor: el hilo, la cola y lo que sea que se refresque solo.
+  await new Promise((r) => setTimeout(r, 1200))
+
+  expect(screen.getByText('Desliza para cancelar')).toBeInTheDocument()
+  expect(track.stop).not.toHaveBeenCalled()
+})
