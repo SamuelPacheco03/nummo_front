@@ -2100,6 +2100,29 @@ markdown, que Numi ya entiende de leerlo, y se limpia al enviar. Al quitarla el 
 vuelve a la caja: el botón desaparece con ella, y sin devolver el foco la siguiente tecla
 no iría a ninguna parte.
 
+## 32.8. Buscar en las conversaciones
+
+El buscador vive **en la vista de conversaciones**, no en el hilo: se busca para llegar a
+algo que no se tiene delante, y lo que se encuentra puede estar en otra conversación.
+Mientras hay término escrito, los resultados sustituyen a la lista y «Nueva conversación»
+se quita de en medio.
+
+Cada resultado trae **de qué conversación salió, quién lo dijo y el trozo alrededor de lo
+buscado**. Los tres hacen falta: sin el título no se sabe adónde lleva la fila, sin el
+«Numi:» no se deduce quién habló —fuera del hilo no hay lado de burbuja que lo diga— y sin
+el extracto centrado veinte resultados se ven todos iguales.
+
+**Se pregunta al dejar de escribir** (300 ms, con el `useDebouncedValue` que ya usa el
+selector de contactos) y **nunca con menos de dos caracteres**: el servidor lo rechazaría,
+y una letra suelta traería medio historial.
+
+**Abrir un resultado lleva la conversación a ese mensaje**, no al final. El backend lo
+sirve con `until`: esa página termina en el mensaje buscado, que es justo donde el hilo
+empieza a leerse, así que no hace falta una segunda forma de cargar mensajes ni centrar
+nada. Por dónde se abrió queda anotado en el store (`historyUntil`) porque el scroll hacia
+arriba lo necesita: sin él, subir pediría la página más nueva y devolvería al usuario al
+final del historial que acababa de esquivar.
+
 ---
 
 # 33. Cards dentro del chat
