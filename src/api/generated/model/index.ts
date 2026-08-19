@@ -285,6 +285,7 @@ export * from './registerPayment';
 export * from './registerPaymentAllocationsItem';
 export * from './registerPaymentPurpose';
 export * from './registerTransfer';
+export * from './renameConversationInput';
 export * from './savePlanInput';
 export * from './savePlanResult';
 export * from './searchHit';

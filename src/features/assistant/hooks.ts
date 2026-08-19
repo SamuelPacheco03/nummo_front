@@ -1,16 +1,19 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  usePostApiV1OrganizationsOrgIdAssistantChat,
-  usePostApiV1OrganizationsOrgIdAssistantChatAudio,
-} from '@/api/generated/endpoints/assistant/assistant'
-import type { AssistantAudioChatResponse, AssistantChatResponse } from '@/api/generated/model'
+import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
+import type { AssistantAudioChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage, isApiStatus } from '@/lib/errors'
+import { classifyNumiError } from './numi-error'
+import { streamChat } from './stream-chat'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
 import { describeRecording } from './waveform'
-import { useMessageAudioLoader, useNumiConversations, useNumiMessages } from './use-numi-history'
+import {
+  useConversationOpener,
+  useMessageAudioLoader,
+  useNumiConversations,
+  useNumiMessages,
+} from './use-numi-history'
 import { shouldRefreshData } from './utils'
 
 /**
@@ -39,6 +42,32 @@ function useHydrateThread(orgId: string | undefined) {
 }
 
 /**
+ * Lo anterior a lo que se ve: subir en el hilo trae la página previa del servidor.
+ *
+ * Hidratar siembra el final de la conversación y esto continúa hacia atrás, de
+ * treinta en treinta. Va contra la misma clave de react-query que usó la hidratación,
+ * así que la primera página ya está en caché y volver a montarla no cuesta una
+ * petición.
+ */
+function useOlderThread(orgId: string | undefined) {
+  // `historyId` es la precondición del hook: solo una conversación que ya existía en
+  // el servidor tiene algo por encima. Sin él esto pediría una página inexistente
+  // cada vez que alguien estrena conversación.
+  const historyId = useNumiStore((s) => s.historyId)
+  const prependOlder = useNumiStore((s) => s.prependOlder)
+  const { older, hasOlder, isLoadingOlder, loadOlder } = useNumiMessages(
+    historyId ? orgId : undefined,
+    historyId ?? undefined,
+  )
+
+  useEffect(() => {
+    if (older.length > 0) prependOlder(older)
+  }, [older, prependOlder])
+
+  return { hasOlder, isLoadingOlder, loadOlder }
+}
+
+/**
  * Conversación con Numi: envío, estado "escribiendo", errores y refresco de
  * datos. Es el único punto que conoce el endpoint; la UI solo consume esto.
  */
@@ -49,7 +78,6 @@ export function useNumiChat() {
   const error = useNumiStore((s) => s.error)
   const switchOrg = useNumiStore((s) => s.switchOrg)
   const newConversation = useNumiStore((s) => s.newConversation)
-  const { mutateAsync } = usePostApiV1OrganizationsOrgIdAssistantChat()
   const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
   const hydrated = useNumiStore((s) => s.hydrated)
   /*
@@ -62,6 +90,17 @@ export function useNumiChat() {
   // La conversación viva del hilo: de ella cuelgan los audios archivados.
   const conversationId = useNumiStore((s) => s.sessionId)
   const loadAudio = useMessageAudioLoader(orgId, conversationId)
+  const { hasOlder, isLoadingOlder, loadOlder } = useOlderThread(orgId)
+  const fetchThread = useConversationOpener(orgId)
+
+  /** Se cambia a una conversación de la lista y la deja abierta en el hilo. */
+  const openConversation = useCallback(
+    async (conversationId: string) => {
+      const messages = await fetchThread(conversationId)
+      useNumiStore.getState().openThread(conversationId, messages)
+    },
+    [fetchThread],
+  )
 
   // El hilo pertenece a una organización: si el usuario cambia de empresa, la
   // conversación anterior habla de datos que ya no son los de esta pantalla.
@@ -73,43 +112,76 @@ export function useNumiChat() {
   // conversación de la organización (ver `useHydrateThread`).
   useHydrateThread(orgId)
 
-  /** Envía al backend y consume la respuesta. No toca el hilo del usuario. */
-  const ask = useCallback(
-    async (message: string) => {
+/** Saca un mensaje de la cola y lo lleva al servidor, marcándolo por el camino. */
+  const deliver = useCallback(
+    async (id: string, content: string) => {
       if (!orgId) return
       // Se lee del store (no del render) para no mandar un sessionId obsoleto.
-      const { sessionId, appendReply, setError, setPending } = useNumiStore.getState()
+      const { sessionId, setError, setPending, setMessageStatus } = useNumiStore.getState()
+      setMessageStatus(id, 'sending')
       setError(null)
       setPending(true)
+
+      const stop = new AbortController()
+      useNumiStore.getState().setTurn(stop)
+      // La burbuja se abre antes de la primera palabra: así se ve escribir en vez de
+      // aparecer entera, que es la diferencia entre esperar y acompañar.
+      const bubble = useNumiStore.getState().beginReply()
+
       try {
-        const res = await mutateAsync({ orgId, data: { message, sessionId } })
-        const { sessionId: nextSessionId, reply } = res.data as AssistantChatResponse
-        appendReply(nextSessionId, reply)
+        const { sessionId: nextSessionId, reply } = await streamChat({
+          orgId,
+          message: content,
+          sessionId,
+          signal: stop.signal,
+          onChunk: (text) => useNumiStore.getState().appendToReply(bubble, text),
+        })
+        const store = useNumiStore.getState()
+        store.setMessageStatus(id, 'sent')
+        store.finishReply(bubble, nextSessionId)
         // Numi también registra operaciones: si el turno pudo escribir, se
         // refresca lo que esté montado (ver `shouldRefreshData`).
-        if (shouldRefreshData(message, reply)) void queryClient.invalidateQueries()
+        if (shouldRefreshData(content, reply)) void queryClient.invalidateQueries()
       } catch (err) {
-        setError({
-          message: getErrorMessage(err, 'No se pudo contactar a Numi. Inténtalo de nuevo.'),
-          // 422 en este endpoint = no hay proveedor de IA activo.
-          needsSetup: isApiStatus(err, 422),
-        })
+        const store = useNumiStore.getState()
+        store.discardReply(bubble)
+        store.setMessageStatus(id, 'failed')
+        store.setError(classifyNumiError(err, 'No se pudo contactar a Numi. Inténtalo de nuevo.'))
       } finally {
+        useNumiStore.getState().setTurn(null)
         useNumiStore.getState().setPending(false)
       }
     },
-    [mutateAsync, orgId, queryClient],
+    [orgId, queryClient],
   )
 
-  const send = useCallback(
-    async (raw: string) => {
-      const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
-      if (!message || useNumiStore.getState().pending) return
-      useNumiStore.getState().appendMessage('user', message)
-      await ask(message)
-    },
-    [ask],
-  )
+  /**
+   * Corta el turno en curso. Lo que Numi alcanzó a escribir se queda, aquí y en el
+   * servidor: cerrar la conexión es la señal, y el backend archiva lo que llevaba.
+   */
+  const stop = useCallback(() => {
+    useNumiStore.getState().turn?.abort()
+  }, [])
+
+  /*
+    Un turno a la vez, y en orden. El despachador vive en un efecto y no dentro de
+    `send` para que la cola sea del hilo y no de esta llamada: si el panel se cierra
+    con algo esperando, al volver a abrir sigue esperando y sale igual.
+  */
+  useEffect(() => {
+    if (pending || !orgId) return
+    const next = messages.find((m) => m.status === 'queued')
+    // `deliver` marca 'sending' y ocupa el turno antes de su primer await, así que
+    // el siguiente paso de este efecto ya no lo vuelve a coger.
+    if (next) void deliver(next.id, next.content)
+  }, [pending, orgId, messages, deliver])
+
+  /** Escribir no espera a Numi: el mensaje entra en la cola y sale cuando haya turno. */
+  const send = useCallback((raw: string) => {
+    const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
+    if (!message) return
+    useNumiStore.getState().enqueueMessage(message)
+  }, [])
 
   /** Envía una nota de voz: se muestra la burbuja de audio y Numi transcribe y responde. */
   const sendAudio = useCallback(
@@ -155,14 +227,16 @@ export function useNumiChat() {
         })
         const { sessionId: nextSessionId, transcript, reply } = res.data as AssistantAudioChatResponse
         const s = useNumiStore.getState()
-        if (id) s.setTranscript(id, transcript)
+        if (id) {
+          s.setTranscript(id, transcript)
+          s.setMessageStatus(id, 'sent')
+        }
         s.appendReply(nextSessionId, reply)
         if (shouldRefreshData(transcript, reply)) void queryClient.invalidateQueries()
       } catch (err) {
-        useNumiStore.getState().setError({
-          message: getErrorMessage(err, 'No se pudo enviar el audio. Inténtalo de nuevo.'),
-          needsSetup: isApiStatus(err, 422),
-        })
+        const s = useNumiStore.getState()
+        if (id) s.setMessageStatus(id, 'failed')
+        s.setError(classifyNumiError(err, 'No se pudo enviar el audio. Inténtalo de nuevo.'))
       } finally {
         useNumiStore.getState().setPending(false)
       }
@@ -170,12 +244,15 @@ export function useNumiChat() {
     [audioChat, orgId, queryClient],
   )
 
-  /** Reintenta el último mensaje de TEXTO del usuario (los audios no se reintentan). */
-  const retry = useCallback(async () => {
-    if (useNumiStore.getState().pending) return
-    const last = useNumiStore.getState().messages.findLast((m) => m.role === 'user' && !!m.content)
-    if (last) await ask(last.content)
-  }, [ask])
+/**
+   * Reintentar un mensaje que no salió: vuelve a la cola y el despachador lo recoge.
+   * Los dictados no se reintentan — su audio era un blob de esta página y ya no está.
+   */
+  const retryMessage = useCallback((id: string) => {
+    const store = useNumiStore.getState()
+    store.setError(null)
+    store.setMessageStatus(id, 'queued')
+  }, [])
 
   return {
     messages,
@@ -184,14 +261,27 @@ export function useNumiChat() {
     isTyping: pending,
     /** Cargando el historial persistido al abrir: se muestra un loader, no el saludo. */
     isHydrating: !hydrated && !!orgId,
+    /** Queda conversación por encima de lo que se ve. */
+    hasOlder,
+    isLoadingOlder,
+    /** Trae la página anterior y la pone por delante del hilo. */
+    loadOlder,
     canChat: !!orgId,
+    orgId,
+    /** La conversación abierta; la lista la señala y de ella cuelgan los audios. */
+    conversationId,
     role,
     /** Nombre de la organización: el hilo habla de SUS datos, y eso se ve en la cabecera. */
     orgName: organization?.name,
     send,
     sendAudio,
-    retry,
+    /** Devuelve a la cola un mensaje que falló. */
+    retryMessage,
+    /** Detiene la respuesta en curso, conservando lo escrito. */
+    stop,
     newConversation,
+    /** Abre otra conversación del historial en el hilo. */
+    openConversation,
     /** Pide la URL firmada de una nota de voz archivada (§«Numi»). */
     loadAudio,
   }

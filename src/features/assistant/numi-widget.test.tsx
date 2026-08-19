@@ -5,49 +5,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import { NumiWidget } from './numi-widget'
 import { useNumiStore } from './numi-store'
+import { json, tenantApiResponse } from '@/test/tenant-api'
+import { sseChannel } from '@/test/sse'
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  })
-}
-
-const ORG = {
-  // `status` no es decorativo: una organización que no está activa queda en
-  // solo lectura y el enlace a Configuración no se ofrece (§45.4).
-  organization: {
-    id: '11111111-1111-4111-8111-111111111111',
-    name: 'Demo',
-    type: 'GENERIC',
-    status: 'ACTIVE',
-  },
-  role: 'OWNER',
-}
-
-/** Quien puede configurar el asistente ve el enlace a Configuración (§88.5). */
-const CAPABILITIES = {
-  organizationId: ORG.organization.id,
-  role: 'OWNER',
-  permissions: ['assistant.use', 'assistant.settings.manage'],
-  planCode: 'PRO',
-  features: {
-    ai_byok: true,
-    custom_roles: true,
-    accounting: false,
-    bank_reconciliation: false,
-    approvals: false,
-    api_access: false,
-  },
-  limits: {
-    max_contacts: null,
-    max_users: null,
-    max_branches: null,
-    ai_messages_monthly: null,
-    voice_minutes_monthly: null,
-  },
-  period: '2026-08',
-  usage: { ai_messages_monthly: 0, voice_minutes_monthly: 0 },
+/** Turno completo en un solo gesto: la conversación, el texto y el cierre. */
+function replyStream(sessionId: string, text: string): Response {
+  const sse = sseChannel()
+  sse.start(sessionId)
+  sse.chunk(text)
+  sse.done(sessionId, text)
+  return sse.response
 }
 
 /** `fetch` con la lista de organizaciones y el chat; `onChat` decide la respuesta. */
@@ -56,16 +23,11 @@ function stubApi(onChat: (message: string) => Promise<Response>) {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url)
-      if (u.includes('/auth/csrf')) return json({ csrfToken: 'tok' })
       if (u.includes('/assistant/chat')) {
         const body = JSON.parse(String(init?.body ?? '{}')) as { message: string }
         return onChat(body.message)
       }
-      // Antes que la lista: la URL de capacidades también empieza por
-      // `/api/v1/organizations`, y el enlace a Configuración depende de ella.
-      if (u.includes('/me/capabilities')) return json(CAPABILITIES)
-      if (u.includes('/api/v1/organizations')) return json([ORG])
-      return json({})
+      return tenantApiResponse(u) ?? json({})
     }),
   )
 }
@@ -88,7 +50,7 @@ afterEach(() => {
 })
 
 test('abre el chat desde el botón flotante y muestra el estado vacío', async () => {
-  stubApi(async () => json({ sessionId: 's1', reply: 'hola' }))
+  stubApi(async () => replyStream('s1', 'hola'))
   const user = userEvent.setup()
   mount()
 
@@ -103,14 +65,8 @@ test('abre el chat desde el botón flotante y muestra el estado vacío', async (
 })
 
 test('envía el mensaje, avisa que Numi escribe y pinta la respuesta', async () => {
-  let release: (() => void) | undefined
-  const pending = new Promise<void>((resolve) => {
-    release = resolve
-  })
-  stubApi(async () => {
-    await pending
-    return json({ sessionId: 'sess-1', reply: 'Te deben **$70.000**.' })
-  })
+  const sse = sseChannel()
+  stubApi(async () => sse.response)
   const user = userEvent.setup()
   mount()
 
@@ -121,7 +77,9 @@ test('envía el mensaje, avisa que Numi escribe y pinta la respuesta', async () 
   expect(await screen.findByText('¿Cuánto me deben?')).toBeInTheDocument()
   expect(await screen.findByText('Numi está escribiendo…')).toBeInTheDocument()
 
-  release?.()
+  sse.start('sess-1')
+  sse.chunk('Te deben **$70.000**.')
+  sse.done('sess-1', 'Te deben **$70.000**.')
 
   expect(await screen.findByText('$70.000')).toBeInTheDocument()
   await waitFor(() => expect(screen.queryByText('Numi está escribiendo…')).not.toBeInTheDocument())
@@ -135,7 +93,7 @@ test('un fallo del backend deja reintentar sin volver a escribir', async () => {
     attempts += 1
     return attempts === 1
       ? json({ error: { code: 'INTERNAL', message: 'Numi no está disponible' } }, 500)
-      : json({ sessionId: 's2', reply: 'Ya estoy aquí.' })
+      : replyStream('s2', 'Ya estoy aquí.')
   })
   const user = userEvent.setup()
   mount()
@@ -172,7 +130,7 @@ test('sin proveedor de IA (422) manda a Configuración en vez de reintentar', as
 })
 
 test('deja los adjuntos como próximos, pero la nota de voz habilitada', async () => {
-  stubApi(async () => json({ sessionId: 's3', reply: 'hola' }))
+  stubApi(async () => replyStream('s3', 'hola'))
   const user = userEvent.setup()
   mount()
 
@@ -183,7 +141,7 @@ test('deja los adjuntos como próximos, pero la nota de voz habilitada', async (
 })
 
 test('sella la hora de cada mensaje', async () => {
-  stubApi(async (message) => json({ sessionId: 's4', reply: `eco: ${message}` }))
+  stubApi(async (message) => replyStream('s4', `eco: ${message}`))
   const user = userEvent.setup()
   mount()
 
@@ -198,7 +156,7 @@ test('sella la hora de cada mensaje', async () => {
 })
 
 test('el botón flotante desaparece con el chat abierto y recupera el foco al cerrar', async () => {
-  stubApi(async () => json({ sessionId: 's5', reply: 'hola' }))
+  stubApi(async () => replyStream('s5', 'hola'))
   const user = userEvent.setup()
   mount()
 

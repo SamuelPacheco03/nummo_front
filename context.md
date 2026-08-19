@@ -1974,6 +1974,104 @@ sitio al que hay que ir. Se apaga al abrir, sin más ceremonia. El rótulo del b
 —«Abrir el chat con Numi · respuesta nueva»—: un punto de color no existe para quien no lo ve
 (§7).
 
+## 32.4. Una conversación por tema, y todo lo anterior a un scroll
+
+El hilo enseñaba solo el último tramo de la última conversación. Lo demás existía en el
+servidor y no había forma de llegar: ni de subir a leer lo de ayer, ni de volver a una
+conversación anterior. El panel tiene ahora **dos vistas** y una lleva a la otra.
+
+**Subir trae lo anterior.** Al llegar arriba del hilo entra la página previa, de treinta en
+treinta, y también hay un botón —«Ver mensajes anteriores»— porque con teclado no existe
+«subir». Lo delicado no es traerlos, es **no mover la vista**: insertar mensajes por arriba
+empuja hacia abajo todo lo demás, así que se guarda dónde estaba la lectura y se restaura
+antes de pintar. Corregirlo después se vería como un salto.
+
+Solo se mezclan las páginas **de la segunda en adelante**. La primera es la que ya sembró el
+hilo al abrir, y un mensaje enviado vive con un id de cliente hasta que el servidor le da el
+suyo: si la app se cerró antes de esa respuesta, mezclar la primera página pondría el mismo
+mensaje dos veces sin que las dos copias se reconozcan.
+
+**La lista de conversaciones vive en el panel**, como en WhatsApp, no como barra lateral: en
+25rem de ancho una barra dejaría el hilo en nada. Se entra por la cabecera y se vuelve con la
+flecha. Cada fila abre al pulsarla —el objetivo grande es el que se usa— y sus acciones,
+renombrar y borrar, van en un menú aparte: un «borrar» que se pulsa al querer abrir es justo
+el error que no se puede deshacer.
+
+El nombre que trae cada conversación lo deriva Numi del primer mensaje, cortado por palabra;
+**es un punto de partida, no una decisión**, y renombrar es lo que la convierte en «Cobros del
+colegio». Borrar la saca de la lista para siempre, y el diálogo lo dice entero: lo que Numi
+haya registrado se queda, porque los movimientos no se borran nunca (§ historia inmutable).
+
+**Qué conversación se está leyendo es del hilo; qué vista se está mirando es de la pantalla.**
+Lo primero se guarda —tiene que sobrevivir a cerrar el chat—; lo segundo no: volver a abrir
+en el hilo es lo que se espera de un asistente. Y borrar la conversación abierta empieza una
+nueva en el acto, que es lo que el backend haría igualmente con un id que ya no reconoce.
+
+## 32.5. Lo enviado se ve, y lo que falla dice por qué
+
+**Numi atiende un turno a la vez, pero escribir no espera a nadie.** Antes, mientras
+contestaba, el botón de enviar se apagaba: lo escrito en ese rato no iba a ninguna parte.
+Ahora entra en la **cola del hilo** —marcado «En espera»— y sale solo en cuanto hay turno
+libre, en el orden en que se escribió. La cola vive en el hilo y no en la pantalla: cerrar
+el chat con algo esperando no lo pierde.
+
+Grabar sí espera, y es la única excepción: una nota de voz no se puede encolar porque su
+audio es un `blob:` de esta página y no sobrevive a guardarlo.
+
+**Cada mensaje propio dice en qué anda**, debajo de su burbuja: «En espera», «Enviando»,
+«No se envió». **Lo entregado no lleva marca** — en un chat lo normal es que llegue, y una
+palomita por línea es ruido. Reintentar cuelga del mensaje que falló, que es lo que se
+quiere reenviar; devolverlo a la cola es todo lo que hace.
+
+**Y un fallo dice cuál fue.** No es lo mismo quedarse sin internet que quedarse sin cuota,
+y hasta ahora las dos cosas se leían igual: «No se pudo contactar a Numi», con un botón de
+reintentar que en el segundo caso iba a fallar todas las veces. Cuatro casos, y el tipo
+decide qué se ofrece:
+
+| Qué pasó | Qué se dice | ¿Reintentar? |
+| --- | --- | --- |
+| No hay proveedor de IA (422) | El aviso, y **Ir a Configuración** si administras | No |
+| Se acabó el tope (409 `LIMIT_EXCEEDED`) | «Llevas 2000 de 2000 mensajes con Numi este mes» | No |
+| El plan no lo incluye (403 `FEATURE_NOT_AVAILABLE`) | «Tu plan no incluye esta función» | No |
+| Lo demás (red, servidor) | El mensaje que haya | Sí |
+
+**Un botón que no puede funcionar es peor que ninguno**: la cuota no se rellena por volver
+a pulsar. Y las cifras salen del `details` del error, nunca inventadas: si no viene
+completo se usa el mensaje del backend tal cual, y un tope que el front no conoce se cuenta
+como «se agotó una de las cuotas de tu plan» —jamás enseñando su clave cruda.
+
+## 32.6. Numi contesta mientras escribe, y se puede detener
+
+La respuesta llega **en flujo** (`POST /assistant/chat/stream`, Server-Sent Events), no de
+una vez. Antes había que esperar la respuesta entera mirando tres puntos; ahora se ve
+escribir. Va sobre `fetch` y no sobre `EventSource` —que solo hace GET y no puede llevar la
+cabecera CSRF— ni sobre el cliente generado, que consume el cuerpo entero antes de
+devolverlo, que es justo lo que aquí no se puede hacer.
+
+**Los puntos viven dentro de la burbuja de Numi**, no en una fila aparte. La burbuja se abre
+vacía en cuanto hay turno y la primera palabra sustituye los puntos en el mismo sitio: nada
+aparece ni desaparece, y el hilo no salta.
+
+**Detener** es un botón sobre la caja de escribir —no en el de enviar, que sigue haciendo
+falta porque lo que se escriba mientras tanto se pone en la cola (§32.5)—. Detener **aborta
+la petición**, y eso es todo: para el servidor, cortar la conexión y cerrar la pestaña son lo
+mismo, y los dos dejan de gastar tokens. **Lo ya escrito se queda**, aquí y en el archivo: es
+texto real que el usuario leyó. Detener antes de la primera palabra no deja burbuja vacía.
+
+Tres detalles que cuestan un bug si se olvidan:
+
+- **El evento `start` trae la conversación antes de la primera palabra.** Quien detiene no ve
+  el final del turno; sin ese aviso su siguiente mensaje iría sin `sessionId` y el backend
+  abriría otra conversación, dejando la primera huérfana con una pregunta y ninguna respuesta.
+- **Abortar cierra el flujo limpiamente**, sin `done` y a veces sin lanzar. Eso no es una
+  conexión caída: hay que preguntar por la señal antes de dar el flujo por roto.
+- **Un turno que falla retira su burbuja**, con lo que llevara escrito. Media frase que nadie
+  va a terminar se lee como si fuera la respuesta buena, y al reintentar quedarían las dos.
+  Detener es distinto: ahí sí se conserva, porque fue una decisión y no un fallo.
+
+Lo que llega por el evento `error` se clasifica exactamente igual que un error HTTP (§32.5):
+la cuota agotada a media respuesta dice lo mismo y tampoco ofrece reintentar.
+
 ---
 
 # 33. Cards dentro del chat

@@ -5,31 +5,30 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import { NumiWidget } from './numi-widget'
 import { useNumiStore } from './numi-store'
+import { sseChannel, type SseChannel } from '@/test/sse'
 
-const m = vi.hoisted(() => ({
-  responder: null as null | ((r: { data: unknown }) => void),
-  llamadas: 0,
-}))
+/*
+  El chat llega por Server-Sent Events, así que el doble no es «qué contesta Numi» sino
+  «cuándo». Estos tests viven precisamente en el rato en que la respuesta viene de
+  camino: el panel se cierra, la app se va, el icono avisa.
+*/
+const m = vi.hoisted(() => ({ canal: null as SseChannel | null, llamadas: 0 }))
 
 vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({ orgId: 'o1', role: 'OWNER', organization: { name: 'Demo' } }),
 }))
 vi.mock('./use-numi-history', () => ({
   useNumiConversations: () => ({ conversations: [], isLoading: false }),
-  useNumiMessages: () => ({ messages: [], isLoading: false }),
+  useNumiMessages: () => ({ messages: [], older: [], isLoading: false, hasOlder: false }),
   useMessageAudioLoader: () => undefined,
+  useConversationOpener: () => async () => [],
+  useConversationActions: () => ({ rename: vi.fn(), remove: vi.fn() }),
 }))
 vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({
-  usePostApiV1OrganizationsOrgIdAssistantChat: () => ({
+  usePostApiV1OrganizationsOrgIdAssistantChatAudio: () => ({
     isPending: false,
-    mutateAsync: () => {
-      m.llamadas++
-      return new Promise((resolve) => {
-        m.responder = resolve as (r: { data: unknown }) => void
-      })
-    },
+    mutateAsync: vi.fn(),
   }),
-  usePostApiV1OrganizationsOrgIdAssistantChatAudio: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }))
 
 function pintar() {
@@ -43,9 +42,27 @@ function pintar() {
 }
 
 beforeEach(() => {
-  m.responder = null
+  m.canal = null
   m.llamadas = 0
   localStorage.clear()
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      const u = String(url)
+      if (u.includes('/auth/csrf')) {
+        return new Response(JSON.stringify({ csrfToken: 'tok' }), {
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      if (u.includes('/assistant/chat/stream')) {
+        m.llamadas++
+        // Se abre y no se contesta: cada test decide cuándo llega la respuesta.
+        m.canal = sseChannel()
+        return m.canal.response
+      }
+      return new Response('{}', { headers: { 'content-type': 'application/json' } })
+    }),
+  )
   useNumiStore.setState({
     isOpen: false,
     orgId: null,
@@ -57,7 +74,19 @@ beforeEach(() => {
     pending: false,
   })
 })
-afterEach(cleanup)
+/** Numi contesta el turno abierto: la conversación, el texto y el cierre. */
+function contesta(texto: string, sessionId = 's1') {
+  const canal = m.canal
+  if (!canal) throw new Error('no hay turno en curso')
+  canal.start(sessionId)
+  canal.chunk(texto)
+  canal.done(sessionId, texto)
+}
+
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 test('lo enviado sigue ahí al cerrar y volver a abrir el chat', async () => {
   const user = userEvent.setup()
@@ -74,7 +103,7 @@ test('lo enviado sigue ahí al cerrar y volver a abrir el chat', async () => {
   expect(screen.queryByText('cuánto me deben')).not.toBeInTheDocument()
 
   // Numi contesta mientras el panel está cerrado.
-  m.responder?.({ data: { sessionId: 's1', reply: 'Te deben $2.350.000' } })
+  contesta('Te deben $2.350.000')
 
   useNumiStore.getState().open()
   expect(await screen.findByText('cuánto me deben')).toBeInTheDocument()
@@ -88,7 +117,7 @@ test('el hilo se guarda: volver a la app no es empezar de cero', async () => {
 
   await user.type(await screen.findByLabelText('Mensaje para Numi'), 'hola')
   await user.keyboard('{Enter}')
-  m.responder?.({ data: { sessionId: 's1', reply: 'Hola, ¿en qué te ayudo?' } })
+  contesta('Hola, ¿en qué te ayudo?')
   await screen.findByText('Hola, ¿en qué te ayudo?')
 
   /*
@@ -120,7 +149,7 @@ test('si Numi contesta con el chat cerrado, el icono lo dice', async () => {
   await user.click(screen.getByRole('button', { name: /cerrar/i }))
 
   expect(screen.getByRole('button', { name: 'Abrir el chat con Numi' })).toBeInTheDocument()
-  m.responder?.({ data: { sessionId: 's1', reply: 'Hola' } })
+  contesta('Hola')
 
   // El aviso vive en el icono de Numi: la respuesta está en el chat, y el
   // sitio donde se dice es al que hay que ir.
