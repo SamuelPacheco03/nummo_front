@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { Coins, LayoutDashboard, Menu, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { NumiAppMark } from '@/features/assistant/numi-avatar'
+import { NumiAppMark, NumiUnreadDot } from '@/features/assistant/numi-avatar'
 import { useNumiStore } from '@/features/assistant/numi-store'
 import { allowedQuickActions } from '@/features/actions/quick-actions'
 import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
@@ -63,16 +63,20 @@ function BottomButton({
   onClick,
   children,
   className,
+  announce,
 }: {
   label: string
   onClick: () => void
   children: React.ReactNode
   className?: string
+  /** Lo que oye un lector de pantalla, cuando dice más que el rótulo. */
+  announce?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label={announce}
       className={cn(itemClass, 'text-muted-foreground hover:text-foreground', className)}
     >
       {children}
@@ -140,6 +144,7 @@ export function BottomNav() {
   const [quickOpen, setQuickOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const openNumi = useNumiStore((s) => s.open)
+  const unread = useNumiStore((s) => s.unread)
   const { role } = useCurrentOrg()
   const location = useLocation()
   const canCreate = allowedQuickActions(role).length > 0
@@ -170,8 +175,11 @@ export function BottomNav() {
           </BottomButton>
         )}
 
-        <BottomButton label="Numi" onClick={openNumi}>
-          <NumiAppMark className="size-5 rounded-[28%]" />
+        <BottomButton label="Numi" onClick={openNumi} announce={unread ? 'Numi · respuesta nueva' : undefined}>
+          <span className="relative">
+            <NumiAppMark className="size-5 rounded-[28%]" />
+            <NumiUnreadDot />
+          </span>
         </BottomButton>
 
         <BottomButton label="Más" onClick={() => setMoreOpen(true)}>

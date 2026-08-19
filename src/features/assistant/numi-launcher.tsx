@@ -1,6 +1,7 @@
 import { type Ref } from 'react'
 import { cn } from '@/lib/utils'
-import { NumiAppMark } from './numi-avatar'
+import { NumiAppMark, NumiUnreadDot } from './numi-avatar'
+import { useNumiStore } from './numi-store'
 import { useLauncherPosition } from './use-launcher-position'
 
 /**
@@ -26,6 +27,7 @@ export function NumiLauncher({
   ref?: Ref<HTMLButtonElement>
 }) {
   const { position, dragging, onPointerDown, wasDragged } = useLauncherPosition()
+  const unread = useNumiStore((s) => s.unread)
 
   return (
     <button
@@ -35,7 +37,7 @@ export function NumiLauncher({
       onClick={() => {
         if (!wasDragged()) onClick()
       }}
-      aria-label="Abrir el chat con Numi"
+      aria-label={unread ? 'Abrir el chat con Numi · respuesta nueva' : 'Abrir el chat con Numi'}
       title="Abrir el chat con Numi · arrástralo si estorba"
       style={{ right: position.right, bottom: position.bottom }}
       className={cn(
@@ -47,6 +49,7 @@ export function NumiLauncher({
       )}
     >
       <NumiAppMark className="drop-shadow-lg" />
+      <NumiUnreadDot className="top-1 right-1 size-3.5" />
     </button>
   )
 }

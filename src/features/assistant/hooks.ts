@@ -49,9 +49,16 @@ export function useNumiChat() {
   const error = useNumiStore((s) => s.error)
   const switchOrg = useNumiStore((s) => s.switchOrg)
   const newConversation = useNumiStore((s) => s.newConversation)
-  const { mutateAsync, isPending } = usePostApiV1OrganizationsOrgIdAssistantChat()
+  const { mutateAsync } = usePostApiV1OrganizationsOrgIdAssistantChat()
   const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
   const hydrated = useNumiStore((s) => s.hydrated)
+  /*
+    «Escribiendo…» vive en el store, no en el hook de la mutación. El panel se
+    desmonta al cerrarlo y con él la mutación: al volver a abrir con la
+    respuesta todavía en camino, el hilo se quedaba callado como si no hubiera
+    nada pendiente. El turno es del hilo, no del panel.
+  */
+  const pending = useNumiStore((s) => s.pending)
   // La conversación viva del hilo: de ella cuelgan los audios archivados.
   const conversationId = useNumiStore((s) => s.sessionId)
   const loadAudio = useMessageAudioLoader(orgId, conversationId)
@@ -71,8 +78,9 @@ export function useNumiChat() {
     async (message: string) => {
       if (!orgId) return
       // Se lee del store (no del render) para no mandar un sessionId obsoleto.
-      const { sessionId, appendReply, setError } = useNumiStore.getState()
+      const { sessionId, appendReply, setError, setPending } = useNumiStore.getState()
       setError(null)
+      setPending(true)
       try {
         const res = await mutateAsync({ orgId, data: { message, sessionId } })
         const { sessionId: nextSessionId, reply } = res.data as AssistantChatResponse
@@ -86,6 +94,8 @@ export function useNumiChat() {
           // 422 en este endpoint = no hay proveedor de IA activo.
           needsSetup: isApiStatus(err, 422),
         })
+      } finally {
+        useNumiStore.getState().setPending(false)
       }
     },
     [mutateAsync, orgId, queryClient],
@@ -94,18 +104,19 @@ export function useNumiChat() {
   const send = useCallback(
     async (raw: string) => {
       const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
-      if (!message || isPending) return
+      if (!message || useNumiStore.getState().pending) return
       useNumiStore.getState().appendMessage('user', message)
       await ask(message)
     },
-    [ask, isPending],
+    [ask],
   )
 
   /** Envía una nota de voz: se muestra la burbuja de audio y Numi transcribe y responde. */
   const sendAudio = useCallback(
     async (blob: Blob) => {
-      if (!orgId || audioChat.isPending || isPending) return
+      if (!orgId || useNumiStore.getState().pending) return
       const store = useNumiStore.getState()
+      store.setPending(true)
       store.appendAudio({ audioUrl: URL.createObjectURL(blob) })
       const id = useNumiStore.getState().messages.at(-1)?.id
       /*
@@ -152,23 +163,25 @@ export function useNumiChat() {
           message: getErrorMessage(err, 'No se pudo enviar el audio. Inténtalo de nuevo.'),
           needsSetup: isApiStatus(err, 422),
         })
+      } finally {
+        useNumiStore.getState().setPending(false)
       }
     },
-    [audioChat, isPending, orgId, queryClient],
+    [audioChat, orgId, queryClient],
   )
 
   /** Reintenta el último mensaje de TEXTO del usuario (los audios no se reintentan). */
   const retry = useCallback(async () => {
-    if (isPending) return
+    if (useNumiStore.getState().pending) return
     const last = useNumiStore.getState().messages.findLast((m) => m.role === 'user' && !!m.content)
     if (last) await ask(last.content)
-  }, [ask, isPending])
+  }, [ask])
 
   return {
     messages,
     error,
     /** Mientras el backend responde (texto o audio): el hilo muestra "escribiendo…". */
-    isTyping: isPending || audioChat.isPending,
+    isTyping: pending,
     /** Cargando el historial persistido al abrir: se muestra un loader, no el saludo. */
     isHydrating: !hydrated && !!orgId,
     canChat: !!orgId,

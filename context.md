@@ -1931,6 +1931,35 @@ Y hay que probar **el pulgar que no quiere nada**: un toque que se sostiene mien
 hacia arriba unos pocos píxeles cada décima. Ese es el que descubrió que 56 px se recorrían sin
 querer, y no lo encuentra ningún toque que va directo del punto A al B.
 
+## 32.3. El hilo no se pierde, y avisa cuando contesta
+
+**Cerrar el chat nunca debe perder lo dicho.** El hilo vive fuera del árbol de rutas, así que
+cerrar el panel o navegar a otra pantalla no lo tocaba nunca; lo que sí lo perdía era **salir de
+la app en el móvil**: el sistema descarta la página y al volver se entraba a un saludo, con lo
+dicho hace un minuto en ninguna parte.
+
+El servidor conserva las conversaciones, pero eso solo sirve si le dio tiempo a guardarlas: si la
+respuesta iba en camino cuando la app se fue, lo enviado no estaba en ningún sitio. Así que **el
+hilo se guarda también en el navegador** (`nummo-numi`), los últimos cincuenta mensajes. Al
+arrancar se ve al instante lo último que se habló y aun así se mira el servidor, que puede traer
+lo que se dijo desde otro dispositivo: si ya hay hilo local, se respeta.
+
+De un mensaje se guarda todo menos la `audioUrl` de una nota recién grabada, que es un `blob:` de
+esa página y muere con ella. Se queda la transcripción y la onda, que es lo que hace que la nota
+siga siendo legible al volver.
+
+**Y el turno es del hilo, no del panel.** Si se cierra el chat con una pregunta en el aire, la
+respuesta llega igual y se guarda; al volver a abrir, «escribiendo…» sigue puesto si todavía no
+ha llegado. Antes ese estado vivía en la mutación, que se desmontaba con el panel: volver a abrir
+mostraba un hilo callado como si no hubiera nada pendiente.
+
+**Cuando Numi contesta con el chat cerrado, lo dice en su icono**: un punto sobre el mark de Numi,
+en la barra de abajo en móvil y en el botón flotante en escritorio (`NumiUnreadDot`). Va ahí y no
+en un aviso aparte porque la respuesta está en el chat, y el sitio donde se anuncia debe ser el
+sitio al que hay que ir. Se apaga al abrir, sin más ceremonia. El rótulo del botón lo dice también
+—«Abrir el chat con Numi · respuesta nueva»—: un punto de color no existe para quien no lo ve
+(§7).
+
 ---
 
 # 33. Cards dentro del chat
@@ -3695,6 +3724,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
 | `HoldToRecord` | `features/assistant/hold-to-record.tsx` | Lo que se ve mientras se mantiene pulsado el micrófono (§32.2) |
 | `RecordingBar` | `features/assistant/recording-bar.tsx` | La barra de una grabación fijada: onda en vivo, pausa, tirar y enviar (§32.2) |
+| `NumiUnreadDot` | `features/assistant/numi-avatar.tsx` | El punto sobre el icono de Numi cuando contestó con el chat cerrado (§32.3) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |

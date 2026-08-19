@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { useNumiStore } from './numi-store'
 
 // Viven en `public/` (no se importan como módulo) igual que el isotipo de
 // Nummo: los genera `scripts/generate-icons.mjs` desde `brand/numi.png` y
@@ -44,6 +45,31 @@ export function NumiAppMark({ className }: { className?: string }) {
       width={256}
       height={256}
       className={cn('size-14 shrink-0 object-contain', className)}
+    />
+  )
+}
+
+/**
+ * **El punto sobre el icono de Numi**: contestó con el chat cerrado y todavía
+ * no se ha visto (§32.3).
+ *
+ * Va donde vive el icono —la barra de abajo en móvil, el botón flotante en
+ * escritorio— y no en una notificación aparte: la respuesta está en el chat, y
+ * el sitio donde se dice es el sitio al que hay que ir. Se apaga solo al abrir.
+ *
+ * El anillo del color del fondo lo separa del icono; sin él, sobre el squircle
+ * de Numi se lee como parte del dibujo.
+ */
+export function NumiUnreadDot({ className }: { className?: string }) {
+  const unread = useNumiStore((s) => s.unread)
+  if (!unread) return null
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'bg-brand ring-card absolute -top-0.5 -right-0.5 size-2.5 rounded-full ring-2',
+        className,
+      )}
     />
   )
 }
