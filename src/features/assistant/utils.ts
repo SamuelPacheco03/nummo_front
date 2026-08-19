@@ -1,4 +1,5 @@
 import { formatDateHuman } from '@/lib/format'
+import type { ChatMessage } from './types'
 
 /**
  * Heurística de refresco tras un turno de chat.
@@ -116,4 +117,65 @@ export function formatConversationStamp(iso: string, today: Date = new Date()): 
     date.getMonth() === today.getMonth() &&
     date.getDate() === today.getDate()
   return sameDay ? formatTime(iso) : formatDateHuman(iso, today)
+}
+
+/** Cuánto silencio rompe una tanda de mensajes seguidos del mismo lado. */
+const GROUP_GAP_MS = 5 * 60 * 1000
+
+/**
+ * Día local de una marca ISO, como `YYYY-MM-DD`.
+ *
+ * Recortar los diez primeros caracteres del ISO daría el día **en UTC**, y en Colombia
+ * eso adelanta la fecha cinco horas: un mensaje de las 9 de la noche aparecería bajo el
+ * separador de mañana. El día tiene que salir del reloj de quien lee.
+ */
+function localDay(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mes}-${dia}`
+}
+
+const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1)
+
+/** Un mensaje del hilo con lo que hay que dibujar alrededor. */
+export interface ThreadRow {
+  message: ChatMessage
+  /** Etiqueta del día cuando cambia respecto al anterior; null mientras siga el mismo. */
+  daySeparator: string | null
+  /**
+   * Sigue a otro del mismo lado y de hace poco. La cara de Numi no se repite en cada
+   * burbuja de una misma respuesta: en un hilo largo, repetirla convierte la
+   * conversación en una columna de avatares.
+   */
+  grouped: boolean
+}
+
+/**
+ * Prepara el hilo para pintarlo: dónde va un separador de fecha y qué mensajes son
+ * continuación del anterior.
+ *
+ * Es una función aparte y pura porque decide sobre la lista entera —cada fila depende
+ * de la de antes—, y así se prueba sin montar nada.
+ */
+export function buildThreadRows(messages: ChatMessage[], today: Date = new Date()): ThreadRow[] {
+  let lastDay = ''
+  return messages.map((message, i) => {
+    const day = localDay(message.at)
+    const cambioDeDia = day !== lastDay
+    lastDay = day
+
+    const previo = i > 0 ? messages[i - 1] : undefined
+    const cerca =
+      previo !== undefined &&
+      new Date(message.at).getTime() - new Date(previo.at).getTime() < GROUP_GAP_MS
+
+    return {
+      message,
+      daySeparator: cambioDeDia ? capitalize(formatDateHuman(day, today)) : null,
+      // Un separador de fecha corta la tanda: lo que queda debajo empieza de nuevo.
+      grouped: !cambioDeDia && previo?.role === message.role && cerca,
+    }
+  })
 }

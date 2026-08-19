@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type Ref,
 } from 'react'
-import { ArrowUp, Mic, Paperclip } from 'lucide-react'
+import { ArrowUp, Mic, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
@@ -87,6 +87,8 @@ export function ChatComposer({
   onSend,
   onSendAudio,
   busy = false,
+  quoted = null,
+  onClearQuote,
   autoFocus = false,
 }: {
   onSend: (text: string) => void
@@ -97,6 +99,13 @@ export function ChatComposer({
    * encolar: su audio vive en esta página y no sobrevive a guardarlo.
    */
   busy?: boolean
+  /**
+   * Lo que se está citando de Numi, si algo. Viaja aparte del texto para que la cita
+   * no se pueda romper escribiendo dentro de ella, y para poder quitarla sin borrar de
+   * paso lo que ya se había escrito.
+   */
+  quoted?: string | null
+  onClearQuote?: () => void
   autoFocus?: boolean
 }) {
   const [value, setValue] = useState('')
@@ -181,8 +190,13 @@ export function ChatComposer({
 
   const submit = () => {
     if (!canSend) return
+    const text = value.trim()
     setValue('')
-    onSend(value.trim())
+    onClearQuote?.()
+    // El formato de cita de markdown, que es el que Numi ya entiende de leerlo.
+    onSend(quoted ? `> ${quoted}
+
+${text}` : text)
   }
 
   const startRecording = async () => {
@@ -388,6 +402,25 @@ export function ChatComposer({
       }}
       className="bg-card border-t px-3 py-2.5"
     >
+      {quoted && (
+        <div className="bg-secondary/60 border-brand mb-2 flex items-start gap-2 rounded-md border-l-2 px-2.5 py-1.5">
+          <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs italic">{quoted}</p>
+          <button
+            type="button"
+            onClick={() => {
+              onClearQuote?.()
+              // El botón desaparece con la cita, y con él el foco. Sin devolverlo, la
+              // siguiente tecla no va a ninguna parte y parece que se colgó.
+              ref.current?.focus()
+            }}
+            aria-label="Quitar la cita"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -mr-1 grid size-5 shrink-0 place-items-center rounded focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            <X aria-hidden className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       {remaining < 400 && (
         <p className="text-muted-foreground px-2 pb-1 text-right text-[0.65rem] tabular-nums">
           {remaining} caracteres

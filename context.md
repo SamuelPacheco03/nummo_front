@@ -2071,6 +2071,35 @@ Tres detalles que cuestan un bug si se olvidan:
 Lo que llega por el evento `error` se clasifica exactamente igual que un error HTTP (§32.5):
 la cuota agotada a media respuesta dice lo mismo y tampoco ofrece reintentar.
 
+## 32.7. El hilo se lee: fechas, tandas, copiar y citar
+
+**Un separador cuando cambia el día** —«Hoy», «Ayer», «14 ago»—, no una etiqueta por
+mensaje. Va con `role="separator"` porque para un lector de pantalla es eso: una
+división del hilo, no un turno más de la conversación.
+
+El día sale del reloj de quien lee, no de UTC. Recortar los diez primeros caracteres del
+ISO parece lo mismo y no lo es: en Colombia adelanta cinco horas, así que un mensaje de
+las nueve de la noche aparecía bajo el separador de mañana.
+
+**Las tandas no repiten la cara.** Dos burbujas seguidas del mismo lado y con menos de
+cinco minutos entre ellas son una sola intervención: solo la primera lleva el avatar de
+Numi y las demás guardan su hueco, para que el hilo no se desalinee. Cambiar de lado, o
+un silencio largo, o un cambio de día, cortan la tanda.
+
+**Copiar y citar viven al lado de la burbuja**, y aparecen al pasar por encima o con el
+foco; en pantalla táctil, donde no hay «encima», se quedan puestas. Copiar es la que más
+falta hacía: Numi contesta con cifras y hasta ahora había que seleccionarlas a mano. Ni
+una nota de voz ni una respuesta a medio escribir las ofrecen — de la primera lo que hay
+es audio, y de la segunda el texto todavía está cambiando.
+
+**Citar es solo para lo que dijo Numi**, no para lo tuyo: sirve para preguntarle de dónde
+sale un número. La cita se ve sobre la caja de escribir y **viaja aparte del texto**, no
+dentro de él. Es a propósito: si fuera parte de lo escrito, quitarla obligaría a adivinar
+dónde acaba la cita y empieza la pregunta. Sale con el mensaje en formato `>` de
+markdown, que Numi ya entiende de leerlo, y se limpia al enviar. Al quitarla el foco
+vuelve a la caja: el botón desaparece con ella, y sin devolver el foco la siguiente tecla
+no iría a ninguna parte.
+
 ---
 
 # 33. Cards dentro del chat
