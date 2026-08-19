@@ -10,6 +10,7 @@ const msg = (id: string): MessageList['items'][number] => ({
   hasAudio: false,
   waveform: null,
   audioSeconds: null,
+  feedback: null,
   createdAt: '2026-08-16T00:00:00.000Z',
 })
 

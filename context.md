@@ -2084,6 +2084,108 @@ Tres detalles que cuestan un bug si se olvidan:
 Lo que llega por el evento `error` se clasifica exactamente igual que un error HTTP (§32.5):
 la cuota agotada a media respuesta dice lo mismo y tampoco ofrece reintentar.
 
+## 32.7. El hilo se lee: fechas, tandas, copiar y citar
+
+**Un separador cuando cambia el día** —«Hoy», «Ayer», «14 ago»—, no una etiqueta por
+mensaje. Va con `role="separator"` porque para un lector de pantalla es eso: una
+división del hilo, no un turno más de la conversación.
+
+El día sale del reloj de quien lee, no de UTC. Recortar los diez primeros caracteres del
+ISO parece lo mismo y no lo es: en Colombia adelanta cinco horas, así que un mensaje de
+las nueve de la noche aparecía bajo el separador de mañana.
+
+**Las tandas no repiten la cara.** Dos burbujas seguidas del mismo lado y con menos de
+cinco minutos entre ellas son una sola intervención: solo la primera lleva el avatar de
+Numi y las demás guardan su hueco, para que el hilo no se desalinee. Cambiar de lado, o
+un silencio largo, o un cambio de día, cortan la tanda.
+
+**Copiar y citar viven al lado de la burbuja**, y aparecen al pasar por encima o con el
+foco; en pantalla táctil, donde no hay «encima», se quedan puestas. Copiar es la que más
+falta hacía: Numi contesta con cifras y hasta ahora había que seleccionarlas a mano. Ni
+una nota de voz ni una respuesta a medio escribir las ofrecen — de la primera lo que hay
+es audio, y de la segunda el texto todavía está cambiando.
+
+**Citar es solo para lo que dijo Numi**, no para lo tuyo: sirve para preguntarle de dónde
+sale un número. La cita se ve sobre la caja de escribir y **viaja aparte del texto**, no
+dentro de él. Es a propósito: si fuera parte de lo escrito, quitarla obligaría a adivinar
+dónde acaba la cita y empieza la pregunta. Sale con el mensaje en formato `>` de
+markdown, que Numi ya entiende de leerlo, y se limpia al enviar. Al quitarla el foco
+vuelve a la caja: el botón desaparece con ella, y sin devolver el foco la siguiente tecla
+no iría a ninguna parte.
+
+## 32.8. Buscar en las conversaciones
+
+El buscador vive **en la vista de conversaciones**, no en el hilo: se busca para llegar a
+algo que no se tiene delante, y lo que se encuentra puede estar en otra conversación.
+Mientras hay término escrito, los resultados sustituyen a la lista y «Nueva conversación»
+se quita de en medio.
+
+Cada resultado trae **de qué conversación salió, quién lo dijo y el trozo alrededor de lo
+buscado**. Los tres hacen falta: sin el título no se sabe adónde lleva la fila, sin el
+«Numi:» no se deduce quién habló —fuera del hilo no hay lado de burbuja que lo diga— y sin
+el extracto centrado veinte resultados se ven todos iguales.
+
+**Se pregunta al dejar de escribir** (300 ms, con el `useDebouncedValue` que ya usa el
+selector de contactos) y **nunca con menos de dos caracteres**: el servidor lo rechazaría,
+y una letra suelta traería medio historial.
+
+**Abrir un resultado lleva la conversación a ese mensaje**, no al final. El backend lo
+sirve con `until`: esa página termina en el mensaje buscado, que es justo donde el hilo
+empieza a leerse, así que no hace falta una segunda forma de cargar mensajes ni centrar
+nada. Por dónde se abrió queda anotado en el store (`historyUntil`) porque el scroll hacia
+arriba lo necesita: sin él, subir pediría la página más nueva y devolvería al usuario al
+final del historial que acababa de esquivar.
+
+## 32.9. El pulgar sobre las respuestas de Numi
+
+Es la única señal de si el asistente contesta bien: nada más en el producto lo dice.
+Deliberadamente binaria — un pulgar se pulsa, una encuesta no se contesta.
+
+**Solo sobre las respuestas de Numi.** Puntuar lo que tú escribiste no significa nada, y
+el backend lo rechaza además de que la interfaz no lo ofrezca.
+
+Los dos pulgares viven en el mismo grupo que copiar y citar, y aparecen igual: al pasar
+por encima, con el foco, y siempre en táctil. Con una diferencia — **el pulgar elegido se
+queda visible aunque el ratón se vaya**, porque ya no es una acción disponible sino un
+estado del mensaje. Lo dice el relleno del icono y lo dice `aria-pressed`, que es lo que
+queda para quien no ve el relleno.
+
+**Se pinta antes de preguntar.** Es una opinión, no una operación: esperar medio segundo
+por un dibujo no tiene sentido. Pero si el servidor lo rechaza **se deshace**, porque una
+opinión que se ve guardada y no lo está es peor que no poder darla — el usuario creería
+que ya avisó de que la respuesta era mala.
+
+Volver a pulsar el mismo pulgar retira la opinión, y retirarla es mandar `null`: el
+endpoint es un `PUT` porque el valor es el estado completo de una sola cosa.
+
+## 32.10. El mismo hilo en todos tus dispositivos
+
+Lo que escribes en el móvil aparece en el escritorio, y al revés. La pieza que lo hace
+posible no es el transporte: es que **el servidor devuelve los ids con los que archivó
+cada turno**. Hasta que los tuvo, un mensaje enviado vivía con un id inventado por el
+cliente, así que cualquier novedad traída del servidor lo veía como uno distinto y lo
+pintaba dos veces.
+
+**Los avisos llegan por SSE y son señales, no datos.** El flujo dice que una conversación
+se movió; el hilo va a buscarlo con `after`. Se eligió así porque esa es **la misma llamada
+que se hace al abrir el panel**: ponerse al día tras un rato cerrado y ponerse al día tras
+un aviso son el mismo camino, y hay uno solo por el que entran mensajes al hilo. Un aviso
+perdido mientras el móvil no tenía cobertura da igual.
+
+Se usa `EventSource` y no `fetch`: la cookie viaja sola, leer no necesita CSRF y
+**reconectar lo hace el navegador**. Y no se reintenta a mano al fallar, precisamente para
+no perder esa reconexión.
+
+**El flujo vive lo que vive el panel.** Con el chat cerrado no hay nada que actualizar y
+una conexión de más se paga en el servidor; por eso al abrir se pregunta una vez, que es
+lo que cubre el rato sin flujo.
+
+Un detalle que parece menor y no lo es: al preguntar «qué hay después de X» solo se usa un
+id **que el servidor podría conocer**, comprobado por su forma de UUID. La versión fácil
+—«no lleva el prefijo del cliente»— acepta cualquier id que no encaje en ninguno de los dos
+moldes, y entonces el servidor responde con todo lo que ya se tenía. Ante la duda, no
+preguntar.
+
 ---
 
 # 33. Cards dentro del chat

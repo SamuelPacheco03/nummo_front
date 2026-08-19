@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from 'react'
+import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { useCan } from '@/features/platform/permissions'
@@ -6,7 +6,8 @@ import { Loader, NumiLoader } from '@/components/ui/loader'
 import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
 import { isRetryable } from './numi-error'
-import type { ChatMessage, NumiError } from './types'
+import { buildThreadRows } from './utils'
+import type { ChatFeedback, ChatMessage, NumiError } from './types'
 
 /** A qué distancia del borde superior se empieza a traer la página anterior. */
 const LOAD_OLDER_MARGIN = 80
@@ -121,6 +122,22 @@ function ThreadError({ error, onLeave }: { error: NumiError; onLeave: () => void
   )
 }
 
+/**
+ * De qué día es lo que viene debajo.
+ *
+ * Va como `separator` y no como texto suelto porque para un lector de pantalla es
+ * justo eso: una división del hilo, no un mensaje más de la conversación.
+ */
+function DaySeparator({ label }: { label: string }) {
+  return (
+    <div role="separator" className="flex items-center justify-center py-1">
+      <span className="bg-secondary text-muted-foreground rounded-full px-2.5 py-0.5 text-[0.65rem] font-medium">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export interface ChatThreadProps {
   messages: ChatMessage[]
   error: NumiError | null
@@ -133,6 +150,11 @@ export interface ChatThreadProps {
   /** Devuelve a la cola el mensaje que no salió. */
   retryMessage: (id: string) => void
   loadAudio: (messageId: string, force?: boolean) => Promise<string>
+  onCopy: (text: string) => void
+  /** Pulgar sobre una respuesta de Numi. */
+  onRate: (messageId: string, feedback: ChatFeedback) => void
+  /** Lleva lo que dijo Numi al composer, para preguntarle por ello. */
+  onQuote: (text: string) => void
   /** El enlace a Configuración sale del panel, así que hay que cerrarlo al seguirlo. */
   onLeave: () => void
 }
@@ -155,6 +177,9 @@ export function ChatThread({
   send,
   retryMessage,
   loadAudio,
+  onCopy,
+  onQuote,
+  onRate,
   onLeave,
 }: ChatThreadProps) {
   const listRef = useRef<HTMLDivElement>(null)
@@ -197,6 +222,10 @@ export function ChatThread({
   */
   const canRetry = !error || isRetryable(error)
 
+  // Cada fila depende de la anterior (mismo día, mismo lado), así que se resuelve la
+  // lista de una vez en vez de mirar hacia atrás dentro del map.
+  const rows = useMemo(() => buildThreadRows(messages), [messages])
+
   // Y lo natural: llegar arriba trae lo anterior sin pedirlo.
   const onScroll = useCallback(() => {
     const el = listRef.current
@@ -225,13 +254,19 @@ export function ChatThread({
       ) : (
         <>
           {hasOlder && <OlderMessages loading={isLoadingOlder} onLoad={onLoadOlder} />}
-          {messages.map((m) => (
-            <ChatMessageItem
-              key={m.id}
-              message={m}
-              loadAudio={loadAudio}
-              onRetry={canRetry ? () => retryMessage(m.id) : undefined}
-            />
+          {rows.map(({ message, daySeparator, grouped }) => (
+            <Fragment key={message.id}>
+              {daySeparator && <DaySeparator label={daySeparator} />}
+              <ChatMessageItem
+                message={message}
+                loadAudio={loadAudio}
+                onRetry={canRetry ? () => retryMessage(message.id) : undefined}
+                grouped={grouped}
+                onCopy={onCopy}
+                onQuote={onQuote}
+                onRate={(feedback) => onRate(message.id, feedback)}
+              />
+            </Fragment>
           ))}
         </>
       )}

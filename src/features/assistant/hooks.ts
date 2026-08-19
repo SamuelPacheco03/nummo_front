@@ -1,16 +1,21 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
 import type { AssistantAudioChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { classifyNumiError } from './numi-error'
 import { streamChat } from './stream-chat'
 import { MAX_MESSAGE_LENGTH } from './constants'
-import { useNumiStore } from './numi-store'
+import { isServerId, useNumiStore } from './numi-store'
+import { useNumiEvents, type NumiEvent } from './numi-events'
+import type { ChatFeedback } from './types'
 import { describeRecording } from './waveform'
 import {
   useConversationOpener,
   useMessageAudioLoader,
+  useMessageRating,
+  useNewerMessages,
   useNumiConversations,
   useNumiMessages,
 } from './use-numi-history'
@@ -54,10 +59,13 @@ function useOlderThread(orgId: string | undefined) {
   // el servidor tiene algo por encima. Sin él esto pediría una página inexistente
   // cada vez que alguien estrena conversación.
   const historyId = useNumiStore((s) => s.historyId)
+  // Abierta desde una búsqueda: se continúa desde ese mensaje, no desde el final.
+  const historyUntil = useNumiStore((s) => s.historyUntil)
   const prependOlder = useNumiStore((s) => s.prependOlder)
   const { older, hasOlder, isLoadingOlder, loadOlder } = useNumiMessages(
     historyId ? orgId : undefined,
     historyId ?? undefined,
+    historyUntil ?? undefined,
   )
 
   useEffect(() => {
@@ -65,6 +73,56 @@ function useOlderThread(orgId: string | undefined) {
   }, [older, prependOlder])
 
   return { hasOlder, isLoadingOlder, loadOlder }
+}
+
+/**
+ * **Lo que se dijo en otro dispositivo.**
+ *
+ * Mientras el panel está abierto hay un flujo de avisos abierto. Un aviso no trae el
+ * mensaje: dice que algo se movió, y aquí se va a buscar con `after`. Esa misma llamada
+ * es la que se hace al abrir el panel, así que ponerse al día tras un rato cerrado y
+ * ponerse al día tras un aviso son exactamente el mismo camino.
+ */
+function useLiveSync(orgId: string | undefined): void {
+  const queryClient = useQueryClient()
+  const fetchNewer = useNewerMessages(orgId)
+
+  const refreshList = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['numi', 'conversations', orgId] })
+  }, [queryClient, orgId])
+
+  /** Trae lo que falte del hilo abierto. Sin conversación o sin id del servidor, no hay nada que pedir. */
+  const catchUp = useCallback(async () => {
+    const { sessionId, messages } = useNumiStore.getState()
+    if (!sessionId) return
+    /*
+      El último que el servidor conoce. Puede no ser el último del hilo: un mensaje en
+      vuelo todavía lleva un id de cliente, y preguntar por él sería preguntar por algo
+      que el servidor no tiene.
+    */
+    const newest = [...messages].reverse().find((m) => isServerId(m.id))?.id
+    if (!newest) return
+    useNumiStore.getState().appendNewer(await fetchNewer(sessionId, newest))
+  }, [fetchNewer])
+
+  const onEvent = useCallback(
+    (event: NumiEvent) => {
+      // La lista cambia con casi todo: un mensaje nuevo también la reordena.
+      refreshList()
+      if (event.kind === 'message' && event.conversationId === useNumiStore.getState().sessionId) {
+        void catchUp()
+      }
+    },
+    [refreshList, catchUp],
+  )
+
+  useNumiEvents(orgId, onEvent)
+
+  // Al montar, que aquí es al abrir el panel: mientras estuvo cerrado no había flujo, así
+  // que los avisos de ese rato no llegaron a ninguna parte.
+  useEffect(() => {
+    void catchUp()
+  }, [catchUp])
 }
 
 /**
@@ -91,13 +149,38 @@ export function useNumiChat() {
   const conversationId = useNumiStore((s) => s.sessionId)
   const loadAudio = useMessageAudioLoader(orgId, conversationId)
   const { hasOlder, isLoadingOlder, loadOlder } = useOlderThread(orgId)
+  useLiveSync(orgId)
+  const sendRating = useMessageRating(orgId, conversationId)
+
+  /**
+   * Pulgar arriba o abajo sobre una respuesta de Numi. Volver a pulsar el mismo lo retira.
+   *
+   * El pulgar se pinta antes de preguntar —es una opinión, no una operación, y esperar
+   * medio segundo por un dibujo no tiene sentido— pero si el servidor lo rechaza se
+   * deshace: una opinión que se ve guardada y no lo está es peor que no poder darla.
+   */
+  const rateMessage = useCallback(
+    async (messageId: string, feedback: ChatFeedback) => {
+      const store = useNumiStore.getState()
+      const previo = store.messages.find((m) => m.id === messageId)?.feedback
+      const siguiente = previo === feedback ? undefined : feedback
+      store.setFeedback(messageId, siguiente)
+      try {
+        await sendRating(messageId, siguiente ?? null)
+      } catch {
+        useNumiStore.getState().setFeedback(messageId, previo)
+        toast.error('No se pudo guardar tu opinión.')
+      }
+    },
+    [sendRating],
+  )
   const fetchThread = useConversationOpener(orgId)
 
   /** Se cambia a una conversación de la lista y la deja abierta en el hilo. */
   const openConversation = useCallback(
-    async (conversationId: string) => {
-      const messages = await fetchThread(conversationId)
-      useNumiStore.getState().openThread(conversationId, messages)
+    async (conversationId: string, until?: string) => {
+      const messages = await fetchThread(conversationId, until)
+      useNumiStore.getState().openThread(conversationId, messages, until)
     },
     [fetchThread],
   )
@@ -129,7 +212,12 @@ export function useNumiChat() {
       const bubble = useNumiStore.getState().beginReply()
 
       try {
-        const { sessionId: nextSessionId, reply } = await streamChat({
+        const {
+          sessionId: nextSessionId,
+          reply,
+          userMessageId,
+          assistantMessageId,
+        } = await streamChat({
           orgId,
           message: content,
           sessionId,
@@ -139,6 +227,10 @@ export function useNumiChat() {
         const store = useNumiStore.getState()
         store.setMessageStatus(id, 'sent')
         store.finishReply(bubble, nextSessionId)
+        // Los dos mensajes dejan de llamarse por el id que inventó el cliente. A partir de
+        // aquí, lo que llegue del servidor sobre este turno se reconoce como lo mismo.
+        if (userMessageId) store.adoptServerId(id, userMessageId)
+        if (assistantMessageId) store.adoptServerId(bubble, assistantMessageId)
         // Numi también registra operaciones: si el turno pudo escribir, se
         // refresca lo que esté montado (ver `shouldRefreshData`).
         if (shouldRefreshData(content, reply)) void queryClient.invalidateQueries()
@@ -277,6 +369,8 @@ export function useNumiChat() {
     sendAudio,
     /** Devuelve a la cola un mensaje que falló. */
     retryMessage,
+    /** Pulgar sobre una respuesta de Numi; el mismo dos veces lo retira. */
+    rateMessage,
     /** Detiene la respuesta en curso, conservando lo escrito. */
     stop,
     newConversation,

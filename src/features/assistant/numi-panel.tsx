@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { ArrowLeft, MessagesSquare, RotateCcw, Square, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChatComposer } from './chat-composer'
@@ -55,6 +56,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     send,
     sendAudio,
     retryMessage,
+    rateMessage,
     stop,
     newConversation,
     openConversation,
@@ -65,9 +67,27 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
   } = useNumiChat()
 
   const [showingList, setShowingList] = useState(false)
+  /** Lo que se está citando de Numi. Vive aquí porque lo escribe el hilo y lo lee el composer. */
+  const [quoted, setQuoted] = useState<string | null>(null)
 
-  const openFromList = async (id: string) => {
-    await openConversation(id)
+  const copy = (text: string) => {
+    // Sin portapapeles —contexto no seguro, o un navegador viejo— se dice, en vez de
+    // fingir que se copió.
+    if (!navigator.clipboard) {
+      toast.error('Tu navegador no permite copiar desde aquí.')
+      return
+    }
+    void navigator.clipboard.writeText(text).then(
+      () => toast.success('Copiado'),
+      () => toast.error('No se pudo copiar'),
+    )
+  }
+
+  /** Una cita es una referencia, no el mensaje entero: lo justo para reconocerlo. */
+  const quote = (text: string) => setQuoted(text.length > 160 ? `${text.slice(0, 159)}…` : text)
+
+  const openFromList = async (id: string, messageId?: string) => {
+    await openConversation(id, messageId)
     setShowingList(false)
   }
 
@@ -124,7 +144,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         <ConversationList
           orgId={orgId}
           currentId={conversationId}
-          onOpen={(id) => void openFromList(id)}
+          onOpen={(id, messageId) => void openFromList(id, messageId)}
           onNew={startNew}
         />
       ) : (
@@ -140,6 +160,9 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             send={(text) => void send(text)}
             retryMessage={retryMessage}
             loadAudio={loadAudio}
+            onCopy={copy}
+            onQuote={quote}
+            onRate={(id, feedback) => void rateMessage(id, feedback)}
             onLeave={onClose}
           />
           {isTyping && (
@@ -158,6 +181,8 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             onSend={(text) => void send(text)}
             onSendAudio={(blob) => void sendAudio(blob)}
             busy={isTyping}
+            quoted={quoted}
+            onClearQuote={() => setQuoted(null)}
             autoFocus
           />
         </>

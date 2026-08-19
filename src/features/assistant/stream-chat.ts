@@ -30,6 +30,13 @@ export interface StreamChatResult {
   reply: string
   /** El usuario la cortó: la respuesta es lo que había hasta ese momento. */
   stopped: boolean
+  /**
+   * Ids con los que el servidor archivó el turno. El cliente los adopta para dejar de
+   * llamar a sus mensajes por identificadores inventados: es lo que evita verlos dos
+   * veces cuando llegan novedades del propio servidor.
+   */
+  userMessageId: string | null
+  assistantMessageId: string | null
 }
 
 interface ApiErrorBody {
@@ -94,6 +101,8 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
   let sessionId = input.sessionId ?? ''
   let reply = ''
   let done = false
+  let userMessageId: string | null = null
+  let assistantMessageId: string | null = null
 
   try {
     for (;;) {
@@ -116,6 +125,16 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
           input.onChunk(payload.text)
         } else if (parsed.event === 'done') {
           if (typeof payload.sessionId === 'string') sessionId = payload.sessionId
+          /*
+            Los ids con los que quedó archivado el turno. Sin ellos, el mensaje seguiría
+            llamándose por el id que inventó el cliente, y lo que traiga novedades del
+            servidor —otro dispositivo, una reconexión— lo vería como uno distinto y lo
+            pintaría dos veces.
+          */
+          if (typeof payload.userMessageId === 'string') userMessageId = payload.userMessageId
+          if (typeof payload.assistantMessageId === 'string') {
+            assistantMessageId = payload.assistantMessageId
+          }
           // El servidor manda la respuesta entera: es la que manda, por si algún
           // trozo se perdió por el camino.
           if (typeof payload.reply === 'string') reply = payload.reply
@@ -131,13 +150,13 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
       devuelve lo mismo que el usuario está leyendo, con el `sessionId` que llegó en
       `start` — sin él, el siguiente mensaje abriría otra conversación.
     */
-    if (input.signal.aborted) return { sessionId, reply, stopped: true }
+    if (input.signal.aborted) return { sessionId, reply, stopped: true, userMessageId, assistantMessageId }
     throw error
   }
 
   // Detener corta la lectura sin `done`, y a veces sin lanzar: cerrar el flujo es una
   // forma perfectamente limpia de terminar cuando quien lee ya no quiere más.
-  if (input.signal.aborted) return { sessionId, reply, stopped: true }
+  if (input.signal.aborted) return { sessionId, reply, stopped: true, userMessageId, assistantMessageId }
 
   // Sin `done` y sin que nadie lo pidiera: la conexión se cayó.
   if (!done) {
@@ -147,5 +166,5 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
     })
   }
 
-  return { sessionId, reply, stopped: false }
+  return { sessionId, reply, stopped: false, userMessageId, assistantMessageId }
 }

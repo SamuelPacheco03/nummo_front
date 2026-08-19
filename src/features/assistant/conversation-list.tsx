@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { MessagesSquare, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react'
+import { MessagesSquare, MoreVertical, Pencil, Plus, Search, SearchX, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -18,8 +18,10 @@ import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import type { Conversation } from '@/api/generated/model'
 import { MAX_CONVERSATION_TITLE } from './constants'
-import { useConversationActions, useNumiConversations } from './use-numi-history'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { useConversationActions, useMessageSearch, useNumiConversations } from './use-numi-history'
 import { formatConversationStamp } from './utils'
+import type { MessageHit } from '@/api/generated/model'
 
 /**
  * Una conversación de la lista.
@@ -91,6 +93,40 @@ function ConversationRow({
 }
 
 /**
+ * Un mensaje encontrado.
+ *
+ * Enseña de qué conversación salió y el trozo alrededor de lo buscado, porque una lista
+ * de resultados se escanea: sin el título no se sabe adónde lleva cada fila, y sin el
+ * extracto todas se parecen.
+ */
+function SearchHit({ hit, onOpen }: { hit: MessageHit; onOpen: () => void }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="hover:bg-secondary focus-visible:ring-ring/50 w-full rounded-lg px-3 py-2 text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+      >
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs font-medium">
+            {hit.conversationTitle}
+          </p>
+          <span className="text-muted-foreground shrink-0 text-[0.65rem]">
+            {formatConversationStamp(hit.createdAt)}
+          </span>
+        </div>
+        <p className="line-clamp-2 text-sm">
+          <span className="text-muted-foreground">
+            {hit.role === 'assistant' ? 'Numi: ' : 'Tú: '}
+          </span>
+          {hit.excerpt}
+        </p>
+      </button>
+    </li>
+  )
+}
+
+/**
  * **Las conversaciones con Numi.**
  *
  * Una por tema: la cartera de septiembre en una, los egresos del mes en otra. Es la
@@ -106,9 +142,15 @@ export function ConversationList({
   orgId: string | undefined
   /** La conversación abierta ahora mismo, para señalarla en la lista. */
   currentId: string | undefined
-  onOpen: (conversationId: string) => void
+  /** Con `messageId`, la conversación se abre en ese mensaje. */
+  onOpen: (conversationId: string, messageId?: string) => void
   onNew: () => void
 }) {
+  const [term, setTerm] = useState('')
+  // El servidor se consulta cuando se deja de escribir, no en cada tecla.
+  const debounced = useDebouncedValue(term.trim(), 300)
+  const { hits, isSearching, enabled: searching } = useMessageSearch(orgId, debounced)
+
   const { conversations, error, isLoading, hasMore, isLoadingMore, loadMore } =
     useNumiConversations(orgId)
   const { rename, remove, isRenaming, isRemoving } = useConversationActions(orgId)
@@ -147,15 +189,53 @@ export function ConversationList({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b px-3 py-2">
-        <Button variant="outline" size="sm" className="w-full" onClick={onNew}>
-          <Plus className="size-4" />
-          Nueva conversación
-        </Button>
+      <div className="space-y-2 border-b px-3 py-2">
+        <div className="relative">
+          <Search
+            aria-hidden
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
+          />
+          <Input
+            type="search"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder="Buscar en mis conversaciones"
+            aria-label="Buscar en mis conversaciones"
+            className="pl-8"
+          />
+        </div>
+        {!searching && (
+          <Button variant="outline" size="sm" className="w-full" onClick={onNew}>
+            <Plus className="size-4" />
+            Nueva conversación
+          </Button>
+        )}
       </div>
 
       <div className="scrollbar-slim min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {isLoading ? (
+        {searching ? (
+          isSearching ? (
+            <div className="flex h-full items-center justify-center">
+              <NumiLoader label="Buscando…" compact />
+            </div>
+          ) : hits.length === 0 ? (
+            <EmptyState
+              Icon={SearchX}
+              title="Sin resultados"
+              description={`No encontré "${debounced}" en tus conversaciones.`}
+            />
+          ) : (
+            <ul className="space-y-0.5">
+              {hits.map((hit) => (
+                <SearchHit
+                  key={hit.messageId}
+                  hit={hit}
+                  onOpen={() => onOpen(hit.conversationId, hit.messageId)}
+                />
+              ))}
+            </ul>
+          )
+        ) : isLoading ? (
           <div className="flex h-full items-center justify-center">
             <NumiLoader label="Buscando tus conversaciones…" compact />
           </div>

@@ -1,14 +1,16 @@
 import { useCallback, useMemo } from 'react'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getApiV1OrganizationsOrgIdAssistantConversations,
   getApiV1OrganizationsOrgIdAssistantConversationsIdMessages,
   getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio,
+  getApiV1OrganizationsOrgIdAssistantConversationsSearch,
   useDeleteApiV1OrganizationsOrgIdAssistantConversationsId,
   usePatchApiV1OrganizationsOrgIdAssistantConversationsId,
+  usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback,
 } from '@/api/generated/endpoints/assistant/assistant'
-import type { AudioUrl, Conversation, MessageList } from '@/api/generated/model'
-import type { ChatMessage } from './types'
+import type { AudioUrl, Conversation, MessageHit, MessageList, MessageSearch } from '@/api/generated/model'
+import type { ChatFeedback, ChatMessage } from './types'
 import { sanitizePeaks } from './waveform'
 
 const CONVERSATIONS_PAGE = 20
@@ -25,21 +27,28 @@ const AUDIO_URL_TTL = 5 * 60 * 1000
  * Pages arrive newest→oldest and each page is itself newest-first; reversing both yields the
  * natural reading order (oldest at the top, newest at the bottom).
  */
+/** Un mensaje del contrato, con la forma que usa el hilo. */
+export function toChatMessage(m: MessageList['items'][number]): ChatMessage {
+  return {
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    at: m.createdAt,
+    dictated: m.source === 'audio',
+    hasAudio: m.hasAudio,
+    waveform: sanitizePeaks(m.waveform),
+    audioSeconds: m.audioSeconds ?? undefined,
+    feedback: m.feedback ?? undefined,
+  }
+}
+
+/**
+ * Flattens the newest-first message pages into an oldest→newest transcript (front shape).
+ * Pages arrive newest→oldest and each page is itself newest-first; reversing both yields the
+ * natural reading order (oldest at the top, newest at the bottom).
+ */
 export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
-  return [...pages].reverse().flatMap((page) =>
-    [...page.items].reverse().map((m) => {
-      return {
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        at: m.createdAt,
-        dictated: m.source === 'audio',
-        hasAudio: m.hasAudio,
-        waveform: sanitizePeaks(m.waveform),
-        audioSeconds: m.audioSeconds ?? undefined,
-      }
-    }),
-  )
+  return [...pages].reverse().flatMap((page) => [...page.items].reverse().map(toChatMessage))
 }
 
 /** The caller's Numi conversations (chat list), most recent first, with cursor paging. */
@@ -80,9 +89,11 @@ const conversationsKey = (orgId: string | undefined) => ['numi', 'conversations'
  * cada uno tuviera la suya, abrir una conversación llenaría una caché que el scroll
  * hacia arriba no mira, y la primera página se pediría dos veces.
  */
-function messagesQuery(orgId: string, conversationId: string) {
+function messagesQuery(orgId: string, conversationId: string, until?: string) {
   return {
-    queryKey: ['numi', 'messages', orgId, conversationId],
+    // `until` entra en la clave: abrir la conversación en un mensaje concreto es otra
+    // caché, no la misma con otro cursor. Compartirla mezclaría dos hilos distintos.
+    queryKey: ['numi', 'messages', orgId, conversationId, until ?? 'latest'],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({
       pageParam,
@@ -94,7 +105,9 @@ function messagesQuery(orgId: string, conversationId: string) {
       const res = await getApiV1OrganizationsOrgIdAssistantConversationsIdMessages(
         orgId,
         conversationId,
-        { limit: MESSAGES_PAGE, before: pageParam },
+        // `until` solo manda en la primera página; a partir de ahí el cursor `before`
+        // ya la deja anclada y repetirlo no cambiaría nada.
+        { limit: MESSAGES_PAGE, before: pageParam, until: pageParam ? undefined : until },
         { signal },
       )
       // customFetch throws on non-2xx, so on success this is always a MessageList.
@@ -109,9 +122,13 @@ function messagesQuery(orgId: string, conversationId: string) {
  * `messages` is the oldest→newest transcript ready to render. Call `loadOlder()` (near the
  * top of the scroll container) to fetch the previous page.
  */
-export function useNumiMessages(orgId: string | undefined, conversationId: string | undefined) {
+export function useNumiMessages(
+  orgId: string | undefined,
+  conversationId: string | undefined,
+  until?: string,
+) {
   const query = useInfiniteQuery({
-    ...messagesQuery(orgId ?? '', conversationId ?? ''),
+    ...messagesQuery(orgId ?? '', conversationId ?? '', until),
     enabled: Boolean(orgId && conversationId),
   })
 
@@ -154,13 +171,46 @@ export function useConversationOpener(orgId: string | undefined) {
   const queryClient = useQueryClient()
 
   return useCallback(
-    async (conversationId: string): Promise<ChatMessage[]> => {
+    async (conversationId: string, until?: string): Promise<ChatMessage[]> => {
       if (!orgId) return []
-      const data = await queryClient.fetchInfiniteQuery(messagesQuery(orgId, conversationId))
+      const data = await queryClient.fetchInfiniteQuery(
+        messagesQuery(orgId, conversationId, until),
+      )
       return flattenMessagePages(data.pages)
     },
     [queryClient, orgId],
   )
+}
+
+/** Lo que hay que escribir antes de que valga la pena preguntarle al servidor. */
+const MIN_SEARCH = 2
+
+/**
+ * Buscar en las conversaciones propias.
+ *
+ * Con menos de dos caracteres no se pregunta: el servidor lo rechazaría y una `a` suelta
+ * traería medio historial. El término ya viene retrasado desde la vista, así que aquí no
+ * se vuelve a esperar.
+ */
+export function useMessageSearch(orgId: string | undefined, q: string) {
+  const term = q.trim()
+  const enabled = Boolean(orgId) && term.length >= MIN_SEARCH
+
+  const query = useQuery({
+    queryKey: ['numi', 'search', orgId, term],
+    enabled,
+    queryFn: async ({ signal }) => {
+      const res = await getApiV1OrganizationsOrgIdAssistantConversationsSearch(
+        orgId ?? '',
+        { q: term },
+        { signal },
+      )
+      return res.data as MessageSearch
+    },
+  })
+
+  const hits: MessageHit[] = query.data?.items ?? []
+  return { hits, isSearching: enabled && query.isPending, error: query.error, enabled }
 }
 
 /**
@@ -195,6 +245,50 @@ export function useConversationActions(orgId: string | undefined) {
   )
 
   return { rename, remove, isRenaming: renameMutation.isPending, isRemoving: removeMutation.isPending }
+}
+
+/**
+ * Lo que se dijo después del último mensaje que tenemos.
+ *
+ * El servidor ya lo devuelve en orden de lectura con `after`, así que aquí no se le da la
+ * vuelta a nada: se pide, se traduce y se añade por el final.
+ */
+export function useNewerMessages(orgId: string | undefined) {
+  return useCallback(
+    async (conversationId: string, after: string): Promise<ChatMessage[]> => {
+      if (!orgId) return []
+      const res = await getApiV1OrganizationsOrgIdAssistantConversationsIdMessages(
+        orgId,
+        conversationId,
+        { limit: MESSAGES_PAGE, after },
+      )
+      return (res.data as MessageList).items.map(toChatMessage)
+    },
+    [orgId],
+  )
+}
+
+/**
+ * Puntuar una respuesta de Numi.
+ *
+ * Devuelve la llamada cruda, sin optimismo ni reversión: eso vive donde está el hilo, que
+ * es quien pinta el pulgar. Aquí solo se habla con el servidor.
+ */
+export function useMessageRating(orgId: string | undefined, conversationId: string | undefined) {
+  const mutation = usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback()
+
+  return useCallback(
+    async (messageId: string, feedback: ChatFeedback | null) => {
+      if (!orgId || !conversationId) return
+      await mutation.mutateAsync({
+        orgId,
+        id: conversationId,
+        messageId,
+        data: { feedback },
+      })
+    },
+    [mutation, orgId, conversationId],
+  )
 }
 
 /**

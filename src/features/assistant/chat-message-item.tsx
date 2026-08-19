@@ -1,12 +1,12 @@
-import { type ReactNode } from 'react'
-import { AlertCircle, Clock, Mic } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { AlertCircle, Check, Clock, Copy, Mic, Quote, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
 import { TypingIndicator } from './typing-indicator'
 import { formatTime } from './utils'
-import type { ChatMessage, ChatMessageStatus } from './types'
+import type { ChatFeedback, ChatMessage, ChatMessageStatus } from './types'
 
 /**
  * Burbuja del hilo: superficie redondeada, la de Numi sobre tarjeta con borde y
@@ -39,13 +39,27 @@ export function ChatBubble({
 }
 
 /**
- * Turno de Numi: su cara acompaña SIEMPRE a la respuesta, para que en un hilo
- * largo se vea de un golpe qué salió del asistente y qué escribiste tú.
+ * Turno de Numi: su cara acompaña a la respuesta para que en un hilo largo se vea de
+ * un golpe qué salió del asistente y qué escribiste tú.
+ *
+ * En una tanda seguida solo la lleva la primera burbuja, y las demás guardan su hueco:
+ * repetirla en cada una convierte la conversación en una columna de avatares, y perder
+ * el hueco desalinearía el hilo entero.
  */
-export function AssistantRow({ children }: { children: ReactNode }) {
+export function AssistantRow({
+  children,
+  showAvatar = true,
+}: {
+  children: ReactNode
+  showAvatar?: boolean
+}) {
   return (
     <div className="flex w-full items-start gap-2">
-      <NumiAvatar className="mt-0.5 size-7" />
+      {showAvatar ? (
+        <NumiAvatar className="mt-0.5 size-7" />
+      ) : (
+        <span aria-hidden className="size-7 shrink-0" />
+      )}
       <div className="flex min-w-0 max-w-[85%] flex-col items-start">{children}</div>
     </div>
   )
@@ -85,6 +99,93 @@ function MessageStatus({ status, onRetry }: { status?: ChatMessageStatus; onRetr
   )
 }
 
+/**
+ * Copiar y citar, al lado de la burbuja.
+ *
+ * Aparecen al pasar por encima y con el foco; en pantalla táctil, donde no hay
+ * «encima», se quedan puestas. Copiar es la que más falta hacía: Numi contesta con
+ * cifras y hasta ahora había que seleccionarlas a mano.
+ */
+function BubbleActions({
+  onCopy,
+  onQuote,
+  feedback,
+  onRate,
+}: {
+  onCopy: () => void
+  onQuote?: () => void
+  feedback?: ChatFeedback
+  onRate?: (feedback: ChatFeedback) => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = () => {
+    onCopy()
+    setCopied(true)
+    // Vuelve solo: un tick permanente dejaría de significar «acabo de copiar».
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  const base =
+    'text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 grid size-6 shrink-0 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none'
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-0.5 self-end transition-opacity group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100',
+        feedback ? 'opacity-100' : 'opacity-0',
+      )}
+    >
+      <button type="button" onClick={copy} aria-label="Copiar mensaje" title="Copiar" className={base}>
+        {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
+      </button>
+      {onQuote && (
+        <button
+          type="button"
+          onClick={onQuote}
+          aria-label="Citar mensaje"
+          title="Citar"
+          className={base}
+        >
+          <Quote aria-hidden className="size-3.5" />
+        </button>
+      )}
+      {onRate && (
+        <>
+          {/*
+            El pulgar elegido se queda visible aunque el ratón se vaya: es un estado del
+            mensaje, no una acción disponible. `aria-pressed` lo dice para quien no ve el
+            relleno del icono.
+          */}
+          <button
+            type="button"
+            onClick={() => onRate('up')}
+            aria-label="Buena respuesta"
+            title="Buena respuesta"
+            aria-pressed={feedback === 'up'}
+            className={cn(base, feedback === 'up' && 'text-success opacity-100')}
+          >
+            <ThumbsUp aria-hidden className={cn('size-3.5', feedback === 'up' && 'fill-current')} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onRate('down')}
+            aria-label="Mala respuesta"
+            title="Mala respuesta"
+            aria-pressed={feedback === 'down'}
+            className={cn(base, feedback === 'down' && 'text-destructive opacity-100')}
+          >
+            <ThumbsDown
+              aria-hidden
+              className={cn('size-3.5', feedback === 'down' && 'fill-current')}
+            />
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 /** Ancho que la hora reserva al final de la última línea del mensaje. */
 const TIME_SLOT = 'inline-block w-[3.4rem] align-baseline'
 
@@ -97,12 +198,23 @@ export function ChatMessageItem({
   message,
   loadAudio,
   onRetry,
+  grouped = false,
+  onCopy,
+  onQuote,
+  onRate,
 }: {
   message: ChatMessage
   /** Trae la URL firmada del audio archivado de este mensaje. */
   loadAudio?: (messageId: string, force?: boolean) => Promise<string>
   /** Vuelve a poner en la cola este mensaje. Los dictados no se reintentan. */
   onRetry?: () => void
+  /** Continúa la tanda anterior: no repite la cara de Numi. */
+  grouped?: boolean
+  onCopy?: (text: string) => void
+  /** Solo en las respuestas de Numi: qué opina el usuario de ella. */
+  onRate?: (feedback: ChatFeedback) => void
+  /** Solo en las respuestas de Numi: llevar esto al composer para preguntar por ello. */
+  onQuote?: (text: string) => void
 }) {
   const isUser = message.role === 'user'
   const spacer = <span aria-hidden className={TIME_SLOT} />
@@ -163,11 +275,39 @@ export function ChatMessageItem({
     </ChatBubble>
   )
 
-  if (!isUser) return <AssistantRow>{bubble}</AssistantRow>
+  /*
+    Ni una nota de voz ni una respuesta a medio escribir se copian o se citan: de la
+    primera lo que hay es audio, y de la segunda el texto todavía está cambiando.
+  */
+  const actionable = !playable && message.content !== ''
+  const actions = actionable && onCopy && (
+    <BubbleActions
+      onCopy={() => onCopy(message.content)}
+      // Citar es para preguntarle a Numi por lo que dijo; citarte a ti mismo no lleva
+      // a ninguna parte.
+      onQuote={!isUser && onQuote ? () => onQuote(message.content) : undefined}
+      feedback={message.feedback}
+      onRate={!isUser ? onRate : undefined}
+    />
+  )
+
+  if (!isUser) {
+    return (
+      <AssistantRow showAvatar={!grouped}>
+        <div className="group flex w-full min-w-0 items-end gap-1">
+          <div className="min-w-0">{bubble}</div>
+          {actions}
+        </div>
+      </AssistantRow>
+    )
+  }
 
   return (
     <div className="flex w-full flex-col items-end pl-9">
-      {bubble}
+      <div className="group flex max-w-[85%] min-w-0 items-end gap-1">
+        {actions}
+        <div className="min-w-0">{bubble}</div>
+      </div>
       <MessageStatus
         status={message.status}
         // Reenviar una nota de voz es imposible: su audio era un blob de esta página.

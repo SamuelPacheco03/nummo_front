@@ -40,8 +40,11 @@ import type {
   ErrorResponse,
   GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesParams,
   GetApiV1OrganizationsOrgIdAssistantConversationsParams,
+  GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams,
   MessageList,
+  MessageSearch,
   RenameConversationInput,
+  SetFeedbackInput,
   UpsertAiProviderCredential
 } from '../../model';
 
@@ -926,7 +929,127 @@ export const usePostApiV1OrganizationsOrgIdAssistantChatStream = <TError = Error
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatStreamMutationOptions(options), queryClient);
     }
-    export type getApiV1OrganizationsOrgIdAssistantConversationsResponse200 = {
+    export type getApiV1OrganizationsOrgIdAssistantEventsResponse200 = {
+  data: string
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdAssistantEventsResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdAssistantEventsResponseSuccess = (getApiV1OrganizationsOrgIdAssistantEventsResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdAssistantEventsResponseError = (getApiV1OrganizationsOrgIdAssistantEventsResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdAssistantEventsResponse = (getApiV1OrganizationsOrgIdAssistantEventsResponseSuccess | getApiV1OrganizationsOrgIdAssistantEventsResponseError)
+
+export const getGetApiV1OrganizationsOrgIdAssistantEventsUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/events`
+}
+
+/**
+ * Flujo de Server-Sent Events abierto mientras la pestaña vive. Manda **avisos, no datos**: `message` con `{ conversationId }` cuando se dijo algo nuevo, y `conversation` cuando la lista cambió (se renombró, se borró o nació una). Al recibirlo, pide lo nuevo con `GET .../messages?after=<último id que tengas>` — que es la misma llamada que debes hacer al reconectar, porque un aviso emitido mientras estabas desconectado no se guarda. Como es un GET con cookie, `EventSource` sirve tal cual. Cada 25 s llega un comentario de latido para que ningún proxy cierre la conexión por silencio.
+ * @summary Enterarse de lo que pasó en otro dispositivo
+ */
+export const getApiV1OrganizationsOrgIdAssistantEvents = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantEventsResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdAssistantEventsResponse>(getGetApiV1OrganizationsOrgIdAssistantEventsUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantEventsQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/assistant/events`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantEventsQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdAssistantEventsQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>> = ({ signal }) => getApiV1OrganizationsOrgIdAssistantEvents(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdAssistantEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>>
+export type GetApiV1OrganizationsOrgIdAssistantEventsQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Enterarse de lo que pasó en otro dispositivo
+ */
+
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdAssistantEventsQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsResponse200 = {
   data: ConversationList
   status: 200
 }
@@ -1043,6 +1166,141 @@ export function useGetApiV1OrganizationsOrgIdAssistantConversations<TData = Awai
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiV1OrganizationsOrgIdAssistantConversationsQueryOptions(orgId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsSearchResponse200 = {
+  data: MessageSearch
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsSearchResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsSearchResponseSuccess = (getApiV1OrganizationsOrgIdAssistantConversationsSearchResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdAssistantConversationsSearchResponseError = (getApiV1OrganizationsOrgIdAssistantConversationsSearchResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsSearchResponse = (getApiV1OrganizationsOrgIdAssistantConversationsSearchResponseSuccess | getApiV1OrganizationsOrgIdAssistantConversationsSearchResponseError)
+
+export const getGetApiV1OrganizationsOrgIdAssistantConversationsSearchUrl = (orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/organizations/${orgId}/assistant/conversations/search?${stringifiedParams}` : `/api/v1/organizations/${orgId}/assistant/conversations/search`
+}
+
+/**
+ * Mensajes propios que contienen el término, del más nuevo al más antiguo. Sin `conversationId` busca en todas las conversaciones del usuario; con él, solo en esa. Cada resultado trae un extracto centrado en lo buscado y el título de su conversación. Para abrir la conversación en ese punto, pide sus mensajes con `until` = `messageId`.
+ * @summary Buscar en mis conversaciones con Numi
+ */
+export const getApiV1OrganizationsOrgIdAssistantConversationsSearch = async (orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantConversationsSearchResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdAssistantConversationsSearchResponse>(getGetApiV1OrganizationsOrgIdAssistantConversationsSearchUrl(orgId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantConversationsSearchQueryKey = (orgId: string,
+    params?: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams,) => {
+    return [
+    `/api/v1/organizations/${orgId}/assistant/conversations/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantConversationsSearchQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError = ErrorResponse>(orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdAssistantConversationsSearchQueryKey(orgId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>> = ({ signal }) => getApiV1OrganizationsOrgIdAssistantConversationsSearch(orgId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdAssistantConversationsSearchQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>>
+export type GetApiV1OrganizationsOrgIdAssistantConversationsSearchQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsSearch<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError = ErrorResponse>(
+ orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsSearch<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError = ErrorResponse>(
+ orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsSearch<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError = ErrorResponse>(
+ orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar en mis conversaciones con Numi
+ */
+
+export function useGetApiV1OrganizationsOrgIdAssistantConversationsSearch<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError = ErrorResponse>(
+ orgId: string,
+    params: GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantConversationsSearch>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdAssistantConversationsSearchQueryOptions(orgId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -1382,7 +1640,102 @@ export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessages<TD
 
 
 
-export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse200 = {
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse204 = {
+  data: void
+  status: 204
+}
+
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseSuccess = (putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse204) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseError = (putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse = (putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseSuccess | putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseError)
+
+export const getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackUrl = (orgId: string,
+    id: string,
+    messageId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/conversations/${id}/messages/${messageId}/feedback`
+}
+
+/**
+ * Guarda el pulgar arriba o abajo sobre una respuesta de Numi. Manda `null` para retirar la opinión — es lo que hace volver a pulsar el mismo pulgar. Solo se pueden puntuar los mensajes con `role: "assistant"`.
+ * @summary Puntuar una respuesta de Numi
+ */
+export const putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback = async (orgId: string,
+    id: string,
+    messageId: string,
+    setFeedbackInput: SetFeedbackInput, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse>(getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackUrl(orgId,id,messageId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setFeedbackInput)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, TError,{orgId: string;id: string;messageId: string;data: SetFeedbackInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, TError,{orgId: string;id: string;messageId: string;data: SetFeedbackInput}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, {orgId: string;id: string;messageId: string;data: SetFeedbackInput}> = (props) => {
+          const {orgId,id,messageId,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback(orgId,id,messageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>>
+    export type PutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationBody = SetFeedbackInput
+    export type PutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationError = ErrorResponse
+
+    /**
+ * @summary Puntuar una respuesta de Numi
+ */
+export const usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, TError,{orgId: string;id: string;messageId: string;data: SetFeedbackInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>,
+        TError,
+        {orgId: string;id: string;messageId: string;data: SetFeedbackInput},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse200 = {
   data: AudioUrl
   status: 200
 }
