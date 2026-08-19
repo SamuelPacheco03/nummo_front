@@ -30,7 +30,8 @@ import type {
   ErrorResponse,
   GetApiV1OrganizationsOrgIdDisbursements200,
   GetApiV1OrganizationsOrgIdDisbursementsParams,
-  RegisterDisbursement
+  RegisterDisbursement,
+  RejectDisbursementInput
 } from '../../model';
 
 import { customFetch } from '../../../http-client';
@@ -508,6 +509,201 @@ export const usePostApiV1OrganizationsOrgIdDisbursementsIdAllocations = <TError 
         TContext
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdDisbursementsIdAllocationsMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse200 = {
+  data: DisbursementDetail
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200 | 403 | 409>
+}
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponseSuccess = (postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponseError = (postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse403 | postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse409 | postApiV1OrganizationsOrgIdDisbursementsIdApproveResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse = (postApiV1OrganizationsOrgIdDisbursementsIdApproveResponseSuccess | postApiV1OrganizationsOrgIdDisbursementsIdApproveResponseError)
+
+export const getPostApiV1OrganizationsOrgIdDisbursementsIdApproveUrl = (orgId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/disbursements/${id}/approve`
+}
+
+/**
+ * Solo aquí se crea el movimiento financiero. Se revalida contra los saldos de hoy —la solicitud pudo esperar— y quien la registró no puede aprobarla: el permiso es condición necesaria, no suficiente.
+ * @summary Approve a pending disbursement (this is where the money moves)
+ */
+export const postApiV1OrganizationsOrgIdDisbursementsIdApprove = async (orgId: string,
+    id: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdDisbursementsIdApproveResponse>(getPostApiV1OrganizationsOrgIdDisbursementsIdApproveUrl(orgId,id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdDisbursementsIdApproveMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdApprove>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdApprove>>, TError,{orgId: string;id: string}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdDisbursementsIdApprove'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdApprove>>, {orgId: string;id: string}> = (props) => {
+          const {orgId,id} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdDisbursementsIdApprove(orgId,id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdDisbursementsIdApproveMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdApprove>>>
+
+    export type PostApiV1OrganizationsOrgIdDisbursementsIdApproveMutationError = ErrorResponse
+
+    /**
+ * @summary Approve a pending disbursement (this is where the money moves)
+ */
+export const usePostApiV1OrganizationsOrgIdDisbursementsIdApprove = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdApprove>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdApprove>>,
+        TError,
+        {orgId: string;id: string},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdDisbursementsIdApproveMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdDisbursementsIdRejectResponse200 = {
+  data: DisbursementDetail
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdRejectResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdRejectResponseSuccess = (postApiV1OrganizationsOrgIdDisbursementsIdRejectResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdDisbursementsIdRejectResponseError = (postApiV1OrganizationsOrgIdDisbursementsIdRejectResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdDisbursementsIdRejectResponse = (postApiV1OrganizationsOrgIdDisbursementsIdRejectResponseSuccess | postApiV1OrganizationsOrgIdDisbursementsIdRejectResponseError)
+
+export const getPostApiV1OrganizationsOrgIdDisbursementsIdRejectUrl = (orgId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/disbursements/${id}/reject`
+}
+
+/**
+ * No se borra: queda como historia, con el motivo y quién decidió. Nunca llega a ser dinero.
+ * @summary Reject a pending disbursement
+ */
+export const postApiV1OrganizationsOrgIdDisbursementsIdReject = async (orgId: string,
+    id: string,
+    rejectDisbursementInput: RejectDisbursementInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdDisbursementsIdRejectResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdDisbursementsIdRejectResponse>(getPostApiV1OrganizationsOrgIdDisbursementsIdRejectUrl(orgId,id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(rejectDisbursementInput)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdDisbursementsIdRejectMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdReject>>, TError,{orgId: string;id: string;data: RejectDisbursementInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdReject>>, TError,{orgId: string;id: string;data: RejectDisbursementInput}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdDisbursementsIdReject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdReject>>, {orgId: string;id: string;data: RejectDisbursementInput}> = (props) => {
+          const {orgId,id,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdDisbursementsIdReject(orgId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdDisbursementsIdRejectMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdReject>>>
+    export type PostApiV1OrganizationsOrgIdDisbursementsIdRejectMutationBody = RejectDisbursementInput
+    export type PostApiV1OrganizationsOrgIdDisbursementsIdRejectMutationError = ErrorResponse
+
+    /**
+ * @summary Reject a pending disbursement
+ */
+export const usePostApiV1OrganizationsOrgIdDisbursementsIdReject = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdReject>>, TError,{orgId: string;id: string;data: RejectDisbursementInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdDisbursementsIdReject>>,
+        TError,
+        {orgId: string;id: string;data: RejectDisbursementInput},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdDisbursementsIdRejectMutationOptions(options), queryClient);
     }
     export type postApiV1OrganizationsOrgIdDisbursementsIdReverseResponse200 = {
   data: DisbursementDetail

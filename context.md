@@ -3580,7 +3580,7 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, 103 paths / 127 operaciones) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, 111 paths / 141 operaciones) y en vivo en
   `http://localhost:4010/openapi.json`.
 - Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`, y el
   resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
@@ -3874,11 +3874,19 @@ mismo orden, los mismos filtros, el mismo CSV. Compartían las dieciséis piezas
 `components/` y aun así estaban duplicadas — lo copiado no eran las piezas, era el montaje. Hoy la
 pantalla vive una vez (`components/accounts-list.tsx`) y cada cara son ~130 líneas.
 
-**Una diferencia entre esas dos caras es real y viaja explícita**, que es distinto de la deriva:
-**causar mora**, solo en cobrar. Es de dominio —a un proveedor no se le cobran intereses— y va en
-`actions`, la lista de operaciones periódicas propias de un lado.
+**Las diferencias reales entre esas dos caras viajan explícitas**, que es distinto de la deriva.
+Hoy son dos:
 
-Hubo una segunda durante un tiempo, y vale la pena contar cómo se cerró. Los números de las fichas
+- **Causar mora**, solo en cobrar. Es de dominio —a un proveedor no se le cobran intereses— y va
+  en `actions`, la lista de operaciones periódicas propias de un lado.
+- **Los estados de un movimiento**: un egreso puede quedar `PENDING_APPROVAL` o `REJECTED` —las
+  aprobaciones por umbral—, y un pago que entra no lo aprueba nadie. Por eso `SettlementList`
+  recibe sus `statuses` como prop: una lista común con los cuatro le ofrecería a pagos dos
+  filtros que su endpoint rechaza. Y `SettlementDetail` opera sobre `POSTED`, no sobre «no está
+  reversado»: un egreso que espera firma no movió un peso, así que no hay nada que revertir ni
+  anticipo que repartir.
+
+Hubo una tercera que lo parecía y no lo era, y vale la pena contar cómo se cerró. Los números de las fichas
 de estado salían del resumen, y `PayablesSummary` solo firma el de vencidas: cuentas por pagar
 enseñaba una ficha con número y tres sin. Se leyó primero como deriva, se comprobó contra el
 contrato y se dejó así a propósito (§70: un dato que no se tiene no se inventa) — mirar el

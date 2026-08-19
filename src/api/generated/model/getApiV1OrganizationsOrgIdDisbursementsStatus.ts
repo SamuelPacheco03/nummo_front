@@ -10,6 +10,8 @@ export type GetApiV1OrganizationsOrgIdDisbursementsStatus = typeof GetApiV1Organ
 
 
 export const GetApiV1OrganizationsOrgIdDisbursementsStatus = {
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
   POSTED: 'POSTED',
+  REJECTED: 'REJECTED',
   REVERSED: 'REVERSED',
 } as const;

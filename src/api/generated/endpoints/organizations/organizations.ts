@@ -27,16 +27,21 @@ import type {
 import type {
   AddMemberInput,
   ApplyTemplateInput,
+  AssignCustomRoleInput,
   Branch,
   CreateBranchInput,
+  CreateCustomRoleInput,
   CreateOrganizationInput,
+  CustomRole,
   ErrorResponse,
   Member,
   Organization,
   OrganizationSettings,
   OrganizationSummary,
   ProvisionSummary,
+  UpdateApprovalPolicyInput,
   UpdateBranchInput,
+  UpdateCustomRoleInput,
   UpdateMemberRoleInput,
   UpdateOrganizationInput,
   UpdateSettingsInput
@@ -1067,6 +1072,712 @@ export const usePatchApiV1OrganizationsOrgIdBranchesBranchId = <TError = ErrorRe
         TContext
       > => {
       return useMutation(getPatchApiV1OrganizationsOrgIdBranchesBranchIdMutationOptions(options), queryClient);
+    }
+    export type putApiV1OrganizationsOrgIdApprovalPolicyResponse200 = {
+  data: OrganizationSettings
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdApprovalPolicyResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdApprovalPolicyResponseSuccess = (putApiV1OrganizationsOrgIdApprovalPolicyResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdApprovalPolicyResponseError = (putApiV1OrganizationsOrgIdApprovalPolicyResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdApprovalPolicyResponse = (putApiV1OrganizationsOrgIdApprovalPolicyResponseSuccess | putApiV1OrganizationsOrgIdApprovalPolicyResponseError)
+
+export const getPutApiV1OrganizationsOrgIdApprovalPolicyUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/approval-policy`
+}
+
+/**
+ * `null` quita la política. Por encima del umbral, registrar un egreso crea una solicitud sin mover dinero: el movimiento financiero solo existe cuando alguien más la aprueba.
+ * @summary Set the amount above which a disbursement needs approval
+ */
+export const putApiV1OrganizationsOrgIdApprovalPolicy = async (orgId: string,
+    updateApprovalPolicyInput: UpdateApprovalPolicyInput, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdApprovalPolicyResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdApprovalPolicyResponse>(getPutApiV1OrganizationsOrgIdApprovalPolicyUrl(orgId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateApprovalPolicyInput)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdApprovalPolicyMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdApprovalPolicy>>, TError,{orgId: string;data: UpdateApprovalPolicyInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdApprovalPolicy>>, TError,{orgId: string;data: UpdateApprovalPolicyInput}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdApprovalPolicy'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdApprovalPolicy>>, {orgId: string;data: UpdateApprovalPolicyInput}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdApprovalPolicy(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdApprovalPolicyMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdApprovalPolicy>>>
+    export type PutApiV1OrganizationsOrgIdApprovalPolicyMutationBody = UpdateApprovalPolicyInput
+    export type PutApiV1OrganizationsOrgIdApprovalPolicyMutationError = ErrorResponse
+
+    /**
+ * @summary Set the amount above which a disbursement needs approval
+ */
+export const usePutApiV1OrganizationsOrgIdApprovalPolicy = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdApprovalPolicy>>, TError,{orgId: string;data: UpdateApprovalPolicyInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdApprovalPolicy>>,
+        TError,
+        {orgId: string;data: UpdateApprovalPolicyInput},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdApprovalPolicyMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdRolesResponse200 = {
+  data: CustomRole[]
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdRolesResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdRolesResponseSuccess = (getApiV1OrganizationsOrgIdRolesResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdRolesResponseError = (getApiV1OrganizationsOrgIdRolesResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdRolesResponse = (getApiV1OrganizationsOrgIdRolesResponseSuccess | getApiV1OrganizationsOrgIdRolesResponseError)
+
+export const getGetApiV1OrganizationsOrgIdRolesUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/roles`
+}
+
+/**
+ * Leer no depende del plan: una organización que baja de Pro conserva los roles que ya definió y sus miembros siguen trabajando; lo que no puede es crear más.
+ * @summary List the organization's own roles
+ */
+export const getApiV1OrganizationsOrgIdRoles = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdRolesResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdRolesResponse>(getGetApiV1OrganizationsOrgIdRolesUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdRolesQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/roles`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdRolesQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError = ErrorResponse>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdRolesQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>> = ({ signal }) => getApiV1OrganizationsOrgIdRoles(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdRolesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>>
+export type GetApiV1OrganizationsOrgIdRolesQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdRoles<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError = ErrorResponse>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdRoles<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdRoles<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List the organization's own roles
+ */
+
+export function useGetApiV1OrganizationsOrgIdRoles<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRoles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdRolesQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type postApiV1OrganizationsOrgIdRolesResponse201 = {
+  data: CustomRole
+  status: 201
+}
+
+export type postApiV1OrganizationsOrgIdRolesResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 201>
+}
+
+export type postApiV1OrganizationsOrgIdRolesResponseSuccess = (postApiV1OrganizationsOrgIdRolesResponse201) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdRolesResponseError = (postApiV1OrganizationsOrgIdRolesResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdRolesResponse = (postApiV1OrganizationsOrgIdRolesResponseSuccess | postApiV1OrganizationsOrgIdRolesResponseError)
+
+export const getPostApiV1OrganizationsOrgIdRolesUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/roles`
+}
+
+/**
+ * Los permisos reservados al propietario no son asignables: se rechazan con 422 nombrándolos, en vez de filtrarse en silencio.
+ * @summary Create a role
+ */
+export const postApiV1OrganizationsOrgIdRoles = async (orgId: string,
+    createCustomRoleInput: CreateCustomRoleInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdRolesResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdRolesResponse>(getPostApiV1OrganizationsOrgIdRolesUrl(orgId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createCustomRoleInput)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdRolesMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdRoles>>, TError,{orgId: string;data: CreateCustomRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdRoles>>, TError,{orgId: string;data: CreateCustomRoleInput}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdRoles'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdRoles>>, {orgId: string;data: CreateCustomRoleInput}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdRoles(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdRolesMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdRoles>>>
+    export type PostApiV1OrganizationsOrgIdRolesMutationBody = CreateCustomRoleInput
+    export type PostApiV1OrganizationsOrgIdRolesMutationError = ErrorResponse
+
+    /**
+ * @summary Create a role
+ */
+export const usePostApiV1OrganizationsOrgIdRoles = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdRoles>>, TError,{orgId: string;data: CreateCustomRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdRoles>>,
+        TError,
+        {orgId: string;data: CreateCustomRoleInput},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdRolesMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdRolesRoleIdResponse200 = {
+  data: CustomRole
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdRolesRoleIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdRolesRoleIdResponseSuccess = (getApiV1OrganizationsOrgIdRolesRoleIdResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdRolesRoleIdResponseError = (getApiV1OrganizationsOrgIdRolesRoleIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdRolesRoleIdResponse = (getApiV1OrganizationsOrgIdRolesRoleIdResponseSuccess | getApiV1OrganizationsOrgIdRolesRoleIdResponseError)
+
+export const getGetApiV1OrganizationsOrgIdRolesRoleIdUrl = (orgId: string,
+    roleId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/roles/${roleId}`
+}
+
+/**
+ * @summary Get a role
+ */
+export const getApiV1OrganizationsOrgIdRolesRoleId = async (orgId: string,
+    roleId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdRolesRoleIdResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdRolesRoleIdResponse>(getGetApiV1OrganizationsOrgIdRolesRoleIdUrl(orgId,roleId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdRolesRoleIdQueryKey = (orgId: string,
+    roleId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/roles/${roleId}`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdRolesRoleIdQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError = ErrorResponse>(orgId: string,
+    roleId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdRolesRoleIdQueryKey(orgId,roleId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>> = ({ signal }) => getApiV1OrganizationsOrgIdRolesRoleId(orgId,roleId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined && roleId !== null && roleId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdRolesRoleIdQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>>
+export type GetApiV1OrganizationsOrgIdRolesRoleIdQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdRolesRoleId<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError = ErrorResponse>(
+ orgId: string,
+    roleId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdRolesRoleId<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError = ErrorResponse>(
+ orgId: string,
+    roleId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdRolesRoleId<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError = ErrorResponse>(
+ orgId: string,
+    roleId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get a role
+ */
+
+export function useGetApiV1OrganizationsOrgIdRolesRoleId<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError = ErrorResponse>(
+ orgId: string,
+    roleId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesRoleId>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdRolesRoleIdQueryOptions(orgId,roleId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type patchApiV1OrganizationsOrgIdRolesRoleIdResponse200 = {
+  data: CustomRole
+  status: 200
+}
+
+export type patchApiV1OrganizationsOrgIdRolesRoleIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type patchApiV1OrganizationsOrgIdRolesRoleIdResponseSuccess = (patchApiV1OrganizationsOrgIdRolesRoleIdResponse200) & {
+  headers: Headers;
+};
+export type patchApiV1OrganizationsOrgIdRolesRoleIdResponseError = (patchApiV1OrganizationsOrgIdRolesRoleIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type patchApiV1OrganizationsOrgIdRolesRoleIdResponse = (patchApiV1OrganizationsOrgIdRolesRoleIdResponseSuccess | patchApiV1OrganizationsOrgIdRolesRoleIdResponseError)
+
+export const getPatchApiV1OrganizationsOrgIdRolesRoleIdUrl = (orgId: string,
+    roleId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/roles/${roleId}`
+}
+
+/**
+ * @summary Update a role
+ */
+export const patchApiV1OrganizationsOrgIdRolesRoleId = async (orgId: string,
+    roleId: string,
+    updateCustomRoleInput: UpdateCustomRoleInput, options?: Parameters<typeof customFetch>[1]): Promise<patchApiV1OrganizationsOrgIdRolesRoleIdResponse> => {
+
+  return customFetch<patchApiV1OrganizationsOrgIdRolesRoleIdResponse>(getPatchApiV1OrganizationsOrgIdRolesRoleIdUrl(orgId,roleId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateCustomRoleInput)
+  }
+);}
+
+
+
+
+
+export const getPatchApiV1OrganizationsOrgIdRolesRoleIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdRolesRoleId>>, TError,{orgId: string;roleId: string;data: UpdateCustomRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdRolesRoleId>>, TError,{orgId: string;roleId: string;data: UpdateCustomRoleInput}, TContext> => {
+
+const mutationKey = ['patchApiV1OrganizationsOrgIdRolesRoleId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdRolesRoleId>>, {orgId: string;roleId: string;data: UpdateCustomRoleInput}> = (props) => {
+          const {orgId,roleId,data} = props ?? {};
+
+          return  patchApiV1OrganizationsOrgIdRolesRoleId(orgId,roleId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchApiV1OrganizationsOrgIdRolesRoleIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdRolesRoleId>>>
+    export type PatchApiV1OrganizationsOrgIdRolesRoleIdMutationBody = UpdateCustomRoleInput
+    export type PatchApiV1OrganizationsOrgIdRolesRoleIdMutationError = ErrorResponse
+
+    /**
+ * @summary Update a role
+ */
+export const usePatchApiV1OrganizationsOrgIdRolesRoleId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdRolesRoleId>>, TError,{orgId: string;roleId: string;data: UpdateCustomRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdRolesRoleId>>,
+        TError,
+        {orgId: string;roleId: string;data: UpdateCustomRoleInput},
+        TContext
+      > => {
+      return useMutation(getPatchApiV1OrganizationsOrgIdRolesRoleIdMutationOptions(options), queryClient);
+    }
+    export type deleteApiV1OrganizationsOrgIdRolesRoleIdResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteApiV1OrganizationsOrgIdRolesRoleIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type deleteApiV1OrganizationsOrgIdRolesRoleIdResponseSuccess = (deleteApiV1OrganizationsOrgIdRolesRoleIdResponse204) & {
+  headers: Headers;
+};
+export type deleteApiV1OrganizationsOrgIdRolesRoleIdResponseError = (deleteApiV1OrganizationsOrgIdRolesRoleIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type deleteApiV1OrganizationsOrgIdRolesRoleIdResponse = (deleteApiV1OrganizationsOrgIdRolesRoleIdResponseSuccess | deleteApiV1OrganizationsOrgIdRolesRoleIdResponseError)
+
+export const getDeleteApiV1OrganizationsOrgIdRolesRoleIdUrl = (orgId: string,
+    roleId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/roles/${roleId}`
+}
+
+/**
+ * Un rol con miembros no se archiva: primero hay que moverlos.
+ * @summary Archive a role
+ */
+export const deleteApiV1OrganizationsOrgIdRolesRoleId = async (orgId: string,
+    roleId: string, options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdRolesRoleIdResponse> => {
+
+  return customFetch<deleteApiV1OrganizationsOrgIdRolesRoleIdResponse>(getDeleteApiV1OrganizationsOrgIdRolesRoleIdUrl(orgId,roleId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteApiV1OrganizationsOrgIdRolesRoleIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdRolesRoleId>>, TError,{orgId: string;roleId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdRolesRoleId>>, TError,{orgId: string;roleId: string}, TContext> => {
+
+const mutationKey = ['deleteApiV1OrganizationsOrgIdRolesRoleId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdRolesRoleId>>, {orgId: string;roleId: string}> = (props) => {
+          const {orgId,roleId} = props ?? {};
+
+          return  deleteApiV1OrganizationsOrgIdRolesRoleId(orgId,roleId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiV1OrganizationsOrgIdRolesRoleIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdRolesRoleId>>>
+
+    export type DeleteApiV1OrganizationsOrgIdRolesRoleIdMutationError = ErrorResponse
+
+    /**
+ * @summary Archive a role
+ */
+export const useDeleteApiV1OrganizationsOrgIdRolesRoleId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdRolesRoleId>>, TError,{orgId: string;roleId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdRolesRoleId>>,
+        TError,
+        {orgId: string;roleId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteApiV1OrganizationsOrgIdRolesRoleIdMutationOptions(options), queryClient);
+    }
+    export type putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponse200 = {
+  data: Member
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponseSuccess = (putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponseError = (putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponse = (putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponseSuccess | putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponseError)
+
+export const getPutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleUrl = (orgId: string,
+    membershipId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/members/${membershipId}/custom-role`
+}
+
+/**
+ * Un rol propio reemplaza los permisos del rol base, no se suma. `null` devuelve al miembro a su rol base. El propietario no puede moverse a un rol propio.
+ * @summary Point a member at one of the organization's roles
+ */
+export const putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole = async (orgId: string,
+    membershipId: string,
+    assignCustomRoleInput: AssignCustomRoleInput, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleResponse>(getPutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleUrl(orgId,membershipId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(assignCustomRoleInput)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole>>, TError,{orgId: string;membershipId: string;data: AssignCustomRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole>>, TError,{orgId: string;membershipId: string;data: AssignCustomRoleInput}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole>>, {orgId: string;membershipId: string;data: AssignCustomRoleInput}> = (props) => {
+          const {orgId,membershipId,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole(orgId,membershipId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole>>>
+    export type PutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleMutationBody = AssignCustomRoleInput
+    export type PutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleMutationError = ErrorResponse
+
+    /**
+ * @summary Point a member at one of the organization's roles
+ */
+export const usePutApiV1OrganizationsOrgIdMembersMembershipIdCustomRole = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole>>, TError,{orgId: string;membershipId: string;data: AssignCustomRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMembersMembershipIdCustomRole>>,
+        TError,
+        {orgId: string;membershipId: string;data: AssignCustomRoleInput},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdMembersMembershipIdCustomRoleMutationOptions(options), queryClient);
     }
     export type getApiV1OrganizationsOrgIdMembersResponse200 = {
   data: Member[]

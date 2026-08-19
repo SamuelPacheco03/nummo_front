@@ -12,6 +12,7 @@ import type {
   GetApiV1OrganizationsOrgIdPaymentsParams,
   GetApiV1OrganizationsOrgIdPaymentsSort,
 } from '@/api/generated/model'
+import { PAYMENT_STATUSES } from '@/lib/settlement-list'
 import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
 import { usePayments } from './hooks'
 
@@ -90,6 +91,7 @@ export function PaymentsListPage() {
       purposes={PURPOSES}
       purposeLabels={PAYMENT_PURPOSE_LABELS}
       sortChoices={SORT_CHOICES}
+      statuses={PAYMENT_STATUSES}
       statusOf={paymentStatus}
       kpi={{ kind: 'income', label: 'Cobrado este mes', previousLabel: 'El mes pasado' }}
       canRegister={can('payments.create')}

@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, vi } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { runSettlementDetailSuite } from '@/test/settlement-detail-suite'
 import { DisbursementDetailPage } from './disbursement-detail-page'
 
@@ -8,6 +9,7 @@ const m = vi.hoisted(() => ({
   avisos: [] as { tono: string; texto: string }[],
   falla: false,
   reversado: false,
+  estado: '' as string,
   sinCredito: false,
   sinAplicaciones: false,
   permisos: new Set<string>(['disbursements.reverse', 'disbursements.allocate']),
@@ -18,7 +20,7 @@ const detalle = () => ({
     id: 'm1',
     supplierContactId: 'c1',
     purpose: 'ADVANCE',
-    status: m.reversado ? 'REVERSED' : 'POSTED',
+    status: m.estado || (m.reversado ? 'REVERSED' : 'POSTED'),
     amount: '800000',
     disbursedAt: '2026-08-05',
     paymentMethodId: 'p1',
@@ -70,6 +72,7 @@ beforeEach(() => {
   m.avisos.length = 0
   m.falla = false
   m.reversado = false
+  m.estado = ''
   m.sinCredito = false
   m.sinAplicaciones = false
   m.permisos = new Set(['disbursements.reverse', 'disbursements.allocate'])
@@ -102,4 +105,38 @@ runSettlementDetailSuite({
   soloLectura: () => {
     m.permisos = new Set()
   },
+})
+
+/*
+  Lo que las aprobaciones por umbral traen a esta cara y no a la de pagos: por
+  encima del umbral no se mueve un peso hasta que alguien firma, así que un
+  egreso puede existir sin haber movido nada.
+*/
+test('un egreso que espera aprobación no ofrece revertir ni repartir', () => {
+  m.estado = 'PENDING_APPROVAL'
+  render(
+    <MemoryRouter initialEntries={['/ficha']}>
+      <DisbursementDetailPage />
+    </MemoryRouter>,
+  )
+
+  expect(screen.getByText('Espera aprobación')).toBeInTheDocument()
+  // No hay movimiento que deshacer ni crédito que asignar: todavía no salió nada.
+  expect(screen.queryByRole('button', { name: 'Revertir' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /aplicar anticipo/i })).not.toBeInTheDocument()
+  // Y no va tachado: esperar no es lo mismo que estar anulado.
+  expect(screen.getByText('$800.000,00')).not.toHaveClass('line-through')
+})
+
+test('un egreso rechazado se tacha, como el reversado', () => {
+  m.estado = 'REJECTED'
+  render(
+    <MemoryRouter initialEntries={['/ficha']}>
+      <DisbursementDetailPage />
+    </MemoryRouter>,
+  )
+
+  expect(screen.getByText('Rechazado')).toBeInTheDocument()
+  expect(screen.getByText('$800.000,00')).toHaveClass('line-through')
+  expect(screen.queryByRole('button', { name: 'Revertir' })).not.toBeInTheDocument()
 })

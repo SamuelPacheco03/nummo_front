@@ -17,8 +17,26 @@ const SCHEDULE_STATUS_LABELS: Record<string, string> = {
 }
 
 const DISBURSEMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING_APPROVAL: 'Espera aprobación',
   POSTED: 'Registrado',
+  REJECTED: 'Rechazado',
   REVERSED: 'Reversado',
+}
+
+/**
+ * Los cuatro tonos dicen cosas distintas y ninguno sobra: **esperando** es ámbar
+ * porque pide una acción de alguien; **rechazado** es rojo porque el dinero no
+ * salió y ya no va a salir; **reversado** se apaga, que es lo que se le hace a
+ * algo que ocurrió y se deshizo; **registrado** es lo normal.
+ *
+ * Por encima del umbral no se mueve un peso hasta que alguien aprueba, así que
+ * un pendiente **no es** un egreso a medias: es una solicitud.
+ */
+const DISBURSEMENT_STATUS_TONES: Record<string, StatusTone> = {
+  PENDING_APPROVAL: 'warning',
+  POSTED: 'success',
+  REJECTED: 'destructive',
+  REVERSED: 'muted',
 }
 
 export const DISBURSEMENT_PURPOSE_LABELS: Record<string, string> = {
@@ -57,10 +75,9 @@ export function scheduleStatus(status: string): { tone: StatusTone; label: strin
   return { tone: scheduleStatusTone(status), label: SCHEDULE_STATUS_LABELS[status] ?? status }
 }
 
-/** Un egreso reversado deja de contar: se apaga, no se marca en rojo. */
 export function disbursementStatus(status: string): { tone: StatusTone; label: string } {
   return {
-    tone: status === 'REVERSED' ? 'muted' : 'success',
+    tone: DISBURSEMENT_STATUS_TONES[status] ?? 'muted',
     label: DISBURSEMENT_STATUS_LABELS[status] ?? status,
   }
 }

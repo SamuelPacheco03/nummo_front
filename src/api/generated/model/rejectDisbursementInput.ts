@@ -6,12 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type DisbursementListItemStatus = typeof DisbursementListItemStatus[keyof typeof DisbursementListItemStatus];
-
-
-export const DisbursementListItemStatus = {
-  PENDING_APPROVAL: 'PENDING_APPROVAL',
-  POSTED: 'POSTED',
-  REJECTED: 'REJECTED',
-  REVERSED: 'REVERSED',
-} as const;
+export interface RejectDisbursementInput {
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  reason: string;
+}

@@ -1,6 +1,6 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-19 (contrato traído de `dev`, 103 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola.**
+**Fecha:** 2026-08-19 (contrato traído de `dev`, 111 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral.**
 
 ## ⚠️ ROMPE — el estado de la organización salió de `PATCH /organizations/:orgId`
 
@@ -108,6 +108,53 @@ Es **orientativo, no autorización**: sirve para no ofrecer un menú que va a fa
 petición a `/admin/*` lo vuelve a comprobar contra la tabla, así que un cliente que se mienta a
 sí mismo solo consigue un 403. Y ningún rol de organización da acceso: ser OWNER de la tuya no
 te hace superadmin.
+
+## 🆕 Roles personalizados — `/organizations/:orgId/roles`
+
+Cinco rutas nuevas (`GET`, `POST`, `GET/:id`, `PATCH/:id`, `DELETE/:id`) más
+`PUT /members/:membershipId/custom-role`. Dos cosas que cambian cómo hay que pensar la pantalla
+de miembros:
+
+- **Un rol propio *reemplaza* los permisos del rol base, no se suma.** «Qué puede hacer esta
+  persona» tiene una sola respuesta. El rol base se conserva como etiqueta y es lo que sigue
+  contando `countActiveOwners`, así que un miembro tiene **rol y, opcionalmente, rol propio**:
+  `Member` gana `customRole`.
+- **Escribir roles se vende con el plan** (`custom_roles`, en Pro); **leerlos no**. Quien baja de
+  plan conserva los que definió y sus miembros siguen trabajando: se bloquea crear, nunca borrar.
+
+Tres cosas que el backend rechaza y conviene no ofrecer: conceder permisos reservados al
+propietario (los rechaza **nombrándolos**, no los filtra en silencio), archivar un rol que
+todavía tiene miembros, y mover al propietario a un rol propio.
+
+**Y un aviso que afecta a lo que ya está construido:** el backend puso guard `.read` a **31
+lecturas** que no lo tenían. Para los cinco roles predefinidos no cambia nada —todos tienen todos
+los `.read`—, pero desde ahora un rol propio **sí** puede no tenerlos, así que una pantalla de
+solo lectura puede empezar a responder 403. La única lectura sin guard es `me/capabilities`:
+pedir permiso para preguntar qué permisos tienes sería circular.
+
+## 🆕 Aprobaciones por umbral — el egreso puede quedar esperando firma
+
+`ROMPE` de forma silenciosa si no se mira: **`DisbursementStatus` pasa de dos valores a cuatro**
+(`PENDING_APPROVAL`, `POSTED`, `REJECTED`, `REVERSED`) y el filtro `status` de
+`GET /disbursements` acepta los cuatro. Un `Record<string, string>` de etiquetas seguirá
+compilando y pintará `PENDING_APPROVAL` crudo en la lista.
+
+**El estado vive en el desembolso, no en el gasto**: un gasto es una obligación y el egreso es el
+dinero saliendo, que es lo que se aprueba. Por encima del umbral **no se mueve un peso** hasta que
+alguien firma, así que un pendiente no es un egreso a medias: es una solicitud. Solo `POSTED` y
+`REVERSED` tienen movimiento financiero — lo sostiene un `CHECK` en la tabla.
+
+| Ruta | Qué hace |
+| --- | --- |
+| `POST /disbursements/:id/approve` | Aprueba y ejecuta. Revalida bajo lock: la solicitud pudo esperar un día |
+| `POST /disbursements/:id/reject` | Rechaza con motivo, que se guarda |
+| `PUT /organizations/:orgId/approval-policy` | El umbral (`disbursementApprovalThreshold` en settings) |
+
+Dos reglas del backend que la UI debería reflejar: **quien registra no aprueba** (se compara
+contra `createdBy`, así que `disbursements.approve` es condición necesaria y no suficiente), y la
+política va detrás de la feature **`approvals`**, que pasa a estar encendida en Pro y Empresa.
+
+Sin notificaciones: quien aprueba se entera filtrando por `status=PENDING_APPROVAL`.
 
 ## 🆕 El contrato nombra el permiso de cada ruta (`x-required-permission`)
 
@@ -382,7 +429,7 @@ El alta de cuentas es **registro público** (decidido). **Implementado en el fro
 - ✅ **Rate-limit** (429) manejado con mensaje amable (vía `getErrorMessage`).
 
 ## Aviso
-El contrato `openapi.json` sigue en **v1.0.0** y hoy trae **103 paths / 127 operaciones**. Regenera tu cliente:
+El contrato `openapi.json` sigue en **v1.0.0** y hoy trae **111 paths / 141 operaciones**. Regenera tu cliente:
 
 ```bash
 pnpm api:gen

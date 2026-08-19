@@ -18,6 +18,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
+import { isVoidedSettlement } from '@/lib/settlement-list'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -165,7 +166,17 @@ export function SettlementDetail({
     )
   }
 
-  const reversed = data.status === 'REVERSED'
+  /*
+    Dos nociones, no una. Con las aprobaciones por umbral, «no está reversado» ya
+    no significa «se puede operar»: un egreso que espera firma no movió un peso,
+    así que no hay nada que revertir ni anticipo que repartir; y uno rechazado
+    tampoco lo moverá nunca.
+
+    Para un pago las dos siguen siendo la de antes —solo tiene POSTED y
+    REVERSED—, así que esta cara no cambia en nada.
+  */
+  const posted = data.status === 'POSTED'
+  const voided = isVoidedSettlement(data.status)
   const unassigned = Number(data.unallocatedAmount) || 0
 
   const onReverse = async () => {
@@ -192,19 +203,19 @@ export function SettlementDetail({
           </span>
         }
         amount={
-          <span className={cn(reversed && 'text-muted-foreground line-through')}>
+          <span className={cn(voided && 'text-muted-foreground line-through')}>
             {formatAmount(data.amount)}
           </span>
         }
         actions={
           <>
-            {canApply && !reversed && unassigned > 0 && data.contactId && (
+            {canApply && posted && unassigned > 0 && data.contactId && (
               <Button size="sm" onClick={() => setApplyOpen(true)}>
                 <Wallet className="size-4" />
                 Aplicar anticipo
               </Button>
             )}
-            {canReverse && !reversed && (
+            {canReverse && posted && (
               <Button variant="outline" size="sm" onClick={() => setReverseOpen(true)}>
                 <Undo2 className="size-4" />
                 Revertir
@@ -213,7 +224,7 @@ export function SettlementDetail({
           </>
         }
       >
-        {unassigned > 0 && !reversed && (
+        {unassigned > 0 && posted && (
           <div className="border-warning/40 bg-warning/5 rounded-lg border px-3.5 py-2.5 text-sm">
             Crédito sin asignar:{' '}
             <span className="nums font-semibold">{formatAmount(data.unallocatedAmount)}</span>

@@ -23,8 +23,28 @@ export type SettlementFilterKey = (typeof SETTLEMENT_FILTER_KEYS)[number]
 /** Los que cuentan para el contador del botón «Filtros». */
 export const SETTLEMENT_ADVANCED_KEYS: SettlementFilterKey[] = ['contacto', 'proposito']
 
-/** Estados que devuelve el contrato para un pago o un egreso. */
-export const SETTLEMENT_STATUSES = ['POSTED', 'REVERSED'] as const
+/**
+ * Estados de cada cara. **Ya no son los mismos**, y esta es la primera
+ * diferencia real entre pagos y egresos desde que comparten pantalla: con las
+ * aprobaciones por umbral, un egreso puede quedar esperando firma o ser
+ * rechazado; un pago que entra no lo aprueba nadie.
+ *
+ * Viaja como prop, igual que las palabras y el endpoint (§94.0): una lista
+ * común con los cuatro ofrecería a pagos dos filtros que su API rechaza.
+ */
+export const PAYMENT_STATUSES = ['POSTED', 'REVERSED'] as const
+export const DISBURSEMENT_STATUSES = ['PENDING_APPROVAL', 'POSTED', 'REJECTED', 'REVERSED'] as const
+
+/**
+ * Los que **no movieron dinero y ya no lo van a mover**: van tachados, como
+ * siempre estuvo el reversado. Un pendiente no entra aquí — todavía puede salir,
+ * y tacharlo lo leería como cancelado.
+ */
+const VOIDED_STATUSES: readonly string[] = ['REVERSED', 'REJECTED']
+
+export function isVoidedSettlement(status: string): boolean {
+  return VOIDED_STATUSES.includes(status)
+}
 
 /** Lo que la pantalla pide; cada lado lo traduce a los nombres de su endpoint. */
 export interface SettlementQuery {

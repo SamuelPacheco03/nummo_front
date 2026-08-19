@@ -12,6 +12,7 @@ import type {
   GetApiV1OrganizationsOrgIdDisbursementsParams,
   GetApiV1OrganizationsOrgIdDisbursementsSort,
 } from '@/api/generated/model'
+import { DISBURSEMENT_STATUSES } from '@/lib/settlement-list'
 import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
 import { useDisbursements } from './hooks'
 
@@ -90,6 +91,7 @@ export function DisbursementsListPage() {
       purposes={PURPOSES}
       purposeLabels={DISBURSEMENT_PURPOSE_LABELS}
       sortChoices={SORT_CHOICES}
+      statuses={DISBURSEMENT_STATUSES}
       statusOf={disbursementStatus}
       kpi={{ kind: 'expense', label: 'Pagado este mes', previousLabel: 'El mes pasado' }}
       canRegister={can('disbursements.create')}

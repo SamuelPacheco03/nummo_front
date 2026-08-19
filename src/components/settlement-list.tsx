@@ -24,9 +24,9 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import {
+  isVoidedSettlement,
   SETTLEMENT_ADVANCED_KEYS,
   SETTLEMENT_FILTER_KEYS,
-  SETTLEMENT_STATUSES,
   type SettlementFilterKey,
   type SettlementListCopy,
   type SettlementListResult,
@@ -66,6 +66,7 @@ export function SettlementList({
   purposes,
   purposeLabels,
   sortChoices,
+  statuses,
   statusOf,
   kpi,
   canRegister,
@@ -82,6 +83,8 @@ export function SettlementList({
   purposes: { value: string; label: string }[]
   purposeLabels: Record<string, string>
   sortChoices: SortChoice[]
+  /** Los estados que acepta *este* endpoint, en el orden en que se ofrecen. */
+  statuses: readonly string[]
   statusOf: (status: string) => { tone: StatusTone; label: string }
   kpi: { kind: 'income' | 'expense'; label: string; previousLabel: string }
   /** Si el rol permite registrar. Lo decide cada feature, no este componente. */
@@ -132,13 +135,13 @@ export function SettlementList({
   const { items, total, totalPages, isPending, isError, error, isFetching } = list
 
   /*
-    Solo dos estados, y ninguno lleva contador: el API no publica un resumen de
-    pagos por estado y sumarlo desde la página visible daría una cifra que el
-    backend no firma (§70).
+    Los estados de esta cara, sin contador: el API no publica un resumen por
+    estado y sumarlo desde la página visible daría una cifra que el backend no
+    firma (§70).
   */
   const statusChoices: FilterChoice[] = [
     { value: '', label: 'Todos' },
-    ...SETTLEMENT_STATUSES.map((value) => ({ value, label: statusOf(value).label })),
+    ...statuses.map((value) => ({ value, label: statusOf(value).label })),
   ]
 
   const columns = column.columns([
@@ -184,7 +187,7 @@ export function SettlementList({
       cell: ({ row }) => (
         <span
           className={cn(
-            row.original.status === 'REVERSED' && 'text-muted-foreground line-through',
+            isVoidedSettlement(row.original.status) && 'text-muted-foreground line-through',
           )}
         >
           {formatAmount(row.original.amount)}
@@ -308,7 +311,7 @@ export function SettlementList({
             aria-label="Estado"
           >
             <option value="">Todos los estados</option>
-            {SETTLEMENT_STATUSES.map((value) => (
+            {statuses.map((value) => (
               <option key={value} value={value}>
                 {statusOf(value).label}
               </option>

@@ -506,7 +506,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.read"
       },
       "patch": {
         "tags": [
@@ -658,7 +659,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.read"
       },
       "put": {
         "tags": [
@@ -754,7 +756,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.branches.read"
       },
       "post": {
         "tags": [
@@ -881,6 +884,422 @@
         "x-required-permission": "organization.branches.manage"
       }
     },
+    "/api/v1/organizations/{orgId}/approval-policy": {
+      "put": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Set the amount above which a disbursement needs approval",
+        "description": "`null` quita la política. Por encima del umbral, registrar un egreso crea una solicitud sin mover dinero: el movimiento financiero solo existe cuando alguien más la aprueba.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApprovalPolicyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.manage",
+        "x-required-feature": "approvals"
+      }
+    },
+    "/api/v1/organizations/{orgId}/roles": {
+      "get": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "List the organization's own roles",
+        "description": "Leer no depende del plan: una organización que baja de Pro conserva los roles que ya definió y sus miembros siguen trabajando; lo que no puede es crear más.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomRole"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.roles.read"
+      },
+      "post": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Create a role",
+        "description": "Los permisos reservados al propietario no son asignables: se rechazan con 422 nombrándolos, en vez de filtrarse en silencio.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomRoleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created role.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomRole"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.roles.manage",
+        "x-required-feature": "custom_roles"
+      }
+    },
+    "/api/v1/organizations/{orgId}/roles/{roleId}": {
+      "get": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Get a role",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomRole"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.roles.read"
+      },
+      "patch": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Update a role",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomRoleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomRole"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.roles.manage",
+        "x-required-feature": "custom_roles"
+      },
+      "delete": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Archive a role",
+        "description": "Un rol con miembros no se archiva: primero hay que moverlos.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Archived."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.roles.manage",
+        "x-required-feature": "custom_roles"
+      }
+    },
+    "/api/v1/organizations/{orgId}/members/{membershipId}/custom-role": {
+      "put": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Point a member at one of the organization's roles",
+        "description": "Un rol propio reemplaza los permisos del rol base, no se suma. `null` devuelve al miembro a su rol base. El propietario no puede moverse a un rol propio.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "membershipId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignCustomRoleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Member.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.members.manage",
+        "x-required-feature": "custom_roles"
+      }
+    },
     "/api/v1/organizations/{orgId}/members": {
       "get": {
         "tags": [
@@ -918,7 +1337,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.members.read"
       },
       "post": {
         "tags": [
@@ -1769,7 +2189,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.read"
       },
       "post": {
         "tags": [
@@ -1882,7 +2303,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.read"
       },
       "patch": {
         "tags": [
@@ -2054,7 +2476,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.read"
       },
       "post": {
         "tags": [
@@ -2317,7 +2740,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "billing_concepts.read"
       },
       "post": {
         "tags": [
@@ -2577,7 +3001,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "interest_policies.read"
       },
       "post": {
         "tags": [
@@ -2848,7 +3273,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.read"
       },
       "post": {
         "tags": [
@@ -2961,7 +3387,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.read"
       },
       "patch": {
         "tags": [
@@ -3378,7 +3805,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.read"
       },
       "post": {
         "tags": [
@@ -3575,7 +4003,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.read"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}/accruals": {
@@ -3625,7 +4054,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.read"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}/waivers": {
@@ -4157,7 +4587,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payments.read"
       },
       "post": {
         "tags": [
@@ -4288,7 +4719,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payments.read"
       }
     },
     "/api/v1/organizations/{orgId}/payments/{id}/allocations": {
@@ -4584,7 +5016,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_categories.read"
       },
       "post": {
         "tags": [
@@ -4855,7 +5288,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.read"
       },
       "post": {
         "tags": [
@@ -4968,7 +5402,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.read"
       },
       "patch": {
         "tags": [
@@ -5385,7 +5820,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expenses.read"
       },
       "post": {
         "tags": [
@@ -5536,7 +5972,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expenses.read"
       }
     },
     "/api/v1/organizations/{orgId}/expenses/{id}/cancel": {
@@ -5764,7 +6201,9 @@
             "schema": {
               "type": "string",
               "enum": [
+                "PENDING_APPROVAL",
                 "POSTED",
+                "REJECTED",
                 "REVERSED"
               ]
             }
@@ -5829,7 +6268,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "disbursements.read"
       },
       "post": {
         "tags": [
@@ -5960,7 +6400,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "disbursements.read"
       }
     },
     "/api/v1/organizations/{orgId}/disbursements/{id}/allocations": {
@@ -6046,6 +6487,161 @@
           }
         },
         "x-required-permission": "disbursements.allocate"
+      }
+    },
+    "/api/v1/organizations/{orgId}/disbursements/{id}/approve": {
+      "post": {
+        "tags": [
+          "Disbursements"
+        ],
+        "summary": "Approve a pending disbursement (this is where the money moves)",
+        "description": "Solo aquí se crea el movimiento financiero. Se revalida contra los saldos de hoy —la solicitud pudo esperar— y quien la registró no puede aprobarla: el permiso es condición necesaria, no suficiente.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approved disbursement detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisbursementDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Approved by whoever requested it, or without the permission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not waiting for approval, or Idempotency-Key conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "disbursements.approve"
+      }
+    },
+    "/api/v1/organizations/{orgId}/disbursements/{id}/reject": {
+      "post": {
+        "tags": [
+          "Disbursements"
+        ],
+        "summary": "Reject a pending disbursement",
+        "description": "No se borra: queda como historia, con el motivo y quién decidió. Nunca llega a ser dinero.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectDisbursementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rejected disbursement detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisbursementDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "disbursements.approve"
       }
     },
     "/api/v1/organizations/{orgId}/disbursements/{id}/reverse": {
@@ -6160,7 +6756,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "treasury.read"
       }
     },
     "/api/v1/organizations/{orgId}/financial-accounts/transfers": {
@@ -6265,7 +6862,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "treasury.read"
       },
       "post": {
         "tags": [
@@ -6517,7 +7115,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "treasury.read"
       }
     },
     "/api/v1/organizations/{orgId}/payment-methods": {
@@ -6667,7 +7266,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payment_methods.read"
       },
       "post": {
         "tags": [
@@ -6940,7 +7540,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "financial_accounts.read"
       },
       "post": {
         "tags": [
@@ -7119,7 +7720,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/cashflow-monthly": {
@@ -7169,7 +7771,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/accounts": {
@@ -7228,7 +7831,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/receivables-summary": {
@@ -7265,7 +7869,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/receivables-aging": {
@@ -7305,7 +7910,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/payables-aging": {
@@ -7345,7 +7951,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/payables-summary": {
@@ -7382,7 +7989,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/top-debtors": {
@@ -7432,7 +8040,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/upcoming-receivables": {
@@ -7492,7 +8101,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/top-creditors": {
@@ -7542,7 +8152,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/upcoming-payables": {
@@ -7602,7 +8213,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/income-by-concept": {
@@ -7660,7 +8272,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/reports/expenses-by-category": {
@@ -7718,7 +8331,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "reports.read"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/settings": {
@@ -8316,7 +8930,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.use"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/conversations/{id}": {
@@ -8512,7 +9127,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.use"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/conversations/{id}/messages/{messageId}/audio": {
@@ -8580,7 +9196,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.use"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/transcribe": {
@@ -8757,7 +9374,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "knowledge.read"
       }
     },
     "/api/v1/organizations/{orgId}/search": {
@@ -8815,7 +9433,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "search.read"
       }
     }
   },
@@ -9120,6 +9739,213 @@
           }
         }
       },
+      "UpdateApprovalPolicyInput": {
+        "type": "object",
+        "properties": {
+          "disbursementApprovalThreshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "disbursementApprovalThreshold"
+        ]
+      },
+      "CreateCustomRoleInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organization.read",
+                "organization.branches.read",
+                "organization.members.read",
+                "contacts.read",
+                "billing_concepts.read",
+                "interest_policies.read",
+                "agreements.read",
+                "receivables.read",
+                "payments.read",
+                "expense_categories.read",
+                "expense_schedules.read",
+                "expenses.read",
+                "disbursements.read",
+                "payment_methods.read",
+                "financial_accounts.read",
+                "treasury.read",
+                "reports.read",
+                "search.read",
+                "knowledge.read",
+                "subscription.read",
+                "assistant.use",
+                "contacts.write",
+                "contacts.archive",
+                "receivables.create",
+                "receivables.adjust",
+                "payments.create",
+                "payments.allocate",
+                "expenses.create",
+                "disbursements.create",
+                "disbursements.allocate",
+                "agreements.manage",
+                "expense_schedules.manage",
+                "receivables.manage",
+                "payments.reverse",
+                "expenses.manage",
+                "disbursements.approve",
+                "disbursements.reverse",
+                "treasury.transfer",
+                "organization.manage",
+                "organization.branches.manage",
+                "organization.members.manage",
+                "organization.roles.read",
+                "organization.roles.manage",
+                "billing_concepts.manage",
+                "interest_policies.manage",
+                "expense_categories.manage",
+                "payment_methods.manage",
+                "financial_accounts.manage",
+                "assistant.settings.read",
+                "assistant.settings.manage",
+                "organization.transfer_ownership",
+                "organization.delete",
+                "subscription.manage"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "permissions"
+        ]
+      },
+      "UpdateCustomRoleInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organization.read",
+                "organization.branches.read",
+                "organization.members.read",
+                "contacts.read",
+                "billing_concepts.read",
+                "interest_policies.read",
+                "agreements.read",
+                "receivables.read",
+                "payments.read",
+                "expense_categories.read",
+                "expense_schedules.read",
+                "expenses.read",
+                "disbursements.read",
+                "payment_methods.read",
+                "financial_accounts.read",
+                "treasury.read",
+                "reports.read",
+                "search.read",
+                "knowledge.read",
+                "subscription.read",
+                "assistant.use",
+                "contacts.write",
+                "contacts.archive",
+                "receivables.create",
+                "receivables.adjust",
+                "payments.create",
+                "payments.allocate",
+                "expenses.create",
+                "disbursements.create",
+                "disbursements.allocate",
+                "agreements.manage",
+                "expense_schedules.manage",
+                "receivables.manage",
+                "payments.reverse",
+                "expenses.manage",
+                "disbursements.approve",
+                "disbursements.reverse",
+                "treasury.transfer",
+                "organization.manage",
+                "organization.branches.manage",
+                "organization.members.manage",
+                "organization.roles.read",
+                "organization.roles.manage",
+                "billing_concepts.manage",
+                "interest_policies.manage",
+                "expense_categories.manage",
+                "payment_methods.manage",
+                "financial_accounts.manage",
+                "assistant.settings.read",
+                "assistant.settings.manage",
+                "organization.transfer_ownership",
+                "organization.delete",
+                "subscription.manage"
+              ]
+            }
+          }
+        }
+      },
+      "AssignCustomRoleInput": {
+        "type": "object",
+        "properties": {
+          "customRoleId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "customRoleId"
+        ]
+      },
       "AddMemberInput": {
         "type": "object",
         "properties": {
@@ -9275,11 +10101,9 @@
             ]
           },
           "isPublic": {
-            "default": false,
             "type": "boolean"
           },
           "sortOrder": {
-            "default": 0,
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
@@ -9302,11 +10126,9 @@
             "maxLength": 3
           },
           "features": {
-            "default": {},
             "$ref": "#/components/schemas/FeaturePatch"
           },
           "limits": {
-            "default": {},
             "$ref": "#/components/schemas/LimitPatch"
           },
           "applyToExisting": {
@@ -9315,6 +10137,11 @@
         },
         "required": [
           "name",
+          "isPublic",
+          "sortOrder",
+          "priceAmount",
+          "features",
+          "limits",
           "applyToExisting"
         ]
       },
@@ -10791,6 +11618,19 @@
           "allocations"
         ]
       },
+      "RejectDisbursementInput": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
       "RegisterTransfer": {
         "type": "object",
         "properties": {
@@ -11452,6 +12292,17 @@
           "interestJobLocalTime": {
             "type": "string"
           },
+          "disbursementApprovalThreshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "uiConfig": {
             "type": "object",
             "propertyNames": {
@@ -11471,6 +12322,7 @@
           "accentToken",
           "dueReminderDays",
           "interestJobLocalTime",
+          "disbursementApprovalThreshold",
           "uiConfig",
           "updatedAt"
         ],
@@ -11549,6 +12401,115 @@
         ],
         "additionalProperties": false
       },
+      "CustomRole": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organization.read",
+                "organization.branches.read",
+                "organization.members.read",
+                "contacts.read",
+                "billing_concepts.read",
+                "interest_policies.read",
+                "agreements.read",
+                "receivables.read",
+                "payments.read",
+                "expense_categories.read",
+                "expense_schedules.read",
+                "expenses.read",
+                "disbursements.read",
+                "payment_methods.read",
+                "financial_accounts.read",
+                "treasury.read",
+                "reports.read",
+                "search.read",
+                "knowledge.read",
+                "subscription.read",
+                "assistant.use",
+                "contacts.write",
+                "contacts.archive",
+                "receivables.create",
+                "receivables.adjust",
+                "payments.create",
+                "payments.allocate",
+                "expenses.create",
+                "disbursements.create",
+                "disbursements.allocate",
+                "agreements.manage",
+                "expense_schedules.manage",
+                "receivables.manage",
+                "payments.reverse",
+                "expenses.manage",
+                "disbursements.approve",
+                "disbursements.reverse",
+                "treasury.transfer",
+                "organization.manage",
+                "organization.branches.manage",
+                "organization.members.manage",
+                "organization.roles.read",
+                "organization.roles.manage",
+                "billing_concepts.manage",
+                "interest_policies.manage",
+                "expense_categories.manage",
+                "payment_methods.manage",
+                "financial_accounts.manage",
+                "assistant.settings.read",
+                "assistant.settings.manage",
+                "organization.transfer_ownership",
+                "organization.delete",
+                "subscription.manage"
+              ]
+            }
+          },
+          "membersCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "permissions",
+          "membersCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
       "Member": {
         "type": "object",
         "properties": {
@@ -11578,6 +12539,31 @@
               "VIEWER"
             ]
           },
+          "customRole": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "isActive": {
             "type": "boolean"
           },
@@ -11593,6 +12579,7 @@
           "email",
           "fullName",
           "role",
+          "customRole",
           "isActive",
           "createdAt"
         ],
@@ -11656,11 +12643,14 @@
                 "receivables.manage",
                 "payments.reverse",
                 "expenses.manage",
+                "disbursements.approve",
                 "disbursements.reverse",
                 "treasury.transfer",
                 "organization.manage",
                 "organization.branches.manage",
                 "organization.members.manage",
+                "organization.roles.read",
+                "organization.roles.manage",
                 "billing_concepts.manage",
                 "interest_policies.manage",
                 "expense_categories.manage",
@@ -14096,9 +15086,16 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "financialMovementId": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "directExpenseCategoryId": {
             "anyOf": [
@@ -14149,8 +15146,44 @@
           "status": {
             "type": "string",
             "enum": [
+              "PENDING_APPROVAL",
               "POSTED",
+              "REJECTED",
               "REVERSED"
+            ]
+          },
+          "decidedBy": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decisionReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "createdAt": {
@@ -14181,6 +15214,9 @@
           "reference",
           "notes",
           "status",
+          "decidedBy",
+          "decidedAt",
+          "decisionReason",
           "createdAt",
           "supplierName"
         ],
@@ -14233,9 +15269,16 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "financialMovementId": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "directExpenseCategoryId": {
             "anyOf": [
@@ -14286,8 +15329,44 @@
           "status": {
             "type": "string",
             "enum": [
+              "PENDING_APPROVAL",
               "POSTED",
+              "REJECTED",
               "REVERSED"
+            ]
+          },
+          "decidedBy": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decisionReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "createdAt": {
@@ -14308,6 +15387,9 @@
           "reference",
           "notes",
           "status",
+          "decidedBy",
+          "decidedAt",
+          "decisionReason",
           "createdAt"
         ],
         "additionalProperties": false
