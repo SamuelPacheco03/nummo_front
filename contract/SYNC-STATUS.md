@@ -1,6 +1,119 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-17 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero.**
+**Fecha:** 2026-08-18 · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma.**
+
+## ⚠️ ROMPE — el estado de la organización salió de `PATCH /organizations/:orgId`
+
+`UpdateOrganizationInput` **ya no acepta `status`**. Suspender o reactivar dejó de ser un campo
+del formulario de empresa y pasó a `PUT /api/v1/admin/organizations/:orgId/status`, que es
+superficie de superadmin de plataforma. Si lo seguís mandando, `tsc` falla al regenerar.
+
+Ya está arreglado en `company-page.tsx`: el campo «Estado» se muestra ahora como lectura
+(`StatusBadge`, con el tono de siempre) en vez de un `<select>` editable. **No lo quitéis de la
+pantalla**: una organización que no está `ACTIVE` queda en **solo lectura**, y ese badge es la
+explicación de por qué no se guarda nada.
+
+Ese modo de solo lectura es nuevo y conviene contemplarlo: cualquier método que no sea de
+lectura responde **`403 ORGANIZATION_SUSPENDED`**. Consultar y exportar la historia sigue
+funcionando siempre — eso no se gatea nunca.
+
+## 🆕 Qué puede hacer el usuario y qué incluye su plan — `GET /me/capabilities`
+
+**`GET /api/v1/organizations/:orgId/me/capabilities`** · cualquier miembro autenticado, sin
+permiso especial. Una llamada que responde de una vez las cuatro preguntas que la UI necesita
+para decidir qué pintar:
+
+```jsonc
+{
+  "organizationId": "…",
+  "role": "ACCOUNTANT",                       // quién es
+  "permissions": ["contacts.read", "payments.create", "…"],  // qué puede hacer
+  "planCode": "PRO",                          // FREE · BASIC · PRO · ENTERPRISE
+  "features": { "ai_byok": true, "custom_roles": false, "accounting": true,
+                "bank_reconciliation": false, "approvals": false, "api_access": false },
+  "limits":   { "max_contacts": 500, "max_users": 10, "max_branches": 3,
+                "ai_messages_monthly": 2000, "voice_minutes_monthly": 120 },
+  "period":   "2026-08",                      // YYYY-MM en la zona horaria de la organización
+  "usage":    { "ai_messages_monthly": 431, "voice_minutes_monthly": 12 }
+}
+```
+
+Dos convenciones que valen para todo el bloque:
+
+- **Un límite en `null` es ilimitado**, no cero. Una feature ausente es `false`.
+- `usage` solo existe para los límites que se acumulan por período (los de IA y voz). Los
+  demás (`max_contacts`, `max_users`, `max_branches`) cuentan filas que existen ahora, así que
+  el conteo lo tenéis vosotros en la propia lista.
+
+Es la fuente para **esconder o deshabilitar** en vez de dejar que el usuario choque contra un
+403. Pero el backend sigue validando: la UI decide qué mostrar, nunca qué se permite.
+
+## 🆕 Dos errores nuevos, y por qué no son un 402
+
+Un plan que no alcanza **no es `402 Payment Required`** — proxies y clientes lo tratan de forma
+errática. Son dos casos distintos y la UI debería decir cosas distintas:
+
+| Código | HTTP | Qué pasó | Salida |
+| --- | --- | --- | --- |
+| `FEATURE_NOT_AVAILABLE` | 403 | El plan no lo incluye | Mejorar de plan |
+| `LIMIT_EXCEEDED` | 409 | Sí lo incluye, pero se acabó la cuota | Liberar algo, o mejorar |
+
+Ambos traen `details` accionables, así que el mensaje puede ser concreto en vez de «no se pudo»:
+
+```jsonc
+// FEATURE_NOT_AVAILABLE
+{ "error": { "code": "FEATURE_NOT_AVAILABLE", "message": "…",
+             "details": { "feature": "accounting", "plan": "BASIC" } } }
+
+// LIMIT_EXCEEDED
+{ "error": { "code": "LIMIT_EXCEEDED", "message": "…",
+             "details": { "limit": "max_contacts", "max": 500, "used": 500,
+                          "plan": "PRO", "period": "2026-08" } } }
+```
+
+`used` es **lo ya gastado**, nunca «cuántos caben». `period` viaja solo en los límites que se
+reinician por mes. Ojo con uno que no viene de un plan: `limit: "free_organizations"` es el tope
+anti-abuso de organizaciones gratuitas por usuario, y falla igual que los demás a propósito —
+no tenéis que distinguirlo.
+
+## 🆕 El contrato nombra el permiso de cada ruta (`x-required-permission`)
+
+Las 62 rutas que mutan datos salen anotadas con el permiso que exigen, derivado del router real
+—no escrito a mano—, así que no puede quedar desfasado:
+
+```jsonc
+"post": { "operationId": "…", "x-required-permission": "payments.create" }
+```
+
+Con eso y el array `permissions` de `/me/capabilities` se puede gatear la UI sin mantener una
+tabla propia de qué pide cada botón.
+
+Un cambio de fondo detrás de esto: **el backend ya no autoriza por nombre de rol**, sino por
+permiso. El rol siguió siendo el mismo paquete de siempre (`OWNER · ADMIN · ACCOUNTANT ·
+OPERATOR · VIEWER`) y nada cambia hoy para el usuario, pero si en el front hay algún
+`if (role === 'ACCOUNTANT')` conviene cambiarlo por el permiso: el día que existan roles
+personalizados, el rol dejará de predecir lo que alguien puede hacer.
+
+## 🆕 Consola de plataforma en `/api/v1/admin/*`
+
+Superficie de **superadmin de plataforma**, no de organización: vive fuera del tenant y detrás
+de su propio guard. No es un rol nuevo en el enum — meterlo ahí habría convertido la gestión de
+miembros en una escalada de privilegios. El primer superadmin se da de alta por script.
+
+| Ruta | Qué hace |
+| --- | --- |
+| `GET /admin/organizations` | Lista con su plan y su consumo |
+| `GET /admin/organizations/:orgId` | Detalle, con entitlements y overrides negociados |
+| `PUT /admin/organizations/:orgId/plan` | Mueve la organización de plan |
+| `PUT /admin/organizations/:orgId/overrides` | Negocia features o topes para un cliente |
+| `PUT /admin/organizations/:orgId/status` | Suspende o reactiva |
+| `GET /admin/plans` · `PUT /admin/plans/:code` | Lista y guarda planes |
+
+Los hooks ya están generados (`src/api/generated/endpoints/platform-admin/`), pero **no hay
+pantalla todavía**: es una consola interna y decidiréis vosotros si vive en esta app o aparte.
+Un detalle por si la construís: editar un plan **no cambia nada para nadie** hasta que se
+recalcula explícitamente — es a propósito, permite subir un tope solo para quien entre desde
+ahora sin tocar a los clientes actuales.
 
 ## 🆕 Idempotencia en todas las mutaciones de dinero — regenera con `pnpm api:gen`
 

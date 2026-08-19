@@ -229,7 +229,7 @@ export const getPostApiV1OrganizationsOrgIdExpenseCategoriesUrl = (orgId: string
 }
 
 /**
- * @summary Create an expense category (OWNER/ADMIN)
+ * @summary Create an expense category (requiere expense_categories.manage)
  */
 export const postApiV1OrganizationsOrgIdExpenseCategories = async (orgId: string,
     createExpenseCategory: CreateExpenseCategory, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdExpenseCategoriesResponse> => {
@@ -279,7 +279,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdExpenseCategoriesMutationError = ErrorResponse
 
     /**
- * @summary Create an expense category (OWNER/ADMIN)
+ * @summary Create an expense category (requiere expense_categories.manage)
  */
 export const usePostApiV1OrganizationsOrgIdExpenseCategories = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdExpenseCategories>>, TError,{orgId: string;data: CreateExpenseCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -320,7 +320,7 @@ export const getPatchApiV1OrganizationsOrgIdExpenseCategoriesIdUrl = (orgId: str
 }
 
 /**
- * @summary Update an expense category (OWNER/ADMIN)
+ * @summary Update an expense category (requiere expense_categories.manage)
  */
 export const patchApiV1OrganizationsOrgIdExpenseCategoriesId = async (orgId: string,
     id: string,
@@ -371,7 +371,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdExpenseCategoriesIdMutationError = ErrorResponse
 
     /**
- * @summary Update an expense category (OWNER/ADMIN)
+ * @summary Update an expense category (requiere expense_categories.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdExpenseCategoriesId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdExpenseCategoriesId>>, TError,{orgId: string;id: string;data: UpdateExpenseCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -538,7 +538,7 @@ export const getPostApiV1OrganizationsOrgIdExpenseSchedulesUrl = (orgId: string,
 }
 
 /**
- * @summary Create a recurring expense schedule (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Create a recurring expense schedule (requiere expense_schedules.manage)
  */
 export const postApiV1OrganizationsOrgIdExpenseSchedules = async (orgId: string,
     createExpenseSchedule: CreateExpenseSchedule, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdExpenseSchedulesResponse> => {
@@ -588,7 +588,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdExpenseSchedulesMutationError = ErrorResponse
 
     /**
- * @summary Create a recurring expense schedule (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Create a recurring expense schedule (requiere expense_schedules.manage)
  */
 export const usePostApiV1OrganizationsOrgIdExpenseSchedules = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdExpenseSchedules>>, TError,{orgId: string;data: CreateExpenseSchedule}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -756,7 +756,7 @@ export const getPatchApiV1OrganizationsOrgIdExpenseSchedulesIdUrl = (orgId: stri
 }
 
 /**
- * @summary Update an expense schedule (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Update an expense schedule (requiere expense_schedules.manage)
  */
 export const patchApiV1OrganizationsOrgIdExpenseSchedulesId = async (orgId: string,
     id: string,
@@ -807,7 +807,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdExpenseSchedulesIdMutationError = ErrorResponse
 
     /**
- * @summary Update an expense schedule (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Update an expense schedule (requiere expense_schedules.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdExpenseSchedulesId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdExpenseSchedulesId>>, TError,{orgId: string;id: string;data: UpdateExpenseSchedule}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1330,7 +1330,7 @@ export const getPostApiV1OrganizationsOrgIdExpensesGenerateUrl = (orgId: string,
 }
 
 /**
- * @summary Generate due recurring expenses for this organization (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Generate due recurring expenses for this organization (requiere expenses.manage)
  */
 export const postApiV1OrganizationsOrgIdExpensesGenerate = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdExpensesGenerateResponse> => {
 
@@ -1379,7 +1379,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdExpensesGenerateMutationError = unknown
 
     /**
- * @summary Generate due recurring expenses for this organization (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Generate due recurring expenses for this organization (requiere expenses.manage)
  */
 export const usePostApiV1OrganizationsOrgIdExpensesGenerate = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdExpensesGenerate>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}

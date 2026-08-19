@@ -101,7 +101,7 @@ export const getGetApiV1OrganizationsOrgIdAssistantSettingsUrl = (orgId: string,
 
 /**
  * Devuelve la configuración del LLM de chat en la raíz y la de transcripción de voz en el bloque `voice`. Cada bloque tiene su proveedor activo independiente.
- * @summary AI assistant settings: configured providers (masked), active provider and model catalog (OWNER/ADMIN)
+ * @summary AI assistant settings: configured providers (masked), active provider and model catalog (requiere assistant.settings.read)
  */
 export const getApiV1OrganizationsOrgIdAssistantSettings = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantSettingsResponse> => {
 
@@ -172,7 +172,7 @@ export function useGetApiV1OrganizationsOrgIdAssistantSettings<TData = Awaited<R
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary AI assistant settings: configured providers (masked), active provider and model catalog (OWNER/ADMIN)
+ * @summary AI assistant settings: configured providers (masked), active provider and model catalog (requiere assistant.settings.read)
  */
 
 export function useGetApiV1OrganizationsOrgIdAssistantSettings<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantSettings>>, TError = ErrorResponse>(
@@ -222,7 +222,7 @@ export const getPutApiV1OrganizationsOrgIdAssistantProvidersProviderUrl = (orgId
 
 /**
  * Stores the provider API key encrypted at rest (never returned). `provider` is one of anthropic|openai|google|deepseek. The first provider configured becomes active automatically; pass `activate:true` to switch to another.
- * @summary Set/replace the API key + model for a provider (OWNER/ADMIN)
+ * @summary Set/replace the API key + model for a provider (requiere assistant.settings.manage)
  */
 export const putApiV1OrganizationsOrgIdAssistantProvidersProvider = async (orgId: string,
     provider: 'anthropic' | 'openai' | 'google' | 'deepseek',
@@ -273,7 +273,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutApiV1OrganizationsOrgIdAssistantProvidersProviderMutationError = ErrorResponse
 
     /**
- * @summary Set/replace the API key + model for a provider (OWNER/ADMIN)
+ * @summary Set/replace the API key + model for a provider (requiere assistant.settings.manage)
  */
 export const usePutApiV1OrganizationsOrgIdAssistantProvidersProvider = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantProvidersProvider>>, TError,{orgId: string;provider: 'anthropic' | 'openai' | 'google' | 'deepseek';data: UpsertAiProviderCredential}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -314,7 +314,7 @@ export const getDeleteApiV1OrganizationsOrgIdAssistantProvidersProviderUrl = (or
 }
 
 /**
- * @summary Remove a provider credential (OWNER/ADMIN)
+ * @summary Remove a provider credential (requiere assistant.settings.manage)
  */
 export const deleteApiV1OrganizationsOrgIdAssistantProvidersProvider = async (orgId: string,
     provider: 'anthropic' | 'openai' | 'google' | 'deepseek', options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdAssistantProvidersProviderResponse> => {
@@ -364,7 +364,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteApiV1OrganizationsOrgIdAssistantProvidersProviderMutationError = ErrorResponse
 
     /**
- * @summary Remove a provider credential (OWNER/ADMIN)
+ * @summary Remove a provider credential (requiere assistant.settings.manage)
  */
 export const useDeleteApiV1OrganizationsOrgIdAssistantProvidersProvider = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantProvidersProvider>>, TError,{orgId: string;provider: 'anthropic' | 'openai' | 'google' | 'deepseek'}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -405,7 +405,7 @@ export const getPostApiV1OrganizationsOrgIdAssistantProvidersProviderActivateUrl
 }
 
 /**
- * @summary Make a configured provider the active one (OWNER/ADMIN)
+ * @summary Make a configured provider the active one (requiere assistant.settings.manage)
  */
 export const postApiV1OrganizationsOrgIdAssistantProvidersProviderActivate = async (orgId: string,
     provider: 'anthropic' | 'openai' | 'google' | 'deepseek', options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantProvidersProviderActivateResponse> => {
@@ -455,7 +455,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdAssistantProvidersProviderActivateMutationError = ErrorResponse
 
     /**
- * @summary Make a configured provider the active one (OWNER/ADMIN)
+ * @summary Make a configured provider the active one (requiere assistant.settings.manage)
  */
 export const usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantProvidersProviderActivate>>, TError,{orgId: string;provider: 'anthropic' | 'openai' | 'google' | 'deepseek'}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -497,7 +497,7 @@ export const getPutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderUrl = (
 
 /**
  * Configura el modelo de voz que transcribe los mensajes de audio. `provider` es deepgram|elevenlabs y `model` es su id (p. ej. `nova-3`, `scribe_v1`). La API key se guarda cifrada y nunca se devuelve. El primer proveedor de voz configurado queda activo automáticamente; usa `activate:true` para cambiar a otro. Es independiente del proveedor de chat.
- * @summary Set/replace the API key + model of a speech-to-text provider (OWNER/ADMIN)
+ * @summary Set/replace the API key + model of a speech-to-text provider (requiere assistant.settings.manage)
  */
 export const putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = async (orgId: string,
     provider: 'deepgram' | 'elevenlabs',
@@ -548,7 +548,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationError = ErrorResponse
 
     /**
- * @summary Set/replace the API key + model of a speech-to-text provider (OWNER/ADMIN)
+ * @summary Set/replace the API key + model of a speech-to-text provider (requiere assistant.settings.manage)
  */
 export const usePutApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs';data: UpsertAiProviderCredential}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -589,7 +589,7 @@ export const getDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderUrl 
 }
 
 /**
- * @summary Remove a speech-to-text provider credential (OWNER/ADMIN)
+ * @summary Remove a speech-to-text provider credential (requiere assistant.settings.manage)
  */
 export const deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = async (orgId: string,
     provider: 'deepgram' | 'elevenlabs', options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderResponse> => {
@@ -639,7 +639,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderMutationError = ErrorResponse
 
     /**
- * @summary Remove a speech-to-text provider credential (OWNER/ADMIN)
+ * @summary Remove a speech-to-text provider credential (requiere assistant.settings.manage)
  */
 export const useDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -680,7 +680,7 @@ export const getPostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActiva
 }
 
 /**
- * @summary Make a configured speech-to-text provider the active one (OWNER/ADMIN)
+ * @summary Make a configured speech-to-text provider the active one (requiere assistant.settings.manage)
  */
 export const postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate = async (orgId: string,
     provider: 'deepgram' | 'elevenlabs', options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateResponse> => {
@@ -730,7 +730,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateMutationError = ErrorResponse
 
     /**
- * @summary Make a configured speech-to-text provider the active one (OWNER/ADMIN)
+ * @summary Make a configured speech-to-text provider the active one (requiere assistant.settings.manage)
  */
 export const usePostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepgram' | 'elevenlabs'}, TContext>, request?: SecondParameter<typeof customFetch>}

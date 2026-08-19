@@ -13,11 +13,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { canManageOrg } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDateHuman } from '@/lib/format'
-import type { Organization, ProvisionSummary } from '@/api/generated/model'
+import type { Organization, OrganizationStatus, ProvisionSummary } from '@/api/generated/model'
 import { useApplyTemplate, useOrgDetail, useUpdateOrg } from './hooks'
 
 const schema = z.object({
@@ -27,14 +28,18 @@ const schema = z.object({
   type: z.enum(['SCHOOL', 'SHOP', 'PERSONAL', 'GENERIC']),
   timezone: z.string().trim().max(80).optional(),
   locale: z.string().trim().max(20).optional(),
-  status: z.enum(['ACTIVE', 'SUSPENDED', 'ARCHIVED']),
 })
 type Values = z.infer<typeof schema>
 
-const STATUS_LABELS: Record<Values['status'], string> = {
-  ACTIVE: 'Activa',
-  SUSPENDED: 'Suspendida',
-  ARCHIVED: 'Archivada',
+/**
+ * El estado dejó de editarse aquí: lo administra la plataforma. Se sigue mostrando
+ * porque cambia lo que la organización puede hacer — suspendida se consulta y se
+ * exporta, pero no admite movimientos nuevos.
+ */
+const STATUS_BADGE: Record<OrganizationStatus, { tone: StatusTone; label: string }> = {
+  ACTIVE: { tone: 'success', label: 'Activa' },
+  SUSPENDED: { tone: 'warning', label: 'Suspendida' },
+  ARCHIVED: { tone: 'muted', label: 'Archivada' },
 }
 
 const ORG_TYPES = ['SCHOOL', 'SHOP', 'PERSONAL', 'GENERIC'] as const
@@ -53,7 +58,6 @@ function toForm(org: Organization): Values {
     type: org.type,
     timezone: org.timezone,
     locale: org.locale,
-    status: org.status,
   }
 }
 
@@ -165,7 +169,6 @@ export function CompanyPage() {
           type: values.type,
           timezone: values.timezone || undefined,
           locale: values.locale || undefined,
-          status: values.status,
         },
       })
       toast.success('Empresa actualizada')
@@ -206,14 +209,10 @@ export function CompanyPage() {
                 ))}
               </NativeSelect>
             </Field>
-            <Field label="Estado" htmlFor="c-status" error={errors.status?.message}>
-              <NativeSelect id="c-status" disabled={!canManage} {...register('status')}>
-                {(Object.keys(STATUS_LABELS) as Values['status'][]).map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABELS[s]}
-                  </option>
-                ))}
-              </NativeSelect>
+            <Field label="Estado" hint="Lo administra Nummo; no se cambia desde aquí.">
+              <div className="flex h-9 items-center">
+                <StatusBadge {...STATUS_BADGE[organization.status]} />
+              </div>
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

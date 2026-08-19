@@ -419,7 +419,7 @@ export const getPatchApiV1OrganizationsOrgIdUrl = (orgId: string,) => {
 }
 
 /**
- * @summary Update an organization (OWNER/ADMIN)
+ * @summary Update an organization (requiere organization.manage)
  */
 export const patchApiV1OrganizationsOrgId = async (orgId: string,
     updateOrganizationInput: UpdateOrganizationInput, options?: Parameters<typeof customFetch>[1]): Promise<patchApiV1OrganizationsOrgIdResponse> => {
@@ -469,7 +469,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdMutationError = ErrorResponse
 
     /**
- * @summary Update an organization (OWNER/ADMIN)
+ * @summary Update an organization (requiere organization.manage)
  */
 export const usePatchApiV1OrganizationsOrgId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgId>>, TError,{orgId: string;data: UpdateOrganizationInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -510,7 +510,7 @@ export const getPostApiV1OrganizationsOrgIdApplyTemplateUrl = (orgId: string,) =
 
 /**
  * Seeds sensible billing concepts, expense categories, payment methods and accounts for the organization vertical. Skips items that already exist, so it is safe to call more than once. Body `type` overrides the stored organization type.
- * @summary Apply the default master-data template for a vertical (OWNER/ADMIN, idempotent)
+ * @summary Apply the default master-data template for a vertical (requiere organization.manage, idempotent)
  */
 export const postApiV1OrganizationsOrgIdApplyTemplate = async (orgId: string,
     applyTemplateInput: ApplyTemplateInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdApplyTemplateResponse> => {
@@ -560,7 +560,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdApplyTemplateMutationError = ErrorResponse
 
     /**
- * @summary Apply the default master-data template for a vertical (OWNER/ADMIN, idempotent)
+ * @summary Apply the default master-data template for a vertical (requiere organization.manage, idempotent)
  */
 export const usePostApiV1OrganizationsOrgIdApplyTemplate = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdApplyTemplate>>, TError,{orgId: string;data: ApplyTemplateInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -712,7 +712,7 @@ export const getPutApiV1OrganizationsOrgIdSettingsUrl = (orgId: string,) => {
 }
 
 /**
- * @summary Update organization settings (OWNER/ADMIN)
+ * @summary Update organization settings (requiere organization.manage)
  */
 export const putApiV1OrganizationsOrgIdSettings = async (orgId: string,
     updateSettingsInput: UpdateSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdSettingsResponse> => {
@@ -762,7 +762,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutApiV1OrganizationsOrgIdSettingsMutationError = ErrorResponse
 
     /**
- * @summary Update organization settings (OWNER/ADMIN)
+ * @summary Update organization settings (requiere organization.manage)
  */
 export const usePutApiV1OrganizationsOrgIdSettings = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdSettings>>, TError,{orgId: string;data: UpdateSettingsInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -914,7 +914,7 @@ export const getPostApiV1OrganizationsOrgIdBranchesUrl = (orgId: string,) => {
 }
 
 /**
- * @summary Create a branch (OWNER/ADMIN)
+ * @summary Create a branch (requiere organization.branches.manage)
  */
 export const postApiV1OrganizationsOrgIdBranches = async (orgId: string,
     createBranchInput: CreateBranchInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdBranchesResponse> => {
@@ -964,7 +964,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdBranchesMutationError = ErrorResponse
 
     /**
- * @summary Create a branch (OWNER/ADMIN)
+ * @summary Create a branch (requiere organization.branches.manage)
  */
 export const usePostApiV1OrganizationsOrgIdBranches = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdBranches>>, TError,{orgId: string;data: CreateBranchInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1005,7 +1005,7 @@ export const getPatchApiV1OrganizationsOrgIdBranchesBranchIdUrl = (orgId: string
 }
 
 /**
- * @summary Update a branch (OWNER/ADMIN)
+ * @summary Update a branch (requiere organization.branches.manage)
  */
 export const patchApiV1OrganizationsOrgIdBranchesBranchId = async (orgId: string,
     branchId: string,
@@ -1056,7 +1056,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdBranchesBranchIdMutationError = ErrorResponse
 
     /**
- * @summary Update a branch (OWNER/ADMIN)
+ * @summary Update a branch (requiere organization.branches.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdBranchesBranchId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdBranchesBranchId>>, TError,{orgId: string;branchId: string;data: UpdateBranchInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1213,7 +1213,7 @@ export const getPostApiV1OrganizationsOrgIdMembersUrl = (orgId: string,) => {
 }
 
 /**
- * @summary Add a member by email (OWNER/ADMIN)
+ * @summary Add a member by email (requiere organization.members.manage)
  */
 export const postApiV1OrganizationsOrgIdMembers = async (orgId: string,
     addMemberInput: AddMemberInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdMembersResponse> => {
@@ -1263,7 +1263,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdMembersMutationError = ErrorResponse
 
     /**
- * @summary Add a member by email (OWNER/ADMIN)
+ * @summary Add a member by email (requiere organization.members.manage)
  */
 export const usePostApiV1OrganizationsOrgIdMembers = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMembers>>, TError,{orgId: string;data: AddMemberInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1304,7 +1304,7 @@ export const getPatchApiV1OrganizationsOrgIdMembersMembershipIdUrl = (orgId: str
 }
 
 /**
- * @summary Change a member role (OWNER/ADMIN)
+ * @summary Change a member role (requiere organization.members.manage)
  */
 export const patchApiV1OrganizationsOrgIdMembersMembershipId = async (orgId: string,
     membershipId: string,
@@ -1355,7 +1355,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdMembersMembershipIdMutationError = ErrorResponse
 
     /**
- * @summary Change a member role (OWNER/ADMIN)
+ * @summary Change a member role (requiere organization.members.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdMembersMembershipId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdMembersMembershipId>>, TError,{orgId: string;membershipId: string;data: UpdateMemberRoleInput}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1396,7 +1396,7 @@ export const getDeleteApiV1OrganizationsOrgIdMembersMembershipIdUrl = (orgId: st
 }
 
 /**
- * @summary Remove a member (OWNER/ADMIN)
+ * @summary Remove a member (requiere organization.members.manage)
  */
 export const deleteApiV1OrganizationsOrgIdMembersMembershipId = async (orgId: string,
     membershipId: string, options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdMembersMembershipIdResponse> => {
@@ -1446,7 +1446,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteApiV1OrganizationsOrgIdMembersMembershipIdMutationError = ErrorResponse
 
     /**
- * @summary Remove a member (OWNER/ADMIN)
+ * @summary Remove a member (requiere organization.members.manage)
  */
 export const useDeleteApiV1OrganizationsOrgIdMembersMembershipId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdMembersMembershipId>>, TError,{orgId: string;membershipId: string}, TContext>, request?: SecondParameter<typeof customFetch>}

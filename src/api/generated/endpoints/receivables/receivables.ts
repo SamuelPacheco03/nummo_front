@@ -307,7 +307,7 @@ export const getPostApiV1OrganizationsOrgIdReceivablesGenerateUrl = (orgId: stri
 }
 
 /**
- * @summary Generate due recurring receivables for this organization (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Generate due recurring receivables for this organization (requiere receivables.manage)
  */
 export const postApiV1OrganizationsOrgIdReceivablesGenerate = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdReceivablesGenerateResponse> => {
 
@@ -356,7 +356,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdReceivablesGenerateMutationError = unknown
 
     /**
- * @summary Generate due recurring receivables for this organization (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Generate due recurring receivables for this organization (requiere receivables.manage)
  */
 export const usePostApiV1OrganizationsOrgIdReceivablesGenerate = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdReceivablesGenerate>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -390,7 +390,7 @@ export const getPostApiV1OrganizationsOrgIdReceivablesAccrueInterestUrl = (orgId
 
 /**
  * Idempotent per receivable/day: charges only the delta versus interest already posted. Also runs daily in the worker.
- * @summary Accrue late interest on overdue receivables now (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Accrue late interest on overdue receivables now (requiere receivables.manage)
  */
 export const postApiV1OrganizationsOrgIdReceivablesAccrueInterest = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdReceivablesAccrueInterestResponse> => {
 
@@ -439,7 +439,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdReceivablesAccrueInterestMutationError = unknown
 
     /**
- * @summary Accrue late interest on overdue receivables now (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Accrue late interest on overdue receivables now (requiere receivables.manage)
  */
 export const usePostApiV1OrganizationsOrgIdReceivablesAccrueInterest = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdReceivablesAccrueInterest>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -733,7 +733,7 @@ export const getPostApiV1OrganizationsOrgIdReceivablesIdWaiversUrl = (orgId: str
 
 /**
  * Posts a WAIVER adjustment that reduces the balance without editing history. Capped at outstanding interest.
- * @summary Waive (forgive) accrued late interest (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Waive (forgive) accrued late interest (requiere receivables.manage)
  */
 export const postApiV1OrganizationsOrgIdReceivablesIdWaivers = async (orgId: string,
     id: string,
@@ -784,7 +784,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdReceivablesIdWaiversMutationError = ErrorResponse
 
     /**
- * @summary Waive (forgive) accrued late interest (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Waive (forgive) accrued late interest (requiere receivables.manage)
  */
 export const usePostApiV1OrganizationsOrgIdReceivablesIdWaivers = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdReceivablesIdWaivers>>, TError,{orgId: string;id: string;data: WaiveInterest}, TContext>, request?: SecondParameter<typeof customFetch>}

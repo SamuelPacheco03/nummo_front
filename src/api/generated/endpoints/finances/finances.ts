@@ -346,7 +346,7 @@ export const getPostApiV1OrganizationsOrgIdFinancialAccountsTransfersUrl = (orgI
 }
 
 /**
- * Moves money between two accounts without changing total income/expense (OWNER/ADMIN/ACCOUNTANT).
+ * Moves money between two accounts without changing total income/expense (requiere treasury.transfer).
  * @summary Register an internal transfer (TRANSFER_OUT + TRANSFER_IN, one transaction)
  */
 export const postApiV1OrganizationsOrgIdFinancialAccountsTransfers = async (orgId: string,
@@ -691,7 +691,7 @@ export const getPostApiV1OrganizationsOrgIdPaymentMethodsUrl = (orgId: string,) 
 }
 
 /**
- * @summary Create a payment method (OWNER/ADMIN)
+ * @summary Create a payment method (requiere payment_methods.manage)
  */
 export const postApiV1OrganizationsOrgIdPaymentMethods = async (orgId: string,
     createPaymentMethod: CreatePaymentMethod, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdPaymentMethodsResponse> => {
@@ -741,7 +741,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdPaymentMethodsMutationError = ErrorResponse
 
     /**
- * @summary Create a payment method (OWNER/ADMIN)
+ * @summary Create a payment method (requiere payment_methods.manage)
  */
 export const usePostApiV1OrganizationsOrgIdPaymentMethods = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdPaymentMethods>>, TError,{orgId: string;data: CreatePaymentMethod}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -782,7 +782,7 @@ export const getPatchApiV1OrganizationsOrgIdPaymentMethodsIdUrl = (orgId: string
 }
 
 /**
- * @summary Update a payment method (OWNER/ADMIN)
+ * @summary Update a payment method (requiere payment_methods.manage)
  */
 export const patchApiV1OrganizationsOrgIdPaymentMethodsId = async (orgId: string,
     id: string,
@@ -833,7 +833,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdPaymentMethodsIdMutationError = ErrorResponse
 
     /**
- * @summary Update a payment method (OWNER/ADMIN)
+ * @summary Update a payment method (requiere payment_methods.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdPaymentMethodsId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdPaymentMethodsId>>, TError,{orgId: string;id: string;data: UpdatePaymentMethod}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1000,7 +1000,7 @@ export const getPostApiV1OrganizationsOrgIdFinancialAccountsUrl = (orgId: string
 }
 
 /**
- * @summary Create a financial account (OWNER/ADMIN)
+ * @summary Create a financial account (requiere financial_accounts.manage)
  */
 export const postApiV1OrganizationsOrgIdFinancialAccounts = async (orgId: string,
     createFinancialAccount: CreateFinancialAccount, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdFinancialAccountsResponse> => {
@@ -1050,7 +1050,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdFinancialAccountsMutationError = ErrorResponse
 
     /**
- * @summary Create a financial account (OWNER/ADMIN)
+ * @summary Create a financial account (requiere financial_accounts.manage)
  */
 export const usePostApiV1OrganizationsOrgIdFinancialAccounts = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdFinancialAccounts>>, TError,{orgId: string;data: CreateFinancialAccount}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1091,7 +1091,7 @@ export const getPatchApiV1OrganizationsOrgIdFinancialAccountsIdUrl = (orgId: str
 }
 
 /**
- * @summary Update a financial account (OWNER/ADMIN)
+ * @summary Update a financial account (requiere financial_accounts.manage)
  */
 export const patchApiV1OrganizationsOrgIdFinancialAccountsId = async (orgId: string,
     id: string,
@@ -1142,7 +1142,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdFinancialAccountsIdMutationError = ErrorResponse
 
     /**
- * @summary Update a financial account (OWNER/ADMIN)
+ * @summary Update a financial account (requiere financial_accounts.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdFinancialAccountsId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdFinancialAccountsId>>, TError,{orgId: string;id: string;data: UpdateFinancialAccount}, TContext>, request?: SecondParameter<typeof customFetch>}

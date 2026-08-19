@@ -6,11 +6,15 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UpdateOrganizationInputStatus = typeof UpdateOrganizationInputStatus[keyof typeof UpdateOrganizationInputStatus];
-
-
-export const UpdateOrganizationInputStatus = {
-  ACTIVE: 'ACTIVE',
-  SUSPENDED: 'SUSPENDED',
-  ARCHIVED: 'ARCHIVED',
-} as const;
+export interface UsageMap {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  ai_messages_monthly: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  voice_minutes_monthly: number;
+}

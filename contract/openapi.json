@@ -28,6 +28,14 @@
       "description": "Organizations, settings, branches and members"
     },
     {
+      "name": "Platform",
+      "description": "Plans, entitlements and what the caller may do"
+    },
+    {
+      "name": "Platform admin",
+      "description": "Consola de plataforma: planes, entitlements y suspensión"
+    },
+    {
       "name": "Contacts",
       "description": "Contacts and relationships"
     },
@@ -504,7 +512,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Update an organization (OWNER/ADMIN)",
+        "summary": "Update an organization (requiere organization.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -553,7 +561,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.manage"
       }
     },
     "/api/v1/organizations/{orgId}/apply-template": {
@@ -561,7 +570,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Apply the default master-data template for a vertical (OWNER/ADMIN, idempotent)",
+        "summary": "Apply the default master-data template for a vertical (requiere organization.manage, idempotent)",
         "description": "Seeds sensible billing concepts, expense categories, payment methods and accounts for the organization vertical. Skips items that already exist, so it is safe to call more than once. Body `type` overrides the stored organization type.",
         "security": [
           {
@@ -611,7 +620,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.manage"
       }
     },
     "/api/v1/organizations/{orgId}/settings": {
@@ -654,7 +664,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Update organization settings (OWNER/ADMIN)",
+        "summary": "Update organization settings (requiere organization.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -703,7 +713,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.manage"
       }
     },
     "/api/v1/organizations/{orgId}/branches": {
@@ -749,7 +760,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Create a branch (OWNER/ADMIN)",
+        "summary": "Create a branch (requiere organization.branches.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -798,7 +809,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.branches.manage"
       }
     },
     "/api/v1/organizations/{orgId}/branches/{branchId}": {
@@ -806,7 +818,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Update a branch (OWNER/ADMIN)",
+        "summary": "Update a branch (requiere organization.branches.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -865,7 +877,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.branches.manage"
       }
     },
     "/api/v1/organizations/{orgId}/members": {
@@ -911,7 +924,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Add a member by email (OWNER/ADMIN)",
+        "summary": "Add a member by email (requiere organization.members.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -970,7 +983,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.members.manage"
       }
     },
     "/api/v1/organizations/{orgId}/members/{membershipId}": {
@@ -978,7 +992,7 @@
         "tags": [
           "Organizations"
         ],
-        "summary": "Change a member role (OWNER/ADMIN)",
+        "summary": "Change a member role (requiere organization.members.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -1037,13 +1051,14 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "organization.members.manage"
       },
       "delete": {
         "tags": [
           "Organizations"
         ],
-        "summary": "Remove a member (OWNER/ADMIN)",
+        "summary": "Remove a member (requiere organization.members.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -1074,6 +1089,453 @@
         "responses": {
           "204": {
             "description": "Removed."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.members.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/me/capabilities": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "What the caller may do here, and what the plan includes",
+        "description": "Una sola llamada al entrar a la organización: rol, permisos, features del plan y topes. Sirve para pintar menús y upsell; el backend vuelve a verificarlo todo en cada petición.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capabilities of the caller in this organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizations": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "List every organization with its plan and consumption",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "planCode",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FREE",
+                "BASIC",
+                "PRO",
+                "ENTERPRISE"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "SUSPENDED",
+                "ARCHIVED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrganizationPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizations/{orgId}": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Organization detail, with its entitlements and negotiated overrides",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrganizationDetailDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizations/{orgId}/plan": {
+      "put": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Move an organization to another plan",
+        "description": "Cierra la suscripción anterior, abre la nueva y recalcula el snapshot, todo en una transacción. Los overrides negociados se conservan.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePlanInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolved entitlements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntitlementsDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizations/{orgId}/overrides": {
+      "put": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Negotiate features or caps for one customer",
+        "description": "Reemplaza los overrides de la organización y recalcula. Se conservan al cambiar de plan y al recalcular el plan.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOverridesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolved entitlements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntitlementsDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizations/{orgId}/status": {
+      "put": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Suspend or reactivate an organization",
+        "description": "Una organización suspendida queda en solo lectura: sigue viendo y exportando su historia, pero no puede escribir.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOrganizationStatusInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrganizationDetailDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/plans": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "List the plans",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/plans/{code}": {
+      "put": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Save a plan, deciding whether it reaches existing customers",
+        "description": "`applyToExisting` es obligatorio y no tiene default: cambiar lo que ya se le vendió a un cliente es de lo poco realmente difícil de deshacer. En `false`, el cambio solo afecta a quien entre desde ahora.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FREE",
+                "BASIC",
+                "PRO",
+                "ENTERPRISE"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePlanInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved plan and how many organizations were recomputed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavePlanResult"
+                }
+              }
+            }
           },
           "default": {
             "description": "Error.",
@@ -1287,7 +1749,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.write"
       }
     },
     "/api/v1/organizations/{orgId}/contacts/{contactId}": {
@@ -1409,7 +1872,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.write"
       },
       "delete": {
         "tags": [
@@ -1464,7 +1928,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.archive"
       }
     },
     "/api/v1/organizations/{orgId}/contacts/{contactId}/relationships": {
@@ -1579,7 +2044,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.write"
       }
     },
     "/api/v1/organizations/{orgId}/contacts/{contactId}/relationships/{relationshipId}": {
@@ -1639,7 +2105,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "contacts.write"
       }
     },
     "/api/v1/organizations/{orgId}/billing-concepts": {
@@ -1781,7 +2248,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Create a billing concept (OWNER/ADMIN)",
+        "summary": "Create a billing concept (requiere billing_concepts.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -1830,7 +2297,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "billing_concepts.manage"
       }
     },
     "/api/v1/organizations/{orgId}/billing-concepts/{id}": {
@@ -1838,7 +2306,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Update a billing concept (OWNER/ADMIN)",
+        "summary": "Update a billing concept (requiere billing_concepts.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -1897,7 +2365,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "billing_concepts.manage"
       }
     },
     "/api/v1/organizations/{orgId}/interest-policies": {
@@ -2039,7 +2508,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Create an interest policy (OWNER/ADMIN)",
+        "summary": "Create an interest policy (requiere interest_policies.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2088,7 +2557,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "interest_policies.manage"
       }
     },
     "/api/v1/organizations/{orgId}/interest-policies/{id}": {
@@ -2096,7 +2566,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Update an interest policy (OWNER/ADMIN)",
+        "summary": "Update an interest policy (requiere interest_policies.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2155,7 +2625,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "interest_policies.manage"
       }
     },
     "/api/v1/organizations/{orgId}/billing-agreements": {
@@ -2308,7 +2779,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Create a billing agreement (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Create a billing agreement (requiere agreements.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2357,7 +2828,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.manage"
       }
     },
     "/api/v1/organizations/{orgId}/billing-agreements/{id}": {
@@ -2420,7 +2892,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Update a billing agreement (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Update a billing agreement (requiere agreements.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2479,7 +2951,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.manage"
       }
     },
     "/api/v1/organizations/{orgId}/billing-agreements/{id}/pause": {
@@ -2487,7 +2960,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Pause a billing agreement (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Pause a billing agreement (requiere agreements.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2536,7 +3009,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.manage"
       }
     },
     "/api/v1/organizations/{orgId}/billing-agreements/{id}/resume": {
@@ -2544,7 +3018,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Resume a billing agreement (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Resume a billing agreement (requiere agreements.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2593,7 +3067,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.manage"
       }
     },
     "/api/v1/organizations/{orgId}/billing-agreements/{id}/end": {
@@ -2601,7 +3076,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "End a billing agreement (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "End a billing agreement (requiere agreements.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2650,7 +3125,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "agreements.manage"
       }
     },
     "/api/v1/organizations/{orgId}/receivables": {
@@ -2882,7 +3358,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.create"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/generate": {
@@ -2890,7 +3367,7 @@
         "tags": [
           "Receivables"
         ],
-        "summary": "Generate due recurring receivables for this organization (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Generate due recurring receivables for this organization (requiere receivables.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -2919,7 +3396,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.manage"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/accrue-interest": {
@@ -2927,7 +3405,7 @@
         "tags": [
           "Receivables"
         ],
-        "summary": "Accrue late interest on overdue receivables now (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Accrue late interest on overdue receivables now (requiere receivables.manage)",
         "description": "Idempotent per receivable/day: charges only the delta versus interest already posted. Also runs daily in the worker.",
         "security": [
           {
@@ -2964,7 +3442,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.manage"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}": {
@@ -3079,7 +3558,7 @@
         "tags": [
           "Receivables"
         ],
-        "summary": "Waive (forgive) accrued late interest (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Waive (forgive) accrued late interest (requiere receivables.manage)",
         "description": "Posts a WAIVER adjustment that reduces the balance without editing history. Capped at outstanding interest.",
         "security": [
           {
@@ -3156,7 +3635,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.manage"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}/adjustments": {
@@ -3240,7 +3720,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.adjust"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}/adjustments/{adjustmentId}": {
@@ -3307,7 +3788,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.manage"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}/cancel": {
@@ -3374,7 +3856,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.manage"
       }
     },
     "/api/v1/organizations/{orgId}/receivables/{id}/write-off": {
@@ -3441,7 +3924,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "receivables.manage"
       }
     },
     "/api/v1/organizations/{orgId}/payments": {
@@ -3671,7 +4155,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payments.create"
       }
     },
     "/api/v1/organizations/{orgId}/payments/{id}": {
@@ -3812,7 +4297,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payments.allocate"
       }
     },
     "/api/v1/organizations/{orgId}/payments/{id}/reverse": {
@@ -3886,7 +4372,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payments.reverse"
       }
     },
     "/api/v1/organizations/{orgId}/expense-categories": {
@@ -4028,7 +4515,7 @@
         "tags": [
           "Expenses"
         ],
-        "summary": "Create an expense category (OWNER/ADMIN)",
+        "summary": "Create an expense category (requiere expense_categories.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -4077,7 +4564,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_categories.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expense-categories/{id}": {
@@ -4085,7 +4573,7 @@
         "tags": [
           "Expenses"
         ],
-        "summary": "Update an expense category (OWNER/ADMIN)",
+        "summary": "Update an expense category (requiere expense_categories.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -4144,7 +4632,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_categories.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expense-schedules": {
@@ -4297,7 +4786,7 @@
         "tags": [
           "Expenses"
         ],
-        "summary": "Create a recurring expense schedule (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Create a recurring expense schedule (requiere expense_schedules.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -4346,7 +4835,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expense-schedules/{id}": {
@@ -4409,7 +4899,7 @@
         "tags": [
           "Expenses"
         ],
-        "summary": "Update an expense schedule (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Update an expense schedule (requiere expense_schedules.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -4468,7 +4958,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expense-schedules/{id}/pause": {
@@ -4525,7 +5016,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expense-schedules/{id}/resume": {
@@ -4582,7 +5074,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expense-schedules/{id}/end": {
@@ -4639,7 +5132,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expense_schedules.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expenses": {
@@ -4871,7 +5365,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expenses.create"
       }
     },
     "/api/v1/organizations/{orgId}/expenses/generate": {
@@ -4879,7 +5374,7 @@
         "tags": [
           "Expenses"
         ],
-        "summary": "Generate due recurring expenses for this organization (OWNER/ADMIN/ACCOUNTANT)",
+        "summary": "Generate due recurring expenses for this organization (requiere expenses.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -4908,7 +5403,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expenses.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expenses/{id}": {
@@ -5032,7 +5528,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expenses.manage"
       }
     },
     "/api/v1/organizations/{orgId}/expenses/{id}/write-off": {
@@ -5099,7 +5596,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "expenses.manage"
       }
     },
     "/api/v1/organizations/{orgId}/disbursements": {
@@ -5329,7 +5827,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "disbursements.create"
       }
     },
     "/api/v1/organizations/{orgId}/disbursements/{id}": {
@@ -5470,7 +5969,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "disbursements.allocate"
       }
     },
     "/api/v1/organizations/{orgId}/disbursements/{id}/reverse": {
@@ -5544,7 +6044,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "disbursements.reverse"
       }
     },
     "/api/v1/organizations/{orgId}/financial-accounts/balances": {
@@ -5696,7 +6197,7 @@
           "Finances"
         ],
         "summary": "Register an internal transfer (TRANSFER_OUT + TRANSFER_IN, one transaction)",
-        "description": "Moves money between two accounts without changing total income/expense (OWNER/ADMIN/ACCOUNTANT).",
+        "description": "Moves money between two accounts without changing total income/expense (requiere treasury.transfer).",
         "security": [
           {
             "cookieAuth": []
@@ -5762,7 +6263,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "treasury.transfer"
       }
     },
     "/api/v1/organizations/{orgId}/financial-movements": {
@@ -6096,7 +6598,7 @@
         "tags": [
           "Finances"
         ],
-        "summary": "Create a payment method (OWNER/ADMIN)",
+        "summary": "Create a payment method (requiere payment_methods.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -6145,7 +6647,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payment_methods.manage"
       }
     },
     "/api/v1/organizations/{orgId}/payment-methods/{id}": {
@@ -6153,7 +6656,7 @@
         "tags": [
           "Finances"
         ],
-        "summary": "Update a payment method (OWNER/ADMIN)",
+        "summary": "Update a payment method (requiere payment_methods.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -6212,7 +6715,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "payment_methods.manage"
       }
     },
     "/api/v1/organizations/{orgId}/financial-accounts": {
@@ -6367,7 +6871,7 @@
         "tags": [
           "Finances"
         ],
-        "summary": "Create a financial account (OWNER/ADMIN)",
+        "summary": "Create a financial account (requiere financial_accounts.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -6416,7 +6920,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "financial_accounts.manage"
       }
     },
     "/api/v1/organizations/{orgId}/financial-accounts/{id}": {
@@ -6424,7 +6929,7 @@
         "tags": [
           "Finances"
         ],
-        "summary": "Update a financial account (OWNER/ADMIN)",
+        "summary": "Update a financial account (requiere financial_accounts.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -6483,7 +6988,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "financial_accounts.manage"
       }
     },
     "/api/v1/organizations/{orgId}/reports/cashflow": {
@@ -7145,7 +7651,7 @@
         "tags": [
           "Assistant"
         ],
-        "summary": "AI assistant settings: configured providers (masked), active provider and model catalog (OWNER/ADMIN)",
+        "summary": "AI assistant settings: configured providers (masked), active provider and model catalog (requiere assistant.settings.read)",
         "description": "Devuelve la configuración del LLM de chat en la raíz y la de transcripción de voz en el bloque `voice`. Cada bloque tiene su proveedor activo independiente.",
         "security": [
           {
@@ -7176,7 +7682,7 @@
             }
           },
           "403": {
-            "description": "Not an OWNER/ADMIN.",
+            "description": "Falta el permiso assistant.settings.read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7185,7 +7691,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.read"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/providers/{provider}": {
@@ -7193,7 +7700,7 @@
         "tags": [
           "Assistant"
         ],
-        "summary": "Set/replace the API key + model for a provider (OWNER/ADMIN)",
+        "summary": "Set/replace the API key + model for a provider (requiere assistant.settings.manage)",
         "description": "Stores the provider API key encrypted at rest (never returned). `provider` is one of anthropic|openai|google|deepseek. The first provider configured becomes active automatically; pass `activate:true` to switch to another.",
         "security": [
           {
@@ -7257,13 +7764,15 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
       },
       "delete": {
         "tags": [
           "Assistant"
         ],
-        "summary": "Remove a provider credential (OWNER/ADMIN)",
+        "summary": "Remove a provider credential (requiere assistant.settings.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -7309,7 +7818,9 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/providers/{provider}/activate": {
@@ -7317,7 +7828,7 @@
         "tags": [
           "Assistant"
         ],
-        "summary": "Make a configured provider the active one (OWNER/ADMIN)",
+        "summary": "Make a configured provider the active one (requiere assistant.settings.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -7370,7 +7881,9 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/voice/providers/{provider}": {
@@ -7378,7 +7891,7 @@
         "tags": [
           "Assistant"
         ],
-        "summary": "Set/replace the API key + model of a speech-to-text provider (OWNER/ADMIN)",
+        "summary": "Set/replace the API key + model of a speech-to-text provider (requiere assistant.settings.manage)",
         "description": "Configura el modelo de voz que transcribe los mensajes de audio. `provider` es deepgram|elevenlabs y `model` es su id (p. ej. `nova-3`, `scribe_v1`). La API key se guarda cifrada y nunca se devuelve. El primer proveedor de voz configurado queda activo automáticamente; usa `activate:true` para cambiar a otro. Es independiente del proveedor de chat.",
         "security": [
           {
@@ -7440,13 +7953,15 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
       },
       "delete": {
         "tags": [
           "Assistant"
         ],
-        "summary": "Remove a speech-to-text provider credential (OWNER/ADMIN)",
+        "summary": "Remove a speech-to-text provider credential (requiere assistant.settings.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -7490,7 +8005,9 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/voice/providers/{provider}/activate": {
@@ -7498,7 +8015,7 @@
         "tags": [
           "Assistant"
         ],
-        "summary": "Make a configured speech-to-text provider the active one (OWNER/ADMIN)",
+        "summary": "Make a configured speech-to-text provider the active one (requiere assistant.settings.manage)",
         "security": [
           {
             "cookieAuth": []
@@ -7549,7 +8066,9 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/chat": {
@@ -7607,7 +8126,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.use"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/conversations": {
@@ -7865,7 +8385,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.use"
       }
     },
     "/api/v1/organizations/{orgId}/assistant/chat/audio": {
@@ -7923,7 +8444,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permission": "assistant.use"
       }
     },
     "/api/v1/organizations/{orgId}/knowledge/search": {
@@ -8199,14 +8721,6 @@
               "PERSONAL",
               "GENERIC"
             ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ACTIVE",
-              "SUSPENDED",
-              "ARCHIVED"
-            ]
           }
         }
       },
@@ -8394,6 +8908,144 @@
         },
         "required": [
           "role"
+        ]
+      },
+      "ChangePlanInput": {
+        "type": "object",
+        "properties": {
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          }
+        },
+        "required": [
+          "planCode"
+        ]
+      },
+      "SetOverridesInput": {
+        "type": "object",
+        "properties": {
+          "features": {
+            "default": {},
+            "$ref": "#/components/schemas/FeaturePatch"
+          },
+          "limits": {
+            "default": {},
+            "$ref": "#/components/schemas/LimitPatch"
+          }
+        }
+      },
+      "FeaturePatch": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "enum": [
+            "ai_byok",
+            "custom_roles",
+            "accounting",
+            "bank_reconciliation",
+            "approvals",
+            "api_access"
+          ]
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      },
+      "LimitPatch": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "enum": [
+            "max_contacts",
+            "max_users",
+            "max_branches",
+            "ai_messages_monthly",
+            "voice_minutes_monthly"
+          ]
+        },
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": "null significa sin tope."
+      },
+      "SetOrganizationStatusInput": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "SavePlanInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPublic": {
+            "default": false,
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "features": {
+            "default": {},
+            "$ref": "#/components/schemas/FeaturePatch"
+          },
+          "limits": {
+            "default": {},
+            "$ref": "#/components/schemas/LimitPatch"
+          },
+          "applyToExisting": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "applyToExisting"
         ]
       },
       "CreateContactInput": {
@@ -10648,6 +11300,671 @@
           "role",
           "isActive",
           "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "CapabilitiesDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "ACCOUNTANT",
+              "OPERATOR",
+              "VIEWER"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organization.read",
+                "organization.branches.read",
+                "organization.members.read",
+                "contacts.read",
+                "billing_concepts.read",
+                "interest_policies.read",
+                "agreements.read",
+                "receivables.read",
+                "payments.read",
+                "expense_categories.read",
+                "expense_schedules.read",
+                "expenses.read",
+                "disbursements.read",
+                "payment_methods.read",
+                "financial_accounts.read",
+                "treasury.read",
+                "reports.read",
+                "search.read",
+                "knowledge.read",
+                "subscription.read",
+                "assistant.use",
+                "contacts.write",
+                "contacts.archive",
+                "receivables.create",
+                "receivables.adjust",
+                "payments.create",
+                "payments.allocate",
+                "expenses.create",
+                "disbursements.create",
+                "disbursements.allocate",
+                "agreements.manage",
+                "expense_schedules.manage",
+                "receivables.manage",
+                "payments.reverse",
+                "expenses.manage",
+                "disbursements.reverse",
+                "treasury.transfer",
+                "organization.manage",
+                "organization.branches.manage",
+                "organization.members.manage",
+                "billing_concepts.manage",
+                "interest_policies.manage",
+                "expense_categories.manage",
+                "payment_methods.manage",
+                "financial_accounts.manage",
+                "assistant.settings.read",
+                "assistant.settings.manage",
+                "organization.transfer_ownership",
+                "organization.delete",
+                "subscription.manage"
+              ]
+            }
+          },
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "features": {
+            "$ref": "#/components/schemas/FeatureMap"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LimitMap"
+          },
+          "period": {
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/UsageMap"
+          }
+        },
+        "required": [
+          "organizationId",
+          "role",
+          "permissions",
+          "planCode",
+          "features",
+          "limits",
+          "period",
+          "usage"
+        ],
+        "additionalProperties": false
+      },
+      "FeatureMap": {
+        "type": "object",
+        "properties": {
+          "ai_byok": {
+            "type": "boolean"
+          },
+          "custom_roles": {
+            "type": "boolean"
+          },
+          "accounting": {
+            "type": "boolean"
+          },
+          "bank_reconciliation": {
+            "type": "boolean"
+          },
+          "approvals": {
+            "type": "boolean"
+          },
+          "api_access": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ai_byok",
+          "custom_roles",
+          "accounting",
+          "bank_reconciliation",
+          "approvals",
+          "api_access"
+        ],
+        "additionalProperties": false
+      },
+      "LimitMap": {
+        "type": "object",
+        "properties": {
+          "max_contacts": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_users": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_branches": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ai_messages_monthly": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "voice_minutes_monthly": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "max_contacts",
+          "max_users",
+          "max_branches",
+          "ai_messages_monthly",
+          "voice_minutes_monthly"
+        ],
+        "additionalProperties": false,
+        "description": "null significa sin tope."
+      },
+      "UsageMap": {
+        "type": "object",
+        "properties": {
+          "ai_messages_monthly": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "voice_minutes_monthly": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "ai_messages_monthly",
+          "voice_minutes_monthly"
+        ],
+        "additionalProperties": false
+      },
+      "AdminOrganizationPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOrganizationDto"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "data",
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ],
+        "additionalProperties": false
+      },
+      "AdminOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "ARCHIVED"
+            ]
+          },
+          "type": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "members": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "contacts": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "period": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "ai_messages_monthly",
+                "voice_minutes_monthly"
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "required": [
+              "ai_messages_monthly",
+              "voice_minutes_monthly"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "type",
+          "createdAt",
+          "planCode",
+          "members",
+          "contacts",
+          "period",
+          "usage"
+        ],
+        "additionalProperties": false
+      },
+      "AdminOrganizationDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "ARCHIVED"
+            ]
+          },
+          "type": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "members": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "contacts": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "period": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "ai_messages_monthly",
+                "voice_minutes_monthly"
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "required": [
+              "ai_messages_monthly",
+              "voice_minutes_monthly"
+            ]
+          },
+          "features": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "ai_byok",
+                "custom_roles",
+                "accounting",
+                "bank_reconciliation",
+                "approvals",
+                "api_access"
+              ]
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "required": [
+              "ai_byok",
+              "custom_roles",
+              "accounting",
+              "bank_reconciliation",
+              "approvals",
+              "api_access"
+            ]
+          },
+          "limits": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "max_contacts",
+                "max_users",
+                "max_branches",
+                "ai_messages_monthly",
+                "voice_minutes_monthly"
+              ]
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": [
+              "max_contacts",
+              "max_users",
+              "max_branches",
+              "ai_messages_monthly",
+              "voice_minutes_monthly"
+            ]
+          },
+          "overrides": {
+            "type": "object",
+            "properties": {
+              "features": {
+                "$ref": "#/components/schemas/FeaturePatch"
+              },
+              "limits": {
+                "$ref": "#/components/schemas/LimitPatch"
+              }
+            },
+            "required": [
+              "features",
+              "limits"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "type",
+          "createdAt",
+          "planCode",
+          "members",
+          "contacts",
+          "period",
+          "usage",
+          "features",
+          "limits",
+          "overrides"
+        ],
+        "additionalProperties": false
+      },
+      "EntitlementsDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "features": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "ai_byok",
+                "custom_roles",
+                "accounting",
+                "bank_reconciliation",
+                "approvals",
+                "api_access"
+              ]
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "required": [
+              "ai_byok",
+              "custom_roles",
+              "accounting",
+              "bank_reconciliation",
+              "approvals",
+              "api_access"
+            ]
+          },
+          "limits": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "max_contacts",
+                "max_users",
+                "max_branches",
+                "ai_messages_monthly",
+                "voice_minutes_monthly"
+              ]
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": [
+              "max_contacts",
+              "max_users",
+              "max_branches",
+              "ai_messages_monthly",
+              "voice_minutes_monthly"
+            ]
+          }
+        },
+        "required": [
+          "organizationId",
+          "planCode",
+          "features",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "PlanDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "features": {
+            "$ref": "#/components/schemas/FeaturePatch"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LimitPatch"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "description",
+          "isPublic",
+          "sortOrder",
+          "features",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "SavePlanResult": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/PlanDto"
+          },
+          "recomputed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "plan",
+          "recomputed"
         ],
         "additionalProperties": false
       },

@@ -227,7 +227,7 @@ export const getPostApiV1OrganizationsOrgIdBillingConceptsUrl = (orgId: string,)
 }
 
 /**
- * @summary Create a billing concept (OWNER/ADMIN)
+ * @summary Create a billing concept (requiere billing_concepts.manage)
  */
 export const postApiV1OrganizationsOrgIdBillingConcepts = async (orgId: string,
     createBillingConcept: CreateBillingConcept, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdBillingConceptsResponse> => {
@@ -277,7 +277,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdBillingConceptsMutationError = ErrorResponse
 
     /**
- * @summary Create a billing concept (OWNER/ADMIN)
+ * @summary Create a billing concept (requiere billing_concepts.manage)
  */
 export const usePostApiV1OrganizationsOrgIdBillingConcepts = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdBillingConcepts>>, TError,{orgId: string;data: CreateBillingConcept}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -318,7 +318,7 @@ export const getPatchApiV1OrganizationsOrgIdBillingConceptsIdUrl = (orgId: strin
 }
 
 /**
- * @summary Update a billing concept (OWNER/ADMIN)
+ * @summary Update a billing concept (requiere billing_concepts.manage)
  */
 export const patchApiV1OrganizationsOrgIdBillingConceptsId = async (orgId: string,
     id: string,
@@ -369,7 +369,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdBillingConceptsIdMutationError = ErrorResponse
 
     /**
- * @summary Update a billing concept (OWNER/ADMIN)
+ * @summary Update a billing concept (requiere billing_concepts.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdBillingConceptsId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdBillingConceptsId>>, TError,{orgId: string;id: string;data: UpdateBillingConcept}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -536,7 +536,7 @@ export const getPostApiV1OrganizationsOrgIdInterestPoliciesUrl = (orgId: string,
 }
 
 /**
- * @summary Create an interest policy (OWNER/ADMIN)
+ * @summary Create an interest policy (requiere interest_policies.manage)
  */
 export const postApiV1OrganizationsOrgIdInterestPolicies = async (orgId: string,
     createInterestPolicy: CreateInterestPolicy, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdInterestPoliciesResponse> => {
@@ -586,7 +586,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdInterestPoliciesMutationError = ErrorResponse
 
     /**
- * @summary Create an interest policy (OWNER/ADMIN)
+ * @summary Create an interest policy (requiere interest_policies.manage)
  */
 export const usePostApiV1OrganizationsOrgIdInterestPolicies = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdInterestPolicies>>, TError,{orgId: string;data: CreateInterestPolicy}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -627,7 +627,7 @@ export const getPatchApiV1OrganizationsOrgIdInterestPoliciesIdUrl = (orgId: stri
 }
 
 /**
- * @summary Update an interest policy (OWNER/ADMIN)
+ * @summary Update an interest policy (requiere interest_policies.manage)
  */
 export const patchApiV1OrganizationsOrgIdInterestPoliciesId = async (orgId: string,
     id: string,
@@ -678,7 +678,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdInterestPoliciesIdMutationError = ErrorResponse
 
     /**
- * @summary Update an interest policy (OWNER/ADMIN)
+ * @summary Update an interest policy (requiere interest_policies.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdInterestPoliciesId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdInterestPoliciesId>>, TError,{orgId: string;id: string;data: UpdateInterestPolicy}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -845,7 +845,7 @@ export const getPostApiV1OrganizationsOrgIdBillingAgreementsUrl = (orgId: string
 }
 
 /**
- * @summary Create a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Create a billing agreement (requiere agreements.manage)
  */
 export const postApiV1OrganizationsOrgIdBillingAgreements = async (orgId: string,
     createBillingAgreement: CreateBillingAgreement, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdBillingAgreementsResponse> => {
@@ -895,7 +895,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdBillingAgreementsMutationError = ErrorResponse
 
     /**
- * @summary Create a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Create a billing agreement (requiere agreements.manage)
  */
 export const usePostApiV1OrganizationsOrgIdBillingAgreements = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdBillingAgreements>>, TError,{orgId: string;data: CreateBillingAgreement}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1063,7 +1063,7 @@ export const getPatchApiV1OrganizationsOrgIdBillingAgreementsIdUrl = (orgId: str
 }
 
 /**
- * @summary Update a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Update a billing agreement (requiere agreements.manage)
  */
 export const patchApiV1OrganizationsOrgIdBillingAgreementsId = async (orgId: string,
     id: string,
@@ -1114,7 +1114,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PatchApiV1OrganizationsOrgIdBillingAgreementsIdMutationError = ErrorResponse
 
     /**
- * @summary Update a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Update a billing agreement (requiere agreements.manage)
  */
 export const usePatchApiV1OrganizationsOrgIdBillingAgreementsId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdBillingAgreementsId>>, TError,{orgId: string;id: string;data: UpdateBillingAgreement}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1155,7 +1155,7 @@ export const getPostApiV1OrganizationsOrgIdBillingAgreementsIdPauseUrl = (orgId:
 }
 
 /**
- * @summary Pause a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Pause a billing agreement (requiere agreements.manage)
  */
 export const postApiV1OrganizationsOrgIdBillingAgreementsIdPause = async (orgId: string,
     id: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdBillingAgreementsIdPauseResponse> => {
@@ -1205,7 +1205,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdBillingAgreementsIdPauseMutationError = ErrorResponse
 
     /**
- * @summary Pause a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Pause a billing agreement (requiere agreements.manage)
  */
 export const usePostApiV1OrganizationsOrgIdBillingAgreementsIdPause = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdBillingAgreementsIdPause>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1246,7 +1246,7 @@ export const getPostApiV1OrganizationsOrgIdBillingAgreementsIdResumeUrl = (orgId
 }
 
 /**
- * @summary Resume a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Resume a billing agreement (requiere agreements.manage)
  */
 export const postApiV1OrganizationsOrgIdBillingAgreementsIdResume = async (orgId: string,
     id: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdBillingAgreementsIdResumeResponse> => {
@@ -1296,7 +1296,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdBillingAgreementsIdResumeMutationError = ErrorResponse
 
     /**
- * @summary Resume a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary Resume a billing agreement (requiere agreements.manage)
  */
 export const usePostApiV1OrganizationsOrgIdBillingAgreementsIdResume = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdBillingAgreementsIdResume>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1337,7 +1337,7 @@ export const getPostApiV1OrganizationsOrgIdBillingAgreementsIdEndUrl = (orgId: s
 }
 
 /**
- * @summary End a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary End a billing agreement (requiere agreements.manage)
  */
 export const postApiV1OrganizationsOrgIdBillingAgreementsIdEnd = async (orgId: string,
     id: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdBillingAgreementsIdEndResponse> => {
@@ -1387,7 +1387,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostApiV1OrganizationsOrgIdBillingAgreementsIdEndMutationError = ErrorResponse
 
     /**
- * @summary End a billing agreement (OWNER/ADMIN/ACCOUNTANT)
+ * @summary End a billing agreement (requiere agreements.manage)
  */
 export const usePostApiV1OrganizationsOrgIdBillingAgreementsIdEnd = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdBillingAgreementsIdEnd>>, TError,{orgId: string;id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
