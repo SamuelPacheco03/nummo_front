@@ -86,8 +86,8 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
   /** Una cita es una referencia, no el mensaje entero: lo justo para reconocerlo. */
   const quote = (text: string) => setQuoted(text.length > 160 ? `${text.slice(0, 159)}…` : text)
 
-  const openFromList = async (id: string) => {
-    await openConversation(id)
+  const openFromList = async (id: string, messageId?: string) => {
+    await openConversation(id, messageId)
     setShowingList(false)
   }
 
@@ -144,7 +144,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         <ConversationList
           orgId={orgId}
           currentId={conversationId}
-          onOpen={(id) => void openFromList(id)}
+          onOpen={(id, messageId) => void openFromList(id, messageId)}
           onNew={startNew}
         />
       ) : (

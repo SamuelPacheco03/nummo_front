@@ -6,12 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type DisbursementListItemStatus = typeof DisbursementListItemStatus[keyof typeof DisbursementListItemStatus];
+export type MessageHitRole = typeof MessageHitRole[keyof typeof MessageHitRole];
 
 
-export const DisbursementListItemStatus = {
-  PENDING_APPROVAL: 'PENDING_APPROVAL',
-  POSTED: 'POSTED',
-  REJECTED: 'REJECTED',
-  REVERSED: 'REVERSED',
+export const MessageHitRole = {
+  user: 'user',
+  assistant: 'assistant',
 } as const;

@@ -5,29 +5,14 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { FeaturePatch } from './featurePatch';
-import type { LimitPatch } from './limitPatch';
+import type { CreateCustomRoleInputPermissionsItem } from './createCustomRoleInputPermissionsItem';
 
-export interface SavePlanInput {
+export interface CreateCustomRoleInput {
   /**
      * @minLength 1
      * @maxLength 80
      */
   name: string;
   description?: string | null;
-  isPublic: boolean;
-  /**
-     * @minimum 0
-     * @maximum 9007199254740991
-     */
-  sortOrder: number;
-  priceAmount: string | null;
-  /**
-     * @minLength 3
-     * @maxLength 3
-     */
-  priceCurrency?: string;
-  features: FeaturePatch;
-  limits: LimitPatch;
-  applyToExisting: boolean;
+  permissions: CreateCustomRoleInputPermissionsItem[];
 }

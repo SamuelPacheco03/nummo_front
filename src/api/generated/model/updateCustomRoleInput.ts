@@ -5,13 +5,14 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { UpdateCustomRoleInputPermissionsItem } from './updateCustomRoleInputPermissionsItem';
 
-export type DisbursementListItemStatus = typeof DisbursementListItemStatus[keyof typeof DisbursementListItemStatus];
-
-
-export const DisbursementListItemStatus = {
-  PENDING_APPROVAL: 'PENDING_APPROVAL',
-  POSTED: 'POSTED',
-  REJECTED: 'REJECTED',
-  REVERSED: 'REVERSED',
-} as const;
+export interface UpdateCustomRoleInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name?: string;
+  description?: string | null;
+  permissions?: UpdateCustomRoleInputPermissionsItem[];
+}

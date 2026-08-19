@@ -56,6 +56,13 @@ interface NumiState {
    * existe cada vez que alguien estrena conversación.
    */
   historyId: string | null
+  /**
+   * El mensaje por el que se abrió la conversación, cuando se llegó desde una búsqueda.
+   *
+   * Sin esto, subir en el hilo pediría la página más nueva en vez de continuar hacia
+   * atrás desde donde el usuario está leyendo: se vería un salto al final del historial.
+   */
+  historyUntil: string | null
   /** Numi contestó con el chat cerrado y todavía no se ha visto. */
   unread: boolean
   /** Hay un turno en marcha: el hilo muestra «escribiendo…». */
@@ -119,7 +126,7 @@ interface NumiState {
    * Se cambia a otra conversación de la lista. Sustituye el hilo entero, no lo
    * mezcla: son dos conversaciones distintas y ninguna continúa a la otra.
    */
-  openThread: (conversationId: string, messages: ChatMessage[]) => void
+  openThread: (conversationId: string, messages: ChatMessage[], until?: string) => void
   /** Empieza de cero: olvida el hilo del servidor y limpia la vista. */
   newConversation: () => void
   /** Ata el hilo a una organización; si cambia, la conversación se reinicia. */
@@ -153,6 +160,7 @@ export const useNumiStore = create<NumiState>()(
       orgId: null,
       hydrated: false,
       historyId: null,
+      historyUntil: null,
       unread: false,
       pending: false,
       turn: null,
@@ -264,11 +272,12 @@ export const useNumiStore = create<NumiState>()(
           return { hydrated: true, historyId: sessionId ?? null, sessionId, messages }
         }),
 
-      openThread: (conversationId, messages) =>
+      openThread: (conversationId, messages, until) =>
         set({
           sessionId: conversationId,
           // Viene del servidor, así que lo anterior a esto se puede ir a buscar.
           historyId: conversationId,
+          historyUntil: until ?? null,
           messages,
           error: null,
           hydrated: true,
@@ -277,7 +286,8 @@ export const useNumiStore = create<NumiState>()(
 
       // Hilo limpio, pero marcado como hidratado para no recargar la conversación
       // que el usuario acaba de dejar.
-      newConversation: () => set({ ...EMPTY, hydrated: true, historyId: null, unread: false }),
+      newConversation: () =>
+        set({ ...EMPTY, hydrated: true, historyId: null, historyUntil: null, unread: false }),
 
       // Cambiar de organización reinicia el hilo y vuelve a hidratar con las
       // conversaciones de la nueva empresa.
@@ -285,7 +295,14 @@ export const useNumiStore = create<NumiState>()(
         set((s) =>
           s.orgId === orgId
             ? s
-            : { orgId, ...EMPTY, hydrated: false, historyId: null, unread: false },
+            : {
+                orgId,
+                ...EMPTY,
+                hydrated: false,
+                historyId: null,
+                historyUntil: null,
+                unread: false,
+              },
         ),
 
       setPending: (pending) => set({ pending }),

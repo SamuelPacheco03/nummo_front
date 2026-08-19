@@ -10,6 +10,8 @@ export type DisbursementStatus = typeof DisbursementStatus[keyof typeof Disburse
 
 
 export const DisbursementStatus = {
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
   POSTED: 'POSTED',
+  REJECTED: 'REJECTED',
   REVERSED: 'REVERSED',
 } as const;

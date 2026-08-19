@@ -54,10 +54,13 @@ function useOlderThread(orgId: string | undefined) {
   // el servidor tiene algo por encima. Sin él esto pediría una página inexistente
   // cada vez que alguien estrena conversación.
   const historyId = useNumiStore((s) => s.historyId)
+  // Abierta desde una búsqueda: se continúa desde ese mensaje, no desde el final.
+  const historyUntil = useNumiStore((s) => s.historyUntil)
   const prependOlder = useNumiStore((s) => s.prependOlder)
   const { older, hasOlder, isLoadingOlder, loadOlder } = useNumiMessages(
     historyId ? orgId : undefined,
     historyId ?? undefined,
+    historyUntil ?? undefined,
   )
 
   useEffect(() => {
@@ -95,9 +98,9 @@ export function useNumiChat() {
 
   /** Se cambia a una conversación de la lista y la deja abierta en el hilo. */
   const openConversation = useCallback(
-    async (conversationId: string) => {
-      const messages = await fetchThread(conversationId)
-      useNumiStore.getState().openThread(conversationId, messages)
+    async (conversationId: string, until?: string) => {
+      const messages = await fetchThread(conversationId, until)
+      useNumiStore.getState().openThread(conversationId, messages, until)
     },
     [fetchThread],
   )

@@ -6,18 +6,19 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetApiV1OrganizationsOrgIdAssistantConversationsIdMessagesParams = {
+export type GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams = {
+/**
+ * @minLength 2
+ * @maxLength 120
+ */
+q: string;
 /**
  * @minimum 1
- * @maximum 100
+ * @maximum 50
  */
 limit?: number;
 /**
  * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
  */
-before?: string;
-/**
- * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
- */
-until?: string;
+conversationId?: string;
 };

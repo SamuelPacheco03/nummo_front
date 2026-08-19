@@ -5,22 +5,21 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { OrganizationSettingsThemeMode } from './organizationSettingsThemeMode';
-import type { OrganizationSettingsUiConfig } from './organizationSettingsUiConfig';
+import type { CustomRolePermissionsItem } from './customRolePermissionsItem';
 
-export interface OrganizationSettings {
+export interface CustomRole {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  organizationId: string;
-  themeMode: OrganizationSettingsThemeMode;
-  accentToken: string;
+  id: string;
+  name: string;
+  description: string | null;
+  permissions: CustomRolePermissionsItem[];
   /**
-     * @items.minimum -9007199254740991
-     * @items.maximum 9007199254740991
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
      */
-  dueReminderDays: number[];
-  interestJobLocalTime: string;
-  disbursementApprovalThreshold: string | null;
-  uiConfig: OrganizationSettingsUiConfig;
+  membersCount: number;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  createdAt: string;
   /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
   updatedAt: string;
 }

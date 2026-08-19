@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CapabilitiesDtoPermissionsItem = typeof CapabilitiesDtoPermissionsItem[keyof typeof CapabilitiesDtoPermissionsItem];
+export type CreateCustomRoleInputPermissionsItem = typeof CreateCustomRoleInputPermissionsItem[keyof typeof CreateCustomRoleInputPermissionsItem];
 
 
-export const CapabilitiesDtoPermissionsItem = {
+export const CreateCustomRoleInputPermissionsItem = {
   organizationread: 'organization.read',
   organizationbranchesread: 'organization.branches.read',
   organizationmembersread: 'organization.members.read',

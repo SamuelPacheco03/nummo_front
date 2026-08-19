@@ -1,13 +1,14 @@
 import { useCallback, useMemo } from 'react'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getApiV1OrganizationsOrgIdAssistantConversations,
   getApiV1OrganizationsOrgIdAssistantConversationsIdMessages,
   getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudio,
+  getApiV1OrganizationsOrgIdAssistantConversationsSearch,
   useDeleteApiV1OrganizationsOrgIdAssistantConversationsId,
   usePatchApiV1OrganizationsOrgIdAssistantConversationsId,
 } from '@/api/generated/endpoints/assistant/assistant'
-import type { AudioUrl, Conversation, MessageList } from '@/api/generated/model'
+import type { AudioUrl, Conversation, MessageHit, MessageList, MessageSearch } from '@/api/generated/model'
 import type { ChatMessage } from './types'
 import { sanitizePeaks } from './waveform'
 
@@ -80,9 +81,11 @@ const conversationsKey = (orgId: string | undefined) => ['numi', 'conversations'
  * cada uno tuviera la suya, abrir una conversación llenaría una caché que el scroll
  * hacia arriba no mira, y la primera página se pediría dos veces.
  */
-function messagesQuery(orgId: string, conversationId: string) {
+function messagesQuery(orgId: string, conversationId: string, until?: string) {
   return {
-    queryKey: ['numi', 'messages', orgId, conversationId],
+    // `until` entra en la clave: abrir la conversación en un mensaje concreto es otra
+    // caché, no la misma con otro cursor. Compartirla mezclaría dos hilos distintos.
+    queryKey: ['numi', 'messages', orgId, conversationId, until ?? 'latest'],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({
       pageParam,
@@ -94,7 +97,9 @@ function messagesQuery(orgId: string, conversationId: string) {
       const res = await getApiV1OrganizationsOrgIdAssistantConversationsIdMessages(
         orgId,
         conversationId,
-        { limit: MESSAGES_PAGE, before: pageParam },
+        // `until` solo manda en la primera página; a partir de ahí el cursor `before`
+        // ya la deja anclada y repetirlo no cambiaría nada.
+        { limit: MESSAGES_PAGE, before: pageParam, until: pageParam ? undefined : until },
         { signal },
       )
       // customFetch throws on non-2xx, so on success this is always a MessageList.
@@ -109,9 +114,13 @@ function messagesQuery(orgId: string, conversationId: string) {
  * `messages` is the oldest→newest transcript ready to render. Call `loadOlder()` (near the
  * top of the scroll container) to fetch the previous page.
  */
-export function useNumiMessages(orgId: string | undefined, conversationId: string | undefined) {
+export function useNumiMessages(
+  orgId: string | undefined,
+  conversationId: string | undefined,
+  until?: string,
+) {
   const query = useInfiniteQuery({
-    ...messagesQuery(orgId ?? '', conversationId ?? ''),
+    ...messagesQuery(orgId ?? '', conversationId ?? '', until),
     enabled: Boolean(orgId && conversationId),
   })
 
@@ -154,13 +163,46 @@ export function useConversationOpener(orgId: string | undefined) {
   const queryClient = useQueryClient()
 
   return useCallback(
-    async (conversationId: string): Promise<ChatMessage[]> => {
+    async (conversationId: string, until?: string): Promise<ChatMessage[]> => {
       if (!orgId) return []
-      const data = await queryClient.fetchInfiniteQuery(messagesQuery(orgId, conversationId))
+      const data = await queryClient.fetchInfiniteQuery(
+        messagesQuery(orgId, conversationId, until),
+      )
       return flattenMessagePages(data.pages)
     },
     [queryClient, orgId],
   )
+}
+
+/** Lo que hay que escribir antes de que valga la pena preguntarle al servidor. */
+const MIN_SEARCH = 2
+
+/**
+ * Buscar en las conversaciones propias.
+ *
+ * Con menos de dos caracteres no se pregunta: el servidor lo rechazaría y una `a` suelta
+ * traería medio historial. El término ya viene retrasado desde la vista, así que aquí no
+ * se vuelve a esperar.
+ */
+export function useMessageSearch(orgId: string | undefined, q: string) {
+  const term = q.trim()
+  const enabled = Boolean(orgId) && term.length >= MIN_SEARCH
+
+  const query = useQuery({
+    queryKey: ['numi', 'search', orgId, term],
+    enabled,
+    queryFn: async ({ signal }) => {
+      const res = await getApiV1OrganizationsOrgIdAssistantConversationsSearch(
+        orgId ?? '',
+        { q: term },
+        { signal },
+      )
+      return res.data as MessageSearch
+    },
+  })
+
+  const hits: MessageHit[] = query.data?.items ?? []
+  return { hits, isSearching: enabled && query.isPending, error: query.error, enabled }
 }
 
 /**
