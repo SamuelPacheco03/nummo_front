@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { ShieldAlert } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
 import { PageLoader } from '@/components/ui/loader'
 import { SectionedLayout } from '@/components/ui/sectioned-layout'
 import { usePlatformAccess } from '@/features/platform/hooks'
@@ -21,16 +22,32 @@ import { GROUPS } from './platform-nav'
  * superadmin.
  */
 export function PlatformLayout() {
-  const { isPlatformAdmin, isLoading } = usePlatformAccess()
+  const { isPlatformAdmin, isLoading, isError, error } = usePlatformAccess()
 
   if (isLoading) return <PageLoader />
+
+  /*
+    Preguntar falló, que no es lo mismo que recibir un no. Pasa cuando el backend
+    todavía no publica `/me/platform-access` —la señal es de la Fase 9— y sin
+    separarlo, un superadmin de verdad vería el mensaje de «no tienes acceso» y
+    se pondría a buscar el problema en su cuenta.
+  */
+  if (isError) {
+    return (
+      <ErrorState
+        error={error}
+        title="No se pudo comprobar el acceso de plataforma"
+        fallback="El backend no respondió a GET /api/v1/me/platform-access."
+      />
+    )
+  }
 
   if (!isPlatformAdmin) {
     return (
       <EmptyState
         Icon={ShieldAlert}
         title="Esta sección es de la plataforma"
-        description="Administra todas las organizaciones de Nummo, y tu cuenta no tiene ese acceso. No tiene nada que ver con tu rol en la organización."
+        description="Administra todas las organizaciones de Nummo, y tu cuenta no tiene ese acceso. No tiene nada que ver con tu rol en la organización: ser propietario de la tuya no te hace superadmin, es una concesión aparte que se da por script."
       />
     )
   }

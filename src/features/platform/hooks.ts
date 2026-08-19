@@ -71,5 +71,16 @@ export function usePlatformAccess() {
     query: { staleTime: 5 * 60_000, retry: false },
   })
   const access = query.data?.data as PlatformAccess | undefined
-  return { isPlatformAdmin: access?.isPlatformAdmin === true, isLoading: query.isLoading }
+  return {
+    isPlatformAdmin: access?.isPlatformAdmin === true,
+    isLoading: query.isLoading,
+    /*
+      «No se pudo preguntar» no es «te dijeron que no», y sin distinguirlos las
+      dos se ven igual: un superadmin de verdad contra un backend que no publica
+      el endpoint vería exactamente la misma pantalla que un usuario cualquiera,
+      y no tendría cómo saber cuál de las dos cosas le pasa.
+    */
+    isError: query.isError,
+    error: query.error,
+  }
 }
