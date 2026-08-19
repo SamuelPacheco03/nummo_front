@@ -1867,7 +1867,7 @@ todo; reanudar sigue el mismo audio, no empieza otro. Y **tirar la grabación no
 botón está lejos del de enviar y quien lo pulsa acaba de decidir que lo que dijo no vale — un
 diálogo ahí solo estorba (§45).
 
-### Cinco cosas sin las que «mantener pulsado» no funciona en un móvil
+### Seis cosas sin las que «mantener pulsado» no funciona en un móvil
 
 Ninguna se nota cuando está; todas se notan cuando falta. Las dos primeras son la misma historia:
 **el gesto se moría antes de empezar**, y se leyó de dos formas distintas —«se cancela con
@@ -1886,9 +1886,19 @@ era el mismo `pointercancel` con dos finales.
    (horizontal) o fijar (vertical), y el otro eje se ignora a partir de ahí. Un pulgar sube
    torcido, y sin esto acumulaba desplazamiento a la izquierda y cancelaba a medio camino del
    candado.
-5. **`pointercancel` no tira la grabación, la fija.** Cuando de verdad ocurre no es el usuario: es
-   el sistema quedándose con el gesto —una notificación, el gesto de volver del borde—. Perder lo
-   que alguien acaba de dictar porque el móvil vibró es el peor final posible.
+5. **`pointercancel` no tira la grabación, la fija** — si había algo que salvar. Cuando de verdad
+   ocurre no es el usuario: es el sistema quedándose con el gesto —una notificación, el gesto de
+   volver del borde—, y perder lo que alguien acaba de dictar porque el móvil vibró es el peor
+   final posible. Pero si llega **en los primeros instantes** no había dictado ninguno, y dejar
+   ahí una barra fijada se lee como «pulsar el micrófono bloquea la grabación solo». Ese se
+   descarta en silencio.
+
+6. **Fijar cuesta 110 px, no 56.** Es la distancia que separa «subir a propósito» de «sostener el
+   móvil». Estuvo en 56 —unos ocho milímetros— y sostener el micrófono ya la cubría: el pulgar se
+   apoya en el borde de abajo de la pantalla y rueda hacia arriba mientras se habla, así que
+   mantener pulsado acababa en el candado sin que nadie lo hubiera pedido. Con 110 px una deriva
+   de 90 no fija nada y una subida de 140 sí. De paso, el candado tiene recorrido para llenarse y
+   contar cuánto falta.
 
 **Y los escuchas del puntero van en `window`, no en el botón**, para que el gesto no dependa de
 sobre qué elemento está el dedo. Es el mismo cuidado que el arrastre del lanzador de Numi (§87.5).
@@ -1902,6 +1912,10 @@ grabar. Se mide el botón en el `pointerdown` y los dos se colocan ahí, el cand
 punteros de ratón no se cancelan al desaparecer su objetivo, así que la primera versión pasaba las
 pruebas y moría en el teléfono. Hay que mandar toques de verdad
 (`Input.dispatchTouchEvent` por CDP) y **contar los `pointercancel`**: con el gesto sano son cero.
+
+Y hay que probar **el pulgar que no quiere nada**: un toque que se sostiene mientras se va yendo
+hacia arriba unos pocos píxeles cada décima. Ese es el que descubrió que 56 px se recorrían sin
+querer, y no lo encuentra ningún toque que va directo del punto A al B.
 
 ---
 

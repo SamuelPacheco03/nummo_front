@@ -4,8 +4,17 @@ import { formatDuration } from './use-audio-recorder'
 
 /** A cuántos píxeles a la izquierda se cancela. */
 export const CANCEL_AT = 120
-/** A cuántos píxeles hacia arriba se fija la grabación. */
-export const LOCK_AT = 56
+/**
+ * A cuántos píxeles hacia arriba se fija la grabación.
+ *
+ * Es una distancia que **no se recorre sin querer**. Estaba en 56 px —unos ocho
+ * milímetros— y sostener el micrófono ya la cubría: el pulgar se apoya en el
+ * borde de abajo de la pantalla y rueda hacia arriba mientras habla, así que
+ * «mantener pulsado» acababa en el candado sin que nadie lo hubiera pedido. Con
+ * 110 px hay que subir a propósito, y de paso el candado tiene recorrido para
+ * llenarse y contar cuánto falta.
+ */
+export const LOCK_AT = 110
 /**
  * Lo que el dedo puede moverse sin que signifique nada.
  *
@@ -18,9 +27,9 @@ export const DEAD_ZONE = 14
 export const MIN_SECONDS = 0.7
 
 /** Cuánto sube el micrófono respecto al dedo, para quedar justo bajo el candado. */
-const MIC_FOLLOW = 0.62
+const MIC_FOLLOW = 0.85
 /** Altura del candado sobre el micrófono. */
-const LOCK_OFFSET = LOCK_AT + 40
+const LOCK_OFFSET = LOCK_AT + 44
 
 /**
  * **Lo que se ve mientras se mantiene pulsado el micrófono.**

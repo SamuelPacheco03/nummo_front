@@ -239,15 +239,25 @@ export function ChatComposer({
 
     /*
       `pointercancel` no es el usuario: es el sistema quedándose con el gesto
-      —una notificación, el gesto de volver del borde—. **No se tira la
-      grabación**: se fija, como si hubiera subido al candado. Perder lo que
-      alguien acaba de dictar porque el móvil vibró es el peor final posible; en
-      la barra de grabación ya decide si lo manda o lo descarta.
+      —una notificación, el gesto de volver del borde—. Con una grabación ya en
+      marcha **no se tira**: se fija, como si hubiera subido al candado. Perder
+      lo que alguien acaba de dictar porque el móvil vibró es el peor final
+      posible; en la barra de grabación ya decide si lo manda o lo descarta.
+
+      Pero si llega **en los primeros instantes** no había nada que salvar, y
+      dejar ahí una barra fijada es peor que no hacer nada: parece que pulsar el
+      micrófono bloquee la grabación sola. Ese se descarta en silencio.
     */
     const onCancel = () => {
       if (!origin.current) return
-      setLocked(true)
+      const held = performance.now() - startedAt.current
       endHold()
+      if (held < MIN_SECONDS * 1000) {
+        abandoned.current = true
+        recorder.cancel()
+        return
+      }
+      setLocked(true)
     }
 
     window.addEventListener('pointermove', onMove)

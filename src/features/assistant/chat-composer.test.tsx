@@ -123,17 +123,33 @@ test('con el dedo: subir en diagonal fija, no cancela', async () => {
 
   press(screen.getByRole('button', { name: /mantén pulsado/i }), 200, 700)
   await screen.findByText('Desliza para cancelar')
-  // Un pulgar sube torcido: 40 px arriba y 30 a la izquierda. Manda el eje del
+  // Un pulgar sube torcido: 120 px arriba y 40 a la izquierda. Manda el eje del
   // primer movimiento, así que esto es «fijar» y no «cancelar».
   moveTo(190, 690)
-  moveTo(170, 660)
-  moveTo(160, 640)
+  moveTo(175, 640)
+  moveTo(160, 580)
 
   expect(await screen.findByText('Fijada')).toBeInTheDocument()
   expect(onSendAudio).not.toHaveBeenCalled()
 })
 
-test('si el sistema se queda con el gesto, la grabación no se pierde', async () => {
+test('si el sistema se queda con un dictado en marcha, no se pierde', async () => {
+  stubPointer('coarse')
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  const started = performance.now()
+  press(screen.getByRole('button', { name: /mantén pulsado/i }))
+  await screen.findByText('Desliza para cancelar')
+  // Ya hay algo dicho cuando llega la notificación que roba el gesto.
+  vi.spyOn(performance, 'now').mockReturnValue(started + 4000)
+  systemSteals()
+
+  // Sigue grabando, con sus botones: quien decide si se tira es la persona.
+  expect(await screen.findByText('Fijada')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Descartar grabación' })).toBeInTheDocument()
+})
+
+test('si el gesto se rompe al instante, no aparece una grabación fijada', async () => {
   stubPointer('coarse')
   render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
 
@@ -141,9 +157,12 @@ test('si el sistema se queda con el gesto, la grabación no se pierde', async ()
   await screen.findByText('Desliza para cancelar')
   systemSteals()
 
-  // Sigue grabando, con sus botones: quien decide si se tira es la persona.
-  expect(await screen.findByText('Fijada')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Descartar grabación' })).toBeInTheDocument()
+  /*
+    No había nada que salvar, y una barra fijada ahí se lee como «pulsar el
+    micrófono bloquea la grabación sola», que es justo lo que no hace.
+  */
+  await waitFor(() => expect(screen.queryByText('Desliza para cancelar')).not.toBeInTheDocument())
+  expect(screen.queryByText('Fijada')).not.toBeInTheDocument()
 })
 
 test('con el dedo: subir fija la grabación y soltar no la manda', async () => {
@@ -153,7 +172,7 @@ test('con el dedo: subir fija la grabación y soltar no la manda', async () => {
 
   press(screen.getByRole('button', { name: /mantén pulsado/i }))
   await screen.findByText('Desliza para cancelar')
-  moveTo(200, 600) // 100 px hacia arriba
+  moveTo(200, 560) // 140 px hacia arriba: por encima del umbral de fijar
   release()
 
   // Fijada: sigue grabando sola, con sus botones de parar y descartar.
