@@ -37,6 +37,17 @@ function pintar() {
   )
 }
 
+/**
+ * Abre el menú del mensaje y elige una acción.
+ *
+ * En escritorio las acciones no están sueltas al lado de cada burbuja: viven detrás del
+ * chevron de su esquina, que es lo que evita que un hilo largo se llene de iconos.
+ */
+async function elegir(user: ReturnType<typeof userEvent.setup>, accion: string) {
+  await user.click(await screen.findByRole('button', { name: 'Opciones del mensaje' }))
+  await user.click(await screen.findByRole('menuitem', { name: accion }))
+}
+
 /** Siembra el hilo con una respuesta de Numi ya entregada. */
 function sembrar() {
   useNumiStore.setState({
@@ -78,7 +89,7 @@ test('copiar se lleva la respuesta entera, que es donde están las cifras', asyn
   pintar()
   sembrar()
 
-  await user.click(await screen.findByRole('button', { name: 'Copiar mensaje' }))
+  await elegir(user, 'Copiar')
 
   // El portapapeles es el que `userEvent` monta, así que se comprueba lo que quedó
   // dentro y no una llamada espiada: importa el texto, no que se llamara a la API.
@@ -92,7 +103,7 @@ test('citar no manda nada todavía: prepara la pregunta', async () => {
   pintar()
   sembrar()
 
-  await user.click(await screen.findByRole('button', { name: 'Citar mensaje' }))
+  await elegir(user, 'Citar')
 
   // La cita se ve encima de la caja, y hasta ahí. Nada ha salido.
   expect(await screen.findByText(/Ana Torres te debe/, { selector: 'p.italic' })).toBeInTheDocument()
@@ -104,7 +115,7 @@ test('la cita viaja con la pregunta, para que Numi sepa de qué se le habla', as
   pintar()
   sembrar()
 
-  await user.click(await screen.findByRole('button', { name: 'Citar mensaje' }))
+  await elegir(user, 'Citar')
   await user.type(screen.getByLabelText('Mensaje para Numi'), '¿de dónde sale?')
   await user.keyboard('{Enter}')
 
@@ -119,7 +130,7 @@ test('quitar la cita no borra lo que ya se había escrito', async () => {
   pintar()
   sembrar()
 
-  await user.click(await screen.findByRole('button', { name: 'Citar mensaje' }))
+  await elegir(user, 'Citar')
   await user.type(screen.getByLabelText('Mensaje para Numi'), 'una pregunta')
   await user.click(screen.getByRole('button', { name: 'Quitar la cita' }))
 
@@ -153,6 +164,7 @@ test('lo dictado no ofrece copiar: de una nota de voz lo que hay es audio', asyn
     ],
   })
 
+  // Ni siquiera se le pone el chevron: de una nota de voz no hay texto que copiar.
   const hilo = await screen.findByRole('log')
-  expect(within(hilo).queryByRole('button', { name: 'Copiar mensaje' })).not.toBeInTheDocument()
+  expect(within(hilo).queryByRole('button', { name: 'Opciones del mensaje' })).not.toBeInTheDocument()
 })

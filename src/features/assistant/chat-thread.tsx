@@ -153,6 +153,9 @@ export interface ChatThreadProps {
   onCopy: (text: string) => void
   /** Pulgar sobre una respuesta de Numi. */
   onRate: (messageId: string, feedback: ChatFeedback) => void
+  /** Mensaje seleccionado con el dedo; en escritorio siempre null. */
+  selectedId: string | null
+  onSelect: (id: string) => void
   /** Lleva lo que dijo Numi al composer, para preguntarle por ello. */
   onQuote: (text: string) => void
   /** El enlace a Configuración sale del panel, así que hay que cerrarlo al seguirlo. */
@@ -180,6 +183,8 @@ export function ChatThread({
   onCopy,
   onQuote,
   onRate,
+  selectedId,
+  onSelect,
   onLeave,
 }: ChatThreadProps) {
   const listRef = useRef<HTMLDivElement>(null)
@@ -265,6 +270,8 @@ export function ChatThread({
                 onCopy={onCopy}
                 onQuote={onQuote}
                 onRate={(feedback) => onRate(message.id, feedback)}
+                selected={message.id === selectedId}
+                onSelect={onSelect}
               />
             </Fragment>
           ))}

@@ -1,5 +1,13 @@
-import { useState, type ReactNode } from 'react'
-import { AlertCircle, Check, Clock, Copy, Mic, Quote, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { type ReactNode } from 'react'
+import { AlertCircle, ChevronDown, Clock, Copy, Mic, Quote, ThumbsDown, ThumbsUp } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useLongPress } from '@/lib/use-long-press'
+import { useTouchInput } from '@/lib/use-touch-input'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
@@ -100,88 +108,107 @@ function MessageStatus({ status, onRetry }: { status?: ChatMessageStatus; onRetr
 }
 
 /**
- * Copiar y citar, al lado de la burbuja.
+ * **El menú del mensaje, en escritorio.**
  *
- * Aparecen al pasar por encima y con el foco; en pantalla táctil, donde no hay
- * «encima», se quedan puestas. Copiar es la que más falta hacía: Numi contesta con
- * cifras y hasta ahora había que seleccionarlas a mano.
+ * Un chevron en la esquina de la burbuja que aparece al pasar por encima, como el de
+ * WhatsApp. Las acciones viven dentro y no sueltas al lado: una fila de iconos flotando
+ * junto a cada mensaje ensucia un hilo largo, y aquí solo se ve cuando se va a usar.
  */
-function BubbleActions({
+function BubbleMenu({
+  isUser,
   onCopy,
   onQuote,
-  feedback,
-  onRate,
 }: {
+  isUser: boolean
   onCopy: () => void
   onQuote?: () => void
-  feedback?: ChatFeedback
-  onRate?: (feedback: ChatFeedback) => void
 }) {
-  const [copied, setCopied] = useState(false)
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Opciones del mensaje"
+          className={cn(
+            'absolute top-0.5 right-0.5 grid size-5 place-items-center rounded transition-opacity',
+            'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100',
+            isUser
+              ? 'text-chat-bubble-foreground/70 hover:text-chat-bubble-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <ChevronDown aria-hidden className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem onSelect={onCopy}>
+          <Copy />
+          Copiar
+        </DropdownMenuItem>
+        {onQuote && (
+          <DropdownMenuItem onSelect={onQuote}>
+            <Quote />
+            Citar
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
-  const copy = () => {
-    onCopy()
-    setCopied(true)
-    // Vuelve solo: un tick permanente dejaría de significar «acabo de copiar».
-    setTimeout(() => setCopied(false), 1500)
-  }
-
-  const base =
-    'text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 grid size-6 shrink-0 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none'
+/**
+ * Los dos pulgares.
+ *
+ * En escritorio van al lado de la burbuja y aparecen al pasar por encima; en el móvil
+ * salen sobre el mensaje seleccionado, como la fila de reacciones de WhatsApp. En los dos
+ * casos **el elegido se queda visible**: ya no es una acción disponible, es un estado del
+ * mensaje. Lo dice el relleno del icono y lo dice `aria-pressed`.
+ */
+function Rating({
+  feedback,
+  onRate,
+  floating = false,
+}: {
+  feedback?: ChatFeedback
+  onRate: (feedback: ChatFeedback) => void
+  floating?: boolean
+}) {
+  const base = floating
+    ? 'grid size-8 place-items-center rounded-full transition-colors'
+    : 'text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 grid size-6 shrink-0 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none'
 
   return (
     <div
       className={cn(
-        'flex items-center gap-0.5 self-end transition-opacity group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100',
-        feedback ? 'opacity-100' : 'opacity-0',
+        'flex items-center gap-0.5',
+        floating
+          ? 'bg-card animate-in fade-in-0 zoom-in-95 rounded-full border p-1 shadow-lg'
+          : cn(
+              'self-end transition-opacity group-hover:opacity-100 focus-within:opacity-100',
+              feedback ? 'opacity-100' : 'opacity-0',
+            ),
       )}
     >
-      <button type="button" onClick={copy} aria-label="Copiar mensaje" title="Copiar" className={base}>
-        {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
+      <button
+        type="button"
+        onClick={() => onRate('up')}
+        aria-label="Buena respuesta"
+        title="Buena respuesta"
+        aria-pressed={feedback === 'up'}
+        className={cn(base, feedback === 'up' ? 'text-success' : 'text-muted-foreground')}
+      >
+        <ThumbsUp aria-hidden className={cn('size-4', feedback === 'up' && 'fill-current')} />
       </button>
-      {onQuote && (
-        <button
-          type="button"
-          onClick={onQuote}
-          aria-label="Citar mensaje"
-          title="Citar"
-          className={base}
-        >
-          <Quote aria-hidden className="size-3.5" />
-        </button>
-      )}
-      {onRate && (
-        <>
-          {/*
-            El pulgar elegido se queda visible aunque el ratón se vaya: es un estado del
-            mensaje, no una acción disponible. `aria-pressed` lo dice para quien no ve el
-            relleno del icono.
-          */}
-          <button
-            type="button"
-            onClick={() => onRate('up')}
-            aria-label="Buena respuesta"
-            title="Buena respuesta"
-            aria-pressed={feedback === 'up'}
-            className={cn(base, feedback === 'up' && 'text-success opacity-100')}
-          >
-            <ThumbsUp aria-hidden className={cn('size-3.5', feedback === 'up' && 'fill-current')} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onRate('down')}
-            aria-label="Mala respuesta"
-            title="Mala respuesta"
-            aria-pressed={feedback === 'down'}
-            className={cn(base, feedback === 'down' && 'text-destructive opacity-100')}
-          >
-            <ThumbsDown
-              aria-hidden
-              className={cn('size-3.5', feedback === 'down' && 'fill-current')}
-            />
-          </button>
-        </>
-      )}
+      <button
+        type="button"
+        onClick={() => onRate('down')}
+        aria-label="Mala respuesta"
+        title="Mala respuesta"
+        aria-pressed={feedback === 'down'}
+        className={cn(base, feedback === 'down' ? 'text-destructive' : 'text-muted-foreground')}
+      >
+        <ThumbsDown aria-hidden className={cn('size-4', feedback === 'down' && 'fill-current')} />
+      </button>
     </div>
   )
 }
@@ -202,6 +229,8 @@ export function ChatMessageItem({
   onCopy,
   onQuote,
   onRate,
+  selected = false,
+  onSelect,
 }: {
   message: ChatMessage
   /** Trae la URL firmada del audio archivado de este mensaje. */
@@ -213,10 +242,15 @@ export function ChatMessageItem({
   onCopy?: (text: string) => void
   /** Solo en las respuestas de Numi: qué opina el usuario de ella. */
   onRate?: (feedback: ChatFeedback) => void
+  /** Seleccionado en el móvil: se resalta y saca sus pulgares. */
+  selected?: boolean
+  /** Mantener pulsado lo selecciona. Solo se ofrece donde se toca con el dedo. */
+  onSelect?: (id: string) => void
   /** Solo en las respuestas de Numi: llevar esto al composer para preguntar por ello. */
   onQuote?: (text: string) => void
 }) {
   const isUser = message.role === 'user'
+  const touch = useTouchInput()
   const spacer = <span aria-hidden className={TIME_SLOT} />
 
   /*
@@ -279,24 +313,47 @@ export function ChatMessageItem({
     Ni una nota de voz ni una respuesta a medio escribir se copian o se citan: de la
     primera lo que hay es audio, y de la segunda el texto todavía está cambiando.
   */
-  const actionable = !playable && message.content !== ''
-  const actions = actionable && onCopy && (
-    <BubbleActions
-      onCopy={() => onCopy(message.content)}
-      // Citar es para preguntarle a Numi por lo que dijo; citarte a ti mismo no lleva
-      // a ninguna parte.
-      onQuote={!isUser && onQuote ? () => onQuote(message.content) : undefined}
-      feedback={message.feedback}
-      onRate={!isUser ? onRate : undefined}
-    />
+  const actionable = !playable && message.content !== '' && Boolean(onCopy)
+  const copy = () => onCopy?.(message.content)
+  // Citar es para preguntarle a Numi por lo que dijo; citarte a ti mismo no lleva a
+  // ninguna parte.
+  const quote = !isUser && onQuote ? () => onQuote(message.content) : undefined
+  const rateable = !isUser && Boolean(onRate)
+
+  /*
+    **Dos interfaces, y no por capricho.** Con ratón hay «encima», así que el menú puede
+    esconderse en la esquina de la burbuja y salir al pasar. Con el dedo no lo hay: el
+    gesto conocido es mantener pulsado, y lo que aparece entonces son los pulgares sobre
+    el mensaje y las acciones arriba, donde WhatsApp las pone.
+  */
+  const press = useLongPress(() => onSelect?.(message.id))
+  const holdable = touch && actionable && onSelect
+
+  const bubbleWithMenu = (
+    <div className="relative min-w-0" {...(holdable ? press : {})}>
+      {selected && (
+        <span
+          aria-hidden
+          className="bg-brand/10 pointer-events-none absolute -inset-x-2 -inset-y-1 rounded-lg"
+        />
+      )}
+      {bubble}
+      {!touch && actionable && <BubbleMenu isUser={isUser} onCopy={copy} onQuote={quote} />}
+    </div>
   )
 
   if (!isUser) {
     return (
       <AssistantRow showAvatar={!grouped}>
+        {/* Los pulgares del móvil van sobre el mensaje, no al lado: es donde caben. */}
+        {touch && selected && rateable && onRate && (
+          <div className="mb-1">
+            <Rating feedback={message.feedback} onRate={onRate} floating />
+          </div>
+        )}
         <div className="group flex w-full min-w-0 items-end gap-1">
-          <div className="min-w-0">{bubble}</div>
-          {actions}
+          {bubbleWithMenu}
+          {!touch && rateable && onRate && <Rating feedback={message.feedback} onRate={onRate} />}
         </div>
       </AssistantRow>
     )
@@ -304,10 +361,7 @@ export function ChatMessageItem({
 
   return (
     <div className="flex w-full flex-col items-end pl-9">
-      <div className="group flex max-w-[85%] min-w-0 items-end gap-1">
-        {actions}
-        <div className="min-w-0">{bubble}</div>
-      </div>
+      <div className="group flex max-w-[85%] min-w-0 items-end gap-1">{bubbleWithMenu}</div>
       <MessageStatus
         status={message.status}
         // Reenviar una nota de voz es imposible: su audio era un blob de esta página.
