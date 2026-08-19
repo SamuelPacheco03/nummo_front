@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -18,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { useCan } from '@/features/platform/permissions'
 import { toastApiError } from '@/features/platform/errors'
 import { todayISODate } from '@/lib/format'
@@ -129,9 +129,7 @@ export function AgreementFormPage() {
     },
   })
 
-  useEffect(() => {
-    if (isEdit && agreement) reset(toForm(agreement))
-  }, [isEdit, agreement, reset])
+  useHydrateOnce(isEdit ? agreement?.id : undefined, agreement, (a) => reset(toForm(a)))
 
   const payerId = watch('payerContactId')
   const beneficiaryId = watch('beneficiaryContactId')

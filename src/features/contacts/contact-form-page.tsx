@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -13,6 +12,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { useCan } from '@/features/platform/permissions'
 import { toastApiError } from '@/features/platform/errors'
 import { cn } from '@/lib/utils'
@@ -104,9 +104,7 @@ export function ContactFormPage() {
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: EMPTY })
 
-  useEffect(() => {
-    if (isEdit && contact) reset(toForm(contact))
-  }, [isEdit, contact, reset])
+  useHydrateOnce(isEdit ? contact?.id : undefined, contact, (c) => reset(toForm(c)))
 
   const contactType = watch('contactType')
   const busy = create.isPending || update.isPending

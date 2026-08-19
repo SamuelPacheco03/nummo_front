@@ -123,3 +123,38 @@ test('editar llega con lo que el rol ya tenía marcado', () => {
   expect(screen.getByLabelText(/Nombre/)).toHaveValue('Cajero')
   expect(screen.getByText('1 permiso elegido')).toBeInTheDocument()
 })
+
+test('un refetch a media edición no borra lo que se estaba eligiendo', async () => {
+  /*
+    El fallo que se descubrió previsualizando: el formulario se rehidrataba con
+    lo que llegaba del servidor, así que invalidar la caché desde cualquier otro
+    sitio —o que alguien editara ese rol— borraba el nombre y los permisos a
+    medio escribir.
+  */
+  m.role = {
+    id: 'r1',
+    name: 'Cajero',
+    description: null,
+    permissions: ['payments.read'],
+    membersCount: 1,
+    createdAt: '2026-08-01T00:00:00.000Z',
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  }
+  const { rerender } = pintar('/config/roles/r1')
+
+  await userEvent.clear(screen.getByLabelText(/Nombre/))
+  await userEvent.type(screen.getByLabelText(/Nombre/), 'Cajero de tarde')
+
+  // Llega el mismo rol otra vez, con otro nombre y otros permisos.
+  m.role = { ...m.role, name: 'Otro nombre', permissions: ['contacts.read', 'contacts.write'] }
+  rerender(
+    <MemoryRouter initialEntries={['/config/roles/r1']}>
+      <Routes>
+        <Route path="/config/roles/:roleId" element={<RoleFormPage />} />
+      </Routes>
+    </MemoryRouter>,
+  )
+
+  expect(screen.getByLabelText(/Nombre/)).toHaveValue('Cajero de tarde')
+  expect(screen.getByText('1 permiso elegido')).toBeInTheDocument()
+})

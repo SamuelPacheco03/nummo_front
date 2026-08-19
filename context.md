@@ -2587,6 +2587,38 @@ dice con palabras («sin cupo») en vez de subir a `destructive`: el rojo de §7
 lo que falló, y un plan Free con «1 de 1 miembros» lo tendría encendido para siempre — que es
 exactamente el aviso que se aprende a ignorar.
 
+## 45.7. Un formulario no se rellena dos veces
+
+El patrón que sale solo al escribir una pantalla de edición es este:
+
+```ts
+useEffect(() => { if (registro) reset(toForm(registro)) }, [registro, reset])
+```
+
+y tiene un fallo que **no se ve leyéndolo**: `registro` no cambia solo cuando se abre otro, sino
+cada vez que la consulta trae datos nuevos. Si alguien edita ese mismo registro desde otro sitio,
+o si algo invalida la caché mientras se escribe, el efecto se dispara otra vez y el formulario se
+rellena de nuevo — **lo escrito desaparece sin decir nada**. Y si el hook reconstruye su resultado
+en cada render, el efecto entra en bucle: es literalmente cómo se descubrió, previsualizando el
+editor de roles.
+
+**`useHydrateOnce` (`lib/use-hydrate-once.ts`) es la forma de hacerlo**, y lo usan las siete
+pantallas que editan algo cargado: contacto, acuerdo, gasto recurrente, empresa, rol, umbral de
+aprobación y el tema por defecto. La clave la pone quien llama —no todo lo que se edita tiene
+`id`; los ajustes van por `organizationId`— y es ella, no la identidad del objeto, la que decide.
+
+Dos consecuencias que hay que tener presentes:
+
+1. **Si la pantalla se queda tras guardar**, hay que marcarla limpia a mano con lo que se guardó
+   (`reset(values)`): ya no va a refrescarse sola. Los cajones que navegan al detalle no lo
+   necesitan.
+2. **Un diálogo que debe abrir siempre con lo de hoy se monta solo mientras está abierto**
+   (`{abierto && <Dialog … />}`), y entonces el estado de partida lo ponen los inicializadores y
+   no hace falta efecto. Es lo que hacen el editor de planes y el de condiciones negociadas.
+
+Lo que **no** entra aquí: los diálogos que se rellenan desde estado local (`editing` de un
+catálogo) ni los que resetean a vacío al abrirse. Ahí la dependencia no la mueve el servidor.
+
 ## 45.2. La puerta de entrada no parpadea
 
 Mientras `GET /auth/me` está en vuelo **no se sabe** si hay sesión, y `isAuthenticated` todavía es
@@ -4134,6 +4166,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `AdminPlansPage` | `features/admin/plans-page.tsx` | Editar planes, con la decisión de si alcanzan a los actuales |
 | `planLabel` · `featureLabel` · `limitLabel` | `features/platform/labels.ts` | Planes, features y topes en las palabras del usuario |
 | `orgStatus` | `features/organizations/labels.ts` | Tono y nombre del estado de una organización |
+| `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
 

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { Check, Monitor, Moon, Sun } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -9,6 +8,7 @@ import { useCan } from '@/features/platform/permissions'
 import { useThemeStore, type ThemeMode } from '@/stores/theme'
 import { toastApiError } from '@/features/platform/errors'
 import type { OrganizationSettingsThemeMode } from '@/api/generated/model'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { cn } from '@/lib/utils'
 import { useOrgSettings, useUpdateSettings } from './hooks'
 
@@ -38,14 +38,10 @@ export function AppearancePage() {
   const can = useCan()
   const canManage = can('organization.manage')
 
-  // Refleja el tema por defecto de la organización una vez al cargar.
-  const syncedRef = useRef(false)
-  useEffect(() => {
-    if (settings && !syncedRef.current) {
-      syncedRef.current = true
-      setMode(ENUM_TO_MODE[settings.themeMode])
-    }
-  }, [settings, setMode])
+  // Refleja el tema por defecto de la organización una vez al cargar, y **solo**
+  // una: repetirlo al refrescar los ajustes pisaría el tema que se acabe de
+  // elegir a mano.
+  useHydrateOnce(settings?.organizationId, settings, (s) => setMode(ENUM_TO_MODE[s.themeMode]))
 
   const choose = async (m: ThemeMode) => {
     setMode(m)

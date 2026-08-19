@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -14,6 +14,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { toastApiError } from '@/features/platform/errors'
 import { useCan, useFeature } from '@/features/platform/permissions'
 import { formatAmount } from '@/lib/format'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { useOrgSettings, useUpdateApprovalPolicy } from './hooks'
 
 /**
@@ -37,15 +38,9 @@ export function ApprovalPolicyPage() {
 
   const [threshold, setThreshold] = useState('')
 
-  /*
-    La dependencia es **el valor, no el objeto**: `settings` puede llegar como
-    una referencia nueva en cada render, y entonces el efecto se volvería a
-    disparar y pisaría lo que se está escribiendo, tecla a tecla.
-  */
-  const guardado = settings?.disbursementApprovalThreshold ?? null
-  useEffect(() => {
-    setThreshold(guardado ?? '')
-  }, [guardado])
+  useHydrateOnce(settings?.organizationId, settings, (s) =>
+    setThreshold(s.disbursementApprovalThreshold ?? ''),
+  )
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()

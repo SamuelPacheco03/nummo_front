@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,6 +15,7 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { orgStatus } from '@/features/organizations/labels'
 import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
@@ -137,9 +138,7 @@ export function CompanyPage() {
     formState: { errors, isDirty },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
-  useEffect(() => {
-    if (organization) reset(toForm(organization))
-  }, [organization, reset])
+  useHydrateOnce(organization?.id, organization, (org) => reset(toForm(org)))
 
   if (isPending) {
     return <Skeleton className="h-96 w-full" />
@@ -163,6 +162,10 @@ export function CompanyPage() {
           locale: values.locale || undefined,
         },
       })
+      // Esta pantalla se queda: hay que marcarla limpia a mano con lo que se
+      // guardó, porque ya no se rellena sola al refrescar (y es lo que apaga el
+      // botón de guardar).
+      reset(values)
       toast.success('Empresa actualizada')
     } catch (err) {
       toastApiError(err, 'No se pudo guardar')

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { toastApiError } from '@/features/platform/errors'
 import { groupPermissions, permissionAction } from '@/features/platform/permission-labels'
 import { ALL_PERMISSIONS, type Permission } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
+import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import { plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useCreateCustomRole, useCustomRole, useUpdateCustomRole } from './hooks'
@@ -92,21 +93,11 @@ export function RoleFormPage() {
   const [description, setDescription] = useState('')
   const [granted, setGranted] = useState<Set<Permission>>(new Set())
 
-  /*
-    Se rellena **una vez por rol**, no cada vez que `role` cambia de identidad.
-    Con la dependencia a secas, un refetch en segundo plano —volver a la pestaña,
-    invalidar tras guardar otra cosa— borraría lo que se está eligiendo a medio
-    formulario. Y si el hook devolviera un objeto nuevo por render, el efecto se
-    dispararía en bucle.
-  */
-  const hydratedFor = useRef<string | null>(null)
-  useEffect(() => {
-    if (!role || hydratedFor.current === role.id) return
-    hydratedFor.current = role.id
-    setName(role.name)
-    setDescription(role.description ?? '')
-    setGranted(new Set(role.permissions))
-  }, [role])
+  useHydrateOnce(role?.id, role, (r) => {
+    setName(r.name)
+    setDescription(r.description ?? '')
+    setGranted(new Set(r.permissions))
+  })
 
   const toggle = (permission: Permission) =>
     setGranted((prev) => {

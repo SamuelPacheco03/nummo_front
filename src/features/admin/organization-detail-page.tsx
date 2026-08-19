@@ -309,7 +309,15 @@ export function AdminOrganizationDetailPage() {
             open={statusOpen}
             onOpenChange={setStatusOpen}
           />
-          <OverridesDialog detail={detail} open={overridesOpen} onOpenChange={setOverridesOpen} />
+          {/* Montado solo mientras se usa: así abre siempre con lo que hay hoy
+              y no se rehidrata a media edición. */}
+          {overridesOpen && (
+            <OverridesDialog
+              detail={detail}
+              open
+              onOpenChange={(open) => !open && setOverridesOpen(false)}
+            />
+          )}
         </>
       )}
     </>

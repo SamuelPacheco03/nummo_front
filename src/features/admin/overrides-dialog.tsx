@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import type {
   AdminOrganizationDetailDto,
@@ -56,6 +56,11 @@ function initialFeatures(overrides: FeaturePatch): Record<FeatureKey, FeatureMod
  * Se manda el conjunto entero (`PUT`), así que lo que se deja en «Lo que diga el
  * plan» **se quita** como override. Es lo que hace que volver atrás sea posible
  * sin un botón de borrar aparte.
+ *
+ * **Se monta solo mientras está abierto** (ver el llamador), y por eso el estado
+ * de partida lo ponen los inicializadores y no un efecto. Rehidratar desde
+ * `detail` mientras se edita era el fallo: cualquier refresco de la ficha
+ * —cambiar el estado de la organización, por ejemplo— borraba lo elegido.
  */
 export function OverridesDialog({
   detail,
@@ -72,14 +77,6 @@ export function OverridesDialog({
     () => initialLimits(detail.overrides.limits).values,
   )
   const [featureModes, setFeatureModes] = useState(() => initialFeatures(detail.overrides.features))
-
-  useEffect(() => {
-    if (!open) return
-    const { modes, values } = initialLimits(detail.overrides.limits)
-    setLimitModes(modes)
-    setLimitValues(values)
-    setFeatureModes(initialFeatures(detail.overrides.features))
-  }, [open, detail])
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
