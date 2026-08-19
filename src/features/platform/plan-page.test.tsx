@@ -1,5 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { CapabilitiesDto, PublicPlan } from '@/api/generated/model'
 
 const estado = vi.hoisted(() => ({
@@ -131,8 +132,12 @@ test('un precio en null es «consultar», no gratis', () => {
   ]
   render(<PlanPage />)
 
-  expect(screen.getByText('$0 / mes')).toBeInTheDocument()
-  expect(screen.getByText('Consultar')).toBeInTheDocument()
+  // La cifra y el período van en dos piezas: el importe manda y «/ mes» lo
+  // acompaña, más pequeño.
+  expect(within(screen.getByRole('group', { name: 'Free' })).getByText('$0')).toBeInTheDocument()
+  const basico = screen.getByRole('group', { name: 'Básico' })
+  expect(within(basico).getByText('Consultar')).toBeInTheDocument()
+  expect(within(basico).getByText('Todavía sin precio publicado.')).toBeInTheDocument()
 })
 
 test('el plan contratado se distingue de los demás', () => {
@@ -156,4 +161,21 @@ test('las features que ningún plan incluye todavía no se listan', () => {
 
   expect(screen.getAllByText('Usar tu propia llave de IA')).toHaveLength(2)
   expect(screen.queryByText('Conciliación bancaria')).not.toBeInTheDocument()
+})
+
+test('el plan contratado no ofrece contratarse, y los demás dicen qué pasa al pedirlos', async () => {
+  /*
+    El contrato no publica una compra: mover una organización de plan es una
+    acción de la consola de plataforma. El botón no puede fingir un carrito.
+  */
+  estado.capabilities = capacidades({ planCode: 'FREE' })
+  estado.plans = [plan({ code: 'FREE', name: 'Free' }), plan({ code: 'PRO', name: 'Pro', price: null })]
+  render(<PlanPage />)
+
+  const actual = screen.getByRole('group', { name: 'Free' })
+  expect(within(actual).getByText('Tu plan actual')).toBeInTheDocument()
+  expect(within(actual).queryByRole('button')).toBeNull()
+
+  await userEvent.click(screen.getByRole('button', { name: /consultar pro/i }))
+  expect(await screen.findByText(/lo aplica el equipo de Nummo/)).toBeInTheDocument()
 })

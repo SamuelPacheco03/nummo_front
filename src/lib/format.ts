@@ -108,6 +108,27 @@ export function formatMonthLabel(ym: string, today: Date = new Date()): string {
 }
 
 /**
+ * 'YYYY-MM' → "agosto de 2026". Para leerlo **dentro de una frase**.
+ *
+ * `formatMonthLabel` es su hermana y no sirve aquí: abrevia («ago») porque nació
+ * para los ejes de una gráfica, donde el espacio manda. En «Consumo de …» esa
+ * abreviatura se lee como un error de la aplicación.
+ *
+ * En UTC a propósito: el período llega ya resuelto en la zona horaria de la
+ * organización, así que aquí solo hay que **nombrarlo** — construirlo en la del
+ * navegador lo correría un mes en medio mundo.
+ */
+export function formatMonthName(ym: string): string {
+  const [y, m] = ym.slice(0, 7).split('-').map(Number)
+  if (!y || !m || m < 1 || m > 12) return ym
+  return new Intl.DateTimeFormat('es-CO', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, m - 1, 1)))
+}
+
+/**
  * Monto compacto para etiquetas y ejes de gráficos (es-CO): "$1,5 M" · "$900 k" · "$850".
  * Redondea a 1 decimal en miles/millones, así que es puramente visual: §9 solo lo
  * admite donde la reducción ayuda a leer, nunca en cifras que el usuario deba cuadrar.

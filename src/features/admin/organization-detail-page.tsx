@@ -31,7 +31,7 @@ import {
   planLabel,
 } from '@/features/platform/labels'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDateHuman, formatMonthLabel } from '@/lib/format'
+import { formatDateHuman, formatMonthName } from '@/lib/format'
 import { useAdminOrganization, useChangePlan, useSetOrgStatus } from './hooks'
 import { OverridesDialog } from './overrides-dialog'
 
@@ -240,7 +240,7 @@ export function AdminOrganizationDetailPage() {
               </DetailRows>
             </DetailSection>
 
-            <DetailSection title={`Consumo de ${formatMonthLabel(detail.period)}`}>
+            <DetailSection title={`Consumo de ${formatMonthName(detail.period)}`}>
               <DetailRows>
                 <DetailRow label="Mensajes de Numi">
                   {detail.usage.ai_messages_monthly ?? 0}

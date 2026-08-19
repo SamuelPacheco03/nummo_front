@@ -2557,6 +2557,24 @@ que leer entero. Y solo se listan las features que **algún** plan incluye: las 
 existen como clave y se encenderán al construirse, así que hoy serían cuatro «✗» que no comparan
 nada.
 
+Cuatro decisiones de la tarjeta, que es lo que se copia mal de una página de precios cualquiera:
+
+1. **El que destaca es el plan contratado, no un «Recomendado».** El contrato no publica esa
+   señal, y ponerla aquí sería una decisión de precio escrita en el front (§70).
+2. **Sin la micro-etiqueta «PLANES» en versalitas** encima del título, ni el conmutador
+   mensual/anual: la primera es el tic que §11.1 prohíbe, y el segundo anunciaría un precio anual
+   que el contrato no tiene.
+3. **Cada tope con su icono**, al tamaño del texto y sin pastilla detrás — el cuadradito tintado
+   por fila es el otro tic de §11.1. Es lo que deja leer la lista de un vistazo.
+4. **El botón no finge un carrito.** Mover una organización de plan es una acción de la consola de
+   plataforma (§47.2), así que «Consultar Pro» abre un diálogo que dice qué pasa de verdad, y el
+   plan contratado no lleva botón sino una marca.
+
+**Estar al tope no se pinta en rojo.** El medidor pasa a ámbar desde el 80 % y, al llenarse, lo
+dice con palabras («sin cupo») en vez de subir a `destructive`: el rojo de §7 es para lo vencido y
+lo que falló, y un plan Free con «1 de 1 miembros» lo tendría encendido para siempre — que es
+exactamente el aviso que se aprende a ignorar.
+
 ## 45.2. La puerta de entrada no parpadea
 
 Mientras `GET /auth/me` está en vuelo **no se sabe** si hay sesión, y `isAuthenticated` todavía es
