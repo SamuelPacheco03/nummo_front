@@ -4548,6 +4548,25 @@ justo a esto.
 
 ---
 
+## Fase 11 — Roles propios ✅ **completada**
+
+Configuración › Roles y su editor (§47.3), y la asignación en Miembros. Los 53 permisos se
+componen de dos tablas pequeñas en vez de nombrarse uno a uno, así que el catálogo puede crecer
+sin que nadie se acuerde de esta pantalla.
+
+**Verificación:** typecheck limpio, 0 warnings, 334 tests en verde.
+
+---
+
+## Fase 12 — Aprobación de egresos ✅ **completada**
+
+El umbral en Configuración › Gastos y el aprobar/rechazar en la ficha del egreso (§47.4), por un
+slot nuevo de `SettlementDetail` — porque un pago que entra no lo aprueba nadie.
+
+**Verificación:** typecheck limpio, 0 warnings, 341 tests en verde, build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -4562,6 +4581,8 @@ justo a esto.
 | ✅ 8 | Suspensión y errores de plan | medio | 7 |
 | ✅ 9 | Plan y consumo | bajo | 7, 8 |
 | ✅ 10 | Consola de plataforma | medio | 7, 9 |
+| ✅ 11 | Roles propios de la organización | medio | 7 |
+| ✅ 12 | Aprobación de egresos | medio | 7, 9 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.
