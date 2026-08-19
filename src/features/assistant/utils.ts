@@ -1,3 +1,5 @@
+import { formatDateHuman } from '@/lib/format'
+
 /**
  * Heurística de refresco tras un turno de chat.
  *
@@ -97,4 +99,21 @@ export function formatTime(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+}
+
+/**
+ * Marca de tiempo de una fila de la lista de conversaciones.
+ *
+ * Lo de hoy lleva hora y lo demás lleva fecha, que es la pregunta que se hace al
+ * mirar una lista de chats: de hoy interesa cuándo, y de la semana pasada interesa
+ * qué día. Reutiliza las dos piezas que ya existen en vez de inventar un formato.
+ */
+export function formatConversationStamp(iso: string, today: Date = new Date()): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const sameDay =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  return sameDay ? formatTime(iso) : formatDateHuman(iso, today)
 }

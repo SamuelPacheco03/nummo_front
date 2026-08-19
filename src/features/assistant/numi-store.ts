@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ChatMessage, ChatRole, NumiError } from './types'
+import type { ChatMessage, ChatMessageStatus, ChatRole, NumiError } from './types'
 
 /**
  * Estado del panel de Numi.
@@ -47,30 +47,85 @@ interface NumiState {
   error: NumiError | null
   /** Ya se intentó cargar el historial persistido (evita recargarlo en bucle). */
   hydrated: boolean
+  /**
+   * Conversación cuya historia vive en el servidor y se puede seguir hacia atrás.
+   *
+   * No es lo mismo que `sessionId`: una conversación empezada en esta pantalla ya
+   * tiene id en cuanto Numi contesta, pero todo lo suyo está a la vista y no hay
+   * nada que ir a buscar. Distinguirlas es lo que evita pedir una página que no
+   * existe cada vez que alguien estrena conversación.
+   */
+  historyId: string | null
   /** Numi contestó con el chat cerrado y todavía no se ha visto. */
   unread: boolean
   /** Hay un turno en marcha: el hilo muestra «escribiendo…». */
   pending: boolean
+  /**
+   * Con qué se corta el turno en vuelo. Vive aquí y no en el panel por lo mismo que
+   * `pending`: cerrar el chat desmonta la vista y el turno sigue llegando, así que el
+   * botón de detener tiene que poder alcanzarlo después. No se guarda —un
+   * `AbortController` no sobrevive a la recarga, y el turno tampoco.
+   */
+  turn: AbortController | null
 
   open: () => void
   close: () => void
   appendMessage: (role: ChatRole, content: string) => void
+  /**
+   * Pone un mensaje propio en la cola y devuelve su id.
+   *
+   * Escribir no espera a que Numi termine: el mensaje entra al hilo marcado y sale
+   * en cuanto haya turno libre. Antes la caja se quedaba muda y lo escrito se perdía.
+   */
+  enqueueMessage: (content: string) => string
+  setMessageStatus: (id: string, status: ChatMessageStatus) => void
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
   appendAudio: (audio: { audioUrl: string; waveform?: number[]; audioSeconds?: number }) => void
+  /**
+   * Añade historia por arriba: lo que el servidor tenía antes de lo que ya se ve.
+   * Es la otra mitad del hilo — `hydrate` siembra el final y esto trae lo anterior.
+   */
+  prependOlder: (messages: ChatMessage[]) => void
   /** Rellena la transcripción de una nota de voz cuando el backend responde. */
   setTranscript: (id: string, transcript: string) => void
   /** Pinta la onda de una nota en cuanto se termina de decodificar. */
   setWaveform: (id: string, waveform: number[], audioSeconds?: number) => void
   /** Guarda la respuesta y el `sessionId` con el que continuar. */
   appendReply: (sessionId: string, reply: string) => void
+  /**
+   * Abre la burbuja de Numi vacía y devuelve su id. El texto entra después, trozo a
+   * trozo: la burbuja tiene que existir antes de la primera palabra para que se vea
+   * llegar en vez de aparecer entera.
+   */
+  beginReply: () => string
+  appendToReply: (id: string, delta: string) => void
+  /**
+   * Cierra el turno. Si no llegó a escribirse nada —se detuvo en el acto— la burbuja
+   * vacía se retira: no es una respuesta corta, es una respuesta que no existe.
+   */
+  finishReply: (id: string, sessionId: string) => void
+  /**
+   * Retira la burbuja del turno que se rompió, con lo que llevara escrito.
+   *
+   * Media frase de Numi que nadie va a terminar no es información: es una respuesta a
+   * medias que se lee como si fuera la buena, y al reintentar quedarían las dos. La
+   * conversación no se toca — el fallo fue del turno, no del hilo.
+   */
+  discardReply: (id: string) => void
   setError: (error: NumiError | null) => void
   /** Siembra el hilo con la conversación persistida más reciente (una sola vez). */
   hydrate: (sessionId: string | undefined, messages: ChatMessage[]) => void
+  /**
+   * Se cambia a otra conversación de la lista. Sustituye el hilo entero, no lo
+   * mezcla: son dos conversaciones distintas y ninguna continúa a la otra.
+   */
+  openThread: (conversationId: string, messages: ChatMessage[]) => void
   /** Empieza de cero: olvida el hilo del servidor y limpia la vista. */
   newConversation: () => void
   /** Ata el hilo a una organización; si cambia, la conversación se reinicia. */
   switchOrg: (orgId: string) => void
   setPending: (pending: boolean) => void
+  setTurn: (turn: AbortController | null) => void
 }
 
 /**
@@ -83,7 +138,10 @@ interface NumiState {
  */
 function storable(message: ChatMessage): ChatMessage {
   const { audioUrl: _audioUrl, ...rest } = message
-  return rest
+  // Un mensaje a medio enviar vuelve como fallido, no como «enviando»: el turno que
+  // lo iba a mandar murió con la página, así que nadie iba a cumplir esa promesa.
+  const status = rest.status === 'sent' || rest.status === undefined ? rest.status : 'failed'
+  return { ...rest, ...(status ? { status } : {}) }
 }
 
 const EMPTY = { sessionId: undefined, messages: [] as ChatMessage[], error: null as NumiError | null }
@@ -94,8 +152,10 @@ export const useNumiStore = create<NumiState>()(
       isOpen: false,
       orgId: null,
       hydrated: false,
+      historyId: null,
       unread: false,
       pending: false,
+      turn: null,
       ...EMPTY,
 
       // Abrir es haber visto lo que hubiera pendiente.
@@ -105,13 +165,46 @@ export const useNumiStore = create<NumiState>()(
       appendMessage: (role, content) =>
         set((s) => ({ messages: [...s.messages, message(role, content)] })),
 
+      enqueueMessage: (content) => {
+        const queued: ChatMessage = { ...message('user', content), status: 'queued' }
+        set((s) => ({ messages: [...s.messages, queued], error: null }))
+        return queued.id
+      },
+
+      setMessageStatus: (id, status) =>
+        set((s) => ({
+          messages: s.messages.map((m) => (m.id === id ? { ...m, status } : m)),
+        })),
+
       appendAudio: (audio) =>
         set((s) => ({
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'user', content: '', at: new Date().toISOString(), dictated: true, ...audio },
+            {
+              id: nextId(),
+              role: 'user',
+              content: '',
+              at: new Date().toISOString(),
+              dictated: true,
+              status: 'sending',
+              ...audio,
+            },
           ],
         })),
+
+      /*
+        Se descarta lo que ya está por id, y si no queda nada nuevo se devuelve el
+        estado tal cual: el efecto que llama a esto vuelve a correr cada vez que
+        react-query rehace su array de páginas, y devolver un `messages` nuevo
+        idéntico al anterior sería un render en bucle.
+      */
+      prependOlder: (older) =>
+        set((s) => {
+          const known = new Set(s.messages.map((m) => m.id))
+          const fresh = older.filter((m) => !known.has(m.id))
+          if (fresh.length === 0) return s
+          return { messages: [...fresh, ...s.messages] }
+        }),
 
       setTranscript: (id, transcript) =>
         set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, content: transcript } : m)) })),
@@ -130,27 +223,74 @@ export const useNumiStore = create<NumiState>()(
           unread: !s.isOpen,
         })),
 
+      beginReply: () => {
+        const bubble = message('assistant', '')
+        set((s) => ({ messages: [...s.messages, bubble] }))
+        return bubble.id
+      },
+
+      appendToReply: (id, delta) =>
+        set((s) => ({
+          messages: s.messages.map((m) => (m.id === id ? { ...m, content: m.content + delta } : m)),
+        })),
+
+      finishReply: (id, sessionId) =>
+        set((s) => {
+          const written = s.messages.find((m) => m.id === id)?.content ?? ''
+          const messages = written
+            ? s.messages
+            : s.messages.filter((m) => m.id !== id)
+          return {
+            sessionId,
+            messages,
+            error: null,
+            // Con el chat cerrado la respuesta no se ha visto: el icono lo dice.
+            unread: written ? !s.isOpen : s.unread,
+          }
+        }),
+
+      discardReply: (id) =>
+        set((s) => ({ messages: s.messages.filter((m) => m.id !== id) })),
+
       setError: (error) => set({ error }),
 
       hydrate: (sessionId, messages) =>
         set((s) => {
           if (s.hydrated) return s
           // Si el usuario ya empezó a escribir antes de que llegara el historial,
-          // se respeta su hilo nuevo y solo se marca como hidratado.
-          if (s.messages.length > 0) return { hydrated: true }
-          return { hydrated: true, sessionId, messages }
+          // se respeta su hilo nuevo. La conversación sigue siendo la misma, así
+          // que lo anterior a lo que se ve continúa estando a un scroll.
+          if (s.messages.length > 0) return { hydrated: true, historyId: s.sessionId ?? null }
+          return { hydrated: true, historyId: sessionId ?? null, sessionId, messages }
+        }),
+
+      openThread: (conversationId, messages) =>
+        set({
+          sessionId: conversationId,
+          // Viene del servidor, así que lo anterior a esto se puede ir a buscar.
+          historyId: conversationId,
+          messages,
+          error: null,
+          hydrated: true,
+          unread: false,
         }),
 
       // Hilo limpio, pero marcado como hidratado para no recargar la conversación
       // que el usuario acaba de dejar.
-      newConversation: () => set({ ...EMPTY, hydrated: true, unread: false }),
+      newConversation: () => set({ ...EMPTY, hydrated: true, historyId: null, unread: false }),
 
       // Cambiar de organización reinicia el hilo y vuelve a hidratar con las
       // conversaciones de la nueva empresa.
       switchOrg: (orgId) =>
-        set((s) => (s.orgId === orgId ? s : { orgId, ...EMPTY, hydrated: false, unread: false })),
+        set((s) =>
+          s.orgId === orgId
+            ? s
+            : { orgId, ...EMPTY, hydrated: false, historyId: null, unread: false },
+        ),
 
       setPending: (pending) => set({ pending }),
+
+      setTurn: (turn) => set({ turn }),
     }),
     {
       name: 'nummo-numi',

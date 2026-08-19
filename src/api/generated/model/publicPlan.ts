@@ -5,22 +5,21 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { FeaturePatch } from './featurePatch';
-import type { LimitPatch } from './limitPatch';
-import type { PlanDtoCode } from './planDtoCode';
+import type { FeatureMap } from './featureMap';
+import type { LimitMap } from './limitMap';
+import type { PlanPrice } from './planPrice';
+import type { PublicPlanCode } from './publicPlanCode';
 
-export interface PlanDto {
-  code: PlanDtoCode;
+export interface PublicPlan {
+  code: PublicPlanCode;
   name: string;
   description: string | null;
-  isPublic: boolean;
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
   sortOrder: number;
-  priceAmount: string | null;
-  priceCurrency: string;
-  features: FeaturePatch;
-  limits: LimitPatch;
+  price: PlanPrice | null;
+  features: FeatureMap;
+  limits: LimitMap;
 }

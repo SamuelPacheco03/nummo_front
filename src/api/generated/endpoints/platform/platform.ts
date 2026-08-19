@@ -22,7 +22,9 @@ import type {
 
 import type {
   CapabilitiesDto,
-  ErrorResponse
+  ErrorResponse,
+  PlatformAccess,
+  PublicPlan
 } from '../../model';
 
 import { customFetch } from '../../../http-client';
@@ -163,6 +165,246 @@ export function useGetApiV1OrganizationsOrgIdMeCapabilities<TData = Awaited<Retu
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiV1OrganizationsOrgIdMeCapabilitiesQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1PlansResponse200 = {
+  data: PublicPlan[]
+  status: 200
+}
+
+export type getApiV1PlansResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1PlansResponseSuccess = (getApiV1PlansResponse200) & {
+  headers: Headers;
+};
+export type getApiV1PlansResponseError = (getApiV1PlansResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1PlansResponse = (getApiV1PlansResponseSuccess | getApiV1PlansResponseError)
+
+export const getGetApiV1PlansUrl = () => {
+
+
+
+
+  return `/api/v1/plans`
+}
+
+/**
+ * Catálogo público para la pantalla de precios y el upsell. Devuelve solo los planes marcados como públicos y no archivados, con el catálogo completo de features y topes resueltos: lo que anuncia esta tabla es exactamente lo que aplican los guards. `price` en null significa que el plan no tiene precio publicado («consultar»), no que sea gratis — el plan gratuito trae precio 0.
+ * @summary Los planes en venta, en orden de presentación
+ */
+export const getApiV1Plans = async ( options?: Parameters<typeof customFetch>[1]): Promise<getApiV1PlansResponse> => {
+
+  return customFetch<getApiV1PlansResponse>(getGetApiV1PlansUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1PlansQueryKey = () => {
+    return [
+    `/api/v1/plans`
+    ] as const;
+    }
+
+
+export const getGetApiV1PlansQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1Plans>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Plans>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1PlansQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1Plans>>> = ({ signal }) => getApiV1Plans({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1Plans>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1PlansQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1Plans>>>
+export type GetApiV1PlansQueryError = ErrorResponse
+
+
+export function useGetApiV1Plans<TData = Awaited<ReturnType<typeof getApiV1Plans>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Plans>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1Plans>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1Plans>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1Plans<TData = Awaited<ReturnType<typeof getApiV1Plans>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Plans>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1Plans>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1Plans>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1Plans<TData = Awaited<ReturnType<typeof getApiV1Plans>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Plans>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Los planes en venta, en orden de presentación
+ */
+
+export function useGetApiV1Plans<TData = Awaited<ReturnType<typeof getApiV1Plans>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Plans>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1PlansQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1MePlatformAccessResponse200 = {
+  data: PlatformAccess
+  status: 200
+}
+
+export type getApiV1MePlatformAccessResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1MePlatformAccessResponseSuccess = (getApiV1MePlatformAccessResponse200) & {
+  headers: Headers;
+};
+export type getApiV1MePlatformAccessResponseError = (getApiV1MePlatformAccessResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1MePlatformAccessResponse = (getApiV1MePlatformAccessResponseSuccess | getApiV1MePlatformAccessResponseError)
+
+export const getGetApiV1MePlatformAccessUrl = () => {
+
+
+
+
+  return `/api/v1/me/platform-access`
+}
+
+/**
+ * Sirve para decidir si se ofrece la consola de superadmin en la interfaz. Es orientativo: `/api/v1/admin/*` vuelve a comprobarlo en cada petición, así que un cliente que se mienta a sí mismo solo consigue un 403.
+ * @summary ¿Esta cuenta administra la plataforma?
+ */
+export const getApiV1MePlatformAccess = async ( options?: Parameters<typeof customFetch>[1]): Promise<getApiV1MePlatformAccessResponse> => {
+
+  return customFetch<getApiV1MePlatformAccessResponse>(getGetApiV1MePlatformAccessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1MePlatformAccessQueryKey = () => {
+    return [
+    `/api/v1/me/platform-access`
+    ] as const;
+    }
+
+
+export const getGetApiV1MePlatformAccessQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1MePlatformAccessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>> = ({ signal }) => getApiV1MePlatformAccess({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1MePlatformAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>>
+export type GetApiV1MePlatformAccessQueryError = ErrorResponse
+
+
+export function useGetApiV1MePlatformAccess<TData = Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1MePlatformAccess>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1MePlatformAccess>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1MePlatformAccess<TData = Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1MePlatformAccess>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1MePlatformAccess>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1MePlatformAccess<TData = Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary ¿Esta cuenta administra la plataforma?
+ */
+
+export function useGetApiV1MePlatformAccess<TData = Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1MePlatformAccess>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1MePlatformAccessQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

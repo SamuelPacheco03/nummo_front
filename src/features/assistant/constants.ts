@@ -4,6 +4,9 @@
  */
 export const MAX_MESSAGE_LENGTH = 4000
 
+/** Lo que aguanta el título de una conversación en el servidor (`RenameConversationInput`). */
+export const MAX_CONVERSATION_TITLE = 200
+
 /** Alto máximo del textarea antes de hacer scroll interno (px). */
 export const COMPOSER_MAX_HEIGHT = 120
 

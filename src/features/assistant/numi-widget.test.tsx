@@ -5,6 +5,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import { NumiWidget } from './numi-widget'
 import { useNumiStore } from './numi-store'
+import { sseChannel } from '@/test/sse'
+
+/** Turno completo en un solo gesto: la conversación, el texto y el cierre. */
+function replyStream(sessionId: string, text: string): Response {
+  const sse = sseChannel()
+  sse.start(sessionId)
+  sse.chunk(text)
+  sse.done(sessionId, text)
+  return sse.response
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -53,7 +63,7 @@ afterEach(() => {
 })
 
 test('abre el chat desde el botón flotante y muestra el estado vacío', async () => {
-  stubApi(async () => json({ sessionId: 's1', reply: 'hola' }))
+  stubApi(async () => replyStream('s1', 'hola'))
   const user = userEvent.setup()
   mount()
 
@@ -68,14 +78,8 @@ test('abre el chat desde el botón flotante y muestra el estado vacío', async (
 })
 
 test('envía el mensaje, avisa que Numi escribe y pinta la respuesta', async () => {
-  let release: (() => void) | undefined
-  const pending = new Promise<void>((resolve) => {
-    release = resolve
-  })
-  stubApi(async () => {
-    await pending
-    return json({ sessionId: 'sess-1', reply: 'Te deben **$70.000**.' })
-  })
+  const sse = sseChannel()
+  stubApi(async () => sse.response)
   const user = userEvent.setup()
   mount()
 
@@ -86,7 +90,9 @@ test('envía el mensaje, avisa que Numi escribe y pinta la respuesta', async () 
   expect(await screen.findByText('¿Cuánto me deben?')).toBeInTheDocument()
   expect(await screen.findByText('Numi está escribiendo…')).toBeInTheDocument()
 
-  release?.()
+  sse.start('sess-1')
+  sse.chunk('Te deben **$70.000**.')
+  sse.done('sess-1', 'Te deben **$70.000**.')
 
   expect(await screen.findByText('$70.000')).toBeInTheDocument()
   await waitFor(() => expect(screen.queryByText('Numi está escribiendo…')).not.toBeInTheDocument())
@@ -100,7 +106,7 @@ test('un fallo del backend deja reintentar sin volver a escribir', async () => {
     attempts += 1
     return attempts === 1
       ? json({ error: { code: 'INTERNAL', message: 'Numi no está disponible' } }, 500)
-      : json({ sessionId: 's2', reply: 'Ya estoy aquí.' })
+      : replyStream('s2', 'Ya estoy aquí.')
   })
   const user = userEvent.setup()
   mount()
@@ -137,7 +143,7 @@ test('sin proveedor de IA (422) manda a Configuración en vez de reintentar', as
 })
 
 test('deja los adjuntos como próximos, pero la nota de voz habilitada', async () => {
-  stubApi(async () => json({ sessionId: 's3', reply: 'hola' }))
+  stubApi(async () => replyStream('s3', 'hola'))
   const user = userEvent.setup()
   mount()
 
@@ -148,7 +154,7 @@ test('deja los adjuntos como próximos, pero la nota de voz habilitada', async (
 })
 
 test('sella la hora de cada mensaje', async () => {
-  stubApi(async (message) => json({ sessionId: 's4', reply: `eco: ${message}` }))
+  stubApi(async (message) => replyStream('s4', `eco: ${message}`))
   const user = userEvent.setup()
   mount()
 
@@ -163,7 +169,7 @@ test('sella la hora de cada mensaje', async () => {
 })
 
 test('el botón flotante desaparece con el chat abierto y recupera el foco al cerrar', async () => {
-  stubApi(async () => json({ sessionId: 's5', reply: 'hola' }))
+  stubApi(async () => replyStream('s5', 'hola'))
   const user = userEvent.setup()
   mount()
 
