@@ -18,6 +18,7 @@ vi.mock('./use-numi-history', () => ({
   useConversationOpener: () => async () => [],
   useConversationActions: () => ({ rename: vi.fn(), remove: vi.fn() }),
   useMessageRating: () => vi.fn(),
+  useNewerMessages: () => async () => [],
 }))
 vi.mock('./stream-chat', () => ({
   streamChat: vi.fn(async ({ message }: { message: string }) => {

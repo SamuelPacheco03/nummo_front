@@ -27,22 +27,28 @@ const AUDIO_URL_TTL = 5 * 60 * 1000
  * Pages arrive newest→oldest and each page is itself newest-first; reversing both yields the
  * natural reading order (oldest at the top, newest at the bottom).
  */
+/** Un mensaje del contrato, con la forma que usa el hilo. */
+export function toChatMessage(m: MessageList['items'][number]): ChatMessage {
+  return {
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    at: m.createdAt,
+    dictated: m.source === 'audio',
+    hasAudio: m.hasAudio,
+    waveform: sanitizePeaks(m.waveform),
+    audioSeconds: m.audioSeconds ?? undefined,
+    feedback: m.feedback ?? undefined,
+  }
+}
+
+/**
+ * Flattens the newest-first message pages into an oldest→newest transcript (front shape).
+ * Pages arrive newest→oldest and each page is itself newest-first; reversing both yields the
+ * natural reading order (oldest at the top, newest at the bottom).
+ */
 export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
-  return [...pages].reverse().flatMap((page) =>
-    [...page.items].reverse().map((m) => {
-      return {
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        at: m.createdAt,
-        dictated: m.source === 'audio',
-        hasAudio: m.hasAudio,
-        waveform: sanitizePeaks(m.waveform),
-        audioSeconds: m.audioSeconds ?? undefined,
-        feedback: m.feedback ?? undefined,
-      }
-    }),
-  )
+  return [...pages].reverse().flatMap((page) => [...page.items].reverse().map(toChatMessage))
 }
 
 /** The caller's Numi conversations (chat list), most recent first, with cursor paging. */
@@ -239,6 +245,27 @@ export function useConversationActions(orgId: string | undefined) {
   )
 
   return { rename, remove, isRenaming: renameMutation.isPending, isRemoving: removeMutation.isPending }
+}
+
+/**
+ * Lo que se dijo después del último mensaje que tenemos.
+ *
+ * El servidor ya lo devuelve en orden de lectura con `after`, así que aquí no se le da la
+ * vuelta a nada: se pide, se traduce y se añade por el final.
+ */
+export function useNewerMessages(orgId: string | undefined) {
+  return useCallback(
+    async (conversationId: string, after: string): Promise<ChatMessage[]> => {
+      if (!orgId) return []
+      const res = await getApiV1OrganizationsOrgIdAssistantConversationsIdMessages(
+        orgId,
+        conversationId,
+        { limit: MESSAGES_PAGE, after },
+      )
+      return (res.data as MessageList).items.map(toChatMessage)
+    },
+    [orgId],
+  )
 }
 
 /**

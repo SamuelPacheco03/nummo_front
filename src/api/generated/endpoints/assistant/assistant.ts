@@ -929,7 +929,127 @@ export const usePostApiV1OrganizationsOrgIdAssistantChatStream = <TError = Error
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatStreamMutationOptions(options), queryClient);
     }
-    export type getApiV1OrganizationsOrgIdAssistantConversationsResponse200 = {
+    export type getApiV1OrganizationsOrgIdAssistantEventsResponse200 = {
+  data: string
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdAssistantEventsResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdAssistantEventsResponseSuccess = (getApiV1OrganizationsOrgIdAssistantEventsResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdAssistantEventsResponseError = (getApiV1OrganizationsOrgIdAssistantEventsResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdAssistantEventsResponse = (getApiV1OrganizationsOrgIdAssistantEventsResponseSuccess | getApiV1OrganizationsOrgIdAssistantEventsResponseError)
+
+export const getGetApiV1OrganizationsOrgIdAssistantEventsUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/events`
+}
+
+/**
+ * Flujo de Server-Sent Events abierto mientras la pestaña vive. Manda **avisos, no datos**: `message` con `{ conversationId }` cuando se dijo algo nuevo, y `conversation` cuando la lista cambió (se renombró, se borró o nació una). Al recibirlo, pide lo nuevo con `GET .../messages?after=<último id que tengas>` — que es la misma llamada que debes hacer al reconectar, porque un aviso emitido mientras estabas desconectado no se guarda. Como es un GET con cookie, `EventSource` sirve tal cual. Cada 25 s llega un comentario de latido para que ningún proxy cierre la conexión por silencio.
+ * @summary Enterarse de lo que pasó en otro dispositivo
+ */
+export const getApiV1OrganizationsOrgIdAssistantEvents = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantEventsResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdAssistantEventsResponse>(getGetApiV1OrganizationsOrgIdAssistantEventsUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantEventsQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/assistant/events`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdAssistantEventsQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdAssistantEventsQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>> = ({ signal }) => getApiV1OrganizationsOrgIdAssistantEvents(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdAssistantEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>>
+export type GetApiV1OrganizationsOrgIdAssistantEventsQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Enterarse de lo que pasó en otro dispositivo
+ */
+
+export function useGetApiV1OrganizationsOrgIdAssistantEvents<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdAssistantEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdAssistantEventsQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdAssistantConversationsResponse200 = {
   data: ConversationList
   status: 200
 }

@@ -21,6 +21,7 @@ vi.mock('./use-numi-history', () => ({
   useConversationOpener: () => async () => [],
   useConversationActions: () => ({ rename: vi.fn(), remove: vi.fn() }),
   useMessageSearch: () => ({ hits: [], isSearching: false, enabled: false }),
+  useNewerMessages: () => async () => [],
   useMessageRating: () => async (messageId: string, feedback: string | null) => {
     if (m.falla) throw new Error('no se pudo');
     m.enviados.push({ messageId, feedback })

@@ -24,6 +24,7 @@ vi.mock('./use-numi-history', () => ({
   useConversationOpener: () => async () => [],
   useConversationActions: () => ({ rename: vi.fn(), remove: vi.fn() }),
   useMessageRating: () => vi.fn(),
+  useNewerMessages: () => async () => [],
 }))
 vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({
   usePostApiV1OrganizationsOrgIdAssistantChatAudio: () => ({

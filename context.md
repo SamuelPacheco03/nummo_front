@@ -2145,6 +2145,34 @@ que ya avisó de que la respuesta era mala.
 Volver a pulsar el mismo pulgar retira la opinión, y retirarla es mandar `null`: el
 endpoint es un `PUT` porque el valor es el estado completo de una sola cosa.
 
+## 32.10. El mismo hilo en todos tus dispositivos
+
+Lo que escribes en el móvil aparece en el escritorio, y al revés. La pieza que lo hace
+posible no es el transporte: es que **el servidor devuelve los ids con los que archivó
+cada turno**. Hasta que los tuvo, un mensaje enviado vivía con un id inventado por el
+cliente, así que cualquier novedad traída del servidor lo veía como uno distinto y lo
+pintaba dos veces.
+
+**Los avisos llegan por SSE y son señales, no datos.** El flujo dice que una conversación
+se movió; el hilo va a buscarlo con `after`. Se eligió así porque esa es **la misma llamada
+que se hace al abrir el panel**: ponerse al día tras un rato cerrado y ponerse al día tras
+un aviso son el mismo camino, y hay uno solo por el que entran mensajes al hilo. Un aviso
+perdido mientras el móvil no tenía cobertura da igual.
+
+Se usa `EventSource` y no `fetch`: la cookie viaja sola, leer no necesita CSRF y
+**reconectar lo hace el navegador**. Y no se reintenta a mano al fallar, precisamente para
+no perder esa reconexión.
+
+**El flujo vive lo que vive el panel.** Con el chat cerrado no hay nada que actualizar y
+una conexión de más se paga en el servidor; por eso al abrir se pregunta una vez, que es
+lo que cubre el rato sin flujo.
+
+Un detalle que parece menor y no lo es: al preguntar «qué hay después de X» solo se usa un
+id **que el servidor podría conocer**, comprobado por su forma de UUID. La versión fácil
+—«no lleva el prefijo del cliente»— acepta cualquier id que no encaje en ninguno de los dos
+moldes, y entonces el servidor responde con todo lo que ya se tenía. Ante la duda, no
+preguntar.
+
 ---
 
 # 33. Cards dentro del chat

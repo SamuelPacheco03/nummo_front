@@ -8878,6 +8878,55 @@
         "x-required-permission": "assistant.use"
       }
     },
+    "/api/v1/organizations/{orgId}/assistant/events": {
+      "get": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Enterarse de lo que pasó en otro dispositivo",
+        "description": "Flujo de Server-Sent Events abierto mientras la pestaña vive. Manda **avisos, no datos**: `message` con `{ conversationId }` cuando se dijo algo nuevo, y `conversation` cuando la lista cambió (se renombró, se borró o nació una). Al recibirlo, pide lo nuevo con `GET .../messages?after=<último id que tengas>` — que es la misma llamada que debes hacer al reconectar, porque un aviso emitido mientras estabas desconectado no se guarda. Como es un GET con cookie, `EventSource` sirve tal cual. Cada 25 s llega un comentario de latido para que ningún proxy cierre la conexión por silencio.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flujo de avisos.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "assistant.use"
+      }
+    },
     "/api/v1/organizations/{orgId}/assistant/conversations": {
       "get": {
         "tags": [
@@ -9186,6 +9235,15 @@
           {
             "in": "query",
             "name": "until",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
             "schema": {
               "type": "string",
               "format": "uuid",
@@ -16519,11 +16577,37 @@
           },
           "reply": {
             "type": "string"
+          },
+          "userMessageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assistantMessageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "sessionId",
-          "reply"
+          "reply",
+          "userMessageId",
+          "assistantMessageId"
         ],
         "additionalProperties": false
       },
@@ -16826,12 +16910,38 @@
           },
           "reply": {
             "type": "string"
+          },
+          "userMessageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assistantMessageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "sessionId",
           "transcript",
-          "reply"
+          "reply",
+          "userMessageId",
+          "assistantMessageId"
         ],
         "additionalProperties": false
       },

@@ -28,8 +28,25 @@ import type { ChatFeedback, ChatMessage, ChatMessageStatus, ChatRole, NumiError 
  */
 const KEPT = 50
 
+/** Prefijo de los ids que inventa el cliente mientras el servidor no ha dado el suyo. */
+const LOCAL_PREFIX = 'numi-'
+
+/** Los del servidor son UUID; los de aquí, nunca. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * ¿Este id lo puso el servidor?
+ *
+ * Se pregunta por la forma y no por «no lleva el prefijo del cliente», que es la versión
+ * fácil y la que falla: cualquier id que no encaje en ninguno de los dos moldes —uno viejo
+ * del almacenamiento, uno de un test— se daría por bueno y se le pediría al servidor «qué
+ * hay después de esto», que responde con todo lo que ya se tenía. Ante la duda, no
+ * preguntar.
+ */
+export const isServerId = (id: string): boolean => UUID.test(id)
+
 let seq = 0
-const nextId = (): string => `numi-${++seq}`
+const nextId = (): string => `${LOCAL_PREFIX}${++seq}`
 
 function message(role: ChatRole, content: string): ChatMessage {
   return { id: nextId(), role, content, at: new Date().toISOString() }
@@ -86,6 +103,19 @@ interface NumiState {
    */
   enqueueMessage: (content: string) => string
   setMessageStatus: (id: string, status: ChatMessageStatus) => void
+  /**
+   * Cambia el id inventado por el cliente por el que el servidor le puso.
+   *
+   * Es lo que hace que un mensaje recién enviado y el mismo mensaje traído del servidor
+   * sean uno solo. Sin esto, cualquier novedad que llegue —de otro dispositivo o al
+   * reconectar— lo pintaría dos veces.
+   */
+  adoptServerId: (localId: string, serverId: string) => void
+  /**
+   * Añade por el final lo que se dijo en otro sitio. Gemela de `prependOlder`: aquella
+   * trae historia, esta trae novedades.
+   */
+  appendNewer: (messages: ChatMessage[]) => void
   /** Pinta el pulgar en el acto; la petición solo lo confirma después. */
   setFeedback: (id: string, feedback: ChatFeedback | undefined) => void
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
@@ -180,6 +210,30 @@ export const useNumiStore = create<NumiState>()(
         set((s) => ({ messages: [...s.messages, queued], error: null }))
         return queued.id
       },
+
+      adoptServerId: (localId, serverId) =>
+        set((s) => {
+          // Si el servidor ya lo mandó por otra vía, el local sobra en vez de duplicar.
+          const yaEsta = s.messages.some((m) => m.id === serverId)
+          return {
+            messages: yaEsta
+              ? s.messages.filter((m) => m.id !== localId)
+              : s.messages.map((m) => (m.id === localId ? { ...m, id: serverId } : m)),
+          }
+        }),
+
+      /*
+        Se descarta lo que ya está por id, igual que `prependOlder`, y si no queda nada
+        nuevo se devuelve el estado tal cual: esto lo dispara un aviso del servidor, y el
+        caso normal es que el aviso sea del propio mensaje que se acaba de mandar.
+      */
+      appendNewer: (nuevos) =>
+        set((s) => {
+          const conocidos = new Set(s.messages.map((m) => m.id))
+          const frescos = nuevos.filter((m) => !conocidos.has(m.id))
+          if (frescos.length === 0) return s
+          return { messages: [...s.messages, ...frescos] }
+        }),
 
       setMessageStatus: (id, status) =>
         set((s) => ({

@@ -11,4 +11,6 @@ export interface AssistantAudioChatResponse {
   sessionId: string;
   transcript: string;
   reply: string;
+  userMessageId: string | null;
+  assistantMessageId: string | null;
 }
