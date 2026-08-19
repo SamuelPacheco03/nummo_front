@@ -2631,9 +2631,24 @@ vuelve a comprobar contra la tabla.
 ## 47.2. La consola de plataforma
 
 Vive **en esta misma app** como ruta protegida, no en un panel aparte: es la misma persona con la
-misma sesión, y montar una segunda aplicación para siete endpoints habría duplicado el shell, el
-cliente HTTP y el sistema visual entero. Su forma es la de Configuración y Ayuda —`SectionedLayout`
-(§11.1.3)—, y su ficha cuelga de la lista como cualquier otra (§87.5).
+misma sesión, y montar una segunda aplicación para siete endpoints habría duplicado el cliente
+HTTP y el sistema visual entero. Su ficha cuelga de la lista como cualquier otra (§87.5) y su
+navegación es `SectionedLayout`, la misma de Configuración y Ayuda (§11.1.3).
+
+**Pero cuelga fuera de `AppShell`, y esto costó una captura de pantalla descubrirlo.** El shell de
+la aplicación empieza por «¿a qué organización perteneces?» y enseña el onboarding de «Crea tu
+organización» a quien no pertenece a ninguna. Un superadmin **no tiene por qué tener
+organización**: administra todas, no es miembro de ninguna. Con la consola dentro, esa puerta se
+cerraba antes de que la ruta llegara a montarse, así que `/plataforma` acababa en «Crea tu
+organización» — parecía una redirección y era una pantalla tapando a la otra.
+
+Es también lo coherente con el backend: `requirePlatformAdmin` corre **fuera** de `requireTenant`.
+Si allí no hace falta un inquilino, aquí tampoco. De ahí que `PlatformShell` lleve el cromo
+mínimo —marca, tema, cuenta y una salida a la app si la tiene—: la navegación del negocio no
+significa nada mirando la plataforma, y el selector de organización estaría vacío.
+
+Y por si alguien aterriza en el onboarding de todas formas, esa pantalla ofrece la consola cuando
+`isPlatformAdmin`: era el único callejón sin salida que quedaba.
 
 | Ruta | Qué hace |
 | --- | --- |
@@ -4009,7 +4024,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `useLimitUsage` | `features/platform/use-limit-usage.ts` | Cuánto llevas de cada tope — aparte, que el sidebar no lo necesita |
 | `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
 | `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
-| `PlatformLayout` | `features/admin/platform-layout.tsx` | Shell de la consola de plataforma (§47.2) |
+| `PlatformShell` | `features/admin/platform-shell.tsx` | Shell de la consola, **fuera de `AppShell`** (§47.2) |
 | `AdminOrganizationsPage` · `AdminOrganizationDetailPage` | `features/admin/` | Las organizaciones de la plataforma y su ficha |
 | `OverridesDialog` | `features/admin/overrides-dialog.tsx` | Negociar features y topes: **tres** estados, no dos |
 | `AdminPlansPage` | `features/admin/plans-page.tsx` | Editar planes, con la decisión de si alcanzan a los actuales |

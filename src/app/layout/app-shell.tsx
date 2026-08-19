@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router'
+import { Link, Outlet, useNavigate } from 'react-router'
 import { Search } from 'lucide-react'
 import { PageLoader } from '@/components/ui/loader'
 import { BrandMark } from '@/components/brand-mark'
@@ -11,6 +11,7 @@ import { useLogout } from '@/features/auth/hooks'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { ReadOnlyBanner } from '@/features/platform/read-only-banner'
+import { usePlatformAccess } from '@/features/platform/hooks'
 import { toastApiError } from '@/features/platform/errors'
 import { CommandBar } from '@/features/search/command-bar'
 import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
@@ -23,6 +24,9 @@ function NoOrgOnboarding() {
   const navigate = useNavigate()
   const logout = useLogout()
   const [open, setOpen] = useState(false)
+  // Un superadmin puede no ser miembro de ninguna organización: administra
+  // todas. Sin esta salida, esta pantalla sería un callejón para él.
+  const { isPlatformAdmin } = usePlatformAccess()
 
   const onLogout = async () => {
     try {
@@ -45,6 +49,14 @@ function NoOrgOnboarding() {
         </div>
         <div className="flex flex-col items-center gap-2">
           <Button onClick={() => setOpen(true)}>Crear organización</Button>
+          {isPlatformAdmin && (
+            <Link
+              to="/plataforma"
+              className="text-brand text-sm font-medium underline-offset-4 hover:underline"
+            >
+              Ir a la consola de plataforma
+            </Link>
+          )}
           <button
             type="button"
             onClick={onLogout}

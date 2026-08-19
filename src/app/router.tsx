@@ -26,6 +26,48 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      /*
+        La consola **fuera de `AppShell`**: ese shell empieza por «¿a qué
+        organización perteneces?» y enseña el onboarding a quien no pertenece a
+        ninguna, y un superadmin no tiene por qué tener una — administra todas.
+        Con la consola dentro, `/plataforma` acababa en «Crea tu organización».
+
+        Es lo mismo que hace el backend: `requirePlatformAdmin` corre fuera de
+        `requireTenant`.
+      */
+      {
+        path: 'plataforma',
+        lazy: async () => ({
+          Component: (await import('@/features/admin/platform-shell')).PlatformShell,
+        }),
+        children: [
+          { index: true, element: <Navigate to="/plataforma/organizaciones" replace /> },
+          {
+            path: 'organizaciones',
+            lazy: async () => ({
+              Component: (await import('@/features/admin/organizations-page'))
+                .AdminOrganizationsPage,
+            }),
+            // La ficha es hija: la lista sigue montada detrás del cajón.
+            children: [
+              {
+                path: ':orgId',
+                handle: OVERLAY,
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/organization-detail-page'))
+                    .AdminOrganizationDetailPage,
+                }),
+              },
+            ],
+          },
+          {
+            path: 'planes',
+            lazy: async () => ({
+              Component: (await import('@/features/admin/plans-page')).AdminPlansPage,
+            }),
+          },
+        ],
+      },
       {
         element: <AppShell />,
         children: [
@@ -239,45 +281,6 @@ export const router = createBrowserRouter([
                 handle: OVERLAY,
                 lazy: async () => ({
                   Component: (await import('@/features/expenses/schedule-detail-page')).ScheduleDetailPage,
-                }),
-              },
-            ],
-          },
-
-          // Consola de plataforma: **no es una sección de la organización**, es
-          // la superficie desde la que se administran todas. Vive aquí y no en
-          // otra app porque el superadmin es la misma persona con la misma
-          // sesión; el guard de verdad está en el backend, que revalida cada
-          // petición a `/admin/*`.
-          {
-            path: 'plataforma',
-            lazy: async () => ({
-              Component: (await import('@/features/admin/platform-layout')).PlatformLayout,
-            }),
-            children: [
-              { index: true, element: <Navigate to="/plataforma/organizaciones" replace /> },
-              {
-                path: 'organizaciones',
-                lazy: async () => ({
-                  Component: (await import('@/features/admin/organizations-page'))
-                    .AdminOrganizationsPage,
-                }),
-                // La ficha es hija: la lista sigue montada detrás del cajón.
-                children: [
-                  {
-                    path: ':orgId',
-                    handle: OVERLAY,
-                    lazy: async () => ({
-                      Component: (await import('@/features/admin/organization-detail-page'))
-                        .AdminOrganizationDetailPage,
-                    }),
-                  },
-                ],
-              },
-              {
-                path: 'planes',
-                lazy: async () => ({
-                  Component: (await import('@/features/admin/plans-page')).AdminPlansPage,
                 }),
               },
             ],

@@ -8,15 +8,21 @@ const acceso = vi.hoisted(() => ({
   isError: false,
   error: null as unknown,
 }))
+const orgs = vi.hoisted(() => ({ current: [] as unknown[] }))
 vi.mock('@/features/platform/hooks', () => ({ usePlatformAccess: () => acceso }))
+// El shell solo pregunta por las organizaciones para saber si hay a dónde volver.
+vi.mock('@/features/organizations/hooks', () => ({
+  useCurrentOrg: () => ({ organizations: orgs.current }),
+}))
+vi.mock('@/features/auth/user-menu', () => ({ UserMenu: () => null }))
 
-const { PlatformLayout } = await import('./platform-layout')
+const { PlatformShell } = await import('./platform-shell')
 
 function pintar() {
   return render(
     <MemoryRouter initialEntries={['/plataforma/organizaciones']}>
       <Routes>
-        <Route path="/plataforma" element={<PlatformLayout />}>
+        <Route path="/plataforma" element={<PlatformShell />}>
           <Route path="organizaciones" element={<p>Listado de organizaciones</p>} />
         </Route>
       </Routes>
@@ -29,6 +35,7 @@ afterEach(() => {
   acceso.isLoading = false
   acceso.isError = false
   acceso.error = null
+  orgs.current = []
   cleanup()
 })
 
@@ -68,4 +75,29 @@ test('no poder preguntar no se cuenta como que te dijeron que no', () => {
 
   expect(screen.getByText('No se pudo comprobar el acceso de plataforma')).toBeInTheDocument()
   expect(screen.queryByText('Esta sección es de la plataforma')).not.toBeInTheDocument()
+})
+
+test('sin organización propia la consola se abre igual', () => {
+  /*
+    El fallo que esto fija: la consola vivía dentro del shell de la aplicación,
+    que empieza por «¿a qué organización perteneces?» y enseña el onboarding a
+    quien no pertenece a ninguna. Un superadmin no tiene por qué tener una —
+    administra todas—, así que `/plataforma` acababa en «Crea tu organización».
+  */
+  acceso.isPlatformAdmin = true
+  orgs.current = []
+  pintar()
+
+  expect(screen.getByText('Listado de organizaciones')).toBeInTheDocument()
+  expect(screen.queryByText(/Crea tu organización/)).not.toBeInTheDocument()
+  // Y sin organización propia no se ofrece volver a ninguna parte.
+  expect(screen.queryByRole('link', { name: /volver a nummo/i })).not.toBeInTheDocument()
+})
+
+test('con organización propia se puede volver a la aplicación', () => {
+  acceso.isPlatformAdmin = true
+  orgs.current = [{ organization: { id: 'o1' }, role: 'OWNER' }]
+  pintar()
+
+  expect(screen.getByRole('link', { name: /volver a nummo/i })).toHaveAttribute('href', '/')
 })
