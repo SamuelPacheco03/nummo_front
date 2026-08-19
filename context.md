@@ -3886,7 +3886,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `useOrgReadOnly` | `features/platform/permissions.ts` | ¿La organización está suspendida o archivada? (§45.4) |
 | `ReadOnlyBanner` | `features/platform/read-only-banner.tsx` | El aviso persistente de solo lectura, en todas las pantallas |
 | `toastApiError` | `features/platform/errors.ts` | **Cómo se cuenta que una mutación falló**, plan incluido (§45.5) |
-| `usePlans` · `useLimitUsage` | `features/platform/hooks.ts` | El catálogo en venta y cuánto llevas de cada tope (§45.6) |
+| `usePlans` | `features/platform/hooks.ts` | El catálogo de planes en venta (§45.6) |
+| `useLimitUsage` | `features/platform/use-limit-usage.ts` | Cuánto llevas de cada tope — aparte, que el sidebar no lo necesita |
 | `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
 | `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
 | `PlatformLayout` | `features/admin/platform-layout.tsx` | Shell de la consola de plataforma (§47.2) |

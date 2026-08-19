@@ -10,20 +10,22 @@ const estado = vi.hoisted(() => ({
   sedes: 1,
 }))
 
-vi.mock('./hooks', async () => {
+vi.mock('./hooks', () => ({
+  useCapabilities: () => ({
+    capabilities: estado.capabilities,
+    isLoading: false,
+    isError: false,
+  }),
+  usePlans: () => ({
+    plans: estado.plans,
+    isLoading: false,
+    isError: false,
+    error: null,
+  }),
+}))
+vi.mock('./use-limit-usage', async () => {
   const { limitLabel, isPeriodicLimit } = await import('./labels')
   return {
-    useCapabilities: () => ({
-      capabilities: estado.capabilities,
-      isLoading: false,
-      isError: false,
-    }),
-    usePlans: () => ({
-      plans: estado.plans,
-      isLoading: false,
-      isError: false,
-      error: null,
-    }),
     useLimitUsage: () => ({
       period: estado.capabilities?.period,
       limits: [

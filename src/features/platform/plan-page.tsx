@@ -9,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatMonthLabel, formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { useCapabilities, useLimitUsage, usePlans, type LimitUsage } from './hooks'
+import { useCapabilities, usePlans } from './hooks'
+import { useLimitUsage, type LimitUsage } from './use-limit-usage'
 import { featureTitle, LIMIT_KEYS, limitLabel, planLabel } from './labels'
 
 /** Un entero con separador de miles, que es como se leen 1.500 contactos. */
