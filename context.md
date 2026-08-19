@@ -748,10 +748,11 @@ no es una sección de trabajo».
 Como `/config` no casa con `/maestros/…` ni con `/cartera/interes`, que también cuelgan de ella,
 el enlace se marca activo con `isSettingsPath` y no solo con el `NavLink`.
 
-**«Estado del sistema» (`/estado`) ya no se enlaza.** La salud del backend es cosa de quien lo
-opera, no de quien lleva las cuentas de un jardín infantil: su sitio es el rol de
-superadministrador, que todavía no existe. La ruta sigue viva —soporte puede pedirla por URL— y
-el enlace volverá al pie detrás de ese permiso cuando el rol llegue.
+**«Estado del sistema» (`/estado`) solo se enlaza para quien administra la plataforma**, junto a
+la consola (§47.2). La salud del backend es cosa de quien lo opera, no de quien lleva las cuentas
+de un jardín infantil: el enlace estuvo retirado del pie mientras no existió el superadmin, y
+volvió ahí detrás de esa señal en cuanto existió. La ruta sigue viva para todos —soporte puede
+pedirla por URL—; lo que está gateado es ofrecerla.
 
 El resto del pie es lo del **dispositivo y la sesión**: instalar la app, el aviso de sin conexión,
 el tema y la cuenta.
@@ -2499,19 +2500,51 @@ La accesibilidad no se agrega después.
 
 # 47. Roles y permisos
 
-La UI debe respetar los permisos del usuario.
-
-Roles:
-
-- Dueño;
-- Administrador;
-- Contador;
-- Operador;
-- Consulta.
+La UI debe respetar los permisos del usuario. **Se decide por permiso, no por nombre de rol**
+(§88.5): el rol sigue siendo el paquete de siempre —Dueño, Administrador, Contador, Operador,
+Consulta— pero lo que gatea un botón es `can('payments.reverse')`, no `role === 'ADMIN'`.
 
 No mostrar acciones ejecutables que el usuario no puede realizar, salvo que exista una razón UX concreta para mostrarlas deshabilitadas con explicación.
 
 Numi debe respetar exactamente los mismos permisos.
+
+## 47.1. El superadmin de plataforma no es un rol de organización
+
+Vive fuera del tenant y en su propia superficie (`/plataforma`, §47.2). Meterlo en el enum de
+roles habría convertido la gestión de miembros en una escalada de privilegios, así que **ser
+propietario de tu organización no te hace superadmin** — ni al revés.
+
+Se decide con `GET /me/platform-access`, que se pide **en paralelo** con la sesión. Es
+**orientativo**: sirve para no ofrecer un menú que va a fallar, y cada petición a `/admin/*` lo
+vuelve a comprobar contra la tabla.
+
+## 47.2. La consola de plataforma
+
+Vive **en esta misma app** como ruta protegida, no en un panel aparte: es la misma persona con la
+misma sesión, y montar una segunda aplicación para siete endpoints habría duplicado el shell, el
+cliente HTTP y el sistema visual entero. Su forma es la de Configuración y Ayuda —`SectionedLayout`
+(§11.1.3)—, y su ficha cuelga de la lista como cualquier otra (§87.5).
+
+| Ruta | Qué hace |
+| --- | --- |
+| `/plataforma/organizaciones` | Todas, con su plan, su estado y su consumo del período |
+| `/plataforma/organizaciones/:id` | La ficha: topes efectivos, condiciones negociadas, cambiar plan, suspender |
+| `/plataforma/planes` | Editar los planes, que son filas y no una constante del código |
+
+Tres cosas de aquí que se hacen mal solas:
+
+1. **Un override tiene tres estados, no dos.** «Lo que diga el plan» no es «sin límite», y «sin
+   límite» no es cero. Por eso cada tope lleva un selector y no una casilla, y lo que se deja
+   heredado **deja de estar negociado** — se manda el conjunto entero.
+2. **Guardar un plan obliga a decir si alcanza a quien ya lo tiene.** El contrato lo pide sin
+   valor por defecto a propósito: cambiar topes o precios sin querer a los clientes actuales es de
+   las pocas cosas realmente difíciles de deshacer. El desplegable arranca vacío y no se envía sin
+   elegir.
+3. **Suspender no borra nada.** Deja a la organización en solo lectura (§45.4). Es una medida
+   comercial o antiabuso, no dejar a nadie fuera de su propia contabilidad.
+
+Y la consola invalida también el catálogo **público** de planes al guardar: editar el precio de
+Pro y que «Plan y consumo» siga enseñando el viejo sería el peor sitio para una caché rancia.
 
 ---
 
@@ -3855,6 +3888,11 @@ Todos son parte del sistema y deben reutilizarse:
 | `toastApiError` | `features/platform/errors.ts` | **Cómo se cuenta que una mutación falló**, plan incluido (§45.5) |
 | `usePlans` · `useLimitUsage` | `features/platform/hooks.ts` | El catálogo en venta y cuánto llevas de cada tope (§45.6) |
 | `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
+| `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
+| `PlatformLayout` | `features/admin/platform-layout.tsx` | Shell de la consola de plataforma (§47.2) |
+| `AdminOrganizationsPage` · `AdminOrganizationDetailPage` | `features/admin/` | Las organizaciones de la plataforma y su ficha |
+| `OverridesDialog` | `features/admin/overrides-dialog.tsx` | Negociar features y topes: **tres** estados, no dos |
+| `AdminPlansPage` | `features/admin/plans-page.tsx` | Editar planes, con la decisión de si alcanzan a los actuales |
 | `planLabel` · `featureLabel` · `limitLabel` | `features/platform/labels.ts` | Planes, features y topes en las palabras del usuario |
 | `orgStatus` | `features/organizations/labels.ts` | Tono y nombre del estado de una organización |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
@@ -4246,6 +4284,55 @@ sitio — y se notó: la paleta se pudo componer entera reutilizando catálogos 
 
 ---
 
+## Fase 7 — Permisos del contrato ✅ **completada**
+
+**Por qué aquí:** el backend dejó de autorizar por nombre de rol (Fase 9 del API), y todo lo que
+viene después —planes, consola— se apoya en `/me/capabilities`.
+
+1. `features/platform/`: `useCapabilities` (una llamada al entrar) y `useCan`, el **único** gate
+   de la UI, tipado contra el enum generado. → §88.5
+2. Los tres predicados de rol de `roles.ts` desaparecen y sus **28 llamadores** piden el permiso
+   de su propio endpoint. `canManageOrg` cubría nueve permisos distintos.
+3. `AccountDetail` y `SettlementDetail` reciben los predicados **como props**: el permiso es
+   distinto en cada cara del espejo (§87.2).
+4. Las pruebas que fijaban un rol ahora fijan permisos, que es lo que la pantalla mira.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 244 tests en verde.
+
+---
+
+## Fase 8 — Los tres estados nuevos ✅ **completada**
+
+1. **Solo lectura como modo** (§45.4): `useCan` apaga toda escritura si la organización no está
+   `ACTIVE`, y `ReadOnlyBanner` lo explica una vez en la cabecera de todas las pantallas.
+2. **Los dos errores de plan** (§45.5) con cifras y salidas concretas, en un solo sitio:
+   `toastApiError` sustituye los 44 `toast.error(getErrorMessage(…))`.
+3. `lib/errors.ts` gana los lectores tipados sobre el enum cerrado del contrato.
+
+**Verificación:** typecheck limpio, 0 warnings, 255 tests en verde.
+
+---
+
+## Fase 9 — Plan y consumo ✅ **completada**
+
+`/config/plan`: el plan actual, cuánto llevas de cada tope y el catálogo en venta (§45.6). Es el
+destino al que apuntan los dos errores de la fase anterior.
+
+**Verificación:** typecheck limpio, 0 warnings, 260 tests en verde.
+
+---
+
+## Fase 10 — Consola de plataforma ✅ **completada**
+
+`/plataforma`, detrás de `GET /me/platform-access` (§47.1, §47.2): organizaciones con su plan y su
+consumo, ficha con condiciones negociadas, cambio de plan, suspensión y edición de planes. De paso
+vuelve al pie del sidebar el enlace a «Estado del sistema», que §11.1.1 dejó anotado esperando
+justo a esto.
+
+**Verificación:** typecheck limpio, 0 warnings, 271 tests en verde, build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -4256,6 +4343,10 @@ sitio — y se notó: la paleta se pudo componer entera reutilizando catálogos 
 | ✅ 4 | Dashboard | medio | 1, 2 |
 | ✅ 5 | Listados, detalles y Numi | medio | 1, 4 |
 | ✅ 6 | Command bar y pulido | medio-alto | todas |
+| ✅ 7 | Permisos del contrato | medio | — (contrato) |
+| ✅ 8 | Suspensión y errores de plan | medio | 7 |
+| ✅ 9 | Plan y consumo | bajo | 7, 8 |
+| ✅ 10 | Consola de plataforma | medio | 7, 9 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

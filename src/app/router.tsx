@@ -244,6 +244,45 @@ export const router = createBrowserRouter([
             ],
           },
 
+          // Consola de plataforma: **no es una sección de la organización**, es
+          // la superficie desde la que se administran todas. Vive aquí y no en
+          // otra app porque el superadmin es la misma persona con la misma
+          // sesión; el guard de verdad está en el backend, que revalida cada
+          // petición a `/admin/*`.
+          {
+            path: 'plataforma',
+            lazy: async () => ({
+              Component: (await import('@/features/admin/platform-layout')).PlatformLayout,
+            }),
+            children: [
+              { index: true, element: <Navigate to="/plataforma/organizaciones" replace /> },
+              {
+                path: 'organizaciones',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/organizations-page'))
+                    .AdminOrganizationsPage,
+                }),
+                // La ficha es hija: la lista sigue montada detrás del cajón.
+                children: [
+                  {
+                    path: ':orgId',
+                    handle: OVERLAY,
+                    lazy: async () => ({
+                      Component: (await import('@/features/admin/organization-detail-page'))
+                        .AdminOrganizationDetailPage,
+                    }),
+                  },
+                ],
+              },
+              {
+                path: 'planes',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/plans-page')).AdminPlansPage,
+                }),
+              },
+            ],
+          },
+
           // Catálogos (bajo Configuración)
           // Configuración: una sola entrada en el sidebar con su propia
           // sub-navegación. Las URLs no cambian —los enlaces guardados siguen

@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { Check, Minus } from 'lucide-react'
-import type { FeatureMap, LimitMap, PublicPlan } from '@/api/generated/model'
+import type { FeatureMap, PublicPlan } from '@/api/generated/model'
 import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
 import { ErrorState } from '@/components/ui/error-state'
@@ -10,21 +10,12 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { formatMonthLabel, formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useCapabilities, useLimitUsage, usePlans, type LimitUsage } from './hooks'
-import { featureTitle, limitLabel, planLabel } from './labels'
+import { featureTitle, LIMIT_KEYS, limitLabel, planLabel } from './labels'
 
 /** Un entero con separador de miles, que es como se leen 1.500 contactos. */
 function count(value: number): string {
   return value.toLocaleString('es-CO')
 }
-
-/** Los topes en el orden en que se explican: primero lo que se acumula, luego lo que se gasta. */
-const LIMIT_ORDER: (keyof LimitMap)[] = [
-  'max_contacts',
-  'max_users',
-  'max_branches',
-  'ai_messages_monthly',
-  'voice_minutes_monthly',
-]
 
 /**
  * El precio de un plan.
@@ -122,7 +113,7 @@ function PlanCard({
       </div>
 
       <ul className="space-y-1 text-sm">
-        {LIMIT_ORDER.map((key) => (
+        {LIMIT_KEYS.map((key) => (
           <li key={key} className="flex items-baseline justify-between gap-3">
             <span className="text-muted-foreground min-w-0 truncate">{limitLabel(key)}</span>
             <span className="nums shrink-0">{maxLabel(plan.limits[key])}</span>

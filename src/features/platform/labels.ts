@@ -12,6 +12,31 @@ export function planLabel(code: string | undefined): string {
   return PLAN_LABELS[code as PublicPlanCode] ?? code
 }
 
+/**
+ * El catálogo de claves, en el orden en que se explican.
+ *
+ * Se declara una vez porque lo miran las dos caras: «Plan y consumo», que lo
+ * enseña al cliente, y la consola de plataforma, que lo negocia. Dos listas
+ * paralelas se habrían separado a la primera clave nueva.
+ */
+export const FEATURE_KEYS: (keyof FeatureMap)[] = [
+  'ai_byok',
+  'custom_roles',
+  'accounting',
+  'bank_reconciliation',
+  'approvals',
+  'api_access',
+]
+
+/** Primero lo que se acumula (aforos), después lo que se gasta cada mes (cuotas). */
+export const LIMIT_KEYS: (keyof LimitMap)[] = [
+  'max_contacts',
+  'max_users',
+  'max_branches',
+  'ai_messages_monthly',
+  'voice_minutes_monthly',
+]
+
 const FEATURE_LABELS: Record<keyof FeatureMap, string> = {
   ai_byok: 'usar tu propia llave de IA',
   custom_roles: 'los roles personalizados',
