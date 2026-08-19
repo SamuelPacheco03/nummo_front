@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { ArrowUp, Mic, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTouchInput } from '@/lib/use-touch-input'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
 import {
@@ -20,25 +21,6 @@ import {
 } from './hold-to-record'
 import { RecordingBar } from './recording-bar'
 import { useAudioRecorder } from './use-audio-recorder'
-
-/**
- * `true` donde se toca con el dedo.
- *
- * El gesto de mantener pulsado no se ofrece con ratón: en escritorio hay que
- * sostener el botón del ratón sin moverlo mientras se habla, que es incómodo y
- * no lo hace nadie — ahí se pulsa una vez y se para con otro botón, igual que
- * en WhatsApp de escritorio.
- */
-function useTouchInput(): boolean {
-  const [touch, setTouch] = useState(() => window.matchMedia?.('(pointer: coarse)').matches ?? false)
-  useEffect(() => {
-    const mql = window.matchMedia('(pointer: coarse)')
-    const onChange = () => setTouch(mql.matches)
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
-  }, [])
-  return touch
-}
 
 /** Acción secundaria: solo icono, sin relleno, dentro de la barra. */
 function ComposerAction({

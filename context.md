@@ -2105,6 +2105,20 @@ falta hacía: Numi contesta con cifras y hasta ahora había que seleccionarlas a
 una nota de voz ni una respuesta a medio escribir las ofrecen — de la primera lo que hay
 es audio, y de la segunda el texto todavía está cambiando.
 
+**Cómo salen las acciones, y por qué son dos interfaces.** Con ratón hay «encima» y con el
+dedo no, así que ofrecer lo mismo en los dos sitios significa que en uno sobra.
+
+En **escritorio**, un chevron en la esquina de la burbuja que aparece al pasar por encima
+y abre el menú con copiar y citar. Van dentro y no sueltas al lado: una fila de iconos
+flotando junto a cada mensaje ensucia un hilo largo. Los pulgares sí se quedan al lado,
+porque son estado del mensaje y no una acción escondida.
+
+En **móvil**, mantener pulsado selecciona el mensaje: la cabecera se convierte en barra de
+acciones —«1 seleccionado», copiar, citar— y los pulgares salen flotando sobre la burbuja,
+como la fila de reacciones de WhatsApp. El gesto se cancela al mover el dedo, porque
+desplazar el hilo no es elegir, y se le quita el menú del sistema, que si no se lleva la
+pulsación larga para seleccionar texto.
+
 **Citar es solo para lo que dijo Numi**, no para lo tuyo: sirve para preguntarle de dónde
 sale un número. La cita se ve sobre la caja de escribir y **viaja aparte del texto**, no
 dentro de él. Es a propósito: si fuera parte de lo escrito, quitarla obligaría a adivinar

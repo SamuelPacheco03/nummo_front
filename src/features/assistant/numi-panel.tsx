@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeft, MessagesSquare, RotateCcw, Square, X } from 'lucide-react'
+import { ArrowLeft, Copy, MessagesSquare, Quote, RotateCcw, Square, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChatComposer } from './chat-composer'
 import { ChatThread } from './chat-thread'
@@ -67,6 +67,13 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
   } = useNumiChat()
 
   const [showingList, setShowingList] = useState(false)
+  /**
+   * Mensaje seleccionado con el dedo. Vive aquí porque la cabecera es quien enseña sus
+   * acciones: seleccionar en el hilo y actuar arriba son la misma cosa vista en dos
+   * sitios, como en WhatsApp.
+   */
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = messages.find((m) => m.id === selectedId) ?? null
   /** Lo que se está citando de Numi. Vive aquí porque lo escribe el hilo y lo lee el composer. */
   const [quoted, setQuoted] = useState<string | null>(null)
 
@@ -107,7 +114,34 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
       )}
     >
       <header className="bg-card flex items-center gap-2.5 border-b px-3 py-2.5 sm:rounded-t-lg">
-        {showingList ? (
+        {selected ? (
+          <>
+            <HeaderAction
+              label="Quitar la selección"
+              Icon={X}
+              onClick={() => setSelectedId(null)}
+            />
+            <p className="min-w-0 flex-1 text-sm font-medium">1 seleccionado</p>
+            <HeaderAction
+              label="Copiar mensaje"
+              Icon={Copy}
+              onClick={() => {
+                copy(selected.content)
+                setSelectedId(null)
+              }}
+            />
+            {selected.role === 'assistant' && (
+              <HeaderAction
+                label="Citar mensaje"
+                Icon={Quote}
+                onClick={() => {
+                  quote(selected.content)
+                  setSelectedId(null)
+                }}
+              />
+            )}
+          </>
+        ) : showingList ? (
           <>
             <HeaderAction
               label="Volver a la conversación"
@@ -163,6 +197,8 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             onCopy={copy}
             onQuote={quote}
             onRate={(id, feedback) => void rateMessage(id, feedback)}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
             onLeave={onClose}
           />
           {isTyping && (
