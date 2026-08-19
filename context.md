@@ -1953,6 +1953,14 @@ respuesta llega igual y se guarda; al volver a abrir, «escribiendo…» sigue p
 ha llegado. Antes ese estado vivía en la mutación, que se desmontaba con el panel: volver a abrir
 mostraba un hilo callado como si no hubiera nada pendiente.
 
+**Lo que el navegador no puede arreglar solo** está en `contract/HANDOFF-numi-durabilidad.md`: si
+la app se cierra mientras Numi piensa, la petición muere y esa respuesta no existe en ninguna
+parte; y una nota de voz recién enviada no se puede volver a escuchar tras recargar, porque el
+servidor guarda el audio pero no nos dice con qué `id` lo guardó. Las dos se resuelven en el
+backend —guardar el turno antes de llamar al modelo, y devolver los ids que crea—. **Aquí no se
+emparejan mensajes por aproximación**: es un parche que se rompe solo, y el dato correcto lo tiene
+quien lo crea.
+
 **Cuando Numi contesta con el chat cerrado, lo dice en su icono**: un punto sobre el mark de Numi,
 en la barra de abajo en móvil y en el botón flotante en escritorio (`NumiUnreadDot`). Va ahí y no
 en un aviso aparte porque la respuesta está en el chat, y el sitio donde se anuncia debe ser el
