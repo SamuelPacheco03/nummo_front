@@ -77,9 +77,10 @@ Ojo con dos cosas que ya nos pasaron en otro sitio:
   al grabar; redondea a dos decimales; valida lo que llega del servidor antes de dibujarlo.
 - `AudioPlayer` acepta `peaks` y `seconds`: con ellos pinta la nota **sin tocar el audio**, y solo
   decodifica cuando faltan.
-- `flattenMessagePages` ya lee `waveform` y `audioSeconds` del mensaje. Están detrás de un puente de
-  tipos (`PendingAudioFields`) porque el contrato aún no los declara; **el día que estén en
-  `openapi.json`, `pnpm api:gen` y se borra el puente**, sin más cambios.
+- `flattenMessagePages` ya lee `waveform` y `audioSeconds` del mensaje. Vivieron un tiempo detrás
+  de un puente de tipos (`PendingAudioFields`) porque el contrato todavía no los declaraba; **ya
+  los declara**, así que el puente se borró y los dos campos vienen del cliente generado, con sus
+  tipos y su documentación (`ChatMessage.waveform`, `AssistantAudioChatForm.waveform`).
 
 **El envío está encendido** desde que el backend confirmó que un valor malformado se ignora en vez
 de tumbar la petición. Se dejó apagado a propósito hasta tener esa confirmación: mandar un campo
