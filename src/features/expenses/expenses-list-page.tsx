@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { AccountsList } from '@/components/accounts-list'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { usePayablesSummary } from '@/features/reports/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { getErrorMessage } from '@/lib/errors'
@@ -46,7 +46,8 @@ const COPY: AccountsListCopy = {
  * vencidas. Las dos ausencias son del dominio y del contrato, no un olvido.
  */
 export function ExpensesListPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
   const { summary, isPending: summaryLoading } = usePayablesSummary(orgId)
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
@@ -105,8 +106,8 @@ export function ExpensesListPage() {
       statusOf={expenseStatus}
       summary={summary}
       summaryLoading={summaryLoading}
-      canCreate={canEditContacts(role)}
-      canGenerate={canManageAgreements(role)}
+      canCreate={can('expenses.create')}
+      canGenerate={can('expenses.manage')}
       onGenerate={() => void onGenerate()}
       generating={generate.isPending}
       createDialog={(open, onOpenChange) =>

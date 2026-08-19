@@ -11,7 +11,7 @@ import { FormDialog } from '@/components/ui/form-dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   AiProviderCatalogEntryProvider,
@@ -404,8 +404,9 @@ function VoiceSection({
 }
 
 export function AssistantPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageOrg(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('assistant.settings.manage')
   const { settings, isPending, isError, error } = useAssistantSettings(canManage ? orgId : undefined)
 
   return (

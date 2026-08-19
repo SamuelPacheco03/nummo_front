@@ -9,7 +9,7 @@ import { FormDialog } from '@/components/ui/form-dialog'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import type { ListResult } from '@/lib/list-result'
 import type { PaymentMethod } from '@/api/generated/model'
@@ -122,8 +122,9 @@ function usePaymentMethodRows(params: MasterParams): ListResult<PaymentMethod> {
 }
 
 export function PaymentMethodsPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageOrg(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('payment_methods.manage')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<PaymentMethod | null>(null)
 

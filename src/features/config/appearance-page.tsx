@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { useThemeStore, type ThemeMode } from '@/stores/theme'
 import { getErrorMessage } from '@/lib/errors'
 import type { OrganizationSettingsThemeMode } from '@/api/generated/model'
@@ -30,12 +30,13 @@ const OPTIONS: { mode: ThemeMode; label: string; description: string; Icon: Luci
 ]
 
 export function AppearancePage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
   const { settings } = useOrgSettings(orgId)
   const mode = useThemeStore((s) => s.mode)
   const setMode = useThemeStore((s) => s.setMode)
   const updateSettings = useUpdateSettings(orgId ?? '')
-  const canManage = canManageOrg(role)
+  const can = useCan()
+  const canManage = can('organization.manage')
 
   // Refleja el tema por defecto de la organización una vez al cargar.
   const syncedRef = useRef(false)

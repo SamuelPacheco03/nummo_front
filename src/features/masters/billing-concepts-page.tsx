@@ -10,7 +10,7 @@ import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import type { ListResult } from '@/lib/list-result'
 import { formatAmount } from '@/lib/format'
@@ -153,8 +153,9 @@ function useBillingConceptRows(params: MasterParams): ListResult<BillingConcept>
 }
 
 export function BillingConceptsPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageOrg(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('billing_concepts.manage')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<BillingConcept | null>(null)
 

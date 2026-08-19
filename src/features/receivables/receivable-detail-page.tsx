@@ -12,7 +12,7 @@ import { DetailEmpty, DetailSection } from '@/components/ui/detail-drawer'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -55,9 +55,10 @@ const COPY: AccountDetailCopy = {
  */
 export function ReceivableDetailPage() {
   const { receivableId } = useParams()
-  const { orgId, role } = useCurrentOrg()
-  const canAdjust = canEditContacts(role)
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canAdjust = can('receivables.adjust')
+  const canManage = can('receivables.manage')
 
   const { detail, isPending, isError, error } = useReceivable(orgId, receivableId)
   const { accruals } = useAccruals(orgId, receivableId)
@@ -133,6 +134,8 @@ export function ReceivableDetailPage() {
       statusOf={receivableStatus}
       settleTo={(payerId) => `/cartera/pagos/nuevo?payer=${payerId}`}
       settleIcon={Banknote}
+      canSettle={can('payments.create')}
+      canManage={canManage}
       query={query}
       close={close}
       menuItems={

@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { RECURRENCE_LABELS, scheduleStatus } from './labels'
@@ -20,8 +20,9 @@ const LIST = '/gastos/recurrentes'
 /** Ficha de un gasto recurrente. Abre como cajón sobre la lista. */
 export function ScheduleDetailPage() {
   const { scheduleId } = useParams()
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('expense_schedules.manage')
 
   const { schedule: s, isPending, isError, error } = useExpenseSchedule(orgId, scheduleId)
   const pause = usePauseSchedule(orgId ?? '')

@@ -8,6 +8,7 @@ import {
 } from '@/components/account-detail'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useCan } from '@/features/platform/permissions'
 import { expenseStatus } from './labels'
 import { useCancelExpense, useExpense, useWriteOffExpense } from './hooks'
 
@@ -38,6 +39,7 @@ const COPY: AccountDetailCopy = {
 export function ExpenseDetailPage() {
   const { expenseId } = useParams()
   const { orgId } = useCurrentOrg()
+  const can = useCan()
 
   const { detail, isPending, isError, error } = useExpense(orgId, expenseId)
   const e = detail?.expense
@@ -91,6 +93,8 @@ export function ExpenseDetailPage() {
       statusOf={expenseStatus}
       settleTo={(supplierId) => `/gastos/egresos/nuevo?supplier=${supplierId}`}
       settleIcon={Coins}
+      canSettle={can('disbursements.create')}
+      canManage={can('expenses.manage')}
       query={query}
       close={close}
     />

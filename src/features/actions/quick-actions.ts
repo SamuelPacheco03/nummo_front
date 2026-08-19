@@ -7,7 +7,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { canEditContacts, canManageAgreements, type AnyRole } from '@/features/organizations/roles'
+import type { Permission } from '@/features/platform/permissions'
 
 type QuickAction = {
   to: string
@@ -16,7 +16,8 @@ type QuickAction = {
   short?: string
   description: string
   Icon: LucideIcon
-  allowed: (role: AnyRole | undefined) => boolean
+  /** El permiso que el contrato exige a su endpoint (`x-required-permission`). */
+  permission: Permission
 }
 
 /**
@@ -36,7 +37,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     short: 'Pago',
     description: 'Alguien te pagó',
     Icon: Banknote,
-    allowed: canEditContacts,
+    permission: 'payments.create',
   },
   {
     to: '/gastos/egresos/nuevo',
@@ -44,7 +45,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     short: 'Egreso',
     description: 'Pagaste algo',
     Icon: HandCoins,
-    allowed: canEditContacts,
+    permission: 'disbursements.create',
   },
   {
     to: '/cartera/cxc?nueva=1',
@@ -52,7 +53,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     short: 'Cobro',
     description: 'Registrar algo que te deben',
     Icon: Coins,
-    allowed: canEditContacts,
+    permission: 'receivables.create',
   },
   {
     to: '/contactos/nuevo',
@@ -60,7 +61,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     short: 'Contacto',
     description: 'Un pagador o un proveedor',
     Icon: UserPlus,
-    allowed: canEditContacts,
+    permission: 'contacts.write',
   },
   {
     to: '/cartera/acuerdos/nuevo',
@@ -68,7 +69,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     short: 'Acuerdo',
     description: 'Un cobro que se repite cada mes',
     Icon: FileText,
-    allowed: canManageAgreements,
+    permission: 'agreements.manage',
   },
   {
     to: '/caja/cuentas?transferir=1',
@@ -76,11 +77,16 @@ const QUICK_ACTIONS: QuickAction[] = [
     short: 'Transferir',
     description: 'Mover dinero entre tus cuentas',
     Icon: ArrowLeftRight,
-    allowed: canEditContacts,
+    permission: 'treasury.transfer',
   },
 ]
 
-/** §47: nunca se ofrece una acción que el rol no puede ejecutar. */
-export function allowedQuickActions(role: AnyRole | undefined): QuickAction[] {
-  return QUICK_ACTIONS.filter((a) => a.allowed(role))
+/**
+ * §47: nunca se ofrece una acción que el usuario no puede ejecutar.
+ *
+ * Recibe el predicado de `useCan()` en vez de llamarlo: así el catálogo sigue
+ * siendo un módulo sin React, que es lo que permite probarlo sin montar nada.
+ */
+export function allowedQuickActions(can: (permission: Permission) => boolean): QuickAction[] {
+  return QUICK_ACTIONS.filter((a) => can(a.permission))
 }

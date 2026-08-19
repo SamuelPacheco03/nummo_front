@@ -2,7 +2,7 @@ import { SettlementList } from '@/components/settlement-list'
 import type { SortChoice } from '@/components/ui/filter-sheet'
 import { LEDGER_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import type {
   SettlementListCopy,
   SettlementListResult,
@@ -78,7 +78,7 @@ function useDisbursementRows(params: SettlementQuery): SettlementListResult {
  * (`SettlementList`) y solo aporta lo suyo: las palabras y su endpoint.
  */
 export function DisbursementsListPage() {
-  const { role } = useCurrentOrg()
+  const can = useCan()
 
   return (
     <SettlementList
@@ -92,7 +92,7 @@ export function DisbursementsListPage() {
       sortChoices={SORT_CHOICES}
       statusOf={disbursementStatus}
       kpi={{ kind: 'expense', label: 'Pagado este mes', previousLabel: 'El mes pasado' }}
-      canRegister={canEditContacts(role)}
+      canRegister={can('disbursements.create')}
       useList={useDisbursementRows}
     />
   )

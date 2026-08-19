@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, RotateCcw, Sparkles, X } from 'lucide-react'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { cn } from '@/lib/utils'
 import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
@@ -90,7 +90,6 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     error,
     isTyping,
     isHydrating,
-    role,
     orgName,
     send,
     sendAudio,
@@ -98,6 +97,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     newConversation,
     loadAudio,
   } = useNumiChat()
+  const can = useCan()
 
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -162,7 +162,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
         {error && (
           <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border px-3 py-2 text-xs">
             <p>{error.message}</p>
-            {error.needsSetup && canManageOrg(role) ? (
+            {error.needsSetup && can('assistant.settings.manage') ? (
               <Link
                 to="/config/asistente"
                 onClick={onClose}

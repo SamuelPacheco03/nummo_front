@@ -8,15 +8,16 @@ import { listColumns } from '@/components/ui/list-columns'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { formatAmount } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { TransferDialog } from './transfer-dialog'
 import { useAccountBalances } from './hooks'
 
 export function AccountsPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canTransfer = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canTransfer = can('treasury.transfer')
   const { balances, isPending, isError, error } = useAccountBalances(orgId)
   const [transferOpen, setTransferOpen] = useState(false)
 

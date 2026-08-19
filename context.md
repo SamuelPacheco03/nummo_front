@@ -2359,8 +2359,10 @@ comprueba el permiso ella misma**, y si no lo hay enseña un `EmptyState` con ca
 formulario y sin pie de acciones. El API sigue siendo el guard de verdad (§48); esto es no ofrecer
 lo que no se puede hacer.
 
-Ojo con quién puede qué, que no es «todo o nada»: un **operador** edita contactos pero **no**
-firma acuerdos. Se comprueba con las funciones de `roles.ts`, nunca comparando el rol a mano.
+Ojo con quién puede qué, que no es «todo o nada»: quien registra pagos no tiene por qué poder
+reversarlos. Se comprueba con `useCan('payments.reverse')` (§88.5), **nunca comparando el rol a
+mano**: el backend autoriza por permiso, y el rol dejará de predecir lo que alguien puede hacer en
+cuanto existan roles personalizados.
 
 ## 45.2b. Un fallo no se pinta con ceros
 
@@ -3426,11 +3428,40 @@ sola:
 de éxito — ojo con las que tienen dos acciones, que la clave es de una sola: en cuentas por cobrar
 se renueva al causar mora, no al generar mensualidades.
 
-## 88.5. El front no es frontera de seguridad
+## 88.5. Permisos: qué se ofrece y qué no
 
-Zod valida en cliente para dar buen feedback. El backend revalida todo. Los permisos de rol
-(`features/organizations/roles.ts`) sirven para **no mostrar** acciones imposibles, no para
-protegerlas.
+El backend **dejó de autorizar por nombre de rol**. Cada operación del contrato viene anotada con
+`x-required-permission` (62 de las 127) y `GET /organizations/:orgId/me/capabilities` responde de
+una vez lo que la UI necesita: rol, `permissions[]`, plan, features, topes, período y consumo.
+
+En el front eso es **una sola pieza**:
+
+```ts
+const can = useCan()               // features/platform/permissions.ts
+const canReverse = can('payments.reverse')
+```
+
+Tres reglas que la sostienen:
+
+1. **El permiso lo dice el contrato, no una tabla nuestra.** El que se pasa a `can()` es el
+   `x-required-permission` del endpoint que el botón va a llamar. El tipo `Permission` sale del
+   enum generado, así que un permiso renombrado rompe `tsc` en vez de dejar un botón gateado
+   contra una cadena muerta.
+2. **Nada de agrupar por comodidad.** Aquí vivían tres predicados de rol —`canManageOrg`,
+   `canEditContacts`, `canManageAgreements`— y el primero cubría **nueve** permisos distintos: la
+   pantalla de sedes y la de catálogos se gateaban igual aunque el API las separa. Registrar un
+   pago (`payments.create`) y registrar un egreso (`disbursements.create`) son dos permisos, no
+   uno.
+3. **Un componente compartido no decide autorización.** `AccountDetail` y `SettlementDetail`
+   reciben `canSettle` / `canManage` / `canReverse` / `canApply` **como props**, porque el permiso
+   es distinto en cada cara del espejo (§87.2).
+
+De `roles.ts` solo queda el **nombre** de un rol (`roleLabel`, `ASSIGNABLE_ROLES`): lo que se
+enseña y lo que se asigna en la pantalla de miembros.
+
+**Y sigue sin ser una frontera de seguridad.** Zod valida en cliente para dar buen feedback y
+`useCan` decide qué se dibuja; el backend revalida todo. Ocultar un botón no protege nada —solo
+evita ofrecer lo que va a responder 403—.
 
 ---
 
@@ -3539,7 +3570,7 @@ usa una máscara, por qué `--primary` no se aclara en hover). Sigue ese estilo:
 | Capa | Herramienta | Qué se cubre |
 | --- | --- | --- |
 | Utilidades puras (`lib/`) | Vitest | Todos los caminos, incluidos los bordes (`format`, `csv`, `errors`) |
-| Lógica de dominio (`roles.ts`, `utils.ts`) | Vitest | Reglas de permiso y de negocio del front |
+| Lógica de dominio (`permissions.ts`, `quick-actions.ts`, `utils.ts`) | Vitest | Reglas de permiso y de negocio del front |
 | Componentes con comportamiento | Testing Library | Lo que el usuario ve y hace, no el estado interno |
 | Flujos completos | Playwright | Login, navegación, Numi y **el ciclo del dinero** (§92.3) |
 
@@ -3749,6 +3780,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `FilterSheet` · `FilterSheetTrigger` · `FilterField` · `FilterSortField` | `components/ui/filter-sheet.tsx` | Filtros avanzados y orden, en hoja inferior / cajón |
 | `BalanceKpis` | `components/balance-kpis.tsx` | Total, vencido y al día de una cartera |
 | `SectionSwitch` | `components/section-switch.tsx` | Salto entre pantallas espejo, solo en móvil |
+| `useCapabilities` | `features/platform/hooks.ts` | Rol, permisos, plan, topes y consumo — **una llamada al entrar** |
+| `useCan` | `features/platform/permissions.ts` | **El único gate de la UI**: `can('payments.reverse')` (§88.5) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
 
@@ -3929,7 +3962,7 @@ Vale la pena dejarlo escrito para no "arreglarlo":
 - Listas: tabla densa en escritorio → tarjetas con jerarquía en móvil (§11.1.3b), desde un solo
   modelo de columnas ✅
 - Esqueletos de carga en listas; `NumiLoader` reservado a esperas significativas ✅
-- Permisos aplicados en UI (`roles.ts`) antes de mostrar acciones ✅
+- Permisos aplicados en UI por **permiso del contrato** (`useCan`), no por nombre de rol ✅
 - Fechas en lenguaje natural con fallback exacto ✅
 - Code-splitting en todas las rutas ✅
 - Filtros conservados al volver del detalle (detalle como ruta hija) ✅

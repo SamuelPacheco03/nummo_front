@@ -3,15 +3,26 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
-import type { AnyRole } from '@/features/organizations/roles'
 import { Search } from 'lucide-react'
 import { useNumiStore } from '@/features/assistant/numi-store'
 
-const role = vi.hoisted(() => ({ current: 'OWNER' as AnyRole }))
+const TODOS = [
+  'payments.create',
+  'disbursements.create',
+  'receivables.create',
+  'contacts.write',
+  'agreements.manage',
+  'treasury.transfer',
+]
+const permisos = vi.hoisted(() => ({ current: new Set<string>() }))
 const hits = vi.hoisted(() => ({ current: [] as { title: string; items: unknown[] }[] }))
 
 vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ role: role.current, orgId: 'org-1', organization: undefined }),
+  useCurrentOrg: () => ({ orgId: 'org-1', organization: undefined }),
+}))
+// Las acciones de la paleta se filtran por permiso, igual que en la barra de móvil.
+vi.mock('@/features/platform/permissions', () => ({
+  useCan: () => (permiso: string) => permisos.current.has(permiso),
 }))
 /*
   La búsqueda contra el servidor se sustituye entera: lo que se prueba aquí es la
@@ -26,7 +37,7 @@ vi.mock('./use-global-search', () => ({
 const { CommandBar } = await import('./command-bar')
 
 beforeEach(() => {
-  role.current = 'OWNER'
+  permisos.current = new Set(TODOS)
   hits.current = []
   useNumiStore.setState({ isOpen: false })
 })
@@ -96,8 +107,8 @@ test('ofrece lo que devuelve la búsqueda del servidor', async () => {
   expect(await screen.findByRole('option', { name: /laura gómez/i })).toBeInTheDocument()
 })
 
-test('respeta los permisos: un lector no puede registrar nada', async () => {
-  role.current = 'VIEWER'
+test('respeta los permisos: sin ninguno de registro no se ofrece registrar nada', async () => {
+  permisos.current = new Set()
   renderBar()
 
   expect(screen.queryByRole('option', { name: /registrar pago/i })).not.toBeInTheDocument()
@@ -126,7 +137,7 @@ test('se recorre con las flechas y se ejecuta con Enter', async () => {
 })
 
 test('Enter sobre la opción de Numi abre el asistente', async () => {
-  role.current = 'VIEWER'
+  permisos.current = new Set()
   renderBar()
   const input = screen.getByRole('textbox')
 

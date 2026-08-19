@@ -15,7 +15,6 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { usePaymentMethods } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { formatAmount, formatDateHuman } from '@/lib/format'
@@ -100,6 +99,8 @@ export function SettlementDetail({
   targetTo,
   copy,
   statusOf,
+  canReverse,
+  canApply,
   query,
   useReverse,
   applyDialog,
@@ -110,6 +111,14 @@ export function SettlementDetail({
   targetTo: (targetId: string) => string
   copy: SettlementDetailCopy
   statusOf: (status: string) => { tone: StatusTone; label: string }
+  /**
+   * Quién puede deshacer y quién puede repartir el anticipo. Vienen de fuera
+   * porque el permiso **es distinto en cada cara** —`payments.reverse` no es
+   * `disbursements.reverse`— y porque un componente compartido no decide
+   * autorización (§87.2).
+   */
+  canReverse: boolean
+  canApply: boolean
   /** El movimiento ya cargado y traducido. */
   query: SettlementDetailQuery
   /**
@@ -124,9 +133,7 @@ export function SettlementDetail({
     settlement: SettlementDetailData,
   ) => ReactNode
 }) {
-  const { orgId, role } = useCurrentOrg()
-  const canReverse = canManageAgreements(role)
-  const canApply = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
 
   const { data, isPending, isError, error } = query
   const idem = useIdempotencyKey()

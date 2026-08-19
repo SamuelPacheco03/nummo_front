@@ -2,7 +2,7 @@ import { Percent } from 'lucide-react'
 import { toast } from 'sonner'
 import { AccountsList } from '@/components/accounts-list'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { useReceivablesSummary } from '@/features/reports/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { getErrorMessage } from '@/lib/errors'
@@ -47,7 +47,8 @@ const COPY: AccountsListCopy = {
  * hacer y la otra no — a un proveedor no se le cobran intereses de mora.
  */
 export function ReceivablesListPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
   const { summary, isPending: summaryLoading } = useReceivablesSummary(orgId)
   const { items: concepts } = useBillingConcepts(orgId, {
     page: 1,
@@ -122,8 +123,8 @@ export function ReceivablesListPage() {
       statusOf={receivableStatus}
       summary={summary}
       summaryLoading={summaryLoading}
-      canCreate={canEditContacts(role)}
-      canGenerate={canManageAgreements(role)}
+      canCreate={can('receivables.create')}
+      canGenerate={can('receivables.manage')}
       onGenerate={() => void onGenerate()}
       generating={generate.isPending}
       actions={[

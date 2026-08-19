@@ -3,7 +3,7 @@ import { RecurringList } from '@/components/recurring-list'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { RECURRING_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import type {
   RecurringListCopy,
   RecurringListResult,
@@ -76,7 +76,7 @@ function useScheduleRows(params: RecurringQuery): RecurringListResult {
  * la pantalla (`RecurringList`) y solo aporta las palabras y su endpoint.
  */
 export function SchedulesListPage() {
-  const { role } = useCurrentOrg()
+  const can = useCan()
 
   return (
     <RecurringList
@@ -87,7 +87,7 @@ export function SchedulesListPage() {
       detailTo={(id) => `/gastos/recurrentes/${id}`}
       statusOf={scheduleStatus}
       recurrenceLabels={RECURRENCE_LABELS}
-      canManage={canManageAgreements(role)}
+      canManage={can('expense_schedules.manage')}
       useList={useScheduleRows}
     />
   )

@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageAgreements } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { todayISODate } from '@/lib/format'
 import type { BillingAgreement } from '@/api/generated/model'
@@ -77,8 +77,9 @@ export function AgreementFormPage() {
   const { agreementId } = useParams()
   const isEdit = !!agreementId
   const navigate = useNavigate()
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('agreements.manage')
   const oid = orgId ?? ''
 
   const { agreement, isPending: loadingAgreement } = useAgreement(orgId, agreementId)

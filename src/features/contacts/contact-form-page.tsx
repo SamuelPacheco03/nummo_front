@@ -13,7 +13,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import type { Contact } from '@/api/generated/model'
@@ -88,8 +88,9 @@ export function ContactFormPage() {
   const { contactId } = useParams()
   const isEdit = !!contactId
   const navigate = useNavigate()
-  const { orgId, role } = useCurrentOrg()
-  const canEdit = canEditContacts(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canEdit = can('contacts.write')
   const { contact, isPending: loadingContact } = useContact(orgId, contactId)
   const create = useCreateContact(orgId ?? '')
   const update = useUpdateContact(orgId ?? '')

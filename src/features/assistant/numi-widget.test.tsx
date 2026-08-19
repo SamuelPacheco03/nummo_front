@@ -18,6 +18,31 @@ const ORG = {
   role: 'OWNER',
 }
 
+/** Quien puede configurar el asistente ve el enlace a Configuración (§88.5). */
+const CAPABILITIES = {
+  organizationId: ORG.organization.id,
+  role: 'OWNER',
+  permissions: ['assistant.use', 'assistant.settings.manage'],
+  planCode: 'PRO',
+  features: {
+    ai_byok: true,
+    custom_roles: true,
+    accounting: false,
+    bank_reconciliation: false,
+    approvals: false,
+    api_access: false,
+  },
+  limits: {
+    max_contacts: null,
+    max_users: null,
+    max_branches: null,
+    ai_messages_monthly: null,
+    voice_minutes_monthly: null,
+  },
+  period: '2026-08',
+  usage: { ai_messages_monthly: 0, voice_minutes_monthly: 0 },
+}
+
 /** `fetch` con la lista de organizaciones y el chat; `onChat` decide la respuesta. */
 function stubApi(onChat: (message: string) => Promise<Response>) {
   vi.stubGlobal(
@@ -29,6 +54,9 @@ function stubApi(onChat: (message: string) => Promise<Response>) {
         const body = JSON.parse(String(init?.body ?? '{}')) as { message: string }
         return onChat(body.message)
       }
+      // Antes que la lista: la URL de capacidades también empieza por
+      // `/api/v1/organizations`, y el enlace a Configuración depende de ella.
+      if (u.includes('/me/capabilities')) return json(CAPABILITIES)
       if (u.includes('/api/v1/organizations')) return json([ORG])
       return json({})
     }),

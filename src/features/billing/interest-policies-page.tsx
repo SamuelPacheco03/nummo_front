@@ -18,7 +18,7 @@ import { MoneyField } from '@/components/money-field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import type { ListResult } from '@/lib/list-result'
 import type { MasterParams } from '@/features/masters/hooks'
@@ -235,8 +235,9 @@ function useInterestPolicyRows(params: MasterParams): ListResult<InterestPolicy>
 }
 
 export function InterestPoliciesPage() {
-  const { orgId, role } = useCurrentOrg()
-  const canManage = canManageOrg(role)
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
+  const canManage = can('interest_policies.manage')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<InterestPolicy | null>(null)
 

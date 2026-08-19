@@ -10,6 +10,7 @@ import { useNumiStore } from '@/features/assistant/numi-store'
 import { GROUPS as SETTINGS_GROUPS } from '@/features/config/settings-nav'
 import { SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useCan } from '@/features/platform/permissions'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
 import { useRecents, type RecentItem } from './recents'
@@ -99,7 +100,8 @@ export function CommandBar({
   const listRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
+  const can = useCan()
   const openNumi = useNumiStore((s) => s.open)
   const recents = useRecents((s) => s.items)
   const remember = useRecents((s) => s.remember)
@@ -114,7 +116,7 @@ export function CommandBar({
 
   const groups = useMemo<CommandGroup[]>(() => {
     const result: CommandGroup[] = []
-    const quick = allowedQuickActions(role)
+    const quick = allowedQuickActions(can)
 
     if (!q) {
       /* Sin texto: lo de aquí y lo de ayer, en vez del catálogo entero. */
@@ -231,7 +233,7 @@ export function CommandBar({
     // `go` y `openNumi` son estables para lo que aquí importa; recalcular por
     // ellos solo reordenaría la lista bajo el dedo del usuario.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, role, results, recents, pathname])
+  }, [q, can, results, recents, pathname])
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups])
   const current = flat[active]

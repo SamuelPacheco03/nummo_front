@@ -16,7 +16,8 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/features/auth/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { ASSIGNABLE_ROLES, canManageOrg, roleLabel } from '@/features/organizations/roles'
+import { ASSIGNABLE_ROLES, roleLabel } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { initials } from '@/lib/format'
 import type { AnyRole } from '@/features/organizations/roles'
@@ -98,12 +99,13 @@ function AddMemberDialog({
 }
 
 export function MembersPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
   const { user } = useAuth()
   const { members, isPending, isError, error } = useMembers(orgId)
   const updateRole = useUpdateMemberRole(orgId ?? '')
   const removeMember = useRemoveMember(orgId ?? '')
-  const canManage = canManageOrg(role)
+  const can = useCan()
+  const canManage = can('organization.members.manage')
 
   const [addOpen, setAddOpen] = useState(false)
   const [removing, setRemoving] = useState<Member | null>(null)

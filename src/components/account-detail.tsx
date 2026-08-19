@@ -20,7 +20,6 @@ import {
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContact } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canEditContacts, canManageAgreements } from '@/features/organizations/roles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { withReturn } from '@/lib/settlement'
@@ -102,6 +101,8 @@ export function AccountDetail({
   statusOf,
   settleTo,
   settleIcon: SettleIcon,
+  canSettle,
+  canManage,
   query,
   close,
   menuItems,
@@ -116,6 +117,14 @@ export function AccountDetail({
   /** Formulario de saldar, con la contraparte ya puesta. */
   settleTo: (contactId: string | null) => string
   settleIcon: LucideIcon
+  /**
+   * Quién puede saldar y quién puede cerrar la cuenta. Vienen de fuera porque el
+   * permiso **es distinto en cada cara** —`payments.create` no es
+   * `disbursements.create`, `receivables.manage` no es `expenses.manage`— y
+   * porque un componente compartido no decide autorización (§87.2).
+   */
+  canSettle: boolean
+  canManage: boolean
   /** La cuenta ya cargada y traducida. */
   query: AccountDetailQuery
   /** Cancelar y castigar, ya atadas a esta cuenta. */
@@ -133,9 +142,7 @@ export function AccountDetail({
   dialogs?: ReactNode
 }) {
   const { pathname } = useLocation()
-  const { orgId, role } = useCurrentOrg()
-  const canSettle = canEditContacts(role)
-  const canManage = canManageAgreements(role)
+  const { orgId } = useCurrentOrg()
 
   const { data, isPending, isError, error } = query
   const [cancelOpen, setCancelOpen] = useState(false)

@@ -5,6 +5,7 @@ import {
   type SettlementDetailQuery,
 } from '@/components/settlement-detail'
 import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useCan } from '@/features/platform/permissions'
 import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
 import { ApplySupplierAdvanceDialog } from './apply-supplier-advance-dialog'
 import { useDisbursement, useReverseDisbursement } from './hooks'
@@ -34,6 +35,7 @@ const COPY: SettlementDetailCopy = {
 export function DisbursementDetailPage() {
   const { disbursementId } = useParams()
   const { orgId } = useCurrentOrg()
+  const can = useCan()
 
   const { detail, isPending, isError, error } = useDisbursement(orgId, disbursementId)
   const d = detail?.disbursement
@@ -79,6 +81,8 @@ export function DisbursementDetailPage() {
       targetTo={(expenseId) => `/gastos/cxp/${expenseId}`}
       copy={COPY}
       statusOf={disbursementStatus}
+      canReverse={can('disbursements.reverse')}
+      canApply={can('disbursements.allocate')}
       query={query}
       useReverse={useReverse}
       applyDialog={(open, onOpenChange, disbursement) =>

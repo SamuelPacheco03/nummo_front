@@ -2,20 +2,17 @@ import type { MemberRole, OrganizationSummaryRole } from '@/api/generated/model'
 
 export type AnyRole = OrganizationSummaryRole | MemberRole
 
-/** OWNER/ADMIN pueden gestionar org, sedes, miembros y maestros (el API es el guard real). */
-export function canManageOrg(role: AnyRole | undefined): boolean {
-  return role === 'OWNER' || role === 'ADMIN'
-}
-
-/** Contactos: crear/editar/archivar = todos menos VIEWER (el API es el guard real). */
-export function canEditContacts(role: AnyRole | undefined): boolean {
-  return role === 'OWNER' || role === 'ADMIN' || role === 'ACCOUNTANT' || role === 'OPERATOR'
-}
-
-/** Acuerdos de facturación: crear/editar/ciclo de vida = OWNER/ADMIN/ACCOUNTANT. */
-export function canManageAgreements(role: AnyRole | undefined): boolean {
-  return role === 'OWNER' || role === 'ADMIN' || role === 'ACCOUNTANT'
-}
+/*
+ * Aquí vivían `canManageOrg`, `canEditContacts` y `canManageAgreements`: tres
+ * predicados escritos contra nombres de rol. El backend ya no autoriza así
+ * —cada operación declara su `x-required-permission`—, y los tres agrupaban
+ * cosas que el contrato distingue: `canManageOrg` cubría nueve permisos
+ * distintos, de modo que sedes, miembros y catálogos quedaban gateados por la
+ * misma condición aunque el API los separe.
+ *
+ * Lo que queda de un rol es su **nombre**, que es lo que se enseña y lo que se
+ * asigna. Para decidir si se ofrece una acción, `useCan` (features/platform).
+ */
 
 const ROLE_LABELS: Record<AnyRole, string> = {
   OWNER: 'Propietario',

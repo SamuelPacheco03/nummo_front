@@ -7,7 +7,7 @@ import { NumiAppMark, NumiUnreadDot } from '@/features/assistant/numi-avatar'
 import { useNumiStore } from '@/features/assistant/numi-store'
 import { allowedQuickActions } from '@/features/actions/quick-actions'
 import { PORTFOLIO_SECTIONS } from '@/features/navigation/sections'
-import { useCurrentOrg } from '@/features/organizations/hooks'
+import { useCan } from '@/features/platform/permissions'
 import { cn } from '@/lib/utils'
 import { SidebarBody } from './sidebar'
 
@@ -93,10 +93,10 @@ function QuickActionsSheet({
   onOpenChange: (open: boolean) => void
 }) {
   const navigate = useNavigate()
-  const { role } = useCurrentOrg()
-  // §47: no ofrecer lo que el usuario no puede hacer. Si su rol no permite nada,
-  // el botón "Nuevo" ni siquiera se dibuja (ver BottomNav).
-  const actions = allowedQuickActions(role)
+  const can = useCan()
+  // §47: no ofrecer lo que el usuario no puede hacer. Si no tiene ninguno de los
+  // permisos, el botón "Nuevo" ni siquiera se dibuja (ver BottomNav).
+  const actions = allowedQuickActions(can)
 
   const go = (to: string) => {
     onOpenChange(false)
@@ -145,9 +145,9 @@ export function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false)
   const openNumi = useNumiStore((s) => s.open)
   const unread = useNumiStore((s) => s.unread)
-  const { role } = useCurrentOrg()
+  const can = useCan()
   const location = useLocation()
-  const canCreate = allowedQuickActions(role).length > 0
+  const canCreate = allowedQuickActions(can).length > 0
 
   return (
     <>

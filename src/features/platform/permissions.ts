@@ -1,0 +1,38 @@
+import { useCallback, useMemo } from 'react'
+import type { CapabilitiesDtoPermissionsItem } from '@/api/generated/model'
+import { useCapabilities } from './hooks'
+
+/**
+ * Un permiso del backend, tal como lo publica el contrato.
+ *
+ * No se escribe a mano: el enum sale de `openapi.json`, así que un permiso que
+ * el backend renombre rompe `tsc` en vez de dejar un botón gateado contra una
+ * cadena muerta que nadie vuelve a mirar.
+ */
+export type Permission = CapabilitiesDtoPermissionsItem
+
+/**
+ * ¿Se puede ofrecer esta acción?
+ *
+ * El backend dejó de autorizar por nombre de rol: cada operación del contrato
+ * viene anotada con `x-required-permission` y `/me/capabilities` dice cuáles
+ * tiene quien mira. Un `if (role === 'ADMIN')` en el front sería una segunda
+ * tabla de reglas, y se desincronizaría el día que existan roles personalizados
+ * —que es justo lo que el backend dejó preparado—.
+ *
+ * **Esto no es autorización** (§88.5). Sirve para no ofrecer lo que va a fallar;
+ * el backend lo revalida todo, y ocultar un botón no protege nada.
+ *
+ * Mientras las capacidades cargan devuelve `false`, que es el lado seguro: una
+ * acción que aparece un instante después no rompe nada; una que se ofrece y
+ * responde 403, sí.
+ *
+ * @example
+ * const can = useCan()
+ * const canManage = can('organization.manage')
+ */
+export function useCan(): (permission: Permission) => boolean {
+  const { capabilities } = useCapabilities()
+  const granted = useMemo(() => new Set(capabilities?.permissions), [capabilities?.permissions])
+  return useCallback((permission: Permission) => granted.has(permission), [granted])
+}

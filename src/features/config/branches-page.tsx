@@ -13,7 +13,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import type { Branch } from '@/api/generated/model'
 import { useBranches, useCreateBranch, useUpdateBranch } from './hooks'
@@ -121,9 +121,10 @@ function BranchDialog({
 }
 
 export function BranchesPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
   const { branches, isPending, isError, error } = useBranches(orgId)
-  const canManage = canManageOrg(role)
+  const can = useCan()
+  const canManage = can('organization.branches.manage')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Branch | null>(null)
 

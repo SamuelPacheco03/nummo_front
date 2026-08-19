@@ -15,7 +15,7 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { canManageOrg } from '@/features/organizations/roles'
+import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDateHuman } from '@/lib/format'
 import type { Organization, OrganizationStatus, ProvisionSummary } from '@/api/generated/model'
@@ -133,10 +133,11 @@ function ProvisionCard({ orgId, initialType }: { orgId: string; initialType: Val
 }
 
 export function CompanyPage() {
-  const { orgId, role } = useCurrentOrg()
+  const { orgId } = useCurrentOrg()
   const { organization, isPending, isError, error } = useOrgDetail(orgId)
   const update = useUpdateOrg(orgId ?? '')
-  const canManage = canManageOrg(role)
+  const can = useCan()
+  const canManage = can('organization.manage')
 
   const {
     register,
