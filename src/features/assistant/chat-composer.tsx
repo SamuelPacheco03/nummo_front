@@ -86,12 +86,17 @@ function ComposerAction({
 export function ChatComposer({
   onSend,
   onSendAudio,
-  disabled = false,
+  busy = false,
   autoFocus = false,
 }: {
   onSend: (text: string) => void
   onSendAudio?: (blob: Blob) => void
-  disabled?: boolean
+  /**
+   * Numi está contestando. **Escribir y enviar siguen abiertos** —lo enviado entra en
+   * la cola del hilo—; lo que espera es grabar, porque una nota de voz no se puede
+   * encolar: su audio vive en esta página y no sobrevive a guardarlo.
+   */
+  busy?: boolean
   autoFocus?: boolean
 }) {
   const [value, setValue] = useState('')
@@ -148,9 +153,9 @@ export function ChatComposer({
   }, [value])
 
   const hasText = !!value.trim()
-  const canSend = hasText && !disabled
+  const canSend = hasText
   const remaining = MAX_MESSAGE_LENGTH - value.length
-  const canRecord = !!onSendAudio && !disabled
+  const canRecord = !!onSendAudio && !busy
 
   /*
     **Que sostener el micrófono no sea una pulsación larga.**

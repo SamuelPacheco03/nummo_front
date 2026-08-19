@@ -55,7 +55,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     conversationId,
     send,
     sendAudio,
-    retry,
+    retryMessage,
     newConversation,
     openConversation,
     loadAudio,
@@ -139,14 +139,14 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             isLoadingOlder={isLoadingOlder}
             loadOlder={() => void loadOlder()}
             send={(text) => void send(text)}
-            retry={() => void retry()}
+            retryMessage={retryMessage}
             loadAudio={loadAudio}
             onLeave={onClose}
           />
           <ChatComposer
             onSend={(text) => void send(text)}
             onSendAudio={(blob) => void sendAudio(blob)}
-            disabled={isTyping}
+            busy={isTyping}
             autoFocus
           />
         </>

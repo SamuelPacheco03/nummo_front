@@ -6,6 +6,7 @@ import { Loader, NumiLoader } from '@/components/ui/loader'
 import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
 import { TypingIndicator } from './typing-indicator'
+import { isRetryable } from './numi-error'
 import type { ChatMessage, NumiError } from './types'
 
 /** A qué distancia del borde superior se empieza a traer la página anterior. */
@@ -82,6 +83,46 @@ function OlderMessages({ loading, onLoad }: { loading: boolean; onLoad: () => vo
   )
 }
 
+/**
+ * Por qué se cortó el turno, y qué puede hacer quien lo lee.
+ *
+ * Reintentar **no** vive aquí: cuelga del mensaje que falló, que es lo que se quiere
+ * reenviar. Y solo aparece cuando puede funcionar — sin proveedor, sin cuota o sin
+ * plan, volver a mandar lo mismo falla igual.
+ */
+function ThreadError({
+  error,
+  role,
+  onLeave,
+}: {
+  error: NumiError
+  role: AnyRole | undefined
+  onLeave: () => void
+}) {
+  const manages = canManageOrg(role)
+  return (
+    <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border px-3 py-2 text-xs">
+      <p>{error.message}</p>
+      {error.kind === 'setup' && manages && (
+        <Link
+          to="/config/asistente"
+          onClick={onLeave}
+          className="mt-1 inline-block font-medium underline underline-offset-4"
+        >
+          Ir a Configuración
+        </Link>
+      )}
+      {(error.kind === 'quota' || error.kind === 'plan') && (
+        <p className="mt-1 opacity-90">
+          {manages
+            ? 'Amplía el plan de la organización para seguir usando esto.'
+            : 'Pídele a quien administra la organización que amplíe el plan.'}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export interface ChatThreadProps {
   messages: ChatMessage[]
   error: NumiError | null
@@ -92,7 +133,8 @@ export interface ChatThreadProps {
   isLoadingOlder: boolean
   loadOlder: () => void
   send: (text: string) => void
-  retry: () => void
+  /** Devuelve a la cola el mensaje que no salió. */
+  retryMessage: (id: string) => void
   loadAudio: (messageId: string, force?: boolean) => Promise<string>
   /** El enlace a Configuración sale del panel, así que hay que cerrarlo al seguirlo. */
   onLeave: () => void
@@ -115,7 +157,7 @@ export function ChatThread({
   isLoadingOlder,
   loadOlder,
   send,
-  retry,
+  retryMessage,
   loadAudio,
   onLeave,
 }: ChatThreadProps) {
@@ -150,6 +192,15 @@ export function ChatThread({
     el.scrollTop = el.scrollHeight
   }, [messages, isTyping, error])
 
+  /*
+    Reintentar solo cuando puede funcionar. El mensaje que falló y el motivo del fallo
+    son la misma historia contada en dos sitios: sin proveedor, sin cuota o sin plan,
+    el botón de la burbuja mandaría a chocar contra la misma pared que el aviso de
+    abajo acaba de explicar. Sin motivo a la vista —un fallo viejo que volvió del
+    almacenamiento— se ofrece, que es lo que se puede hacer con él.
+  */
+  const canRetry = !error || isRetryable(error)
+
   // Y lo natural: llegar arriba trae lo anterior sin pedirlo.
   const onScroll = useCallback(() => {
     const el = listRef.current
@@ -179,7 +230,12 @@ export function ChatThread({
         <>
           {hasOlder && <OlderMessages loading={isLoadingOlder} onLoad={onLoadOlder} />}
           {messages.map((m) => (
-            <ChatMessageItem key={m.id} message={m} loadAudio={loadAudio} />
+            <ChatMessageItem
+              key={m.id}
+              message={m}
+              loadAudio={loadAudio}
+              onRetry={canRetry ? () => retryMessage(m.id) : undefined}
+            />
           ))}
         </>
       )}
@@ -192,28 +248,7 @@ export function ChatThread({
         </AssistantRow>
       )}
 
-      {error && (
-        <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border px-3 py-2 text-xs">
-          <p>{error.message}</p>
-          {error.needsSetup && canManageOrg(role) ? (
-            <Link
-              to="/config/asistente"
-              onClick={onLeave}
-              className="mt-1 inline-block font-medium underline underline-offset-4"
-            >
-              Ir a Configuración
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={retry}
-              className="mt-1 font-medium underline underline-offset-4"
-            >
-              Reintentar
-            </button>
-          )}
-        </div>
-      )}
+      {error && <ThreadError error={error} role={role} onLeave={onLeave} />}
     </div>
   )
 }

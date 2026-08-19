@@ -2006,6 +2006,39 @@ Lo primero se guarda —tiene que sobrevivir a cerrar el chat—; lo segundo no:
 en el hilo es lo que se espera de un asistente. Y borrar la conversación abierta empieza una
 nueva en el acto, que es lo que el backend haría igualmente con un id que ya no reconoce.
 
+## 32.5. Lo enviado se ve, y lo que falla dice por qué
+
+**Numi atiende un turno a la vez, pero escribir no espera a nadie.** Antes, mientras
+contestaba, el botón de enviar se apagaba: lo escrito en ese rato no iba a ninguna parte.
+Ahora entra en la **cola del hilo** —marcado «En espera»— y sale solo en cuanto hay turno
+libre, en el orden en que se escribió. La cola vive en el hilo y no en la pantalla: cerrar
+el chat con algo esperando no lo pierde.
+
+Grabar sí espera, y es la única excepción: una nota de voz no se puede encolar porque su
+audio es un `blob:` de esta página y no sobrevive a guardarlo.
+
+**Cada mensaje propio dice en qué anda**, debajo de su burbuja: «En espera», «Enviando»,
+«No se envió». **Lo entregado no lleva marca** — en un chat lo normal es que llegue, y una
+palomita por línea es ruido. Reintentar cuelga del mensaje que falló, que es lo que se
+quiere reenviar; devolverlo a la cola es todo lo que hace.
+
+**Y un fallo dice cuál fue.** No es lo mismo quedarse sin internet que quedarse sin cuota,
+y hasta ahora las dos cosas se leían igual: «No se pudo contactar a Numi», con un botón de
+reintentar que en el segundo caso iba a fallar todas las veces. Cuatro casos, y el tipo
+decide qué se ofrece:
+
+| Qué pasó | Qué se dice | ¿Reintentar? |
+| --- | --- | --- |
+| No hay proveedor de IA (422) | El aviso, y **Ir a Configuración** si administras | No |
+| Se acabó el tope (409 `LIMIT_EXCEEDED`) | «Llevas 2000 de 2000 mensajes con Numi este mes» | No |
+| El plan no lo incluye (403 `FEATURE_NOT_AVAILABLE`) | «Tu plan no incluye esta función» | No |
+| Lo demás (red, servidor) | El mensaje que haya | Sí |
+
+**Un botón que no puede funcionar es peor que ninguno**: la cuota no se rellena por volver
+a pulsar. Y las cifras salen del `details` del error, nunca inventadas: si no viene
+completo se usa el mensaje del backend tal cual, y un tope que el front no conoce se cuenta
+como «se agotó una de las cuotas de tu plan» —jamás enseñando su clave cruda.
+
 ---
 
 # 33. Cards dentro del chat

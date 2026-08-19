@@ -6,7 +6,7 @@ import {
 } from '@/api/generated/endpoints/assistant/assistant'
 import type { AssistantAudioChatResponse, AssistantChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { getErrorMessage, isApiStatus } from '@/lib/errors'
+import { classifyNumiError } from './numi-error'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
 import { describeRecording } from './waveform'
@@ -115,27 +115,28 @@ export function useNumiChat() {
   // conversación de la organización (ver `useHydrateThread`).
   useHydrateThread(orgId)
 
-  /** Envía al backend y consume la respuesta. No toca el hilo del usuario. */
-  const ask = useCallback(
-    async (message: string) => {
+/** Saca un mensaje de la cola y lo lleva al servidor, marcándolo por el camino. */
+  const deliver = useCallback(
+    async (id: string, content: string) => {
       if (!orgId) return
       // Se lee del store (no del render) para no mandar un sessionId obsoleto.
-      const { sessionId, appendReply, setError, setPending } = useNumiStore.getState()
+      const { sessionId, setError, setPending, setMessageStatus } = useNumiStore.getState()
+      setMessageStatus(id, 'sending')
       setError(null)
       setPending(true)
       try {
-        const res = await mutateAsync({ orgId, data: { message, sessionId } })
+        const res = await mutateAsync({ orgId, data: { message: content, sessionId } })
         const { sessionId: nextSessionId, reply } = res.data as AssistantChatResponse
-        appendReply(nextSessionId, reply)
+        const store = useNumiStore.getState()
+        store.setMessageStatus(id, 'sent')
+        store.appendReply(nextSessionId, reply)
         // Numi también registra operaciones: si el turno pudo escribir, se
         // refresca lo que esté montado (ver `shouldRefreshData`).
-        if (shouldRefreshData(message, reply)) void queryClient.invalidateQueries()
+        if (shouldRefreshData(content, reply)) void queryClient.invalidateQueries()
       } catch (err) {
-        setError({
-          message: getErrorMessage(err, 'No se pudo contactar a Numi. Inténtalo de nuevo.'),
-          // 422 en este endpoint = no hay proveedor de IA activo.
-          needsSetup: isApiStatus(err, 422),
-        })
+        const store = useNumiStore.getState()
+        store.setMessageStatus(id, 'failed')
+        store.setError(classifyNumiError(err, 'No se pudo contactar a Numi. Inténtalo de nuevo.'))
       } finally {
         useNumiStore.getState().setPending(false)
       }
@@ -143,15 +144,25 @@ export function useNumiChat() {
     [mutateAsync, orgId, queryClient],
   )
 
-  const send = useCallback(
-    async (raw: string) => {
-      const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
-      if (!message || useNumiStore.getState().pending) return
-      useNumiStore.getState().appendMessage('user', message)
-      await ask(message)
-    },
-    [ask],
-  )
+  /*
+    Un turno a la vez, y en orden. El despachador vive en un efecto y no dentro de
+    `send` para que la cola sea del hilo y no de esta llamada: si el panel se cierra
+    con algo esperando, al volver a abrir sigue esperando y sale igual.
+  */
+  useEffect(() => {
+    if (pending || !orgId) return
+    const next = messages.find((m) => m.status === 'queued')
+    // `deliver` marca 'sending' y ocupa el turno antes de su primer await, así que
+    // el siguiente paso de este efecto ya no lo vuelve a coger.
+    if (next) void deliver(next.id, next.content)
+  }, [pending, orgId, messages, deliver])
+
+  /** Escribir no espera a Numi: el mensaje entra en la cola y sale cuando haya turno. */
+  const send = useCallback((raw: string) => {
+    const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
+    if (!message) return
+    useNumiStore.getState().enqueueMessage(message)
+  }, [])
 
   /** Envía una nota de voz: se muestra la burbuja de audio y Numi transcribe y responde. */
   const sendAudio = useCallback(
@@ -197,14 +208,16 @@ export function useNumiChat() {
         })
         const { sessionId: nextSessionId, transcript, reply } = res.data as AssistantAudioChatResponse
         const s = useNumiStore.getState()
-        if (id) s.setTranscript(id, transcript)
+        if (id) {
+          s.setTranscript(id, transcript)
+          s.setMessageStatus(id, 'sent')
+        }
         s.appendReply(nextSessionId, reply)
         if (shouldRefreshData(transcript, reply)) void queryClient.invalidateQueries()
       } catch (err) {
-        useNumiStore.getState().setError({
-          message: getErrorMessage(err, 'No se pudo enviar el audio. Inténtalo de nuevo.'),
-          needsSetup: isApiStatus(err, 422),
-        })
+        const s = useNumiStore.getState()
+        if (id) s.setMessageStatus(id, 'failed')
+        s.setError(classifyNumiError(err, 'No se pudo enviar el audio. Inténtalo de nuevo.'))
       } finally {
         useNumiStore.getState().setPending(false)
       }
@@ -212,12 +225,15 @@ export function useNumiChat() {
     [audioChat, orgId, queryClient],
   )
 
-  /** Reintenta el último mensaje de TEXTO del usuario (los audios no se reintentan). */
-  const retry = useCallback(async () => {
-    if (useNumiStore.getState().pending) return
-    const last = useNumiStore.getState().messages.findLast((m) => m.role === 'user' && !!m.content)
-    if (last) await ask(last.content)
-  }, [ask])
+/**
+   * Reintentar un mensaje que no salió: vuelve a la cola y el despachador lo recoge.
+   * Los dictados no se reintentan — su audio era un blob de esta página y ya no está.
+   */
+  const retryMessage = useCallback((id: string) => {
+    const store = useNumiStore.getState()
+    store.setError(null)
+    store.setMessageStatus(id, 'queued')
+  }, [])
 
   return {
     messages,
@@ -240,7 +256,8 @@ export function useNumiChat() {
     orgName: organization?.name,
     send,
     sendAudio,
-    retry,
+    /** Devuelve a la cola un mensaje que falló. */
+    retryMessage,
     newConversation,
     /** Abre otra conversación del historial en el hilo. */
     openConversation,

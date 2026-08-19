@@ -1,11 +1,11 @@
 import { type ReactNode } from 'react'
-import { Mic } from 'lucide-react'
+import { AlertCircle, Clock, Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
 import { formatTime } from './utils'
-import type { ChatMessage } from './types'
+import type { ChatMessage, ChatMessageStatus } from './types'
 
 /**
  * Burbuja del hilo: superficie redondeada, la de Numi sobre tarjeta con borde y
@@ -50,6 +50,40 @@ export function AssistantRow({ children }: { children: ReactNode }) {
   )
 }
 
+/**
+ * Qué fue del mensaje, debajo de su burbuja.
+ *
+ * Solo se dice cuando hay algo que decir: lo entregado no lleva marca, porque en un
+ * chat lo normal es que llegue y una palomita en cada línea es ruido. Lo que espera y
+ * lo que falló sí, y esto último con la salida al lado.
+ */
+function MessageStatus({ status, onRetry }: { status?: ChatMessageStatus; onRetry?: () => void }) {
+  if (status === 'queued' || status === 'sending') {
+    return (
+      <p className="text-muted-foreground mt-0.5 flex items-center justify-end gap-1 text-[0.65rem]">
+        <Clock aria-hidden className="size-3" />
+        {status === 'queued' ? 'En espera' : 'Enviando'}
+      </p>
+    )
+  }
+  if (status !== 'failed') return null
+  return (
+    <p className="text-destructive mt-0.5 flex items-center justify-end gap-1 text-[0.65rem]">
+      <AlertCircle aria-hidden className="size-3" />
+      No se envió
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="font-medium underline underline-offset-2"
+        >
+          Reintentar
+        </button>
+      )}
+    </p>
+  )
+}
+
 /** Ancho que la hora reserva al final de la última línea del mensaje. */
 const TIME_SLOT = 'inline-block w-[3.4rem] align-baseline'
 
@@ -61,10 +95,13 @@ const TIME_SLOT = 'inline-block w-[3.4rem] align-baseline'
 export function ChatMessageItem({
   message,
   loadAudio,
+  onRetry,
 }: {
   message: ChatMessage
   /** Trae la URL firmada del audio archivado de este mensaje. */
   loadAudio?: (messageId: string, force?: boolean) => Promise<string>
+  /** Vuelve a poner en la cola este mensaje. Los dictados no se reintentan. */
+  onRetry?: () => void
 }) {
   const isUser = message.role === 'user'
   const spacer = <span aria-hidden className={TIME_SLOT} />
@@ -122,5 +159,14 @@ export function ChatMessageItem({
 
   if (!isUser) return <AssistantRow>{bubble}</AssistantRow>
 
-  return <div className="flex w-full justify-end pl-9">{bubble}</div>
+  return (
+    <div className="flex w-full flex-col items-end pl-9">
+      {bubble}
+      <MessageStatus
+        status={message.status}
+        // Reenviar una nota de voz es imposible: su audio era un blob de esta página.
+        onRetry={message.dictated ? undefined : onRetry}
+      />
+    </div>
+  )
 }

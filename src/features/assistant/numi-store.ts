@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ChatMessage, ChatRole, NumiError } from './types'
+import type { ChatMessage, ChatMessageStatus, ChatRole, NumiError } from './types'
 
 /**
  * Estado del panel de Numi.
@@ -64,6 +64,14 @@ interface NumiState {
   open: () => void
   close: () => void
   appendMessage: (role: ChatRole, content: string) => void
+  /**
+   * Pone un mensaje propio en la cola y devuelve su id.
+   *
+   * Escribir no espera a que Numi termine: el mensaje entra al hilo marcado y sale
+   * en cuanto haya turno libre. Antes la caja se quedaba muda y lo escrito se perdía.
+   */
+  enqueueMessage: (content: string) => string
+  setMessageStatus: (id: string, status: ChatMessageStatus) => void
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
   appendAudio: (audio: { audioUrl: string; waveform?: number[]; audioSeconds?: number }) => void
   /**
@@ -102,7 +110,10 @@ interface NumiState {
  */
 function storable(message: ChatMessage): ChatMessage {
   const { audioUrl: _audioUrl, ...rest } = message
-  return rest
+  // Un mensaje a medio enviar vuelve como fallido, no como «enviando»: el turno que
+  // lo iba a mandar murió con la página, así que nadie iba a cumplir esa promesa.
+  const status = rest.status === 'sent' || rest.status === undefined ? rest.status : 'failed'
+  return { ...rest, ...(status ? { status } : {}) }
 }
 
 const EMPTY = { sessionId: undefined, messages: [] as ChatMessage[], error: null as NumiError | null }
@@ -125,11 +136,30 @@ export const useNumiStore = create<NumiState>()(
       appendMessage: (role, content) =>
         set((s) => ({ messages: [...s.messages, message(role, content)] })),
 
+      enqueueMessage: (content) => {
+        const queued: ChatMessage = { ...message('user', content), status: 'queued' }
+        set((s) => ({ messages: [...s.messages, queued], error: null }))
+        return queued.id
+      },
+
+      setMessageStatus: (id, status) =>
+        set((s) => ({
+          messages: s.messages.map((m) => (m.id === id ? { ...m, status } : m)),
+        })),
+
       appendAudio: (audio) =>
         set((s) => ({
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'user', content: '', at: new Date().toISOString(), dictated: true, ...audio },
+            {
+              id: nextId(),
+              role: 'user',
+              content: '',
+              at: new Date().toISOString(),
+              dictated: true,
+              status: 'sending',
+              ...audio,
+            },
           ],
         })),
 
