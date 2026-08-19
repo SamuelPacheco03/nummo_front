@@ -1,6 +1,24 @@
-import { expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 import { ApiError } from '@/api/http-client'
-import { planErrorMessage } from './errors'
+import { setAppNavigate } from '@/lib/navigate'
+
+/** Lo que un aviso lleva encima del título, que es lo que aquí se comprueba. */
+interface ToastOptions {
+  description?: string
+  action?: { label: string; onClick: () => void }
+}
+
+/** El aviso se sustituye entero: lo que se prueba es qué se pide pintar. */
+const toastSpy = vi.hoisted(() => ({
+  error: (_titulo: string, _opciones?: unknown) => {},
+}))
+vi.mock('sonner', () => ({ toast: { error: (t: string, o?: unknown) => toastSpy.error(t, o) } }))
+
+const { planErrorMessage, toastApiError } = await import('./errors')
+
+afterEach(() => {
+  setAppNavigate(null)
+})
 
 test('una feature que el plan no incluye se cuenta como «mejora», no como fallo', () => {
   const err = new ApiError(403, {
@@ -11,7 +29,7 @@ test('una feature que el plan no incluye se cuenta como «mejora», no como fall
 
   expect(planErrorMessage(err)).toEqual({
     title: 'Tu plan Free no incluye usar tu propia llave de IA',
-    description: 'Está disponible en un plan superior: míralos en Configuración › Plan.',
+    description: 'Está disponible en un plan superior.',
   })
 })
 
@@ -24,7 +42,7 @@ test('un aforo lleno ofrece las dos salidas: liberar o mejorar', () => {
 
   expect(planErrorMessage(err)).toEqual({
     title: 'Llegaste al tope de contactos',
-    description: 'Tienes 200 de 200. Libera espacio, o mejora de plan en Configuración › Plan.',
+    description: 'Tienes 200 de 200. Libera espacio o mejora de plan.',
   })
 })
 
@@ -55,4 +73,33 @@ test('el tope anti-abuso de organizaciones gratuitas se nombra igual que los dem
 test('cualquier otro error no es un error de plan', () => {
   expect(planErrorMessage(new ApiError(422, { code: 'VALIDATION', message: 'x' }))).toBeNull()
   expect(planErrorMessage(new Error('boom'))).toBeNull()
+})
+
+test('un error de plan sale con la salida a un clic, no solo con el diagnóstico', () => {
+  const avisos: { titulo: string; opciones?: ToastOptions }[] = []
+  const destinos: string[] = []
+  toastSpy.error = (titulo, opciones) => avisos.push({ titulo, opciones: opciones as ToastOptions })
+  setAppNavigate((to) => destinos.push(to))
+
+  toastApiError(
+    new ApiError(409, {
+      code: 'LIMIT_EXCEEDED',
+      message: 'Limit exceeded',
+      details: { limit: 'max_contacts', max: 200, used: 200 },
+    }),
+  )
+
+  expect(avisos.at(-1)?.opciones?.action?.label).toBe('Ver planes')
+  avisos.at(-1)?.opciones?.action?.onClick()
+  expect(destinos).toEqual(['/config/plan'])
+})
+
+test('un error corriente no ofrece planes: no tiene nada que ver', () => {
+  const avisos: { titulo: string; opciones?: unknown }[] = []
+  toastSpy.error = (titulo, opciones) => avisos.push({ titulo, opciones })
+
+  toastApiError(new ApiError(422, { code: 'VALIDATION', message: 'Email inválido' }))
+
+  expect(avisos.at(-1)?.titulo).toBe('Email inválido')
+  expect(avisos.at(-1)?.opciones).toBeUndefined()
 })

@@ -1,6 +1,14 @@
 import { toast } from 'sonner'
 import { featureNotAvailable, getErrorMessage, limitExceeded } from '@/lib/errors'
+import { navigateApp } from '@/lib/navigate'
 import { featureLabel, isPeriodicLimit, limitLabel, planLabel } from './labels'
+
+/**
+ * A donde lleva «Ver planes»: la pantalla que enseña el plan, el consumo y el
+ * catálogo (§45.6). La entrada de navegación la declara `settings-nav.ts`; aquí
+ * hace falta el destino, no el menú.
+ */
+const PLAN_PATH = '/config/plan'
 
 /**
  * Lo que hay que decir cuando el que falla es el **plan** y no la petición.
@@ -21,7 +29,7 @@ export function planErrorMessage(error: unknown): { title: string; description: 
   if (feature) {
     return {
       title: `Tu plan ${planLabel(feature.plan)} no incluye ${featureLabel(feature.feature)}`,
-      description: 'Está disponible en un plan superior: míralos en Configuración › Plan.',
+      description: 'Está disponible en un plan superior.',
     }
   }
 
@@ -34,11 +42,11 @@ export function planErrorMessage(error: unknown): { title: string; description: 
       ? {
           title: `Se acabaron tus ${nombre} de este mes`,
           // `used` es lo ya gastado, nunca lo que queda.
-          description: `Llevas ${limit.used} de ${limit.max}. Se renueva el mes que viene, o mejora de plan en Configuración › Plan.`,
+          description: `Llevas ${limit.used} de ${limit.max}. Se renueva el mes que viene, o puedes mejorar de plan.`,
         }
       : {
           title: `Llegaste al tope de ${nombre}`,
-          description: `Tienes ${limit.used} de ${limit.max}. Libera espacio, o mejora de plan en Configuración › Plan.`,
+          description: `Tienes ${limit.used} de ${limit.max}. Libera espacio o mejora de plan.`,
         }
   }
 
@@ -54,7 +62,13 @@ export function planErrorMessage(error: unknown): { title: string; description: 
 export function toastApiError(error: unknown, fallback?: string): void {
   const plan = planErrorMessage(error)
   if (plan) {
-    toast.error(plan.title, { description: plan.description })
+    // El aviso no se queda en el diagnóstico: la salida está a un clic. El
+    // navegador lo presta el shell (`lib/navigate.ts`), porque el `Toaster` se
+    // monta por encima del router y aquí no hay hooks.
+    toast.error(plan.title, {
+      description: plan.description,
+      action: { label: 'Ver planes', onClick: () => navigateApp(PLAN_PATH) },
+    })
     return
   }
   toast.error(getErrorMessage(error, fallback))

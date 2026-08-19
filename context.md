@@ -2420,6 +2420,18 @@ de contar que una mutación falló: si el error es de plan dice lo de arriba, y 
 siempre. Ninguna pantalla se tiene que acordar de los dos códigos, que es justo lo que no habría
 pasado con 44 `toast.error` repartidos.
 
+**Y el aviso no se queda en el diagnóstico:** lleva un botón «Ver planes» a `/config/plan`
+(§45.6). Decirle a alguien que se quedó sin cupo y dejarlo buscando dónde se arregla es media
+respuesta.
+
+Cómo llega ahí es lo único con truco. El `Toaster` se monta en `providers.tsx`, **por encima del
+`RouterProvider`**, así que un `<Link>` dentro de un aviso no tendría router del que colgar; y
+llamar al router desde `errors.ts` cerraría un ciclo de imports —`router.tsx` monta el shell y el
+shell acaba importando quien avisa—. La salida es la misma que ya usa el 401: el shell **presta**
+su `navigate` (`setAppNavigate`, `lib/navigate.ts`) y quien avisa lo pide. Sin nadie registrado
+cae a una navegación del navegador: recarga, que es peor, pero un botón que no hace nada es mucho
+peor.
+
 **Ojo con uno que no viene de un plan:** `limit: "free_organizations"` es el tope anti-abuso de
 organizaciones gratuitas por usuario. Llega por la misma vía y se nombra igual —por eso el
 mensaje no dice «de tu plan»—, y no hay que distinguirlo.
@@ -3886,6 +3898,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `useOrgReadOnly` | `features/platform/permissions.ts` | ¿La organización está suspendida o archivada? (§45.4) |
 | `ReadOnlyBanner` | `features/platform/read-only-banner.tsx` | El aviso persistente de solo lectura, en todas las pantallas |
 | `toastApiError` | `features/platform/errors.ts` | **Cómo se cuenta que una mutación falló**, plan incluido (§45.5) |
+| `setAppNavigate` · `navigateApp` | `lib/navigate.ts` | Navegar desde fuera de React (avisos, §45.5) |
 | `usePlans` | `features/platform/hooks.ts` | El catálogo de planes en venta (§45.6) |
 | `useLimitUsage` | `features/platform/use-limit-usage.ts` | Cuánto llevas de cada tope — aparte, que el sidebar no lo necesita |
 | `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |

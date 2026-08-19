@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router'
 import { Search } from 'lucide-react'
 import { PageLoader } from '@/components/ui/loader'
@@ -15,6 +15,7 @@ import { toastApiError } from '@/features/platform/errors'
 import { CommandBar } from '@/features/search/command-bar'
 import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
 import { PageScrollRestoration } from '@/app/page-scroll'
+import { setAppNavigate } from '@/lib/navigate'
 import { BottomNav } from './bottom-nav'
 import { Brand, SidebarBody } from './sidebar'
 
@@ -63,6 +64,18 @@ export function AppShell() {
   const [commandOpen, setCommandOpen] = useState(false)
   const openCommand = useCallback(() => setCommandOpen(true), [])
   useCommandBarShortcut(openCommand)
+  const navigate = useNavigate()
+
+  /*
+    El shell vive dentro del router y los avisos no (el `Toaster` se monta por
+    encima, en `providers.tsx`). Prestarle aquí el navegador es lo que permite
+    que el botón «Ver planes» de un error de plan lleve a algún sitio sin
+    recargar la página (§45.5).
+  */
+  useEffect(() => {
+    setAppNavigate(navigate)
+    return () => setAppNavigate(null)
+  }, [navigate])
 
   if (isLoading) return <PageLoader />
   if (hasNoOrgs) return <NoOrgOnboarding />
