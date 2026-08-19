@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
+import { TypingIndicator } from './typing-indicator'
 import { formatTime } from './utils'
 import type { ChatMessage, ChatMessageStatus } from './types'
 
@@ -140,10 +141,15 @@ export function ChatMessageItem({
           {message.content}
           {spacer}
         </p>
+      ) : message.content === '' ? (
+        // Numi ya tiene turno pero todavía no ha dicho nada. Los puntos viven dentro de
+        // su burbuja para que la primera palabra los sustituya en el sitio, en vez de
+        // hacer saltar el hilo con una fila que desaparece y otra que nace.
+        <TypingIndicator />
       ) : (
         <RichText text={message.content} trailing={spacer} />
       )}
-      {!playable && (
+      {!playable && message.content !== '' && (
         <time
           dateTime={message.at}
           className={cn(

@@ -835,6 +835,97 @@ export const usePostApiV1OrganizationsOrgIdAssistantChat = <TError = ErrorRespon
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatMutationOptions(options), queryClient);
     }
+    export type postApiV1OrganizationsOrgIdAssistantChatStreamResponse200 = {
+  data: string
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatStreamResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatStreamResponseSuccess = (postApiV1OrganizationsOrgIdAssistantChatStreamResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantChatStreamResponseError = (postApiV1OrganizationsOrgIdAssistantChatStreamResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantChatStreamResponse = (postApiV1OrganizationsOrgIdAssistantChatStreamResponseSuccess | postApiV1OrganizationsOrgIdAssistantChatStreamResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatStreamUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/chat/stream`
+}
+
+/**
+ * Mismo turno que `POST /assistant/chat`, entregado como Server-Sent Events (`text/event-stream`). Tres eventos: `chunk` con `{ text }` por cada trozo, `done` una sola vez con `{ sessionId, reply, stopped }`, y `error` con el mismo cuerpo de error del resto de la API si algo falla **después** del primer trozo. Lo que falla antes (sin proveedor, sin cuota, sin permiso) responde JSON normal con su status. **Para detener la generación, aborta la petición**: lo ya escrito se guarda igual y se archiva en la conversación.
+ * @summary Enviar un mensaje a Numi y recibir la respuesta mientras se escribe
+ */
+export const postApiV1OrganizationsOrgIdAssistantChatStream = async (orgId: string,
+    assistantChatInput: AssistantChatInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantChatStreamResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantChatStreamResponse>(getPostApiV1OrganizationsOrgIdAssistantChatStreamUrl(orgId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(assistantChatInput)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatStreamMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatStream>>, TError,{orgId: string;data: AssistantChatInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatStream>>, TError,{orgId: string;data: AssistantChatInput}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantChatStream'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatStream>>, {orgId: string;data: AssistantChatInput}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantChatStream(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantChatStreamMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatStream>>>
+    export type PostApiV1OrganizationsOrgIdAssistantChatStreamMutationBody = AssistantChatInput
+    export type PostApiV1OrganizationsOrgIdAssistantChatStreamMutationError = ErrorResponse
+
+    /**
+ * @summary Enviar un mensaje a Numi y recibir la respuesta mientras se escribe
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantChatStream = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatStream>>, TError,{orgId: string;data: AssistantChatInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatStream>>,
+        TError,
+        {orgId: string;data: AssistantChatInput},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatStreamMutationOptions(options), queryClient);
+    }
     export type getApiV1OrganizationsOrgIdAssistantConversationsResponse200 = {
   data: ConversationList
   status: 200

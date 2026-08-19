@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, MessagesSquare, RotateCcw, X } from 'lucide-react'
+import { ArrowLeft, MessagesSquare, RotateCcw, Square, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChatComposer } from './chat-composer'
 import { ChatThread } from './chat-thread'
@@ -56,6 +56,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     send,
     sendAudio,
     retryMessage,
+    stop,
     newConversation,
     openConversation,
     loadAudio,
@@ -143,6 +144,18 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             loadAudio={loadAudio}
             onLeave={onClose}
           />
+          {isTyping && (
+            <div className="flex justify-center pb-1">
+              <button
+                type="button"
+                onClick={stop}
+                className="bg-card text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
+              >
+                <Square aria-hidden className="size-3 fill-current" />
+                Detener
+              </button>
+            </div>
+          )}
           <ChatComposer
             onSend={(text) => void send(text)}
             onSendAudio={(blob) => void sendAudio(blob)}

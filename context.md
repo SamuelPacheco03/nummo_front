@@ -2039,6 +2039,38 @@ a pulsar. Y las cifras salen del `details` del error, nunca inventadas: si no vi
 completo se usa el mensaje del backend tal cual, y un tope que el front no conoce se cuenta
 como «se agotó una de las cuotas de tu plan» —jamás enseñando su clave cruda.
 
+## 32.6. Numi contesta mientras escribe, y se puede detener
+
+La respuesta llega **en flujo** (`POST /assistant/chat/stream`, Server-Sent Events), no de
+una vez. Antes había que esperar la respuesta entera mirando tres puntos; ahora se ve
+escribir. Va sobre `fetch` y no sobre `EventSource` —que solo hace GET y no puede llevar la
+cabecera CSRF— ni sobre el cliente generado, que consume el cuerpo entero antes de
+devolverlo, que es justo lo que aquí no se puede hacer.
+
+**Los puntos viven dentro de la burbuja de Numi**, no en una fila aparte. La burbuja se abre
+vacía en cuanto hay turno y la primera palabra sustituye los puntos en el mismo sitio: nada
+aparece ni desaparece, y el hilo no salta.
+
+**Detener** es un botón sobre la caja de escribir —no en el de enviar, que sigue haciendo
+falta porque lo que se escriba mientras tanto se pone en la cola (§32.5)—. Detener **aborta
+la petición**, y eso es todo: para el servidor, cortar la conexión y cerrar la pestaña son lo
+mismo, y los dos dejan de gastar tokens. **Lo ya escrito se queda**, aquí y en el archivo: es
+texto real que el usuario leyó. Detener antes de la primera palabra no deja burbuja vacía.
+
+Tres detalles que cuestan un bug si se olvidan:
+
+- **El evento `start` trae la conversación antes de la primera palabra.** Quien detiene no ve
+  el final del turno; sin ese aviso su siguiente mensaje iría sin `sessionId` y el backend
+  abriría otra conversación, dejando la primera huérfana con una pregunta y ninguna respuesta.
+- **Abortar cierra el flujo limpiamente**, sin `done` y a veces sin lanzar. Eso no es una
+  conexión caída: hay que preguntar por la señal antes de dar el flujo por roto.
+- **Un turno que falla retira su burbuja**, con lo que llevara escrito. Media frase que nadie
+  va a terminar se lee como si fuera la respuesta buena, y al reintentar quedarían las dos.
+  Detener es distinto: ahí sí se conserva, porque fue una decisión y no un fallo.
+
+Lo que llega por el evento `error` se clasifica exactamente igual que un error HTTP (§32.5):
+la cuota agotada a media respuesta dice lo mismo y tampoco ofrece reintentar.
+
 ---
 
 # 33. Cards dentro del chat

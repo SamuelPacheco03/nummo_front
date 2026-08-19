@@ -1,12 +1,10 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  usePostApiV1OrganizationsOrgIdAssistantChat,
-  usePostApiV1OrganizationsOrgIdAssistantChatAudio,
-} from '@/api/generated/endpoints/assistant/assistant'
-import type { AssistantAudioChatResponse, AssistantChatResponse } from '@/api/generated/model'
+import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
+import type { AssistantAudioChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { classifyNumiError } from './numi-error'
+import { streamChat } from './stream-chat'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
 import { describeRecording } from './waveform'
@@ -80,7 +78,6 @@ export function useNumiChat() {
   const error = useNumiStore((s) => s.error)
   const switchOrg = useNumiStore((s) => s.switchOrg)
   const newConversation = useNumiStore((s) => s.newConversation)
-  const { mutateAsync } = usePostApiV1OrganizationsOrgIdAssistantChat()
   const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
   const hydrated = useNumiStore((s) => s.hydrated)
   /*
@@ -124,25 +121,47 @@ export function useNumiChat() {
       setMessageStatus(id, 'sending')
       setError(null)
       setPending(true)
+
+      const stop = new AbortController()
+      useNumiStore.getState().setTurn(stop)
+      // La burbuja se abre antes de la primera palabra: así se ve escribir en vez de
+      // aparecer entera, que es la diferencia entre esperar y acompañar.
+      const bubble = useNumiStore.getState().beginReply()
+
       try {
-        const res = await mutateAsync({ orgId, data: { message: content, sessionId } })
-        const { sessionId: nextSessionId, reply } = res.data as AssistantChatResponse
+        const { sessionId: nextSessionId, reply } = await streamChat({
+          orgId,
+          message: content,
+          sessionId,
+          signal: stop.signal,
+          onChunk: (text) => useNumiStore.getState().appendToReply(bubble, text),
+        })
         const store = useNumiStore.getState()
         store.setMessageStatus(id, 'sent')
-        store.appendReply(nextSessionId, reply)
+        store.finishReply(bubble, nextSessionId)
         // Numi también registra operaciones: si el turno pudo escribir, se
         // refresca lo que esté montado (ver `shouldRefreshData`).
         if (shouldRefreshData(content, reply)) void queryClient.invalidateQueries()
       } catch (err) {
         const store = useNumiStore.getState()
+        store.discardReply(bubble)
         store.setMessageStatus(id, 'failed')
         store.setError(classifyNumiError(err, 'No se pudo contactar a Numi. Inténtalo de nuevo.'))
       } finally {
+        useNumiStore.getState().setTurn(null)
         useNumiStore.getState().setPending(false)
       }
     },
-    [mutateAsync, orgId, queryClient],
+    [orgId, queryClient],
   )
+
+  /**
+   * Corta el turno en curso. Lo que Numi alcanzó a escribir se queda, aquí y en el
+   * servidor: cerrar la conexión es la señal, y el backend archiva lo que llevaba.
+   */
+  const stop = useCallback(() => {
+    useNumiStore.getState().turn?.abort()
+  }, [])
 
   /*
     Un turno a la vez, y en orden. El despachador vive en un efecto y no dentro de
@@ -258,6 +277,8 @@ export function useNumiChat() {
     sendAudio,
     /** Devuelve a la cola un mensaje que falló. */
     retryMessage,
+    /** Detiene la respuesta en curso, conservando lo escrito. */
+    stop,
     newConversation,
     /** Abre otra conversación del historial en el hilo. */
     openConversation,

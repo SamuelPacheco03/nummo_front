@@ -5,7 +5,6 @@ import { canManageOrg, type AnyRole } from '@/features/organizations/roles'
 import { Loader, NumiLoader } from '@/components/ui/loader'
 import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
-import { TypingIndicator } from './typing-indicator'
 import { isRetryable } from './numi-error'
 import type { ChatMessage, NumiError } from './types'
 
@@ -238,14 +237,6 @@ export function ChatThread({
             />
           ))}
         </>
-      )}
-
-      {isTyping && (
-        <AssistantRow>
-          <ChatBubble role="assistant">
-            <TypingIndicator />
-          </ChatBubble>
-        </AssistantRow>
       )}
 
       {error && <ThreadError error={error} role={role} onLeave={onLeave} />}

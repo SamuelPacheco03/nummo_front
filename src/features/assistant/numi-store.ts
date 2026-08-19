@@ -60,6 +60,13 @@ interface NumiState {
   unread: boolean
   /** Hay un turno en marcha: el hilo muestra «escribiendo…». */
   pending: boolean
+  /**
+   * Con qué se corta el turno en vuelo. Vive aquí y no en el panel por lo mismo que
+   * `pending`: cerrar el chat desmonta la vista y el turno sigue llegando, así que el
+   * botón de detener tiene que poder alcanzarlo después. No se guarda —un
+   * `AbortController` no sobrevive a la recarga, y el turno tampoco.
+   */
+  turn: AbortController | null
 
   open: () => void
   close: () => void
@@ -85,6 +92,26 @@ interface NumiState {
   setWaveform: (id: string, waveform: number[], audioSeconds?: number) => void
   /** Guarda la respuesta y el `sessionId` con el que continuar. */
   appendReply: (sessionId: string, reply: string) => void
+  /**
+   * Abre la burbuja de Numi vacía y devuelve su id. El texto entra después, trozo a
+   * trozo: la burbuja tiene que existir antes de la primera palabra para que se vea
+   * llegar en vez de aparecer entera.
+   */
+  beginReply: () => string
+  appendToReply: (id: string, delta: string) => void
+  /**
+   * Cierra el turno. Si no llegó a escribirse nada —se detuvo en el acto— la burbuja
+   * vacía se retira: no es una respuesta corta, es una respuesta que no existe.
+   */
+  finishReply: (id: string, sessionId: string) => void
+  /**
+   * Retira la burbuja del turno que se rompió, con lo que llevara escrito.
+   *
+   * Media frase de Numi que nadie va a terminar no es información: es una respuesta a
+   * medias que se lee como si fuera la buena, y al reintentar quedarían las dos. La
+   * conversación no se toca — el fallo fue del turno, no del hilo.
+   */
+  discardReply: (id: string) => void
   setError: (error: NumiError | null) => void
   /** Siembra el hilo con la conversación persistida más reciente (una sola vez). */
   hydrate: (sessionId: string | undefined, messages: ChatMessage[]) => void
@@ -98,6 +125,7 @@ interface NumiState {
   /** Ata el hilo a una organización; si cambia, la conversación se reinicia. */
   switchOrg: (orgId: string) => void
   setPending: (pending: boolean) => void
+  setTurn: (turn: AbortController | null) => void
 }
 
 /**
@@ -127,6 +155,7 @@ export const useNumiStore = create<NumiState>()(
       historyId: null,
       unread: false,
       pending: false,
+      turn: null,
       ...EMPTY,
 
       // Abrir es haber visto lo que hubiera pendiente.
@@ -194,6 +223,35 @@ export const useNumiStore = create<NumiState>()(
           unread: !s.isOpen,
         })),
 
+      beginReply: () => {
+        const bubble = message('assistant', '')
+        set((s) => ({ messages: [...s.messages, bubble] }))
+        return bubble.id
+      },
+
+      appendToReply: (id, delta) =>
+        set((s) => ({
+          messages: s.messages.map((m) => (m.id === id ? { ...m, content: m.content + delta } : m)),
+        })),
+
+      finishReply: (id, sessionId) =>
+        set((s) => {
+          const written = s.messages.find((m) => m.id === id)?.content ?? ''
+          const messages = written
+            ? s.messages
+            : s.messages.filter((m) => m.id !== id)
+          return {
+            sessionId,
+            messages,
+            error: null,
+            // Con el chat cerrado la respuesta no se ha visto: el icono lo dice.
+            unread: written ? !s.isOpen : s.unread,
+          }
+        }),
+
+      discardReply: (id) =>
+        set((s) => ({ messages: s.messages.filter((m) => m.id !== id) })),
+
       setError: (error) => set({ error }),
 
       hydrate: (sessionId, messages) =>
@@ -231,6 +289,8 @@ export const useNumiStore = create<NumiState>()(
         ),
 
       setPending: (pending) => set({ pending }),
+
+      setTurn: (turn) => set({ turn }),
     }),
     {
       name: 'nummo-numi',

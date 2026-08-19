@@ -8205,6 +8205,65 @@
         "x-required-permission": "assistant.use"
       }
     },
+    "/api/v1/organizations/{orgId}/assistant/chat/stream": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Enviar un mensaje a Numi y recibir la respuesta mientras se escribe",
+        "description": "Mismo turno que `POST /assistant/chat`, entregado como Server-Sent Events (`text/event-stream`). Tres eventos: `chunk` con `{ text }` por cada trozo, `done` una sola vez con `{ sessionId, reply, stopped }`, y `error` con el mismo cuerpo de error del resto de la API si algo falla **después** del primer trozo. Lo que falla antes (sin proveedor, sin cuota, sin permiso) responde JSON normal con su status. **Para detener la generación, aborta la petición**: lo ya escrito se guarda igual y se archiva en la conversación.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Flujo de eventos con la respuesta de Numi.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error antes de empezar a responder.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "assistant.use"
+      }
+    },
     "/api/v1/organizations/{orgId}/assistant/conversations": {
       "get": {
         "tags": [
