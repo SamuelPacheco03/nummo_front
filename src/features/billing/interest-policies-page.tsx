@@ -62,19 +62,14 @@ type Values = z.infer<typeof schema>
 const nn = (v?: string) => (v ? v : null)
 
 const COLUMNS: Column<InterestPolicy>[] = [
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
   {
     header: 'Método',
     cell: (r) => CALC_METHOD_LABELS[r.calculationMethod] ?? r.calculationMethod,
     card: 'meta',
   },
-  { header: 'Tasa', cell: (r) => r.rateValue, className: 'nums text-right', headClassName: 'text-right' },
-  {
-    header: 'Gracia',
-    cell: (r) => `${r.graceDays} d`,
-    className: 'nums text-right',
-    headClassName: 'text-right',
-  },
+  { header: 'Tasa', cell: (r) => r.rateValue, align: 'right' },
+  { header: 'Gracia', cell: (r) => `${r.graceDays} d`, align: 'right' },
 ]
 
 function PolicyDialog({

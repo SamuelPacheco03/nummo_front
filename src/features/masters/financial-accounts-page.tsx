@@ -183,21 +183,23 @@ export function FinancialAccountsPage() {
   */
   const columns: Column<FinancialAccount>[] = useMemo(
     () => [
-      { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+      { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
       {
         header: 'Tipo',
         cell: (r) => ACCOUNT_TYPE_LABELS[r.accountType] ?? r.accountType,
         card: 'meta',
       },
-      { header: 'Moneda', cell: (r) => r.currency, className: 'nums', card: 'meta' },
+      { header: 'Moneda', cell: (r) => r.currency, card: 'meta' },
       {
         header: 'Saldo inicial',
         cell: (r) => formatAmount(r.openingBalance, r.currency),
-        className: 'nums text-right',
-        headClassName: 'text-right',
+        align: 'right',
         card: 'amount',
       },
-      { header: 'Sede', cell: (r) => branchName(r.branchId), className: 'text-muted-foreground' },
+      {
+        header: 'Sede',
+        cell: (r) => <span className="text-muted-foreground">{branchName(r.branchId)}</span>,
+      },
     ],
     [branchName],
   )

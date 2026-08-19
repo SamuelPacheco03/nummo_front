@@ -100,6 +100,20 @@ export function runAccountsListSuite(c: AccountsListCase) {
     })
   })
 
+  test('la cabecera de una columna ordena, y el orden viaja al API', async () => {
+    pintar(c.Page)
+    await screen.findByRole('heading', { name: c.titulo })
+
+    // La cartera abre por vencimiento ascendente: pulsar «Saldo» cambia de
+    // columna conservando la dirección, y volver a pulsarla la invierte (§18.1).
+    await userEvent.click(screen.getByRole('button', { name: 'Saldo' }))
+    await waitFor(() => expect(c.ultimosParams()?.sort).toBe('balance'))
+    expect(c.ultimosParams()?.order).toBe('asc')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Saldo' }))
+    await waitFor(() => expect(c.ultimosParams()?.order).toBe('desc'))
+  })
+
   test('al pulsar una fila abre su ficha', async () => {
     pintar(c.Page)
     await screen.findByRole('heading', { name: c.titulo })

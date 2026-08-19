@@ -227,8 +227,6 @@ export function ContactsListPage() {
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),
               options: SORT_CHOICES.map(({ field, label }) => ({ field, label })),
-              // El orden ya vive en el cajón, que es la única vía en móvil.
-              showSortControl: false,
             }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}

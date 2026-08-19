@@ -38,21 +38,20 @@ const nn = (v?: string) => (v ? v : null)
 const COLUMNS: Column<ExpenseCategory>[] = [
   {
     header: 'Código',
-    cell: (r) => r.code ?? '—',
-    className: 'nums text-muted-foreground',
+    cell: (r) => <span className="nums text-muted-foreground">{r.code ?? '—'}</span>,
     hideOnCard: true,
   },
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
   {
     header: 'Ámbito',
-    cell: (r) => SCOPE_LABELS[r.scope] ?? r.scope,
-    className: 'text-muted-foreground',
+    cell: (r) => <span className="text-muted-foreground">{SCOPE_LABELS[r.scope] ?? r.scope}</span>,
     card: 'meta',
   },
   {
     header: 'Descripción',
-    cell: (r) => r.description ?? '—',
-    className: 'max-w-xs truncate text-muted-foreground',
+    cell: (r) => (
+      <span className="text-muted-foreground block max-w-xs truncate">{r.description ?? '—'}</span>
+    ),
     hideOnCard: true,
   },
 ]

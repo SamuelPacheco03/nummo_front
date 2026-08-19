@@ -1069,7 +1069,7 @@ el backend —`cashflow` devuelve `previous`—, no se calcula aquí (§88.4).
 | Buscar | Siempre visible | Siempre visible, a la izquierda |
 | El filtro principal (estado) | `FilterChips`, rejilla 2×2 | Desplegable junto al buscador |
 | El resto | `FilterSheet`, tras un botón con el contador | El mismo botón, **a la derecha del todo** |
-| Ordenar | Dentro del cajón, `FilterSortField` | Pulsando la cabecera de la columna |
+| Ordenar | Dentro del cajón, `FilterSortField` | Pulsando la cabecera de la columna (§18.1) |
 
 Esa fila la dibuja `ListToolbar`, no cada pantalla: dónde va cada filtro según el ancho es una
 decisión que debe tomarse **una vez**, no seis.
@@ -1413,15 +1413,110 @@ Características según necesidad:
 
 ---
 
+## 18.1. El orden de una tabla
+
+De esa lista, el **ordenamiento** es lo que más se había desalineado entre pantallas, y por un
+motivo concreto: funcionaba **por coincidencia**. `DataList` daba cabecera clicable a una columna
+cuando su `id` era, letra por letra, el nombre del campo que acepta el endpoint. Donde coincidía
+—«Vence» (`dueDate`), «Saldo» (`balance`)— la tabla ordenaba; donde no —la columna `date` de
+pagos y egresos, que en el contrato se llama `receivedAt` y `disbursedAt`— la cabecera se quedaba
+muda **sin que fallara nada**. Misma lista, mismo componente, y la cartera ordenaba por
+vencimiento y por saldo mientras egresos ordenaba por monto y no por fecha.
+
+Un fallo que no se ve no se arregla, así que la conexión entre columna y contrato **se declara**:
+
+1. **El orden lo hace el servidor. Siempre.** `DataList` monta TanStack Table en `manualSorting` y
+   no registra `sortedRowModel`. Ordenar en el cliente solo tocaría la página cargada y daría un
+   orden global falso (§21.1, §88.4).
+2. **Una columna ordena si el endpoint acepta su campo. Ni una menos.** Un campo que el API sabe
+   ordenar y la cabecera no ofrece es orden perdido, y es la grieta por la que dos pantallas
+   espejo empiezan a comportarse distinto.
+3. **Ni una más.** Una cabecera que ordena por algo que el contrato no acepta es una promesa que
+   el listado no puede cumplir. Si el orden que falta hace falta de verdad, es **petición de
+   contrato** (§21.1), no trabajo de front.
+4. **El `id` es vocabulario de la interfaz; el campo, del contrato.** Cuando no coinciden se dice
+   con `meta.sortField`. Es obligatorio en las pantallas espejo: la columna «Fecha» es **una**, y
+   se llama `receivedAt` de un lado y `disbursedAt` del otro.
+5. **Dos puertas, un solo dato.** La cabecera en escritorio y `FilterSortField` dentro del cajón
+   —la única vía en móvil, donde las filas son tarjetas y no hay cabeceras—. Las dos escriben en
+   la URL, así que no pueden contradecirse. **No hay una tercera:** el control suelto de orden en
+   la barra existió, ninguna lista lo usó nunca y se borró.
+6. **La dirección: la columna activa alterna; cambiar de columna la conserva.** Es lo que ya hacía
+   el cajón («si venías mirando lo más grande primero, sigues queriendo lo más grande primero») y
+   ahora hacen las dos puertas igual. Que la cabecera reiniciara a ascendente y el cajón no era
+   otra incongruencia, más pequeña y más difícil de ver.
+7. **Una sola columna a la vez.** El contrato v1.0.0 acepta un `sort` y un `order`, no una lista
+   (§21.1).
+8. **La cabecera ordenable es un `<button>` de verdad**, y la activa lleva `aria-sort`
+   (`ascending` / `descending`) y su flecha. Sin foco ni anuncio, ordenar es una función que solo
+   existe para quien usa ratón.
+9. **Un campo ordenable sin columna vive solo en el cajón.** Pasa con «Valor original» en cartera
+   y con «Creación» en contactos, maestros y recurrentes: se ofrecen porque el endpoint los
+   acepta, y no hay dónde pulsar porque no se enseñan.
+
+### Cómo está hoy
+
+| Lista | Lo que acepta el endpoint | Cabeceras que ordenan |
+| --- | --- | --- |
+| Cuentas por cobrar / por pagar (`AccountsList`) | `dueDate`, `balance`, `originalAmount` | Vence, Saldo |
+| Pagos / egresos (`SettlementList`) | `receivedAt` · `disbursedAt`, `amount` | Fecha (por `sortField`), Monto |
+| Acuerdos / gastos recurrentes (`RecurringList`) | `name`, `createdAt` | Ninguna: ningún campo tiene columna |
+| Contactos | `name`, `createdAt` | Nombre |
+| Movimientos de caja | `occurredAt`, `amount` | Fecha, Monto |
+| Los cinco maestros (`MasterCrud`) | `name`, `createdAt` | Nombre (por `sortField` de la columna) |
+| Organizaciones (consola) | — | Ninguna: el endpoint no acepta `sort` |
+| Cuentas de caja (`/caja/cuentas`) | — | Ninguna: es un resumen de saldos, no un listado paginado |
+
+Las dos filas sin cabeceras son deliberadas y están comentadas en su código. En recurrentes el
+nombre de la plantilla es la **segunda línea** de «Pagador», no una columna: una cabecera clicable
+ahí diría que ordena por pagador y ordenaría por otra cosa. El día que el nombre tenga columna
+propia, la gana.
+
+### Al montar un listado nuevo
+
+- ¿Qué acepta el `sort` de este endpoint? Sale del contrato, no de lo que parezca razonable.
+- Cada campo aceptado: ¿tiene columna? Entonces su cabecera ordena — y si su `id` no es el campo,
+  `meta.sortField`.
+- El mismo `SortChoice[]` alimenta las cabeceras y el cajón. Una sola lista, no dos.
+- Si es una pantalla espejo, **la otra cara ordena por lo mismo** o hay una razón escrita.
+
+---
+
+## 18.2. Lo que declara una columna
+
+Una lista se define **una vez** —`listColumns()`— y de ahí salen la tabla de escritorio y las
+tarjetas de móvil (§11.1.3b). Lo que cambia entre las dos presentaciones viaja en `meta`, nunca
+en clases sueltas:
+
+| En `meta` | Para qué |
+| --- | --- |
+| `card` | Qué papel tiene en la tarjeta: `title`, `meta`, `status`, `amount`, `sub` |
+| `align: 'right'` | Cifras a la derecha, con `nums`, **en la tabla y en la tarjeta** |
+| `hideOnTable` / `hideOnStack` | Lo que sobra en una de las dos presentaciones |
+| `label` | Su etiqueta en el pie de la tarjeta, si la cabecera no sirve |
+| `sortField` | El campo del contrato que la ordena, cuando no es su `id` (§18.1) |
+
+**Nada de clases de presentación por columna.** `MasterCrud` aceptaba `className` y
+`headClassName` por columna y **no las usaba**: los cinco maestros declaraban `nums text-right`
+en sus importes y los pintaban a la izquierda, mientras los de cartera iban a la derecha. La
+alineación de un importe es del sistema (§19), no de cada pantalla, y por eso hoy es `align`.
+
+**Y el énfasis lo pone el papel, no la posición.** La fila lleva en negrita la columna que la
+nombra —la que declara `card: 'title'`—, no la primera que se haya escrito: en conceptos de cobro
+y en categorías de gasto la primera es el código, casi siempre vacío, así que se destacaba un «—»
+y el nombre quedaba en texto normal.
+
+---
+
 # 19. Tablas en desktop
 
 Mantener:
 
-- encabezado claramente diferenciado;
+- encabezado claramente diferenciado, y **clicable donde ordena** (§18.1);
 - filas respiradas;
 - líneas divisorias discretas;
 - hover suave;
-- montos alineados;
+- montos alineados a la derecha, siempre, con `meta.align` (§18.2);
 - acciones contextuales.
 
 Evitar:
@@ -3525,6 +3620,7 @@ Solo después:
 - [ ] Los montos son fáciles de leer.
 - [ ] Los estados tienen significado consistente.
 - [ ] Los filtros son comprensibles.
+- [ ] Si es un listado: ordena por **todas** las columnas que el endpoint acepta (§18.1).
 - [ ] Existe estado loading.
 - [ ] Existe estado vacío.
 - [ ] Existe estado de error.
@@ -4187,7 +4283,7 @@ entre refactorizar y reescribir con los dedos cruzados.
 | `StatusBadge` | ✅ `StatusBadge` (+ atajo `StatusDot`) | `components/ui/status-badge.tsx` |
 | `Money` | ✅ como función, no como componente | `formatMoney` / `formatAmount` en `lib/format.ts` (§9.1) |
 | `DateDisplay` | ❌ no existe como componente | función `formatDateHuman` en `lib/format.ts` |
-| `DataTable` | ✅ `DataList` (tabla + tarjetas apiladas) | `components/ui/data-list.tsx` |
+| `DataTable` | ✅ `DataList` (tabla + tarjetas apiladas, y las cabeceras que ordenan — §18.1) | `components/ui/data-list.tsx` |
 | `EmptyState` | ✅ `EmptyState` + `NoResults` | `components/ui/empty-state.tsx` |
 | `NumiLoader` | ✅ `NumiLoader` | `components/ui/loader.tsx` |
 | `NumiInlineLoader` | ✅ `NumiLoader compact` / `Loader` | `components/ui/loader.tsx` |
@@ -4437,7 +4533,28 @@ mal registrado.
 propuestas de operación (tipo, campos, etiquetas). Con eso, la tarjeta de §34 es directa y
 determinista. **Hasta entonces esta brecha se queda abierta a propósito**, no se parchea.
 
-### 95.14. Lo que ya cumple
+### 95.14. Orden de las tablas — ✅ **cerrada**
+
+§21.1 firmaba desde hacía tiempo que en escritorio se ordena «pulsando la cabecera de la
+columna». El código lo cumplía **a medias y en silencio**: `DataList` marcaba la cabecera como
+ordenable comparando el `id` de la columna con el nombre del campo del endpoint, así que la
+función existía donde los dos nombres coincidían por casualidad y desaparecía donde no.
+
+El reparto real era este: cartera ordenaba por «Vence» y «Saldo»; pagos y egresos ordenaban por
+«Monto» pero **no por «Fecha»** —su columna es `date` y el contrato la llama `receivedAt` /
+`disbursedAt`—; los cinco maestros no ordenaban por ninguna cabecera —sus columnas se generan con
+ids `col-0`, `col-1`…—; contactos y movimientos sí. Ninguna pantalla estaba «mal escrita»: el
+mecanismo era el que fallaba.
+
+**Resuelto:** la conexión entre columna y contrato se declara (`meta.sortField`), la regla queda
+escrita en §18.1 y probada en `data-list.test.tsx` —el test que faltaba el día que «Fecha» dejó
+de ordenar—. De paso cayeron tres cosas que venían del mismo sitio: el control suelto de orden de
+la barra de `DataList`, que **ninguna** lista usaba (y con él sus props `search` y `filters`,
+también muertas desde que existe `ListToolbar`); las clases por columna de `MasterCrud`, que
+nadie leía y dejaban los importes de los maestros alineados a la izquierda; y la negrita por
+posición, que destacaba el código en vez del nombre (§18.2).
+
+### 95.15. Lo que ya cumple
 
 Vale la pena dejarlo escrito para no "arreglarlo":
 

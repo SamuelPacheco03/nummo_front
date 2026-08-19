@@ -39,7 +39,15 @@ import { useListFilters } from '@/lib/use-list-filters'
 /** Diez, como el resto de listados. */
 const PAGE_SIZE = 10
 
-/** Columnas ordenables que aceptan los dos endpoints (contrato: NamedListQuery). */
+/**
+ * Columnas ordenables que aceptan los dos endpoints (contrato: NamedListQuery).
+ *
+ * **Es la única lista sin cabeceras que ordenan, y no por descuido:** ninguno de
+ * los dos campos tiene columna propia. La fecha de creación no se enseña, y el
+ * nombre de la plantilla es la segunda línea de «Pagador» —no su columna—, así
+ * que una cabecera clicable ahí diría que ordena por pagador y ordenaría por
+ * otra cosa. Mientras sea así, el orden vive solo en el cajón (§18.1).
+ */
 const SORT_CHOICES: SortChoice[] = [
   { field: 'createdAt', label: 'Creación', asc: 'Más antiguos', desc: 'Más recientes' },
   { field: 'name', label: 'Nombre', asc: 'De la A a la Z', desc: 'De la Z a la A' },
@@ -242,8 +250,6 @@ export function RecurringList({
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, next[0]?.desc !== false),
               options: SORT_CHOICES.map(({ field, label }) => ({ field, label })),
-              // El orden ya vive en el cajón, que es la única vía en móvil.
-              showSortControl: false,
             }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}

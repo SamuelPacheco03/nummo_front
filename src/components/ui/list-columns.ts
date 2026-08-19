@@ -61,6 +61,22 @@ interface ListColumnMeta {
   hideOnTable?: boolean
   /** Qué es esta columna en la tarjeta de móvil. */
   card?: CardRole
+  /**
+   * Cómo llama el endpoint al campo que ordena esta columna.
+   *
+   * Por defecto es el `id` de la columna, que es lo que hace que «Vence»
+   * (`dueDate`) o «Monto» (`amount`) se ordenen sin declarar nada. Pero el `id`
+   * es vocabulario de la interfaz y el campo es vocabulario del contrato, y no
+   * siempre coinciden: en las pantallas espejo la **misma** columna se llama
+   * distinto a cada lado —la fecha de un pago es `receivedAt` y la de un egreso
+   * `disbursedAt`—, así que el `id` no puede ser ninguno de los dos.
+   *
+   * Cuando no coinciden hay que decirlo aquí. Callarlo no rompe nada de forma
+   * visible: la cabecera simplemente deja de ordenar, que es exactamente el
+   * fallo que tuvieron pagos y egresos —«Monto» ordenaba y «Fecha» no, en una
+   * tabla donde las dos podían—.
+   */
+  sortField?: string
 }
 
 declare module '@tanstack/react-table' {
