@@ -10,11 +10,13 @@ export const CANCEL_AT = 120
  * Es una distancia que **no se recorre sin querer**. Estaba en 56 px —unos ocho
  * milímetros— y sostener el micrófono ya la cubría: el pulgar se apoya en el
  * borde de abajo de la pantalla y rueda hacia arriba mientras habla, así que
- * «mantener pulsado» acababa en el candado sin que nadie lo hubiera pedido. Con
- * 110 px hay que subir a propósito, y de paso el candado tiene recorrido para
- * llenarse y contar cuánto falta.
+ * «mantener pulsado» acababa en el candado sin que nadie lo hubiera pedido.
+ *
+ * Es también **hasta dónde se sube**: el candado se dibuja justo ahí (`LOCK_OFFSET`),
+ * a la altura de siempre. Subir más de lo que se ve sería pedir algo que la
+ * pantalla no enseña.
  */
-export const LOCK_AT = 110
+export const LOCK_AT = 104
 /**
  * Lo que el dedo puede moverse sin que signifique nada.
  *
@@ -26,10 +28,25 @@ export const DEAD_ZONE = 14
 /** Por debajo de esto fue un toque, no una grabación. */
 export const MIN_SECONDS = 0.7
 
+/**
+ * Cuánto tiene que mandar un eje sobre el otro para robarle el gesto.
+ *
+ * El eje no se decide para siempre en los primeros catorce píxeles —ahí solo hay
+ * ruido y un pulgar acomodándose—, pero tampoco se cambia por cualquier cosa:
+ * subir torcido tiene que seguir siendo subir.
+ */
+export const AXIS_MARGIN = 1.6
+
 /** Cuánto sube el micrófono respecto al dedo, para quedar justo bajo el candado. */
-const MIC_FOLLOW = 0.85
-/** Altura del candado sobre el micrófono. */
-const LOCK_OFFSET = LOCK_AT + 44
+const MIC_FOLLOW = 0.6
+/**
+ * Altura del candado sobre el micrófono: donde estuvo siempre.
+ *
+ * Atarlo al umbral lo mandó al doble de lejos cuando el umbral creció, y un
+ * candado a dos dedos de distancia deja de leerse como el destino del gesto.
+ * Ocho píxeles por debajo del umbral: se sube hasta él y ahí queda fijada.
+ */
+const LOCK_OFFSET = 96
 
 /**
  * **Lo que se ve mientras se mantiene pulsado el micrófono.**

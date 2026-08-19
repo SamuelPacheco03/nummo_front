@@ -3,7 +3,7 @@ import { ArrowUp, Mic, Paperclip } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
-import { CANCEL_AT, DEAD_ZONE, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
+import { AXIS_MARGIN, CANCEL_AT, DEAD_ZONE, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
 import { RecordingBar } from './recording-bar'
 import { useAudioRecorder } from './use-audio-recorder'
 
@@ -193,16 +193,30 @@ export function ChatComposer({
     setLocked(false)
     setHold({ dx: 0, dy: 0 })
 
-    const onMove = (ev: PointerEvent) => {
+    const moved = (cx: number, cy: number) => {
       const from = origin.current
       if (!from) return
-      const mx = ev.clientX - from.x
-      const my = ev.clientY - from.y
+      const mx = cx - from.x
+      const my = cy - from.y
 
+      /*
+        Qué está haciendo el dedo. El primer movimiento que sale de la zona
+        muerta lo decide, pero **no lo deja decidido para siempre**: son catorce
+        píxeles de ruido y el pulgar se acomoda antes de arrancar. Con el eje
+        congelado ahí, un temblor horizontal al empezar dejaba «cancelar» puesto
+        y la subida al candado no contaba nunca.
+
+        Cambia de eje cuando el otro manda con holgura: subir torcido —el otro
+        fallo, el de siempre— sigue siendo subir, porque ahí la vertical es la
+        que domina.
+      */
       if (axis.current === 'none') {
-        // Hasta salir de la zona muerta, el dedo no ha dicho nada todavía.
         if (Math.hypot(mx, my) < DEAD_ZONE) return
         axis.current = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'
+      } else if (axis.current === 'x' && Math.abs(my) > Math.abs(mx) * AXIS_MARGIN) {
+        axis.current = 'y'
+      } else if (axis.current === 'y' && Math.abs(mx) > Math.abs(my) * AXIS_MARGIN) {
+        axis.current = 'x'
       }
       const dx = axis.current === 'x' ? Math.min(mx, 0) : 0
       const dy = axis.current === 'y' ? Math.min(my, 0) : 0
@@ -222,7 +236,7 @@ export function ChatComposer({
       setHold({ dx, dy })
     }
 
-    const onUp = () => {
+    const lifted = () => {
       if (!origin.current) return
       const held = performance.now() - startedAt.current
       endHold()
@@ -238,17 +252,15 @@ export function ChatComposer({
     }
 
     /*
-      `pointercancel` no es el usuario: es el sistema quedándose con el gesto
-      —una notificación, el gesto de volver del borde—. Con una grabación ya en
-      marcha **no se tira**: se fija, como si hubiera subido al candado. Perder
-      lo que alguien acaba de dictar porque el móvil vibró es el peor final
-      posible; en la barra de grabación ya decide si lo manda o lo descarta.
-
-      Pero si llega **en los primeros instantes** no había nada que salvar, y
-      dejar ahí una barra fijada es peor que no hacer nada: parece que pulsar el
-      micrófono bloquee la grabación sola. Ese se descarta en silencio.
+      El sistema se queda con el gesto de verdad —`touchcancel`—: una llamada,
+      el gesto de volver del borde. Con una grabación ya en marcha **no se
+      tira**: se fija, como si hubiera subido al candado. Perder lo que alguien
+      acaba de dictar porque entró una llamada es el peor final posible; en la
+      barra de grabación ya decide si lo manda o lo descarta. Si llega en los
+      primeros instantes no había nada que salvar, y una barra fijada ahí se lee
+      como «pulsar el micrófono bloquea la grabación solo»: se descarta callando.
     */
-    const onCancel = () => {
+    const stolen = () => {
       if (!origin.current) return
       const held = performance.now() - startedAt.current
       endHold()
@@ -260,13 +272,38 @@ export function ChatComposer({
       setLocked(true)
     }
 
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onCancel)
+    const onPointerMove = (ev: PointerEvent) => moved(ev.clientX, ev.clientY)
+    const onTouchMove = (ev: TouchEvent) => {
+      const finger = ev.touches[0]
+      if (finger) moved(finger.clientX, finger.clientY)
+    }
+
+    /*
+      **Dos fuentes para el mismo dedo, y `pointercancel` deja de importar.**
+
+      Android cancela el puntero cuando cree que una pulsación quieta va a ser
+      una pulsación larga —la de seleccionar texto—. El menú no llega a salir,
+      así que desde fuera solo se ve que el gesto muere solo a los medio segundo
+      de presionar; moverse un poco lo evitaba, porque mover descarta la
+      pulsación larga. Contra eso no hay heurística que valga: se descartara la
+      grabación o se fijara, las dos formas de reaccionar estaban mal, porque el
+      gesto seguía vivo bajo el dedo.
+
+      Los eventos táctiles no se cancelan por eso, así que van en paralelo y
+      dicen lo mismo. `pointercancel` ya no se escucha: si el puntero muere, el
+      dedo sigue contándose por `touchmove` y el gesto acaba en `touchend`.
+    */
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', lifted)
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
+    window.addEventListener('touchend', lifted)
+    window.addEventListener('touchcancel', stolen)
     detach.current = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onCancel)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', lifted)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', lifted)
+      window.removeEventListener('touchcancel', stolen)
       detach.current = null
     }
 

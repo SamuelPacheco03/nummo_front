@@ -41,7 +41,11 @@ const press = (el: Element, x = 200, y = 700) =>
 const moveTo = (x: number, y: number) =>
   window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y }))
 const release = () => window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
-const systemSteals = () => window.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true }))
+/** El sistema se queda con el gesto de verdad: una llamada, el gesto del borde. */
+const systemSteals = () => window.dispatchEvent(new Event('touchcancel', { bubbles: true }))
+/** Android cancelando el puntero por una pulsación larga que no llega a salir. */
+const pointerDies = () =>
+  window.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true }))
 
 beforeEach(stubRecorder)
 afterEach(() => {
@@ -147,6 +151,29 @@ test('si el sistema se queda con un dictado en marcha, no se pierde', async () =
   // Sigue grabando, con sus botones: quien decide si se tira es la persona.
   expect(await screen.findByText('Fijada')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Descartar grabación' })).toBeInTheDocument()
+})
+
+test('que Android cancele el puntero no rompe el gesto', async () => {
+  stubPointer('coarse')
+  const onSendAudio = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={onSendAudio} />)
+
+  const started = performance.now()
+  press(screen.getByRole('button', { name: /mantén pulsado/i }))
+  await screen.findByText('Desliza para cancelar')
+
+  /*
+    Sostener el dedo quieto hace que Android cancele el puntero, creyendo que
+    va a ser una pulsación larga. El dedo sigue ahí: el gesto también.
+  */
+  pointerDies()
+  expect(screen.getByText('Desliza para cancelar')).toBeInTheDocument()
+  expect(screen.queryByText('Fijada')).not.toBeInTheDocument()
+
+  // Y termina donde tiene que terminar: al levantar el dedo, mandando.
+  vi.spyOn(performance, 'now').mockReturnValue(started + 2000)
+  window.dispatchEvent(new Event('touchend', { bubbles: true }))
+  await waitFor(() => expect(onSendAudio).toHaveBeenCalledTimes(1))
 })
 
 test('si el gesto se rompe al instante, no aparece una grabación fijada', async () => {

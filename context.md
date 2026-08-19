@@ -1882,23 +1882,37 @@ era el mismo `pointercancel` con dos finales.
    se queda con el gesto y también manda `pointercancel`, a los pocos píxeles.
 3. **Zona muerta de 14 px.** Nadie sostiene el pulgar quieto mientras habla. Sin ella el pulso de
    la mano contaba como deslizar.
-4. **Eje bloqueado.** El primer movimiento que sale de la zona muerta decide si esto es cancelar
-   (horizontal) o fijar (vertical), y el otro eje se ignora a partir de ahí. Un pulgar sube
-   torcido, y sin esto acumulaba desplazamiento a la izquierda y cancelaba a medio camino del
-   candado.
-5. **`pointercancel` no tira la grabación, la fija** — si había algo que salvar. Cuando de verdad
-   ocurre no es el usuario: es el sistema quedándose con el gesto —una notificación, el gesto de
-   volver del borde—, y perder lo que alguien acaba de dictar porque el móvil vibró es el peor
-   final posible. Pero si llega **en los primeros instantes** no había dictado ninguno, y dejar
-   ahí una barra fijada se lee como «pulsar el micrófono bloquea la grabación solo». Ese se
-   descarta en silencio.
+4. **Un eje a la vez, pero revocable.** El primer movimiento que sale de la zona muerta decide si
+   esto es cancelar (horizontal) o fijar (vertical), y el otro eje se ignora: un pulgar sube
+   torcido, y sin eso acumulaba desplazamiento a la izquierda y cancelaba a medio camino del
+   candado. Pero **decidirlo para siempre en catorce píxeles es decidirlo con ruido**: un temblor
+   horizontal al acomodar el pulgar dejaba «cancelar» puesto y la subida al candado no contaba
+   nunca — se podía grabar y se podía cancelar, pero fijar era imposible. El eje cambia cuando el
+   otro manda con holgura (1,6×), que es suficiente margen para que subir torcido siga siendo
+   subir.
+5. **`pointercancel` no se escucha; el dedo se sigue por eventos táctiles.** Android cancela el
+   puntero cuando cree que una pulsación quieta va a ser una **pulsación larga** —la de
+   seleccionar texto—. El menú no llega a salir, así que desde fuera solo se ve que el gesto se
+   muere solo medio segundo después de presionar, y que moverse un poco lo evita (mover descarta
+   la pulsación larga). Reaccionar a ese evento estaba mal de las dos maneras posibles: tirando la
+   grabación parecía que presionar la cancelara, y fijándola parecía que presionar la bloqueara.
+   Las dos eran mentira — el dedo seguía ahí—.
 
-6. **Fijar cuesta 110 px, no 56.** Es la distancia que separa «subir a propósito» de «sostener el
+   Los eventos táctiles no se cancelan por eso. Van en paralelo diciendo lo mismo, así que si el
+   puntero muere el gesto continúa por `touchmove` y termina en `touchend`. El sistema quedándose
+   con el gesto **de verdad** llega por `touchcancel` —una llamada, el gesto de volver del borde—:
+   con algo ya dictado se fija (perderlo sería el peor final), y en los primeros instantes se
+   descarta callando, que no había nada que salvar.
+
+6. **Fijar cuesta 104 px, no 56.** Es la distancia que separa «subir a propósito» de «sostener el
    móvil». Estuvo en 56 —unos ocho milímetros— y sostener el micrófono ya la cubría: el pulgar se
    apoya en el borde de abajo de la pantalla y rueda hacia arriba mientras se habla, así que
-   mantener pulsado acababa en el candado sin que nadie lo hubiera pedido. Con 110 px una deriva
-   de 90 no fija nada y una subida de 140 sí. De paso, el candado tiene recorrido para llenarse y
-   contar cuánto falta.
+   mantener pulsado acababa en el candado sin que nadie lo hubiera pedido. Con 104 px una deriva
+   de 90 no fija nada y una subida de 130 sí.
+
+   **El candado se queda donde estaba**, a 96 px del micrófono. Atarlo al umbral lo mandó al doble
+   de lejos en cuanto el umbral creció, y un candado a dos dedos de distancia deja de leerse como
+   el destino del gesto: se sube hasta el que se ve, y ahí queda fijada.
 
 **Y los escuchas del puntero van en `window`, no en el botón**, para que el gesto no dependa de
 sobre qué elemento está el dedo. Es el mismo cuidado que el arrastre del lanzador de Numi (§87.5).
