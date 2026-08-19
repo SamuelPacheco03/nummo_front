@@ -4169,6 +4169,12 @@ mismo commit, como cualquier otra prueba.
 - Toda utilidad nueva en `lib/` nace con test.
 - Todo bug corregido en lógica pura suma un test que lo reproduce.
 - No se persigue cobertura por cobertura: se prueban decisiones, no getters.
+- **Un par de pantallas espejo se prueba con una sola suite parametrizada**
+  (`test/accounts-list-suite.tsx`, `test/settlement-list-suite.tsx`): cada cara aporta sus
+  palabras, su endpoint y lo que de verdad la distingue, y las afirmaciones se escriben una vez.
+  Dos archivos de pruebas calcados son el mismo duplicado que el componente compartido vino a
+  quitar, y se separan igual de rápido — con el agravante de que unas pruebas que no coinciden no
+  avisan de nada.
 
 ---
 
@@ -4275,6 +4281,12 @@ interna—, y **una sola suite parametrizada**, que escribirla dos veces sería 
 el duplicado que se está quitando. Después se extrae. Si la suite sigue pasando **sin tocarla**,
 la extracción fue fiel; si hay que retocarla, algo cambió de comportamiento. Es la diferencia
 entre refactorizar y reescribir con los dedos cruzados.
+
+**Y una suite que llega tarde también sirve, para otra cosa.** `SettlementList` se extrajo sin
+red y estuvo mucho tiempo sin ninguna prueba que mirara esa pantalla; cuando por fin la tuvo
+(`test/settlement-list-suite.tsx`, las dos caras) fue para sujetar lo que ya se había separado en
+silencio: la cabecera «Fecha» llevaba tiempo sin ordenar y nadie podía verlo (§18.1). Compartir
+componente evita que las pantallas se separen; solo las pruebas avisan cuando se separan igual.
 
 | Propuesto (§64) | En el código hoy | Ruta |
 | --- | --- | --- |
@@ -4547,8 +4559,9 @@ ids `col-0`, `col-1`…—; contactos y movimientos sí. Ninguna pantalla estaba
 mecanismo era el que fallaba.
 
 **Resuelto:** la conexión entre columna y contrato se declara (`meta.sortField`), la regla queda
-escrita en §18.1 y probada en `data-list.test.tsx` —el test que faltaba el día que «Fecha» dejó
-de ordenar—. De paso cayeron tres cosas que venían del mismo sitio: el control suelto de orden de
+escrita en §18.1 y probada en dos sitios: `data-list.test.tsx` para el mecanismo, y las suites de
+listado para el recorrido completo —cabecera → URL → API— en cartera y en pagos y egresos, que
+hasta ahora no tenían ninguna prueba de pantalla. De paso cayeron tres cosas que venían del mismo sitio: el control suelto de orden de
 la barra de `DataList`, que **ninguna** lista usaba (y con él sus props `search` y `filters`,
 también muertas desde que existe `ListToolbar`); las clases por columna de `MasterCrud`, que
 nadie leía y dejaban los importes de los maestros alineados a la izquierda; y la negrita por

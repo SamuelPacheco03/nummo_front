@@ -34,10 +34,10 @@ const PURPOSES = ['RECEIVABLE', 'ADVANCE', 'DIRECT_INCOME'].map((value) => ({
   label: PAYMENT_PURPOSE_LABELS[value] ?? value,
 }))
 
-/** Columnas ordenables que acepta el endpoint (contrato: ListPaymentsQuery). */
 /** Cómo llama este contrato a la fecha del movimiento. Ordena la columna «Fecha». */
 const DATE_FIELD = 'receivedAt'
 
+/** Columnas ordenables que acepta el endpoint (contrato: ListPaymentsQuery). */
 const SORT_CHOICES: SortChoice[] = [
   { field: DATE_FIELD, label: 'Fecha', asc: 'Más antiguos', desc: 'Más recientes' },
   { field: 'amount', label: 'Monto', asc: 'Menor primero', desc: 'Mayor primero' },
