@@ -66,6 +66,7 @@ export function SettlementList({
   purposes,
   purposeLabels,
   sortChoices,
+  dateField,
   statuses,
   statusOf,
   kpi,
@@ -83,6 +84,12 @@ export function SettlementList({
   purposes: { value: string; label: string }[]
   purposeLabels: Record<string, string>
   sortChoices: SortChoice[]
+  /**
+   * Cómo llama *este* endpoint a la fecha del movimiento: `receivedAt` cuando
+   * entra, `disbursedAt` cuando sale. La columna es la misma —«Fecha»— y por eso
+   * su `id` no puede ser ninguno de los dos; sin esto la cabecera no ordenaría.
+   */
+  dateField: string
   /** Los estados que acepta *este* endpoint, en el orden en que se ofrecen. */
   statuses: readonly string[]
   statusOf: (status: string) => { tone: StatusTone; label: string }
@@ -169,7 +176,7 @@ export function SettlementList({
     column.display({
       id: 'date',
       header: 'Fecha',
-      meta: { card: 'meta' },
+      meta: { card: 'meta', sortField: dateField },
       cell: ({ row }) => (
         <span className="nums text-muted-foreground">{formatDateHuman(row.original.date)}</span>
       ),
@@ -256,8 +263,6 @@ export function SettlementList({
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? defaultSort, next[0]?.desc !== false),
               options: sortChoices.map(({ field, label }) => ({ field, label })),
-              // El orden ya vive en el cajón, que es la única vía en móvil.
-              showSortControl: false,
             }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}

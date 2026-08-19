@@ -417,8 +417,6 @@ export function AccountsList({
               onChange: (next) =>
                 sortBy(next[0]?.id ?? ACCOUNTS_DEFAULT_SORT, Boolean(next[0]?.desc)),
               options: SORT_OPTIONS,
-              // El orden ya vive en el cajón, que es la única vía en móvil.
-              showSortControl: false,
             }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}

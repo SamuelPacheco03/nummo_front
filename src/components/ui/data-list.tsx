@@ -7,8 +7,6 @@ import {
   type RowData,
   type SortingState,
 } from '@tanstack/react-table'
-import { NativeSelect } from '@/components/ui/native-select'
-import { SearchInput } from '@/components/search-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -29,6 +27,14 @@ interface SortOption {
   label: string
 }
 
+/**
+ * Cómo llama el endpoint al campo que ordena una columna: lo que diga su
+ * `meta.sortField` y, si no dice nada, su propio `id` (ver `ListColumnMeta`).
+ */
+function sortFieldOf(column: { id: string; columnDef: { meta?: { sortField?: string } } }) {
+  return column.columnDef.meta?.sortField ?? column.id
+}
+
 interface DataListProps<TData extends RowData> {
   columns: ColumnDef<ListFeatures, TData, unknown>[]
   rows: TData[]
@@ -37,24 +43,20 @@ interface DataListProps<TData extends RowData> {
   isLoading?: boolean
   skeletonRows?: number
   emptyText?: ReactNode
-  /** Buscador. Se omite si el endpoint no acepta `q`. */
-  search?: { value: string; onChange: (value: string) => void; placeholder?: string }
   /**
    * Orden por columna. Se omite si el endpoint no acepta `sort`.
    *
-   * Dibuja dos cosas: las cabeceras clicables de la tabla y el control suelto de
-   * la barra. `showSortControl: false` deja solo las cabeceras, para las
-   * pantallas que ya ofrecen el orden desde su cajón de filtros — el control
-   * suelto ahí sería una tercera puerta al mismo dato.
+   * Dibuja las cabeceras clicables de la tabla: **una por cada columna cuyo
+   * campo esté en `options`**, y ninguna más. La otra puerta al mismo dato es
+   * `FilterSortField`, dentro del cajón de filtros —la única que hay en móvil,
+   * donde las filas son tarjetas y no tienen cabecera—. Las dos escriben en la
+   * URL, así que no pueden contradecirse (§21.1).
    */
   sort?: {
     value: SortingState
     onChange: (value: SortingState) => void
     options: SortOption[]
-    showSortControl?: boolean
   }
-  /** Filtros propios de la lista, a la derecha de la barra. */
-  filters?: ReactNode
   /**
    * Qué pinta cada fila en el hueco de la izquierda de su **tarjeta de móvil**.
    *
@@ -76,6 +78,10 @@ interface DataListProps<TData extends RowData> {
  *
  * La paginación ni siquiera se registra como feature: de ella se encarga
  * `<Pagination>` contra el total que devuelve el servidor.
+ *
+ * **Aquí no hay barra.** El buscador, el estado y el botón de filtros los dibuja
+ * `ListToolbar` encima, para todas las listas igual (§21.1); esta sí dibuja las
+ * cabeceras que ordenan, porque son parte de la tabla.
  */
 export function DataList<TData extends RowData>({
   columns,
@@ -85,9 +91,7 @@ export function DataList<TData extends RowData>({
   isLoading,
   skeletonRows = 8,
   emptyText = 'Sin datos.',
-  search,
   sort,
-  filters,
   rowIcon,
   className,
 }: DataListProps<TData>) {
@@ -113,30 +117,6 @@ export function DataList<TData extends RowData>({
 
   return (
     <div className={className}>
-      {(search || filters || (sort && sort.showSortControl !== false)) && (
-        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-          {search && (
-            <div className="sm:w-72">
-              <SearchInput
-                value={search.value}
-                onChange={search.onChange}
-                placeholder={search.placeholder ?? 'Buscar…'}
-              />
-            </div>
-          )}
-          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-            {filters}
-            {sort && sort.showSortControl !== false && (
-              <SortControl
-                options={sort.options}
-                value={activeSort}
-                onChange={(next) => sort.onChange(next ? [next] : [])}
-              />
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Escritorio: tabla densa */}
       <div className="bg-card hidden overflow-hidden rounded-lg border lg:block">
         <Table>
@@ -149,9 +129,13 @@ export function DataList<TData extends RowData>({
                   header: undefined as never,
                   table,
                 })
-                // Ordenable = la columna está entre las que acepta el endpoint.
-                const option = sort?.options.find((o) => o.field === col.id)
-                const isActive = activeSort?.id === col.id
+                // Ordenable = el campo de la columna está entre los que acepta
+                // el endpoint. Ni uno menos: una columna que el API sabe ordenar
+                // y la cabecera no ofrece es orden perdido, y es como se separan
+                // dos pantallas que deberían ordenar igual.
+                const field = sortFieldOf(col)
+                const option = sort?.options.find((o) => o.field === field)
+                const isActive = activeSort?.id === field
                 return (
                   <TableHead
                     key={col.id}
@@ -163,8 +147,16 @@ export function DataList<TData extends RowData>({
                     {option && sort ? (
                       <button
                         type="button"
+                        // La columna activa alterna; cambiar de columna conserva
+                        // la dirección, igual que el cajón: si venías mirando lo
+                        // más reciente primero, sigues queriendo lo más reciente.
                         onClick={() =>
-                          sort.onChange([{ id: col.id, desc: isActive ? !activeSort?.desc : false }])
+                          sort.onChange([
+                            {
+                              id: field,
+                              desc: isActive ? !activeSort?.desc : Boolean(activeSort?.desc),
+                            },
+                          ])
                         }
                         className={cn(
                           'hover:text-foreground inline-flex items-center gap-1 uppercase transition-colors',
@@ -364,48 +356,6 @@ export function DataList<TData extends RowData>({
           })
         )}
       </div>
-    </div>
-  )
-}
-
-/**
- * Control de orden. Va aquí y no en cabeceras clicables porque las filas-tarjeta
- * no tienen cabecera: el mismo control sirve igual en escritorio y en móvil.
- */
-function SortControl({
-  options,
-  value,
-  onChange,
-}: {
-  options: SortOption[]
-  value?: { id: string; desc: boolean }
-  onChange: (next?: { id: string; desc: boolean }) => void
-}) {
-  const current = value ?? { id: options[0]?.field ?? '', desc: false }
-
-  return (
-    <div className="flex items-center gap-1">
-      <NativeSelect
-        className="w-44"
-        aria-label="Ordenar por"
-        value={current.id}
-        onChange={(e) => onChange({ id: e.target.value, desc: current.desc })}
-      >
-        {options.map((option) => (
-          <option key={option.field} value={option.field}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
-      <button
-        type="button"
-        onClick={() => onChange({ id: current.id, desc: !current.desc })}
-        aria-label={current.desc ? 'Orden descendente' : 'Orden ascendente'}
-        title={current.desc ? 'Descendente' : 'Ascendente'}
-        className="text-muted-foreground hover:bg-secondary hover:text-foreground grid size-9 shrink-0 place-items-center rounded-md border transition-colors"
-      >
-        {current.desc ? <ArrowDown className="size-4" /> : <ArrowUp className="size-4" />}
-      </button>
     </div>
   )
 }

@@ -38,16 +38,14 @@ const nn = (v?: string) => (v ? v : null)
 const COLUMNS: Column<BillingConcept>[] = [
   {
     header: 'Código',
-    cell: (r) => r.code ?? '—',
-    className: 'nums text-muted-foreground',
+    cell: (r) => <span className="nums text-muted-foreground">{r.code ?? '—'}</span>,
     hideOnCard: true,
   },
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
   {
     header: 'Monto por defecto',
     cell: (r) => formatAmount(r.defaultAmount),
-    className: 'nums text-right',
-    headClassName: 'text-right',
+    align: 'right',
     card: 'amount',
   },
 ]

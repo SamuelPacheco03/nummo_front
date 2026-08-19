@@ -52,8 +52,23 @@ const DEFAULT_SORT = 'name'
 export interface Column<T> {
   header: string
   cell: (row: T) => ReactNode
-  className?: string
-  headClassName?: string
+  /**
+   * A la derecha, para el dinero y las cifras (§19).
+   *
+   * Se declara aquí y no como clase suelta porque la alineación no es solo de la
+   * tabla: `DataList` la usa también para la tarjeta de móvil. Antes esto eran
+   * dos clases (`className`, `headClassName`) que nadie leía, así que los montos
+   * de los maestros se pintaban a la izquierda mientras los de cartera iban a la
+   * derecha.
+   */
+  align?: 'right'
+  /**
+   * Qué campo del contrato ordena esta columna, si el endpoint lo acepta.
+   *
+   * Los maestros solo ordenan por `name` y `createdAt` (`NamedListQuery`), y de
+   * los dos solo el nombre tiene columna: es el que se marca.
+   */
+  sortField?: string
   /**
    * Qué papel tiene en la tarjeta de móvil.
    *
@@ -177,9 +192,20 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
           column.display({
             id: `col-${i}`,
             header: c.header,
-            meta: { card: c.card, hideOnStack: c.hideOnCard },
+            meta: {
+              card: c.card,
+              hideOnStack: c.hideOnCard,
+              align: c.align,
+              sortField: c.sortField,
+            },
+            /*
+              La columna que da nombre a la fila va en negrita, y es la que el
+              maestro marca como título — no la primera. En conceptos de cobro y
+              en categorías de gasto la primera es el código, casi siempre vacío:
+              se destacaba un «—» y el nombre quedaba en texto normal.
+            */
             cell: ({ row }) =>
-              i === 0 ? (
+              c.card === 'title' ? (
                 <span className="font-medium">{c.cell(row.original)}</span>
               ) : (
                 c.cell(row.original)
@@ -268,8 +294,6 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),
               options: SORT_CHOICES.map(({ field, label }) => ({ field, label })),
-              // El orden ya vive en el cajón, que es la única vía en móvil.
-              showSortControl: false,
             }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}

@@ -26,7 +26,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 const COLUMNS: Column<PaymentMethod>[] = [
-  { header: 'Nombre', cell: (r) => r.name, className: 'font-medium', card: 'title' },
+  { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
   {
     header: 'Tipo',
     cell: (r) => METHOD_TYPE_LABELS[r.methodType] ?? r.methodType,

@@ -23,6 +23,7 @@ el usuario — pero deja constancia de la contradicción para poder actualizar e
 | Escribir TypeScript / React / estilos | §89, §90, §91 |
 | Escribir tests | §92 |
 | **Crear un componente** | **§94 (inventario) — probablemente ya existe** |
+| **Montar o tocar un listado** | **§18.1 (orden), §18.2 (columnas), §21.1 (filtros y toolbar)** |
 | Saber qué está desalineado | §95 (auditoría de brechas) |
 | **Saber qué toca hacer ahora** | **§96 (plan de rediseño por fases)** |
 | Dar algo por terminado | §81 (checklist) |
@@ -42,6 +43,10 @@ el usuario — pero deja constancia de la contradicción para poder actualizar e
 8. **Sin `any`, sin código muerto, sin `console.log`** en lo que se entrega.
 9. **Cubre los estados obligatorios** (§45): loading, loaded, empty, error, y permisos.
 10. **No instales dependencias** sin pasar por §63.
+11. **Una tabla ordena por todo lo que su endpoint acepta** (§18.1). Toda lista es `ListToolbar` +
+    `DataList` + `FilterSheet` + `Pagination`, el orden lo hace el servidor, y si el `id` de una
+    columna no es el nombre del campo del contrato se declara `meta.sortField` — callarlo no
+    rompe nada visible: la cabecera simplemente deja de ordenar.
 
 ## Nada por duplicado
 

@@ -34,9 +34,12 @@ const PURPOSES = ['EXPENSE', 'ADVANCE', 'DIRECT_EXPENSE'].map((value) => ({
   label: DISBURSEMENT_PURPOSE_LABELS[value] ?? value,
 }))
 
+/** Cómo llama este contrato a la fecha del movimiento. Ordena la columna «Fecha». */
+const DATE_FIELD = 'disbursedAt'
+
 /** Columnas ordenables que acepta el endpoint (contrato: ListDisbursementsQuery). */
 const SORT_CHOICES: SortChoice[] = [
-  { field: 'disbursedAt', label: 'Fecha', asc: 'Más antiguos', desc: 'Más recientes' },
+  { field: DATE_FIELD, label: 'Fecha', asc: 'Más antiguos', desc: 'Más recientes' },
   { field: 'amount', label: 'Monto', asc: 'Menor primero', desc: 'Mayor primero' },
 ]
 
@@ -91,6 +94,7 @@ export function DisbursementsListPage() {
       purposes={PURPOSES}
       purposeLabels={DISBURSEMENT_PURPOSE_LABELS}
       sortChoices={SORT_CHOICES}
+      dateField={DATE_FIELD}
       statuses={DISBURSEMENT_STATUSES}
       statusOf={disbursementStatus}
       kpi={{ kind: 'expense', label: 'Pagado este mes', previousLabel: 'El mes pasado' }}
