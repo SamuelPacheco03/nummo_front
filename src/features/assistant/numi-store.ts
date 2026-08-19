@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ChatMessage, ChatMessageStatus, ChatRole, NumiError } from './types'
+import type { ChatFeedback, ChatMessage, ChatMessageStatus, ChatRole, NumiError } from './types'
 
 /**
  * Estado del panel de Numi.
@@ -86,6 +86,8 @@ interface NumiState {
    */
   enqueueMessage: (content: string) => string
   setMessageStatus: (id: string, status: ChatMessageStatus) => void
+  /** Pinta el pulgar en el acto; la petición solo lo confirma después. */
+  setFeedback: (id: string, feedback: ChatFeedback | undefined) => void
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
   appendAudio: (audio: { audioUrl: string; waveform?: number[]; audioSeconds?: number }) => void
   /**
@@ -213,6 +215,11 @@ export const useNumiStore = create<NumiState>()(
           if (fresh.length === 0) return s
           return { messages: [...fresh, ...s.messages] }
         }),
+
+      setFeedback: (id, feedback) =>
+        set((s) => ({
+          messages: s.messages.map((m) => (m.id === id ? { ...m, feedback } : m)),
+        })),
 
       setTranscript: (id, transcript) =>
         set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, content: transcript } : m)) })),

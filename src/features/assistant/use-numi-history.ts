@@ -7,9 +7,10 @@ import {
   getApiV1OrganizationsOrgIdAssistantConversationsSearch,
   useDeleteApiV1OrganizationsOrgIdAssistantConversationsId,
   usePatchApiV1OrganizationsOrgIdAssistantConversationsId,
+  usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback,
 } from '@/api/generated/endpoints/assistant/assistant'
 import type { AudioUrl, Conversation, MessageHit, MessageList, MessageSearch } from '@/api/generated/model'
-import type { ChatMessage } from './types'
+import type { ChatFeedback, ChatMessage } from './types'
 import { sanitizePeaks } from './waveform'
 
 const CONVERSATIONS_PAGE = 20
@@ -38,6 +39,7 @@ export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
         hasAudio: m.hasAudio,
         waveform: sanitizePeaks(m.waveform),
         audioSeconds: m.audioSeconds ?? undefined,
+        feedback: m.feedback ?? undefined,
       }
     }),
   )
@@ -237,6 +239,29 @@ export function useConversationActions(orgId: string | undefined) {
   )
 
   return { rename, remove, isRenaming: renameMutation.isPending, isRemoving: removeMutation.isPending }
+}
+
+/**
+ * Puntuar una respuesta de Numi.
+ *
+ * Devuelve la llamada cruda, sin optimismo ni reversión: eso vive donde está el hilo, que
+ * es quien pinta el pulgar. Aquí solo se habla con el servidor.
+ */
+export function useMessageRating(orgId: string | undefined, conversationId: string | undefined) {
+  const mutation = usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback()
+
+  return useCallback(
+    async (messageId: string, feedback: ChatFeedback | null) => {
+      if (!orgId || !conversationId) return
+      await mutation.mutateAsync({
+        orgId,
+        id: conversationId,
+        messageId,
+        data: { feedback },
+      })
+    },
+    [mutation, orgId, conversationId],
+  )
 }
 
 /**

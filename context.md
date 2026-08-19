@@ -2123,6 +2123,28 @@ nada. Por dónde se abrió queda anotado en el store (`historyUntil`) porque el 
 arriba lo necesita: sin él, subir pediría la página más nueva y devolvería al usuario al
 final del historial que acababa de esquivar.
 
+## 32.9. El pulgar sobre las respuestas de Numi
+
+Es la única señal de si el asistente contesta bien: nada más en el producto lo dice.
+Deliberadamente binaria — un pulgar se pulsa, una encuesta no se contesta.
+
+**Solo sobre las respuestas de Numi.** Puntuar lo que tú escribiste no significa nada, y
+el backend lo rechaza además de que la interfaz no lo ofrezca.
+
+Los dos pulgares viven en el mismo grupo que copiar y citar, y aparecen igual: al pasar
+por encima, con el foco, y siempre en táctil. Con una diferencia — **el pulgar elegido se
+queda visible aunque el ratón se vaya**, porque ya no es una acción disponible sino un
+estado del mensaje. Lo dice el relleno del icono y lo dice `aria-pressed`, que es lo que
+queda para quien no ve el relleno.
+
+**Se pinta antes de preguntar.** Es una opinión, no una operación: esperar medio segundo
+por un dibujo no tiene sentido. Pero si el servidor lo rechaza **se deshace**, porque una
+opinión que se ve guardada y no lo está es peor que no poder darla — el usuario creería
+que ya avisó de que la respuesta era mala.
+
+Volver a pulsar el mismo pulgar retira la opinión, y retirarla es mandar `null`: el
+endpoint es un `PUT` porque el valor es el estado completo de una sola cosa.
+
 ---
 
 # 33. Cards dentro del chat

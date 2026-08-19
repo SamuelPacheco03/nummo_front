@@ -9218,6 +9218,78 @@
         "x-required-permission": "assistant.use"
       }
     },
+    "/api/v1/organizations/{orgId}/assistant/conversations/{id}/messages/{messageId}/feedback": {
+      "put": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Puntuar una respuesta de Numi",
+        "description": "Guarda el pulgar arriba o abajo sobre una respuesta de Numi. Manda `null` para retirar la opinión — es lo que hace volver a pulsar el mismo pulgar. Solo se pueden puntuar los mensajes con `role: \"assistant\"`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "messageId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFeedbackInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Opinión guardada."
+          },
+          "default": {
+            "description": "Mensaje o conversación no encontrados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "assistant.use"
+      }
+    },
     "/api/v1/organizations/{orgId}/assistant/conversations/{id}/messages/{messageId}/audio": {
       "get": {
         "tags": [
@@ -11972,6 +12044,28 @@
         },
         "required": [
           "title"
+        ]
+      },
+      "SetFeedbackInput": {
+        "type": "object",
+        "properties": {
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "up",
+                  "down"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "feedback"
         ]
       },
       "AssistantTranscribeForm": {
@@ -16639,6 +16733,20 @@
               }
             ]
           },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "up",
+                  "down"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -16653,6 +16761,7 @@
           "hasAudio",
           "waveform",
           "audioSeconds",
+          "feedback",
           "createdAt"
         ],
         "additionalProperties": false

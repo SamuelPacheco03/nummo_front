@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
 import type { AssistantAudioChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -7,10 +8,12 @@ import { classifyNumiError } from './numi-error'
 import { streamChat } from './stream-chat'
 import { MAX_MESSAGE_LENGTH } from './constants'
 import { useNumiStore } from './numi-store'
+import type { ChatFeedback } from './types'
 import { describeRecording } from './waveform'
 import {
   useConversationOpener,
   useMessageAudioLoader,
+  useMessageRating,
   useNumiConversations,
   useNumiMessages,
 } from './use-numi-history'
@@ -94,6 +97,30 @@ export function useNumiChat() {
   const conversationId = useNumiStore((s) => s.sessionId)
   const loadAudio = useMessageAudioLoader(orgId, conversationId)
   const { hasOlder, isLoadingOlder, loadOlder } = useOlderThread(orgId)
+  const sendRating = useMessageRating(orgId, conversationId)
+
+  /**
+   * Pulgar arriba o abajo sobre una respuesta de Numi. Volver a pulsar el mismo lo retira.
+   *
+   * El pulgar se pinta antes de preguntar —es una opinión, no una operación, y esperar
+   * medio segundo por un dibujo no tiene sentido— pero si el servidor lo rechaza se
+   * deshace: una opinión que se ve guardada y no lo está es peor que no poder darla.
+   */
+  const rateMessage = useCallback(
+    async (messageId: string, feedback: ChatFeedback) => {
+      const store = useNumiStore.getState()
+      const previo = store.messages.find((m) => m.id === messageId)?.feedback
+      const siguiente = previo === feedback ? undefined : feedback
+      store.setFeedback(messageId, siguiente)
+      try {
+        await sendRating(messageId, siguiente ?? null)
+      } catch {
+        useNumiStore.getState().setFeedback(messageId, previo)
+        toast.error('No se pudo guardar tu opinión.')
+      }
+    },
+    [sendRating],
+  )
   const fetchThread = useConversationOpener(orgId)
 
   /** Se cambia a una conversación de la lista y la deja abierta en el hilo. */
@@ -280,6 +307,8 @@ export function useNumiChat() {
     sendAudio,
     /** Devuelve a la cola un mensaje que falló. */
     retryMessage,
+    /** Pulgar sobre una respuesta de Numi; el mismo dos veces lo retira. */
+    rateMessage,
     /** Detiene la respuesta en curso, conservando lo escrito. */
     stop,
     newConversation,

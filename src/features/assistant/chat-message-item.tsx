@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react'
-import { AlertCircle, Check, Clock, Copy, Mic, Quote } from 'lucide-react'
+import { AlertCircle, Check, Clock, Copy, Mic, Quote, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
 import { TypingIndicator } from './typing-indicator'
 import { formatTime } from './utils'
-import type { ChatMessage, ChatMessageStatus } from './types'
+import type { ChatFeedback, ChatMessage, ChatMessageStatus } from './types'
 
 /**
  * Burbuja del hilo: superficie redondeada, la de Numi sobre tarjeta con borde y
@@ -106,7 +106,17 @@ function MessageStatus({ status, onRetry }: { status?: ChatMessageStatus; onRetr
  * «encima», se quedan puestas. Copiar es la que más falta hacía: Numi contesta con
  * cifras y hasta ahora había que seleccionarlas a mano.
  */
-function BubbleActions({ onCopy, onQuote }: { onCopy: () => void; onQuote?: () => void }) {
+function BubbleActions({
+  onCopy,
+  onQuote,
+  feedback,
+  onRate,
+}: {
+  onCopy: () => void
+  onQuote?: () => void
+  feedback?: ChatFeedback
+  onRate?: (feedback: ChatFeedback) => void
+}) {
   const [copied, setCopied] = useState(false)
 
   const copy = () => {
@@ -120,7 +130,12 @@ function BubbleActions({ onCopy, onQuote }: { onCopy: () => void; onQuote?: () =
     'text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:ring-ring/50 grid size-6 shrink-0 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none'
 
   return (
-    <div className="flex items-center gap-0.5 self-end opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100">
+    <div
+      className={cn(
+        'flex items-center gap-0.5 self-end transition-opacity group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100',
+        feedback ? 'opacity-100' : 'opacity-0',
+      )}
+    >
       <button type="button" onClick={copy} aria-label="Copiar mensaje" title="Copiar" className={base}>
         {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
       </button>
@@ -134,6 +149,38 @@ function BubbleActions({ onCopy, onQuote }: { onCopy: () => void; onQuote?: () =
         >
           <Quote aria-hidden className="size-3.5" />
         </button>
+      )}
+      {onRate && (
+        <>
+          {/*
+            El pulgar elegido se queda visible aunque el ratón se vaya: es un estado del
+            mensaje, no una acción disponible. `aria-pressed` lo dice para quien no ve el
+            relleno del icono.
+          */}
+          <button
+            type="button"
+            onClick={() => onRate('up')}
+            aria-label="Buena respuesta"
+            title="Buena respuesta"
+            aria-pressed={feedback === 'up'}
+            className={cn(base, feedback === 'up' && 'text-success opacity-100')}
+          >
+            <ThumbsUp aria-hidden className={cn('size-3.5', feedback === 'up' && 'fill-current')} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onRate('down')}
+            aria-label="Mala respuesta"
+            title="Mala respuesta"
+            aria-pressed={feedback === 'down'}
+            className={cn(base, feedback === 'down' && 'text-destructive opacity-100')}
+          >
+            <ThumbsDown
+              aria-hidden
+              className={cn('size-3.5', feedback === 'down' && 'fill-current')}
+            />
+          </button>
+        </>
       )}
     </div>
   )
@@ -154,6 +201,7 @@ export function ChatMessageItem({
   grouped = false,
   onCopy,
   onQuote,
+  onRate,
 }: {
   message: ChatMessage
   /** Trae la URL firmada del audio archivado de este mensaje. */
@@ -163,6 +211,8 @@ export function ChatMessageItem({
   /** Continúa la tanda anterior: no repite la cara de Numi. */
   grouped?: boolean
   onCopy?: (text: string) => void
+  /** Solo en las respuestas de Numi: qué opina el usuario de ella. */
+  onRate?: (feedback: ChatFeedback) => void
   /** Solo en las respuestas de Numi: llevar esto al composer para preguntar por ello. */
   onQuote?: (text: string) => void
 }) {
@@ -236,6 +286,8 @@ export function ChatMessageItem({
       // Citar es para preguntarle a Numi por lo que dijo; citarte a ti mismo no lleva
       // a ninguna parte.
       onQuote={!isUser && onQuote ? () => onQuote(message.content) : undefined}
+      feedback={message.feedback}
+      onRate={!isUser ? onRate : undefined}
     />
   )
 

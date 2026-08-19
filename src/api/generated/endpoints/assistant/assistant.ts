@@ -44,6 +44,7 @@ import type {
   MessageList,
   MessageSearch,
   RenameConversationInput,
+  SetFeedbackInput,
   UpsertAiProviderCredential
 } from '../../model';
 
@@ -1519,7 +1520,102 @@ export function useGetApiV1OrganizationsOrgIdAssistantConversationsIdMessages<TD
 
 
 
-export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse200 = {
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse204 = {
+  data: void
+  status: 204
+}
+
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseSuccess = (putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse204) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseError = (putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse = (putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseSuccess | putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponseError)
+
+export const getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackUrl = (orgId: string,
+    id: string,
+    messageId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/conversations/${id}/messages/${messageId}/feedback`
+}
+
+/**
+ * Guarda el pulgar arriba o abajo sobre una respuesta de Numi. Manda `null` para retirar la opinión — es lo que hace volver a pulsar el mismo pulgar. Solo se pueden puntuar los mensajes con `role: "assistant"`.
+ * @summary Puntuar una respuesta de Numi
+ */
+export const putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback = async (orgId: string,
+    id: string,
+    messageId: string,
+    setFeedbackInput: SetFeedbackInput, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackResponse>(getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackUrl(orgId,id,messageId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setFeedbackInput)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, TError,{orgId: string;id: string;messageId: string;data: SetFeedbackInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, TError,{orgId: string;id: string;messageId: string;data: SetFeedbackInput}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, {orgId: string;id: string;messageId: string;data: SetFeedbackInput}> = (props) => {
+          const {orgId,id,messageId,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback(orgId,id,messageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>>
+    export type PutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationBody = SetFeedbackInput
+    export type PutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationError = ErrorResponse
+
+    /**
+ * @summary Puntuar una respuesta de Numi
+ */
+export const usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>, TError,{orgId: string;id: string;messageId: string;data: SetFeedbackInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback>>,
+        TError,
+        {orgId: string;id: string;messageId: string;data: SetFeedbackInput},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedbackMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdAudioResponse200 = {
   data: AudioUrl
   status: 200
 }

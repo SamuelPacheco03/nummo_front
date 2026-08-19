@@ -76,6 +76,10 @@ vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({
     isPending: false,
     mutateAsync: vi.fn(),
   }),
+  usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback: () => ({
+    isPending: false,
+    mutateAsync: vi.fn(),
+  }),
   usePostApiV1OrganizationsOrgIdAssistantChat: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePostApiV1OrganizationsOrgIdAssistantChatAudio: () => ({
     isPending: false,

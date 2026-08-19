@@ -42,7 +42,15 @@ export interface ChatMessage {
   audioSeconds?: number
   /** Solo en los mensajes propios; los del historial llegan ya entregados. */
   status?: ChatMessageStatus
+  /**
+   * Lo que opinaste de esta respuesta. Solo en las de Numi: puntuar lo que tú escribiste
+   * no significa nada.
+   */
+  feedback?: ChatFeedback
 }
+
+/** Pulgar arriba o abajo. Sin valor = todavía no has dicho nada. */
+export type ChatFeedback = 'up' | 'down'
 
 /**
  * Por qué no salió el turno. El tipo decide qué ofrecerle al usuario, y sobre todo

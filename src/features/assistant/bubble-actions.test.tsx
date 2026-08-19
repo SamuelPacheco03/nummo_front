@@ -17,6 +17,7 @@ vi.mock('./use-numi-history', () => ({
   useMessageAudioLoader: () => undefined,
   useConversationOpener: () => async () => [],
   useConversationActions: () => ({ rename: vi.fn(), remove: vi.fn() }),
+  useMessageRating: () => vi.fn(),
 }))
 vi.mock('./stream-chat', () => ({
   streamChat: vi.fn(async ({ message }: { message: string }) => {

@@ -7,7 +7,7 @@ import { SUGGESTIONS } from './constants'
 import { AssistantRow, ChatBubble, ChatMessageItem } from './chat-message-item'
 import { isRetryable } from './numi-error'
 import { buildThreadRows } from './utils'
-import type { ChatMessage, NumiError } from './types'
+import type { ChatFeedback, ChatMessage, NumiError } from './types'
 
 /** A qué distancia del borde superior se empieza a traer la página anterior. */
 const LOAD_OLDER_MARGIN = 80
@@ -153,6 +153,8 @@ export interface ChatThreadProps {
   retryMessage: (id: string) => void
   loadAudio: (messageId: string, force?: boolean) => Promise<string>
   onCopy: (text: string) => void
+  /** Pulgar sobre una respuesta de Numi. */
+  onRate: (messageId: string, feedback: ChatFeedback) => void
   /** Lleva lo que dijo Numi al composer, para preguntarle por ello. */
   onQuote: (text: string) => void
   /** El enlace a Configuración sale del panel, así que hay que cerrarlo al seguirlo. */
@@ -180,6 +182,7 @@ export function ChatThread({
   loadAudio,
   onCopy,
   onQuote,
+  onRate,
   onLeave,
 }: ChatThreadProps) {
   const listRef = useRef<HTMLDivElement>(null)
@@ -264,6 +267,7 @@ export function ChatThread({
                 grouped={grouped}
                 onCopy={onCopy}
                 onQuote={onQuote}
+                onRate={(feedback) => onRate(message.id, feedback)}
               />
             </Fragment>
           ))}

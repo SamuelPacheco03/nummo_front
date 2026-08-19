@@ -57,6 +57,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     send,
     sendAudio,
     retryMessage,
+    rateMessage,
     stop,
     newConversation,
     openConversation,
@@ -163,6 +164,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             loadAudio={loadAudio}
             onCopy={copy}
             onQuote={quote}
+            onRate={(id, feedback) => void rateMessage(id, feedback)}
             onLeave={onClose}
           />
           {isTyping && (
