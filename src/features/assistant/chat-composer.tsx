@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { ArrowUp, Mic, Paperclip, Trash2 } from 'lucide-react'
+import { ArrowUp, Mic, Paperclip } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
 import { CANCEL_AT, DEAD_ZONE, HoldToRecord, LOCK_AT, MIN_SECONDS } from './hold-to-record'
-import { formatDuration, useAudioRecorder } from './use-audio-recorder'
+import { RecordingBar } from './recording-bar'
+import { useAudioRecorder } from './use-audio-recorder'
 
 /**
  * `true` donde se toca con el dedo.
@@ -67,47 +68,6 @@ function ComposerAction({
   )
 }
 
-/** Barra que reemplaza al composer mientras se graba una nota de voz. */
-function RecordingBar({
-  seconds,
-  onCancel,
-  onStop,
-}: {
-  seconds: number
-  onCancel: () => void
-  onStop: () => void
-}) {
-  return (
-    <div className="bg-card border-t px-3 py-2.5">
-      <div className="border-input bg-background flex items-center gap-2 rounded-2xl border py-1.5 pr-1.5 pl-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          aria-label="Cancelar grabación"
-          title="Cancelar"
-          className="text-muted-foreground hover:bg-secondary hover:text-destructive focus-visible:ring-ring/50 grid size-8 shrink-0 place-items-center rounded-full transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-        >
-          <Trash2 className="size-[1.05rem]" />
-        </button>
-        <div className="flex flex-1 items-center gap-2 px-1 text-sm">
-          <span className="bg-destructive size-2 shrink-0 animate-pulse rounded-full" />
-          <span className="tabular-nums">{formatDuration(seconds)}</span>
-          <span className="text-muted-foreground">Grabando…</span>
-        </div>
-        <button
-          type="button"
-          onClick={onStop}
-          aria-label="Enviar audio"
-          title="Enviar"
-          className="bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-ring/50 grid size-8 shrink-0 place-items-center rounded-full transition-all active:scale-95 focus-visible:ring-[3px] focus-visible:outline-none"
-        >
-          <ArrowUp className="size-4" />
-        </button>
-      </div>
-    </div>
-  )
-}
-
 /**
  * Barra de escritura: acciones, texto y envío en UNA sola pieza que se ilumina
  * al enfocar. Enter envía, Shift+Enter salta de línea y la barra crece con el
@@ -155,6 +115,9 @@ export function ChatComposer({
   // Mientras se vuelca el audio grabado no es «grabando»: sin esto la barra de
   // grabación parpadea al soltar y parece que se fijó.
   const [finishing, setFinishing] = useState(false)
+  // Si llegó al candado, la barra lo dice: quien subió el dedo necesita saber
+  // que ya puede soltarlo.
+  const [locked, setLocked] = useState(false)
   const detach = useRef<(() => void) | null>(null)
 
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
@@ -227,6 +190,7 @@ export function ChatComposer({
     startedAt.current = performance.now()
     abandoned.current = false
     axis.current = 'none'
+    setLocked(false)
     setHold({ dx: 0, dy: 0 })
 
     const onMove = (ev: PointerEvent) => {
@@ -245,6 +209,7 @@ export function ChatComposer({
 
       // Fijada: el dedo se puede soltar y la grabación sigue sola.
       if (dy <= -LOCK_AT) {
+        setLocked(true)
         endHold()
         return
       }
@@ -281,6 +246,7 @@ export function ChatComposer({
     */
     const onCancel = () => {
       if (!origin.current) return
+      setLocked(true)
       endHold()
     }
 
@@ -305,7 +271,12 @@ export function ChatComposer({
     return (
       <RecordingBar
         seconds={recorder.seconds}
+        levels={recorder.levels}
+        paused={recorder.isPaused}
+        locked={locked}
         onCancel={recorder.cancel}
+        onPause={recorder.pause}
+        onResume={recorder.resume}
         onStop={() => void stopAndSend()}
       />
     )

@@ -129,7 +129,7 @@ test('con el dedo: subir en diagonal fija, no cancela', async () => {
   moveTo(170, 660)
   moveTo(160, 640)
 
-  expect(await screen.findByText('Grabando…')).toBeInTheDocument()
+  expect(await screen.findByText('Fijada')).toBeInTheDocument()
   expect(onSendAudio).not.toHaveBeenCalled()
 })
 
@@ -142,8 +142,8 @@ test('si el sistema se queda con el gesto, la grabación no se pierde', async ()
   systemSteals()
 
   // Sigue grabando, con sus botones: quien decide si se tira es la persona.
-  expect(await screen.findByText('Grabando…')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Cancelar grabación' })).toBeInTheDocument()
+  expect(await screen.findByText('Fijada')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Descartar grabación' })).toBeInTheDocument()
 })
 
 test('con el dedo: subir fija la grabación y soltar no la manda', async () => {
@@ -157,8 +157,8 @@ test('con el dedo: subir fija la grabación y soltar no la manda', async () => {
   release()
 
   // Fijada: sigue grabando sola, con sus botones de parar y descartar.
-  expect(await screen.findByText('Grabando…')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Enviar audio' })).toBeInTheDocument()
+  expect(await screen.findByText('Fijada')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Enviar nota de voz' })).toBeInTheDocument()
   expect(onSendAudio).not.toHaveBeenCalled()
 })
 
@@ -186,7 +186,9 @@ test('con ratón: un clic empieza y el botón de enviar termina', async () => {
   expect(screen.queryByText('Desliza para cancelar')).not.toBeInTheDocument()
 
   mic.click()
-  expect(await screen.findByText('Grabando…')).toBeInTheDocument()
-  screen.getByRole('button', { name: 'Enviar audio' }).click()
+  // De escritorio: no viene del candado, así que la barra no dice «fijada».
+  expect(await screen.findByRole('button', { name: 'Enviar nota de voz' })).toBeInTheDocument()
+  expect(screen.queryByText('Fijada')).not.toBeInTheDocument()
+  screen.getByRole('button', { name: 'Enviar nota de voz' }).click()
   await waitFor(() => expect(onSendAudio).toHaveBeenCalledTimes(1))
 })

@@ -17,6 +17,11 @@ export const DEAD_ZONE = 14
 /** Por debajo de esto fue un toque, no una grabación. */
 export const MIN_SECONDS = 0.7
 
+/** Cuánto sube el micrófono respecto al dedo, para quedar justo bajo el candado. */
+const MIC_FOLLOW = 0.62
+/** Altura del candado sobre el micrófono. */
+const LOCK_OFFSET = LOCK_AT + 40
+
 /**
  * **Lo que se ve mientras se mantiene pulsado el micrófono.**
  *
@@ -25,10 +30,13 @@ export const MIN_SECONDS = 0.7
  * estilo — es el único gesto de grabar que la gente ya tiene aprendido, y un
  * dictado a Numi se parece más a mandar un audio que a rellenar un formulario.
  *
- * La barra dice **las dos salidas a la vez**: el tiempo que llevas y cómo salir
- * sin mandar nada. El candado está **desde el primer momento** —antes salía solo
- * al empezar a subir, y una opción que no se ve no existe: nadie descubre que
- * puede soltar el dedo—; se agranda y se enciende según te acercas.
+ * **Las dos salidas se dibujan igual de fuerte.** Cancelar se veía —el aviso se
+ * va por la izquierda y se apaga— pero fijar no: el candado apenas crecía un
+ * poco y se llegaba al tope sin haberse enterado de que se estaba llegando. Así
+ * que subir tiene ahora su propia animación, y dice **cuánto falta**: el candado
+ * se llena de color como un vaso, el micrófono sube a su encuentro y el aviso de
+ * abajo cambia de «desliza para cancelar» a «sube para fijar». Al llenarse, el
+ * candado queda macizo: eso es que ya está.
  */
 export function HoldToRecord({
   seconds,
@@ -55,8 +63,10 @@ export function HoldToRecord({
   // Cuanto más cerca de cancelar, más se apaga el texto: el aviso de que va a pasar.
   const fade = 1 - Math.min(1, -slide / CANCEL_AT)
   const lift = Math.max(dy, -LOCK_AT)
-  // Cuánto falta para fijar, de 0 a 1. Manda el tamaño y el color del candado.
+  // Cuánto falta para fijar, de 0 a 1. Manda el relleno, el tamaño y el aviso.
   const toLock = Math.min(1, -dy / LOCK_AT)
+  // Los dos avisos se cruzan: el que no toca se aparta antes de llegar al tope.
+  const rising = Math.min(1, toLock * 2.5)
 
   return (
     <div className="bg-card absolute inset-0 z-40 flex flex-col justify-center border-t px-3 py-2.5">
@@ -68,41 +78,70 @@ export function HoldToRecord({
           <div className="relative h-5 flex-1 overflow-hidden">
             <span
               className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-1 text-sm whitespace-nowrap"
-              style={{ transform: `translateX(${slide}px)`, opacity: fade }}
+              style={{ transform: `translateX(${slide}px)`, opacity: fade * (1 - rising) }}
             >
               <ChevronLeft aria-hidden className="size-4" />
               Desliza para cancelar
             </span>
+            <span
+              className="text-brand absolute inset-0 flex items-center justify-center gap-1 text-sm font-medium whitespace-nowrap"
+              style={{ opacity: rising }}
+            >
+              <ChevronUp aria-hidden className="size-4" />
+              Sube para fijar
+            </span>
           </div>
         </div>
-
       </div>
 
-      {/* El candado, justo encima del micrófono. Se ilumina al llegar. */}
+      {/*
+        El candado, justo encima del micrófono. Se llena de abajo arriba con lo
+        que falta para fijar: es la misma idea que el aviso que se apaga al
+        cancelar, pero contada al derecho.
+      */}
       <div
         aria-hidden
         className={cn(
-          'bg-secondary fixed z-50 flex flex-col items-center gap-1 rounded-full px-2 py-2.5 transition-colors',
-          toLock >= 1 ? 'text-brand ring-brand/40 ring-2' : 'text-muted-foreground',
+          'bg-secondary fixed z-50 flex flex-col items-center gap-1 overflow-hidden rounded-full px-2 py-2.5',
+          toLock >= 1 && 'ring-brand/40 ring-2',
         )}
         style={{
           left: anchor.x,
-          top: anchor.y - LOCK_AT - 28,
-          transform: `translate(-50%, -50%) scale(${1 + toLock * 0.15})`,
+          top: anchor.y - LOCK_OFFSET,
+          transform: `translate(-50%, -50%) scale(${1 + toLock * 0.25})`,
         }}
       >
-        <Lock className="size-4" />
-        <ChevronUp className={cn('size-3', toLock < 1 && 'animate-bounce')} />
+        <span
+          className="bg-brand absolute inset-x-0 bottom-0"
+          style={{ height: `${toLock * 100}%` }}
+        />
+        <Lock
+          className={cn(
+            'relative size-4 transition-colors',
+            toLock > 0.45 ? 'text-brand-foreground' : 'text-muted-foreground',
+          )}
+        />
+        <ChevronUp
+          className={cn(
+            'relative size-3 transition-opacity',
+            toLock > 0.75 ? 'text-brand-foreground' : 'text-muted-foreground',
+            toLock < 0.15 && 'animate-bounce',
+          )}
+          style={{ opacity: 1 - toLock * 0.7 }}
+        />
       </div>
 
       {/* El micrófono grande, exactamente donde estaba el pequeño. */}
       <span
         aria-hidden
-        className="bg-primary text-primary-foreground fixed z-50 grid size-14 place-items-center rounded-full shadow-lg"
+        className={cn(
+          'text-primary-foreground fixed z-50 grid size-14 place-items-center rounded-full shadow-lg transition-colors',
+          toLock > 0.45 ? 'bg-brand' : 'bg-primary',
+        )}
         style={{
           left: anchor.x,
           top: anchor.y,
-          transform: `translate(calc(-50% + ${slide / 3}px), calc(-50% + ${lift / 2}px)) scale(${1 + Math.min(seconds, 3) * 0.03})`,
+          transform: `translate(calc(-50% + ${slide / 3}px), calc(-50% + ${lift * MIC_FOLLOW}px)) scale(${1 + Math.min(seconds, 3) * 0.03})`,
         }}
       >
         <Mic className="size-6" />

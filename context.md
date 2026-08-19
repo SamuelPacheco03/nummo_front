@@ -1819,8 +1819,32 @@ Manteniendo pulsado hay tres salidas, y la barra las dice mientras pasan: **solt
 que usa el ratón. Un toque de menos de 0,7 s no es una grabación: se descarta y se dice por qué.
 
 **El candado se ve desde el primer momento**, no al empezar a subir. Una opción que no se ve no
-existe: nadie descubre solo que puede soltar el dedo. Se agranda y se enciende según te acercas, y
-así el gesto se explica mientras lo haces.
+existe: nadie descubre solo que puede soltar el dedo.
+
+**Y las dos salidas se dibujan igual de fuerte.** Cancelar siempre se vio —el aviso se va con el
+dedo y se apaga— pero fijar no: el candado crecía un poco y se llegaba al tope sin haberse
+enterado de que se estaba llegando. Subir tiene ahora su propia animación, y lo que cuenta es
+**cuánto falta**: el candado se llena de color de abajo arriba como un vaso, el micrófono sube a
+su encuentro y el aviso de la barra cambia de «desliza para cancelar» a «sube para fijar». Al
+llenarse queda macizo, y eso es que ya está. Es la misma idea que el aviso que se apaga al
+cancelar, contada al derecho.
+
+### Cuando queda fijada
+
+A partir del candado el dedo sobra y manda la barra de siempre —la misma que usa el ratón—, y esa
+barra se parece a la de WhatsApp por la misma razón que el gesto: hace lo mismo y la gente ya sabe
+leerla.
+
+Arriba, **lo que llevas grabado**: el reloj y la **onda en vivo**, que se dibuja midiendo el
+volumen del micrófono diez veces por segundo (§32.1 usa la misma medida, `rms`, para resumir el
+audio ya grabado). Sin la onda, una grabación fijada es un reloj que corre y no hay forma de saber
+si el micrófono está cogiendo algo hasta escuchar lo enviado.
+
+Abajo, **las tres salidas separadas y del tamaño de un pulgar**: tirarlo, pararlo un momento,
+mandarlo. Pausar existe porque una nota fijada dura lo que haga falta y a media frase pasa de
+todo; reanudar sigue el mismo audio, no empieza otro. Y **tirar la grabación no se confirma**: el
+botón está lejos del de enviar y quien lo pulsa acaba de decidir que lo que dijo no vale — un
+diálogo ahí solo estorba (§45).
 
 ### Cinco cosas sin las que «mantener pulsado» no funciona en un móvil
 
@@ -3619,6 +3643,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `AudioPlayer` | `features/assistant/audio-player.tsx` | Nota de voz del hilo: play, onda y duración (§32.1) |
 | `waveform.ts` | `features/assistant/waveform.ts` | Calcular, redondear y validar la onda de una nota de voz |
 | `HoldToRecord` | `features/assistant/hold-to-record.tsx` | Lo que se ve mientras se mantiene pulsado el micrófono (§32.2) |
+| `RecordingBar` | `features/assistant/recording-bar.tsx` | La barra de una grabación fijada: onda en vivo, pausa, tirar y enviar (§32.2) |
 | `Note` | `components/ui/note.tsx` | Aparte dentro de un texto: nota, aviso o truco |
 | `Toaster` + `toast` | `components/ui/sonner.tsx`, `sonner` | **Los avisos de la app** (§11.1.5) — se monta una vez en `providers.tsx` |
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |

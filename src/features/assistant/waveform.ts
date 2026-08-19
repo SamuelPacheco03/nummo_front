@@ -14,21 +14,24 @@ export const PEAK_COUNT = 32
 export const FLAT_PEAKS: readonly number[] = Array<number>(PEAK_COUNT).fill(0.35)
 
 /**
- * Resume una señal en `count` picos (RMS por tramo, normalizado a 0–1).
+ * **Cuánto suena** un tramo de señal: su media cuadrática (RMS).
  *
  * RMS y no el máximo absoluto: el pico se dispara con un golpe de mesa y deja
  * el resto de la onda plana, mientras que la media cuadrática dibuja el volumen
- * que de verdad se oye.
+ * que de verdad se oye. Es la misma medida al grabar —barra a barra, en vivo— y
+ * al resumir el audio ya grabado, así que vive una sola vez.
  */
+export function rms(data: Float32Array, start = 0, length = data.length - start): number {
+  let sum = 0
+  for (let i = 0; i < length; i++) sum += (data[start + i] ?? 0) ** 2
+  return Math.sqrt(sum / (length || 1))
+}
+
+/** Resume una señal en `count` picos (RMS por tramo, normalizado a 0–1). */
 export function peaksFromSamples(data: Float32Array, count = PEAK_COUNT): number[] {
   const size = Math.floor(data.length / count) || 1
   const peaks: number[] = []
-  for (let i = 0; i < count; i++) {
-    let sum = 0
-    const start = i * size
-    for (let j = 0; j < size; j++) sum += (data[start + j] ?? 0) ** 2
-    peaks.push(Math.sqrt(sum / size))
-  }
+  for (let i = 0; i < count; i++) peaks.push(rms(data, i * size, size))
   const max = Math.max(...peaks, 1e-4)
   return peaks.map((p) => Math.min(p / max, 1))
 }
