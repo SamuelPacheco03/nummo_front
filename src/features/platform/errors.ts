@@ -21,7 +21,7 @@ export function planErrorMessage(error: unknown): { title: string; description: 
   if (feature) {
     return {
       title: `Tu plan ${planLabel(feature.plan)} no incluye ${featureLabel(feature.feature)}`,
-      description: 'Está disponible en un plan superior.',
+      description: 'Está disponible en un plan superior: míralos en Configuración › Plan.',
     }
   }
 
@@ -34,11 +34,11 @@ export function planErrorMessage(error: unknown): { title: string; description: 
       ? {
           title: `Se acabaron tus ${nombre} de este mes`,
           // `used` es lo ya gastado, nunca lo que queda.
-          description: `Llevas ${limit.used} de ${limit.max}. La cuota se renueva el mes que viene, o puedes mejorar de plan.`,
+          description: `Llevas ${limit.used} de ${limit.max}. Se renueva el mes que viene, o mejora de plan en Configuración › Plan.`,
         }
       : {
           title: `Llegaste al tope de ${nombre}`,
-          description: `Tienes ${limit.used} de ${limit.max}. Libera espacio o mejora de plan.`,
+          description: `Tienes ${limit.used} de ${limit.max}. Libera espacio, o mejora de plan en Configuración › Plan.`,
         }
   }
 

@@ -816,7 +816,7 @@ un botón «Secciones». Es **un solo componente**, `SectionedLayout`
 que la segunda copia empezara a divergir.
 
 Antes era una **tira horizontal desplazable**, y era el error que §21.1 reprocha en los filtros:
-de once destinos se veían tres, los otros ocho quedaban detrás de un gesto que nadie ve, y al
+de doce destinos se veían tres, los otros nueve quedaban detrás de un gesto que nadie ve, y al
 aplanar la lista se perdían los títulos de grupo. Un `select` con `<optgroup>` los recupera en
 una sola línea, pero **tiene que mostrar el destino actual** —repitiendo el `<h1>` que va justo
 debajo— y en tablet se estira a lo ancho hasta parecer un campo de formulario vacío. El botón no
@@ -2423,6 +2423,29 @@ pasado con 44 `toast.error` repartidos.
 organizaciones gratuitas por usuario. Llega por la misma vía y se nombra igual —por eso el
 mensaje no dice «de tu plan»—, y no hay que distinguirlo.
 
+## 45.6. Dónde se ve el plan
+
+`/config/plan` («Plan y consumo») es el destino de los dos errores de arriba: cuando el backend
+dice «no te alcanza», aquí se ve por qué y qué haría falta.
+
+Tres cosas que hay que hacer bien y se hacen mal solas:
+
+1. **Un tope en `null` es «sin límite», nunca cero.** Y un `price` en `null` es **«Consultar»**,
+   tampoco cero: el plan gratuito trae `0.00` de verdad, así que pintar el vacío como gratis
+   promete algo que nadie ha decidido.
+2. **Los dos tipos de tope no salen del mismo sitio.** Las cuotas mensuales (Numi, voz) las lleva
+   el servidor en `usage`, que es donde se cobran. Los aforos (contactos, miembros, sedes) cuentan
+   filas que existen ahora, así que el conteo lo tiene la propia lista — y contactos va con
+   `isActive: 'true'`, porque **lo archivado no gasta cupo**.
+3. **`period` es el mes de la organización, no el del navegador.** Viene resuelto en su zona
+   horaria; no se recalcula aquí.
+
+Los planes van en **tarjetas y no en una tabla comparativa**: cuatro planes por once filas no
+caben en 360 px sin desplazarse en horizontal, que es el gesto que §11.1.3 prohíbe para lo que hay
+que leer entero. Y solo se listan las features que **algún** plan incluye: las otras cuatro
+existen como clave y se encenderán al construirse, así que hoy serían cuatro «✗» que no comparan
+nada.
+
 ## 45.2. La puerta de entrada no parpadea
 
 Mientras `GET /auth/me` está en vuelo **no se sabe** si hay sesión, y `isAuthenticated` todavía es
@@ -3830,6 +3853,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `useOrgReadOnly` | `features/platform/permissions.ts` | ¿La organización está suspendida o archivada? (§45.4) |
 | `ReadOnlyBanner` | `features/platform/read-only-banner.tsx` | El aviso persistente de solo lectura, en todas las pantallas |
 | `toastApiError` | `features/platform/errors.ts` | **Cómo se cuenta que una mutación falló**, plan incluido (§45.5) |
+| `usePlans` · `useLimitUsage` | `features/platform/hooks.ts` | El catálogo en venta y cuánto llevas de cada tope (§45.6) |
+| `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
 | `planLabel` · `featureLabel` · `limitLabel` | `features/platform/labels.ts` | Planes, features y topes en las palabras del usuario |
 | `orgStatus` | `features/organizations/labels.ts` | Tono y nombre del estado de una organización |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
@@ -4065,7 +4090,7 @@ actualización de este documento.
 
 1. `features/config/settings-layout.tsx`: shell de Configuración con sub-navegación propia
    —columna fija en escritorio; por debajo de `lg` fue una tira horizontal desplazable y hoy es
-   el `Drawer` detrás de «Secciones» (§11.1.3)— que absorbe las once pantallas de ajustes. El
+   el `Drawer` detrás de «Secciones» (§11.1.3)— que absorbe las doce pantallas de ajustes. El
    sidebar pasa de 21 a 13 enlaces. → 95.1
 2. "Maestros" → **"Catálogos"** de cara al usuario, también en la guía (`/ayuda`), que apuntaba
    a una sección con el nombre viejo.

@@ -11,7 +11,7 @@ test('una feature que el plan no incluye se cuenta como «mejora», no como fall
 
   expect(planErrorMessage(err)).toEqual({
     title: 'Tu plan Free no incluye usar tu propia llave de IA',
-    description: 'Está disponible en un plan superior.',
+    description: 'Está disponible en un plan superior: míralos en Configuración › Plan.',
   })
 })
 
@@ -24,7 +24,7 @@ test('un aforo lleno ofrece las dos salidas: liberar o mejorar', () => {
 
   expect(planErrorMessage(err)).toEqual({
     title: 'Llegaste al tope de contactos',
-    description: 'Tienes 200 de 200. Libera espacio o mejora de plan.',
+    description: 'Tienes 200 de 200. Libera espacio, o mejora de plan en Configuración › Plan.',
   })
 })
 
@@ -38,7 +38,7 @@ test('una cuota mensual dice además que se renueva sola', () => {
   })
 
   expect(planErrorMessage(err)?.title).toBe('Se acabaron tus mensajes de Numi de este mes')
-  expect(planErrorMessage(err)?.description).toMatch(/se renueva el mes que viene/)
+  expect(planErrorMessage(err)?.description).toMatch(/Se renueva el mes que viene/)
 })
 
 test('el tope anti-abuso de organizaciones gratuitas se nombra igual que los demás', () => {
