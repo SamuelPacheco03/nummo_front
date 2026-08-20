@@ -143,6 +143,23 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
           throw toApiError(response.status, payload)
         }
       }
+
+      /*
+        **El turno termina en `done`, no cuando se cierre la conexión.**
+
+        Antes se seguía leyendo hasta que el cuerpo se acababa, y eso puede tardar:
+        entre el último evento y el cierre están el proxy y su keep-alive. Lo que se
+        veía era el botón de detener puesto unos segundos sobre una respuesta ya
+        terminada, ofreciendo cortar algo que no seguía escribiéndose.
+
+        Con `done` ya está todo lo que hacía falta —la respuesta entera y los ids—,
+        así que se suelta el flujo aquí mismo. `cancel` no falla por llegar tarde a
+        un cuerpo ya cerrado, pero se ignora igual: el turno terminó bien.
+      */
+      if (done) {
+        void reader.cancel().catch(() => {})
+        break
+      }
     }
   } catch (error) {
     /*

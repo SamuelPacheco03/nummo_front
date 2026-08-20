@@ -211,6 +211,24 @@ export function useNumiChat() {
       // aparecer entera, que es la diferencia entre esperar y acompañar.
       const bubble = useNumiStore.getState().beginReply()
 
+      /*
+        **«Enviando» se apaga cuando el servidor contesta, no cuando termina.**
+
+        El mensaje propio se daba por entregado al cerrarse el turno, así que la
+        marca seguía puesta debajo de la pregunta mientras Numi escribía la
+        respuesta: se leía «Enviando» con la contestación ya a media página. Lo
+        que se estaba diciendo no era verdad — llegó en cuanto hubo turno.
+
+        Vale cualquier señal de vida del servidor: `start` es la primera y la que
+        llega siempre, y el primer trozo cubre el turno que no la traiga.
+      */
+      let delivered = false
+      const markDelivered = () => {
+        if (delivered) return
+        delivered = true
+        useNumiStore.getState().setMessageStatus(id, 'sent')
+      }
+
       try {
         const {
           sessionId: nextSessionId,
@@ -222,7 +240,11 @@ export function useNumiChat() {
           message: content,
           sessionId,
           signal: stop.signal,
-          onChunk: (text) => useNumiStore.getState().appendToReply(bubble, text),
+          onStart: markDelivered,
+          onChunk: (text) => {
+            markDelivered()
+            useNumiStore.getState().appendToReply(bubble, text)
+          },
         })
         const store = useNumiStore.getState()
         store.setMessageStatus(id, 'sent')

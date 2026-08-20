@@ -102,7 +102,7 @@ test('detener corta el turno y conserva lo que Numi alcanzó a escribir', async 
   sse.chunk('Te deben ')
   await screen.findByText(/Te deben/)
 
-  await user.click(screen.getByRole('button', { name: 'Detener' }))
+  await user.click(screen.getByRole('button', { name: 'Detener la respuesta' }))
 
   // El servidor se entera por el corte de la conexión, que es lo que le hace parar.
   await waitFor(() => expect(m.abortada).toBe(true))
@@ -121,7 +121,7 @@ test('detener antes de la primera palabra no deja una burbuja vacía', async () 
   sse.start('s1')
   await screen.findByText('Numi está escribiendo…')
 
-  await user.click(screen.getByRole('button', { name: 'Detener' }))
+  await user.click(screen.getByRole('button', { name: 'Detener la respuesta' }))
 
   await waitFor(() => expect(useNumiStore.getState().pending).toBe(false))
   expect(screen.queryByText('Numi está escribiendo…')).not.toBeInTheDocument()
@@ -136,13 +136,66 @@ test('detener no pierde la conversación: el siguiente mensaje sigue en la misma
   // `start` llega antes que cualquier texto justamente para esto.
   sse.start('s1')
   await screen.findByText('Numi está escribiendo…')
-  await user.click(screen.getByRole('button', { name: 'Detener' }))
+  await user.click(screen.getByRole('button', { name: 'Detener la respuesta' }))
 
   /*
     Sin el `sessionId` de `start`, el siguiente mensaje iría sin conversación y el
     backend abriría otra, dejando esta huérfana con una pregunta y ninguna respuesta.
   */
   await waitFor(() => expect(useNumiStore.getState().sessionId).toBe('s1'))
+})
+
+test('detener ocupa el sitio del micrófono mientras Numi escribe', async () => {
+  const user = userEvent.setup()
+  const sse = await preguntar(user)
+
+  sse.start('s1')
+  // Un solo botón a la derecha de la caja, y dice lo que se puede hacer ahora.
+  expect(await screen.findByRole('button', { name: 'Detener la respuesta' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /nota de voz/i })).not.toBeInTheDocument()
+
+  sse.chunk('Te deben $2.350.000')
+  sse.done('s1', 'Te deben $2.350.000')
+
+  // Terminado el turno, el micrófono vuelve a su sitio.
+  expect(await screen.findByRole('button', { name: /nota de voz/i })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Detener la respuesta' })).not.toBeInTheDocument()
+})
+
+test('«Enviando» se apaga cuando Numi coge el turno, no cuando termina', async () => {
+  const user = userEvent.setup()
+  const sse = await preguntar(user)
+
+  expect(await screen.findByText('Enviando')).toBeInTheDocument()
+
+  // El servidor contestó: la pregunta llegó, y decir «Enviando» a partir de aquí es
+  // decir algo que ya no es verdad.
+  sse.start('s1')
+  await waitFor(() => expect(screen.queryByText('Enviando')).not.toBeInTheDocument())
+
+  // Y sigue apagado mientras la respuesta se escribe, que es donde más se veía.
+  sse.chunk('Te deben ')
+  expect(await screen.findByText(/Te deben/)).toBeInTheDocument()
+  expect(screen.queryByText('Enviando')).not.toBeInTheDocument()
+})
+
+test('el turno acaba con `done`, sin esperar a que se cierre la conexión', async () => {
+  const user = userEvent.setup()
+  const sse = await preguntar(user)
+
+  sse.start('s1')
+  sse.chunk('Te deben $2.350.000')
+  await screen.findByText(/Te deben/)
+
+  /*
+    El servidor ya dijo todo lo que tenía que decir, pero el cuerpo tarda en cerrarse.
+    Esperar a eso dejaba el botón de detener puesto unos segundos sobre una respuesta
+    terminada, ofreciendo cortar algo que ya no se estaba escribiendo.
+  */
+  sse.doneWithoutClosing('s1', 'Te deben $2.350.000')
+
+  await waitFor(() => expect(useNumiStore.getState().pending).toBe(false))
+  expect(screen.queryByRole('button', { name: 'Detener la respuesta' })).not.toBeInTheDocument()
 })
 
 test('un fallo a mitad del flujo se lee igual que cualquier otro', async () => {
