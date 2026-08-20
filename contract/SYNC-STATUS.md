@@ -62,6 +62,10 @@ contador en las dos cabeceras, panel en el `Drawer` de siempre, filtro por leíd
 marcar una, marcar todas, descartar. Y el enganche al stream, que refresca el contador sin
 recargar (§11.1.9).
 
+**Las tramas `resource`** (§11.1.9): las cinco invalidan lo suyo y, con cualquiera de ellas, los
+informes. Cada recurso toca solo sus endpoints porque el fan-out ya lo hacéis vosotros —un pago
+emite `payments`, `receivables` y `treasury`—, y adivinarlo aquí sería una segunda tabla de reglas.
+
 **Web Push** (§11.1.11): las dos escuchas del service worker (`public/push-sw.js`, enganchado por
 `workbox.importScripts`), y en la pantalla de preferencias el botón de activar este dispositivo con
 la lista de los suscritos. **No se pide el permiso del navegador si `publicKey` viene `null`** — un
@@ -180,9 +184,10 @@ Dos notas sobre esa tabla:
 
 ### Lo que falta por construir en el front
 
-Queda una cosa de esta tanda: las tramas `resource` del stream, que hoy llegan y **nadie las
-escucha** — la conexión ya está, lo que falta es decidir qué invalida cada uno de los cinco
-recursos.
+De esta tanda, nada: centro, preferencias, política, Web Push y las tramas `resource` están los
+cinco montados. Lo que queda son las **peticiones de contrato** de más arriba —los `deepLink`, los
+días de antelación, el `endpoint` de un dispositivo— y el bloque de iconos, auto-registro y alta por
+nombre, que va abajo.
 
 Sobre EMAIL y WHATSAPP: no hace falta esconderlos a mano. Hoy ningún tipo los declara en
 `supportedChannels`, así que la pantalla no los dibuja; el día que tengan remitente y entren en

@@ -19,6 +19,7 @@ import { toastApiError } from '@/features/platform/errors'
 import { CommandBar } from '@/features/search/command-bar'
 import { useCommandBarShortcut } from '@/features/search/use-command-bar-shortcut'
 import { PageScrollRestoration } from '@/app/page-scroll'
+import { useResourceStream } from '@/app/resource-stream'
 import { setAppNavigate } from '@/lib/navigate'
 import { BottomNav } from './bottom-nav'
 import { Brand, SidebarBody } from './sidebar'
@@ -89,6 +90,13 @@ export function AppShell() {
     que es cuando importa. La conexión la comparte con el chat (§11.1.9).
   */
   useNotificationStream(orgId)
+
+  /*
+    Y lo mismo para las listas: llega «cambió cartera» y se invalida lo suyo.
+    Comparte la conexión con el centro y con el chat — el contador de
+    suscriptores del stream es lo que hace que sigan siendo una sola.
+  */
+  useResourceStream(orgId)
 
   /*
     El shell vive dentro del router y los avisos no (el `Toaster` se monta por

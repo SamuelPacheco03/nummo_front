@@ -1080,6 +1080,30 @@ Por eso el centro **invalida y no inserta**: con el id en la mano sería tentado
 suelto y meterlo en la caché, y eso son dos caminos de entrada que se desincronizan a la primera
 página que ya estuviera cargada con otro filtro.
 
+### Qué se refresca con un `resource`
+
+`app/resource-stream.ts` traduce los cinco recursos —cartera, pagos, cuentas por pagar, egresos y
+caja— a los endpoints que dejan viejos, **por el trozo de URL que los nombra**. Funciona porque
+Orval construye sus claves como `[url, params?]`: la URL **es** la clave, así que un prefijo se
+lleva la lista entera con todos sus filtros y páginas, y también su ficha.
+
+**Cada recurso invalida solo lo suyo.** Registrar un pago mueve además el saldo de la cuenta por
+cobrar y el de la caja, pero eso no se deduce aquí: el servidor emite las tres tramas porque es él
+quien sabe qué tocó. Adivinarlo en el cliente sería una segunda tabla de reglas, y se separaría de
+la suya a la primera operación nueva.
+
+**Los informes caen con cualquiera de los cinco**, sin tabla de qué informe mira qué. Esa
+dependencia no está en el contrato, así que una lista nuestra sería justo lo que nadie se acuerda de
+tocar. Refrescar de más no cuesta casi nada: `invalidateQueries` solo vuelve a pedir lo que está
+montado, así que fuera del Panel y de los informes no dispara ni una petición.
+
+Y **un recurso que no conozcamos no invalida nada**, en vez de barrerlo todo por si acaso: si el
+backend estrena uno, lo que se nota es que esa lista no se refresca sola — no que la aplicación se
+pase el día pidiendo.
+
+El servidor ya filtra por permiso antes de emitir —quien no puede leer egresos no recibe esa
+trama—, así que aquí no se vuelve a comprobar.
+
 No se reintenta a mano al fallar: `EventSource` reconecta solo, con su propia espera. El latido de
 25 s del servidor es un comentario SSE, no un evento: no hay nada que hacer con él.
 
@@ -4528,6 +4552,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `pushSupported` · `subscribeToPush` · `deviceLabel` | `pwa/push.ts` | La mecánica de Web Push en el navegador |
 | `push-sw.js` | `public/push-sw.js` | Lo que hace el service worker con un aviso que llega (§11.1.11) |
 | `subscribeToRealtime` | `lib/realtime-stream.ts` | **La conexión en vivo de la app**, una para todos (§11.1.9) |
+| `useResourceStream` | `app/resource-stream.ts` | Refrescar la lista que otro dejó vieja (§11.1.9) |
 | `formatRelativeTime` · `localDay` | `lib/format.ts` | «hace 5 min» y el día del reloj de quien lee, no el de UTC |
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
@@ -5139,6 +5164,22 @@ manifiesto.
 
 ---
 
+## Fase 16 — Las listas se refrescan solas ✅ **completada**
+
+`app/resource-stream.ts`: las tramas `resource` del stream, que llegaban desde que existe la
+conexión y no las escuchaba nadie (§11.1.9).
+
+1. Cinco recursos, cada uno a sus endpoints por prefijo de URL, más los informes con cualquiera de
+   ellos. Ninguna tabla de «qué informe depende de qué», que no está en el contrato.
+2. Cada recurso invalida **solo lo suyo**: el fan-out lo hace el servidor, que sabe qué tocó de
+   verdad —un pago emite `payments`, `receivables` y `treasury`—.
+3. Se monta en el shell, junto al centro de notificaciones, compartiendo la misma conexión.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 502 tests en verde (7 nuevos sobre el
+reparto, incluidos los catálogos que se parecen y el recurso desconocido), build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5158,6 +5199,7 @@ manifiesto.
 | ✅ 13 | Centro de notificaciones | medio | 7 (contrato) |
 | ✅ 14 | Preferencias y política de avisos | bajo | 13 |
 | ✅ 15 | Web Push | medio | 14 |
+| ✅ 16 | Las listas se refrescan solas | bajo | 13 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.
