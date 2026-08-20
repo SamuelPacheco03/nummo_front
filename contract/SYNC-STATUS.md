@@ -184,10 +184,9 @@ Dos notas sobre esa tabla:
 
 ### Lo que falta por construir en el front
 
-De esta tanda, nada: centro, preferencias, política, Web Push y las tramas `resource` están los
-cinco montados. Lo que queda son las **peticiones de contrato** de más arriba —los `deepLink`, los
-días de antelación, el `endpoint` de un dispositivo— y el bloque de iconos, auto-registro y alta por
-nombre, que va abajo.
+**Nada de las dos tandas.** Centro, preferencias, política, Web Push, las tramas `resource`, la
+identidad de los catálogos, el auto-registro y el alta por nombre están los ocho montados. Lo que
+queda son las **peticiones de contrato** que van marcadas ⚠️ en este documento.
 
 Sobre EMAIL y WHATSAPP: no hace falta esconderlos a mano. Hoy ningún tipo los declara en
 `supportedChannels`, así que la pantalla no los dibuja; el día que tengan remitente y entren en
@@ -220,11 +219,16 @@ pantalla tampoco deja mandarlo. Cada cara dice lo suyo antes de aceptar —que m
 mora, interés y recordatorios; que por encima del umbral no paga sino que pide firma— y el permiso
 que se mira es el de registrar el movimiento, no el de gestionar el recurrente.
 
-### Lo que queda de este bloque
+### Alta por nombre — ✅ construido (§11.1.14)
 
-- `payerName` / `supplierName` son **exactamente uno** con su contraparte por id. La regla es un
-  refine de Zod y no baja al JSON Schema, así que el cliente generado los tipa a los dos como
-  opcionales: lo impone el formulario.
+`ContactPicker` ofrece «Crear "Netflix"» al final de los resultados, solo al crear —el `PATCH` no
+acepta el nombre— y solo cuando lo escrito no coincide ya con un contacto.
+
+La regla de «exactamente uno» la imponen un `refine` en cada formulario y el propio selector, que
+nunca deja los dos puestos. **Confirmado que hace falta:** el refine de Zod no baja al JSON Schema,
+así que el cliente generado tipa los dos como opcionales y `tsc` no ayuda. Si algún día podéis
+expresarlo como `oneOf` —como ya hacéis en `SetAutoCharge`—, el tipo generado sería una unión
+discriminada y la regla dejaría de depender de que cada formulario se acuerde.
 
 ## 🆕 Dos errores nuevos, y por qué no son un 402
 

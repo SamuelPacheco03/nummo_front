@@ -27,7 +27,14 @@ import { useAgreement, useCreateAgreement, useInterestPolicies, useUpdateAgreeme
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/
 
 const schema = z.object({
-  payerContactId: z.string().min(1, 'Selecciona el pagador'),
+  payerContactId: z.string(),
+  /**
+   * Un pagador que todavía no está en la agenda. **Exactamente uno de los dos**,
+   * que es la regla del contrato: allí es un refine de Zod que no baja al JSON
+   * Schema, así que el cliente generado tipa los dos como opcionales y quien
+   * tiene que imponerlo es este formulario. Mandar los dos, o ninguno, es 422.
+   */
+  payerName: z.string().trim().max(160),
   beneficiaryContactId: z.string().optional(),
   billingConceptId: z.string().min(1, 'Selecciona el concepto'),
   interestPolicyId: z.string().optional(),
@@ -49,11 +56,16 @@ const schema = z.object({
   generateDaysBefore: z.number().int().min(0).max(60),
   notes: z.string().trim().max(2000).optional(),
 })
+  .refine((v) => Boolean(v.payerContactId) !== Boolean(v.payerName), {
+    path: ['payerContactId'],
+    message: 'Selecciona el pagador',
+  })
 type Values = z.infer<typeof schema>
 
 function toForm(a: BillingAgreement): Values {
   return {
     payerContactId: a.payerContactId,
+    payerName: '',
     beneficiaryContactId: a.beneficiaryContactId ?? '',
     billingConceptId: a.billingConceptId,
     interestPolicyId: a.interestPolicyId ?? '',
@@ -114,6 +126,7 @@ export function AgreementFormPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       payerContactId: '',
+      payerName: '',
       beneficiaryContactId: '',
       billingConceptId: '',
       interestPolicyId: '',
@@ -132,6 +145,7 @@ export function AgreementFormPage() {
   useHydrateOnce(isEdit ? agreement?.id : undefined, agreement, (a) => reset(toForm(a)))
 
   const payerId = watch('payerContactId')
+  const payerName = watch('payerName')
   const beneficiaryId = watch('beneficiaryContactId')
   const busy = create.isPending || update.isPending
 
@@ -139,7 +153,9 @@ export function AgreementFormPage() {
 
   const onSubmit = handleSubmit(async (v) => {
     const data = {
-      payerContactId: v.payerContactId,
+      // Uno de los dos, nunca los dos: es lo que el contrato exige y lo que el
+      // refine de arriba garantiza que se cumple antes de llegar aquí.
+      ...(v.payerContactId ? { payerContactId: v.payerContactId } : { payerName: v.payerName }),
       beneficiaryContactId: v.beneficiaryContactId || null,
       billingConceptId: v.billingConceptId,
       interestPolicyId: v.interestPolicyId || null,
@@ -211,12 +227,37 @@ export function AgreementFormPage() {
     >
       <form id={FORM_ID} onSubmit={onSubmit} noValidate className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Pagador" required error={errors.payerContactId?.message}>
+              <Field
+                label="Pagador"
+                required
+                error={errors.payerContactId?.message}
+                hint={
+                  isEdit
+                    ? undefined
+                    : 'Si es una empresa que aún no tienes, escríbela y créala desde aquí.'
+                }
+              >
                 <ContactPicker
                   label="Pagador"
                   orgId={oid}
                   value={payerId || null}
-                  onChange={(id) => setValue('payerContactId', id ?? '', { shouldValidate: true })}
+                  onChange={(id) => {
+                    setValue('payerContactId', id ?? '', { shouldValidate: true })
+                    setValue('payerName', '', { shouldValidate: true })
+                  }}
+                  /*
+                    Solo al crear: el `PATCH` no acepta `payerName`, así que
+                    ofrecerlo al editar sería un camino que termina en error.
+                  */
+                  newName={isEdit ? null : payerName || null}
+                  onNewName={
+                    isEdit
+                      ? undefined
+                      : (name) => {
+                          setValue('payerName', name, { shouldValidate: true })
+                          setValue('payerContactId', '', { shouldValidate: true })
+                        }
+                  }
                   invalid={!!errors.payerContactId}
                 />
               </Field>

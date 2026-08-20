@@ -1307,6 +1307,36 @@ Y cuando uno falla, el backend emite un aviso de prioridad alta (§11.1.8). La f
 preferencias, que es donde se elige por dónde enterarse: un automático que falla en silencio es
 peor que no tenerlo.
 
+## 11.1.14. Nombrar a quien todavía no está en la agenda
+
+Al firmar un acuerdo de cobro o un gasto recurrente ya no hace falta crear antes el contacto: el
+contrato acepta `payerContactId` **o** `payerName` —y su espejo `supplierContactId` /
+`supplierName`—, **exactamente uno de los dos**.
+
+**Esa regla la impone el formulario, y no es opcional.** En el backend es un refine de Zod que no
+baja al JSON Schema, así que el cliente generado tipa los dos como opcionales y `tsc` no protege
+nada: mandar los dos, o ninguno, es un 422. Lo sujetan un `refine` en el esquema de la pantalla y
+el propio selector, que nunca deja los dos puestos a la vez.
+
+**El selector es el de siempre**, con una fila más al final: «Crear "Netflix"». Va **al final y no
+al principio** porque la primera respuesta a un nombre tiene que ser el contacto que ya está en la
+agenda; y no aparece cuando lo escrito coincide exactamente con uno de los resultados, que es
+justo cuando ofrecer crearlo sería ofrecer un duplicado.
+
+**Quién limpia a quién, que es donde estuvo el fallo:** elegir un contacto borra el nombre escrito,
+y escribir un nombre borra el contacto elegido — cada uno lo hace **quien recibe el valor**, en el
+formulario. Hacer las dos cosas desde el selector borraba lo que se acababa de poner, porque el
+formulario ya limpia el nombre al recibir un id.
+
+**Solo al crear.** El `PATCH` no acepta el nombre, así que al editar el selector es el de toda la
+vida: ofrecerlo ahí sería un camino que termina en error.
+
+Y **solo empresas**: con nombre se crea un contacto `COMPANY` de verdad, que gasta cupo de
+`max_contacts` y puede responder `409 LIMIT_EXCEEDED` —lo cuenta `toastApiError` con sus cifras
+(§45.5)—. Para una persona sigue haciendo falta el formulario completo, que es donde importan su
+documento y su teléfono; la pantalla lo dice en una línea en vez de dejar que se descubra al
+guardar.
+
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
@@ -4563,7 +4593,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `Panel` | `components/panel.tsx` | Tarjeta de sección con cabecera y acción |
 | `Pagination` | `components/pagination.tsx` | Paginación contra el total del servidor |
 | `SearchInput` | `components/search-input.tsx` | Buscador de listas |
-| `ContactPicker` | `components/contact-picker.tsx` | Selector de contacto con búsqueda |
+| `ContactPicker` | `components/contact-picker.tsx` | Selector de contacto con búsqueda, y con «crear "Netflix"» donde el endpoint lo acepta (§11.1.14) |
 | `MoneyField` / `MoneyInput` | `components/money-field.tsx`, `ui/money-input.tsx` | Entrada de importes (crudo con punto, vista agrupada) |
 | `Chart` · `DonutChart` | `components/ui/chart.tsx` | **Las gráficas de la app** (Recharts envuelto) |
 | `MonthlyFlowChart` | `components/monthly-flow-chart.tsx` | Flujo mensual, en barras o línea |
@@ -5320,6 +5350,22 @@ suite para las dos caras, §92.3), build OK.
 
 ---
 
+## Fase 19 — Alta de contraparte por nombre ✅ **completada**
+
+Firmar un acuerdo o un gasto recurrente sin pasar antes por contactos (§11.1.14).
+
+1. `ContactPicker` gana la fila de crear, al final de los resultados y solo cuando lo escrito no
+   coincide ya con uno.
+2. «Exactamente uno de los dos» lo imponen el `refine` de cada formulario y el propio selector: el
+   contrato lo pide con un refine que no baja al JSON Schema, así que aquí no hay tipo que ayude.
+3. Solo al crear y solo empresas, con la razón dicha en la pantalla en vez de descubierta al
+   guardar.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 526 tests en verde (5 nuevos sobre el
+selector, incluido que elegir un contacto borre el nombre escrito), build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5342,6 +5388,7 @@ suite para las dos caras, §92.3), build OK.
 | ✅ 16 | Las listas se refrescan solas | bajo | 13 |
 | ✅ 17 | La identidad de los catálogos | medio | — (contrato) |
 | ✅ 18 | El auto-registro de un recurrente | medio | 17 |
+| ✅ 19 | Alta de contraparte por nombre | bajo | — (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

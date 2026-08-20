@@ -26,7 +26,14 @@ const AMOUNT_RE = /^\d+(\.\d{1,2})?$/
 const FORM_ID = 'schedule-form'
 
 const schema = z.object({
-  supplierContactId: z.string().min(1, 'Selecciona el proveedor'),
+  supplierContactId: z.string(),
+  /**
+   * Un proveedor que todavía no está en la agenda. **Exactamente uno de los
+   * dos**: en el contrato es un refine de Zod que no baja al JSON Schema, así
+   * que el cliente generado tipa los dos como opcionales y lo impone este
+   * formulario. Mandar los dos, o ninguno, es 422.
+   */
+  supplierName: z.string().trim().max(160),
   expenseCategoryId: z.string().min(1, 'Selecciona la categoría'),
   name: z.string().trim().max(160).optional(),
   agreedAmount: z
@@ -45,11 +52,16 @@ const schema = z.object({
   generateDaysBefore: z.number().int().min(0).max(60),
   notes: z.string().trim().max(2000).optional(),
 })
+  .refine((v) => Boolean(v.supplierContactId) !== Boolean(v.supplierName), {
+    path: ['supplierContactId'],
+    message: 'Selecciona el proveedor',
+  })
 type Values = z.infer<typeof schema>
 
 function toForm(s: ExpenseSchedule): Values {
   return {
     supplierContactId: s.supplierContactId,
+    supplierName: '',
     expenseCategoryId: s.expenseCategoryId,
     name: s.name ?? '',
     agreedAmount: s.agreedAmount,
@@ -86,6 +98,7 @@ export function ScheduleFormPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       supplierContactId: '',
+      supplierName: '',
       expenseCategoryId: '',
       name: '',
       agreedAmount: '',
@@ -101,12 +114,16 @@ export function ScheduleFormPage() {
   useHydrateOnce(isEdit ? schedule?.id : undefined, schedule, (s) => reset(toForm(s)))
 
   const supplierId = watch('supplierContactId')
+  const supplierName = watch('supplierName')
   const busy = create.isPending || update.isPending
   const backTo = isEdit && scheduleId ? `/gastos/recurrentes/${scheduleId}` : '/gastos/recurrentes'
 
   const onSubmit = handleSubmit(async (v) => {
     const data = {
-      supplierContactId: v.supplierContactId,
+      // Uno de los dos, nunca los dos: lo garantiza el refine de arriba.
+      ...(v.supplierContactId
+        ? { supplierContactId: v.supplierContactId }
+        : { supplierName: v.supplierName }),
       expenseCategoryId: v.expenseCategoryId,
       name: v.name || null,
       agreedAmount: v.agreedAmount,
@@ -148,12 +165,34 @@ export function ScheduleFormPage() {
     >
       <form id={FORM_ID} onSubmit={onSubmit} noValidate className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Proveedor" required error={errors.supplierContactId?.message}>
+          <Field
+            label="Proveedor"
+            required
+            error={errors.supplierContactId?.message}
+            hint={
+              isEdit
+                ? undefined
+                : 'Si es una empresa que aún no tienes, escríbela y créala desde aquí.'
+            }
+          >
             <ContactPicker
               label={'Proveedor'}
               orgId={oid}
               value={supplierId || null}
-              onChange={(id) => setValue('supplierContactId', id ?? '', { shouldValidate: true })}
+              onChange={(id) => {
+                setValue('supplierContactId', id ?? '', { shouldValidate: true })
+                setValue('supplierName', '', { shouldValidate: true })
+              }}
+              // Solo al crear: el `PATCH` no acepta `supplierName`.
+              newName={isEdit ? null : supplierName || null}
+              onNewName={
+                isEdit
+                  ? undefined
+                  : (name) => {
+                      setValue('supplierName', name, { shouldValidate: true })
+                      setValue('supplierContactId', '', { shouldValidate: true })
+                    }
+              }
               invalid={!!errors.supplierContactId}
             />
           </Field>
