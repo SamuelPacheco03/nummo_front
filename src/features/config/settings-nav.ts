@@ -1,5 +1,6 @@
 import {
   Bell,
+  BellRing,
   Bot,
   Building2,
   CreditCard,
@@ -32,6 +33,7 @@ export const GROUPS: SectionGroup[] = [
       { to: '/config/sedes', label: 'Sedes', Icon: MapPin },
       { to: '/config/miembros', label: 'Miembros', Icon: UserCog },
       { to: '/config/roles', label: 'Roles', Icon: KeyRound },
+      { to: '/config/avisos', label: 'Política de avisos', Icon: BellRing },
       { to: '/config/plan', label: 'Plan y consumo', Icon: Gauge },
       { to: '/config/sesiones', label: 'Sesiones', Icon: MonitorSmartphone },
     ],

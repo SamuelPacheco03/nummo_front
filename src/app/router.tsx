@@ -381,6 +381,13 @@ export const router = createBrowserRouter([
                 }),
               },
               {
+                path: 'config/avisos',
+                lazy: async () => ({
+                  Component: (await import('@/features/notifications/policy-page'))
+                    .NotificationPolicyPage,
+                }),
+              },
+              {
                 path: 'config/notificaciones',
                 lazy: async () => ({
                   Component: (await import('@/features/notifications/preferences-page'))

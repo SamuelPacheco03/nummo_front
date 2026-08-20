@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -390,6 +391,17 @@ export function NotificationPreferencesPage() {
                     </ul>
                   </div>
                 ))}
+
+                {/* De dónde salen los días y los umbrales que esta pantalla
+                    solo enseña: es la pregunta que deja «Te avisamos 5 y 1 días
+                    antes» sin contestar. */}
+                <p className="text-muted-foreground text-sm">
+                  La hora de los recordatorios y los umbrales los fija la organización en{' '}
+                  <Link className="text-brand underline underline-offset-4" to="/config/avisos">
+                    la política de avisos
+                  </Link>
+                  .
+                </p>
               </section>
             </CardContent>
 

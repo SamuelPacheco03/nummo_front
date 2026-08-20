@@ -62,6 +62,11 @@ contador en las dos cabeceras, panel en el `Drawer` de siempre, filtro por leíd
 marcar una, marcar todas, descartar. Y el enganche al stream, que refresca el contador sin
 recargar (§11.1.9).
 
+**La política de la organización** (`/config/avisos`, §11.1.10): la hora de los recordatorios y los
+dos umbrales, en Configuración › Organización y detrás de `notifications.settings.manage`. Se lee
+con `notifications.read`, así que se enseña a cualquiera y lo que desaparece es el botón. Un umbral
+vacío se manda como `null`, que es lo que apaga esa alerta.
+
 **Las preferencias de la persona** (`/config/notificaciones`, §11.1.10): el catálogo entero
 agrupado por categoría, con su interruptor por tipo, una columna por canal que interrumpa y el
 detalle que sale en la pantalla de bloqueo. Todo dibujado desde `preferences[]`,
@@ -93,6 +98,17 @@ conjunto de la organización en los dos casos. Por eso hoy la pantalla **los ens
 
 Se cierra con un campo al lado de `supportsLeadDays`: los días que la organización ofrece para ese
 tipo. Con eso las casillas son ese conjunto y lo marcado es `leadDays`.
+
+### `lowBalanceCurrency` es de solo lectura y nace en `COP`
+
+`NotificationSettings` la firma, `UpdateNotificationSettingsInput` no la acepta, y la columna trae
+`char(3) default 'COP'`. Es decir: una organización cuyo dinero está en otra moneda puede poner un
+umbral de saldo bajo que **nunca se va a comparar con sus cuentas** —`listBelow` filtra por esa
+moneda— y no tiene forma de arreglarlo desde la API.
+
+La pantalla lo dice en vez de suponerlo («Se compara con tus cuentas en COP»), que es lo único que
+puede hacer el front. Lo que falta decidir de vuestro lado: o la hereda de `defaultCurrency` de la
+organización, o entra en el input de actualización.
 
 ### Un detalle de `supportedChannels`
 
@@ -136,8 +152,8 @@ Dos notas sobre esa tabla:
 
 ### Lo que falta por construir en el front
 
-Por este orden, salvo que digáis otra cosa: la política de la organización
-(`/notifications/settings`), Web Push (`/me/push-subscriptions` + service worker), y las tramas
+Por este orden, salvo que digáis otra cosa: Web Push (`/me/push-subscriptions` + service worker),
+y las tramas
 `resource` del stream, que hoy llegan y **nadie las escucha** — la conexión ya está, lo que falta
 es decidir qué invalida cada uno de los cinco recursos.
 

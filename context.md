@@ -1129,6 +1129,34 @@ Un control que solo va en una dirección es peor que una frase.
 Sin `notifications.manage` la pantalla se mira y no se toca —sin pie de acciones, con un `Note` que
 lo dice—; sin `notifications.read` no se pide nada y sale el candado (§45.2c).
 
+### Y la política de la organización, aparte
+
+`/config/avisos` es la otra mitad, y **no comparte pantalla con la anterior**: a qué hora salen los
+recordatorios, desde qué saldo se avisa de una cuenta y desde qué monto interrumpe lo que registró
+un compañero. Apagar los avisos de una empresa entera es una decisión, no un ajuste personal, y por
+eso tiene su propio permiso (`notifications.settings.manage`) — que ni un administrador tiene por
+defecto en otra organización.
+
+Va en **Configuración › Organización**, no en Preferencias, por lo mismo que la aprobación de
+egresos vive en Gastos y no en Empresa (§47.4): es una política, tiene endpoint propio y se audita
+aparte.
+
+**Se lee con `notifications.read` y se enseña a cualquiera**; lo que desaparece sin el permiso de
+escritura es el botón. Esconder la pantalla entera diría lo contrario de lo que hace el backend,
+que solo bloquea guardar (§47.3).
+
+**Un umbral vacío apaga esa alerta, y es el valor por defecto.** No es «umbral cero»: con cero,
+cualquier peso que registrara un compañero interrumpiría a media oficina, y lo primero que haría
+cualquiera es apagar la categoría entera. Es el mismo criterio que el umbral de aprobación (§47.4).
+
+Y las dos pantallas **se enlazan**: la política manda a las preferencias de cada persona, y las
+preferencias explican de dónde salen los días y los umbrales que solo enseñan. Sin ese enlace, «Te
+avisamos 5 y 1 días antes» deja una pregunta sin contestar en la pantalla equivocada.
+
+Un detalle del contrato que se ve en la pantalla: **`lowBalanceCurrency` es de solo lectura** y
+llega con `COP` por defecto, así que el umbral se compara con las cuentas de esa moneda y no
+necesariamente con las de la organización. La pantalla lo dice en vez de suponerlo (§70).
+
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
@@ -4442,6 +4470,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `NotificationsDrawer` | `features/notifications/notifications-drawer.tsx` | **El centro de notificaciones**, montado una vez en el shell (§11.1.8) |
 | `useNotificationStream` | `features/notifications/hooks.ts` | Enterarse de un aviso nuevo sin recargar (§11.1.9) |
 | `NotificationPreferencesPage` | `features/notifications/preferences-page.tsx` | De qué te avisamos y por dónde (§11.1.10) |
+| `NotificationPolicyPage` | `features/notifications/policy-page.tsx` | La política de avisos de la organización (§11.1.10) |
 | `subscribeToRealtime` | `lib/realtime-stream.ts` | **La conexión en vivo de la app**, una para todos (§11.1.9) |
 | `formatRelativeTime` · `localDay` | `lib/format.ts` | «hace 5 min» y el día del reloj de quien lee, no el de UTC |
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
@@ -5000,7 +5029,7 @@ nombre.
 
 ---
 
-## Fase 14 — Preferencias de avisos ✅ **completada**
+## Fase 14 — Preferencias y política de avisos ✅ **completada**
 
 `/config/notificaciones` (§11.1.10): el catálogo entero por categorías, con su interruptor, la
 columna de móvil y el detalle que sale en la pantalla de bloqueo.
@@ -5011,9 +5040,12 @@ columna de móvil y el detalle que sale en la pantalla de bloqueo.
    apagaría nada.
 3. Un botón, dos endpoints, y solo viaja lo que cambió — el diff se calcula al enviar.
 4. Los días de antelación se leen: el contrato no publica los que hay (95.17).
+5. Y su otra mitad, `/config/avisos`: la hora de los recordatorios y los dos umbrales de la
+   organización, en Configuración › Organización y detrás de su propio permiso. Las dos pantallas
+   se enlazan, que es lo que contesta de dónde salen los días que la primera solo enseña.
 
-**Verificación:** typecheck limpio, 0 warnings de lint, 470 tests en verde (20 nuevos: 12 de la
-pantalla y 8 de las palabras), build OK.
+**Verificación:** typecheck limpio, 0 warnings de lint, 479 tests en verde (29 nuevos: 12 de las
+preferencias, 9 de la política y 8 de las palabras), build OK.
 
 ---
 
@@ -5034,7 +5066,7 @@ pantalla y 8 de las palabras), build OK.
 | ✅ 11 | Roles propios de la organización | medio | 7 |
 | ✅ 12 | Aprobación de egresos | medio | 7, 9 |
 | ✅ 13 | Centro de notificaciones | medio | 7 (contrato) |
-| ✅ 14 | Preferencias de avisos | bajo | 13 |
+| ✅ 14 | Preferencias y política de avisos | bajo | 13 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

@@ -3,20 +3,24 @@ import { keepPreviousData, useQueryClient, type QueryClient } from '@tanstack/re
 import {
   getGetApiV1OrganizationsOrgIdNotificationsPreferencesQueryKey,
   getGetApiV1OrganizationsOrgIdNotificationsQueryKey,
+  getGetApiV1OrganizationsOrgIdNotificationsSettingsQueryKey,
   getGetApiV1OrganizationsOrgIdNotificationsUnreadCountQueryKey,
   useDeleteApiV1OrganizationsOrgIdNotificationsNotificationId,
   useGetApiV1OrganizationsOrgIdNotifications,
   useGetApiV1OrganizationsOrgIdNotificationsPreferences,
+  useGetApiV1OrganizationsOrgIdNotificationsSettings,
   useGetApiV1OrganizationsOrgIdNotificationsUnreadCount,
   usePostApiV1OrganizationsOrgIdNotificationsNotificationIdRead,
   usePostApiV1OrganizationsOrgIdNotificationsReadAll,
   usePutApiV1OrganizationsOrgIdNotificationsPreferences,
   usePutApiV1OrganizationsOrgIdNotificationsPreferencesPushPreview,
+  usePutApiV1OrganizationsOrgIdNotificationsSettings,
 } from '@/api/generated/endpoints/notifications/notifications'
 import type {
   GetApiV1OrganizationsOrgIdNotificationsParams,
   Notification,
   NotificationPreferences,
+  NotificationSettings,
 } from '@/api/generated/model'
 import { asArray } from '@/lib/list-result'
 import { subscribeToRealtime } from '@/lib/realtime-stream'
@@ -150,6 +154,36 @@ export function useUpdatePushPreview(orgId: string) {
 function invalidatePreferences(qc: QueryClient, orgId: string): void {
   void qc.invalidateQueries({
     queryKey: getGetApiV1OrganizationsOrgIdNotificationsPreferencesQueryKey(orgId),
+  })
+}
+
+/* ---------- Política de la organización ---------- */
+
+/**
+ * La política común: a qué hora salen los recordatorios y desde qué cifra vale
+ * la pena interrumpir. Una sola para todos, y **distinta de las preferencias de
+ * cada persona** — apagar los avisos de una empresa entera es una decisión, no
+ * un ajuste personal, y por eso va detrás de otro permiso.
+ *
+ * Leerla basta con `notifications.read`, así que la pantalla se enseña a
+ * cualquiera; lo que desaparece sin `notifications.settings.manage` es el botón.
+ */
+export function useNotificationSettings(orgId: string | undefined) {
+  const query = useGetApiV1OrganizationsOrgIdNotificationsSettings(orgId ?? '', {
+    query: { enabled: !!orgId },
+  })
+  return { ...query, settings: query.data?.data as NotificationSettings | undefined }
+}
+
+export function useUpdateNotificationSettings(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdNotificationsSettings({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({
+          queryKey: getGetApiV1OrganizationsOrgIdNotificationsSettingsQueryKey(orgId),
+        }),
+    },
   })
 }
 
