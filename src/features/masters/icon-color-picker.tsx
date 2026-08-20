@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/native-select'
+import { plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   catalogColorClass,
@@ -21,27 +23,37 @@ import {
   ICON_LABELS,
   type CatalogIdentity,
   type ColorKey,
+  type IconKey,
 } from './catalogs'
 
-/** Un objetivo de 44 px con el glifo a tamaño de texto dentro (§43). */
+/** Objetivo táctil holgado (§43) y el glifo a tamaño de texto dentro. */
 const CELL =
-  'grid size-9 place-items-center rounded-md transition-colors pointer-coarse:size-11 focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none'
+  'grid place-items-center rounded-md transition-colors focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none'
+
+/** En qué tema vive un icono, para abrir el selector donde está el elegido. */
+function themeOf(icon: IconKey | null): string {
+  const group = CATALOG_ICON_GROUPS.find((g) => icon != null && g.icons.includes(icon))
+  return (group ?? CATALOG_ICON_GROUPS[0]).label
+}
 
 /**
  * **Elegir el icono y el color de un catálogo, en su propio diálogo.**
  *
  * Vivía dentro del formulario, abierto: veintidós colores y ciento sesenta y un
  * iconos ocupaban más que los campos que de verdad hay que rellenar, y en un
- * teléfono empujaban «Guardar» fuera de la pantalla. Ahora el formulario enseña
- * una fila —lo elegido y un botón— y todo esto se abre solo cuando hace falta.
+ * teléfono empujaban «Guardar» fuera de la pantalla.
  *
  * Dentro, tres decisiones:
  *
+ * - **Un tema a la vez, elegido.** Con los once puestos uno detrás de otro había
+ *   que recorrer ciento sesenta y un dibujos para ver el último, y el diálogo se
+ *   volvía un rollo de papel. Se elige el tema y se ven los suyos; al abrir,
+ *   el que ya está puesto (§11.1.12).
  * - **Se busca por palabra, no por dibujo.** Las claves del contrato son
  *   inglesas (`piggy-bank`), así que la búsqueda va contra el nombre en español,
- *   los sinónimos del negocio —«arriendo», «nómina», «pensión»— y el grupo.
- * - **Los iconos van por temas** (§11.1.12): recorrer ciento sesenta y uno seguidos
- *   no es elegir, es rendirse en el veinte.
+ *   los sinónimos del negocio —«arriendo», «nómina», «pensión»— y el tema. Y
+ *   busca **en todos**: quien escribe «vacuna» no sabe en qué tema cayó, así que
+ *   mientras hay texto el tema se calla y se dice cuántos hay.
  * - **Se aplica al tocar, no al aceptar.** Es un selector, no un formulario: el
  *   cambio se ve al instante en la muestra de arriba y «Listo» solo cierra. Lo
  *   que se descarta —o no— lo decide el formulario de fuera, que es quien
@@ -61,55 +73,89 @@ export function IconColorPicker({
   /** El icono de la sección, que es lo que se ve mientras no haya uno propio. */
   fallback: LucideIcon
 }) {
-  const [query, setQuery] = useState('')
-  const searching = query.trim().length > 0
-
-  const groups = useMemo(
-    () =>
-      CATALOG_ICON_GROUPS.map((group) => ({
-        ...group,
-        icons: group.icons.filter((icon) => iconMatches(icon, query)),
-      })).filter((group) => group.icons.length > 0),
-    [query],
-  )
-
-  const Preview = catalogIcon(value.icon) ?? fallback
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Alto fijo: la rejilla es lo que crece, no el diálogo. */}
+      {/* Alto fijo: la rejilla es lo que crece, no el diálogo (§11.1.3). */}
       <DialogContent className="flex flex-col gap-4 overflow-y-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Icono y color</DialogTitle>
         </DialogHeader>
+        {/*
+          El cuerpo se monta al abrir y se desmonta al cerrar —lo hace `Dialog`—,
+          así que su estado nace limpio cada vez: sin esto, la búsqueda de la vez
+          anterior seguía escrita y el tema seguía siendo el de otro registro.
+        */}
+        <PickerBody
+          value={value}
+          onChange={onChange}
+          fallback={fallback}
+          onDone={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
 
-        <div className="flex items-center gap-3">
-          <span className="bg-secondary grid size-10 shrink-0 place-items-center rounded-lg">
-            <Preview aria-hidden className={cn('size-5', catalogColorClass(value.color))} />
-          </span>
-          <p className="text-muted-foreground text-sm">
-            {value.icon ? 'Así se verá en las listas.' : 'Sin icono propio: se usa el de la sección.'}
-          </p>
-        </div>
+function PickerBody({
+  value,
+  onChange,
+  fallback,
+  onDone,
+}: {
+  value: CatalogIdentity
+  onChange: (next: CatalogIdentity) => void
+  fallback: LucideIcon
+  onDone: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const [theme, setTheme] = useState(() => themeOf(value.icon))
+  const searching = query.trim().length > 0
 
-        <div className="space-y-2">
-          <h3 className="text-muted-foreground text-xs tracking-wider uppercase">Color</h3>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Color">
+  const icons = useMemo(() => {
+    if (searching) {
+      return CATALOG_ICON_GROUPS.flatMap((group) => group.icons).filter((icon) =>
+        iconMatches(icon, query),
+      )
+    }
+    return CATALOG_ICON_GROUPS.find((group) => group.label === theme)?.icons ?? []
+  }, [query, searching, theme])
+
+  const Preview = catalogIcon(value.icon) ?? fallback
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="bg-secondary grid size-10 shrink-0 place-items-center rounded-lg">
+          <Preview aria-hidden className={cn('size-5', catalogColorClass(value.color))} />
+        </span>
+        <p className="text-muted-foreground text-sm">
+          {value.icon
+            ? `${ICON_LABELS[value.icon]} · ${value.color ? COLOR_LABELS[value.color] : 'sin color'}`
+            : 'Sin icono propio: se usa el de la sección.'}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-muted-foreground text-xs tracking-wider uppercase">Color</h3>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Color">
+          <ColorSwatch
+            color={null}
+            selected={value.color == null}
+            onSelect={() => onChange({ ...value, color: null })}
+          />
+          {CATALOG_COLORS.map((color) => (
             <ColorSwatch
-              color={null}
-              selected={value.color == null}
-              onSelect={() => onChange({ ...value, color: null })}
+              key={color}
+              color={color}
+              selected={value.color === color}
+              onSelect={() => onChange({ ...value, color })}
             />
-            {CATALOG_COLORS.map((color) => (
-              <ColorSwatch
-                key={color}
-                color={color}
-                selected={value.color === color}
-                onSelect={() => onChange({ ...value, color })}
-              />
-            ))}
-          </div>
+          ))}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-muted-foreground text-xs tracking-wider uppercase">Icono</h3>
 
         <div className="relative">
           <Search
@@ -119,67 +165,78 @@ export function IconColorPicker({
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar icono: arriendo, nómina, gasolina…"
+            placeholder="Buscar: arriendo, nómina, gasolina…"
             aria-label="Buscar icono"
             className="pl-9"
           />
         </div>
 
-        {/* Lo único que se desplaza. */}
-        <div className="scrollbar-slim min-h-0 flex-1 space-y-4 overflow-y-auto">
+        {searching ? (
+          <p className="text-muted-foreground text-sm" role="status">
+            {icons.length === 0
+              ? 'Ningún icono se llama así.'
+              : `${plural(icons.length, 'icono', 'iconos')} en todos los temas`}
+          </p>
+        ) : (
+          <NativeSelect
+            value={theme}
+            onChange={(event) => setTheme(event.target.value)}
+            aria-label="Tema"
+          >
+            {CATALOG_ICON_GROUPS.map((group) => (
+              <option key={group.label} value={group.label}>
+                {group.label}
+              </option>
+            ))}
+          </NativeSelect>
+        )}
+      </div>
+
+      {/* Lo único que se desplaza, y solo hacia abajo. */}
+      <div className="scrollbar-slim min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1">
+          {/*
+            «Sin icono» va **dentro de la rejilla y siempre**, no en una sección
+            propia: quitar el icono es una opción más, y con sección propia era
+            un título con un solo botón debajo. Al buscar no aparece, que no es
+            un resultado.
+          */}
           {!searching && (
-            <Group label="Sin icono propio">
+            <IconCell
+              Icon={Ban}
+              label="Sin icono"
+              selected={value.icon == null}
+              onSelect={() => onChange({ ...value, icon: null })}
+            />
+          )}
+          {icons.map((icon) => {
+            const Icon = catalogIcon(icon)
+            if (!Icon) return null
+            return (
               <IconCell
-                Icon={Ban}
-                label="Sin icono"
-                selected={value.icon == null}
-                onSelect={() => onChange({ ...value, icon: null })}
+                key={icon}
+                Icon={Icon}
+                label={ICON_LABELS[icon]}
+                selected={value.icon === icon}
+                onSelect={() => onChange({ ...value, icon })}
               />
-            </Group>
-          )}
-
-          {groups.map((group) => (
-            <Group key={group.label} label={group.label}>
-              {group.icons.map((icon) => {
-                const Icon = catalogIcon(icon)
-                if (!Icon) return null
-                return (
-                  <IconCell
-                    key={icon}
-                    Icon={Icon}
-                    label={ICON_LABELS[icon]}
-                    selected={value.icon === icon}
-                    onSelect={() => onChange({ ...value, icon })}
-                  />
-                )
-              })}
-            </Group>
-          ))}
-
-          {groups.length === 0 && (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              Ningún icono se llama así. Prueba con lo que es —«casa», «carro»— o con el gasto
-              —«arriendo», «matrícula»—.
-            </p>
-          )}
+            )
+          })}
         </div>
 
-        <DialogFooter>
-          <Button type="button" onClick={() => onOpenChange(false)}>
-            Listo
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
+        {searching && icons.length === 0 && (
+          <p className="text-muted-foreground py-6 text-center text-sm">
+            Prueba con lo que es —«casa», «carro»— o con el gasto —«arriendo», «matrícula»—.
+          </p>
+        )}
+      </div>
 
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5" role="group" aria-label={label}>
-      <h3 className="text-muted-foreground text-xs tracking-wider uppercase">{label}</h3>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(2.25rem,1fr))] gap-1">{children}</div>
-    </div>
+      <DialogFooter>
+        <Button type="button" onClick={onDone}>
+          Listo
+        </Button>
+      </DialogFooter>
+    </>
   )
 }
 
@@ -200,7 +257,7 @@ function ColorSwatch({
       aria-pressed={selected}
       aria-label={label}
       title={label}
-      className={cn(CELL, 'size-8 pointer-coarse:size-11', selected && 'ring-ring ring-2')}
+      className={cn(CELL, 'size-8 pointer-coarse:size-10', selected && 'ring-ring ring-2')}
     >
       {/*
         `bg-current` hereda el color del texto, así que la muestra sale de la
@@ -231,11 +288,14 @@ function IconCell({
       title={label}
       className={cn(
         CELL,
-        'hover:bg-secondary',
+        // Cuadrada y **del ancho de su columna**: con un tamaño fijo más grande
+        // que la columna —lo que pasaba con el objetivo táctil— la rejilla se
+        // salía del diálogo y aparecía un desplazamiento horizontal.
+        'aspect-square w-full hover:bg-secondary',
         selected ? 'bg-secondary ring-ring ring-2' : 'text-muted-foreground',
       )}
     >
-      <Icon aria-hidden className="size-4" />
+      <Icon aria-hidden className="size-4.5" />
     </button>
   )
 }

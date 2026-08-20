@@ -1278,16 +1278,30 @@ elegido, cómo se llama y un chevron— y todo lo demás vive en `IconColorPicke
 
 Tres cosas que ese diálogo hace y la rejilla suelta no podía:
 
-- **Buscar por palabra.** Las claves del contrato son inglesas (`piggy-bank`, `graduation-cap`), así
-  que la búsqueda va contra el **nombre en español**, contra las palabras del negocio —«arriendo»,
-  «nómina», «pensión», «gasolina»— y contra el tema. Sin tildes ni mayúsculas en ninguno de los dos
-  lados (`fold`, §94): nadie escribe «matrícula» con tilde en un buscador.
-- **Agrupar por temas.** Recorrer ciento sesenta y un dibujos seguidos no es elegir, es rendirse en
-  el veinte. Los grupos van sobre las **mismas claves** del contrato —cuyo orden ya es temático—, no
-  sobre una lista aparte, y una prueba obliga a que cada clave esté en uno y en uno solo: el día que
-  el backend añada una, no puede quedarse fuera del selector en silencio.
+- **Un tema a la vez, y lo elige quien busca.** Los once puestos uno detrás de otro convertían el
+  diálogo en un rollo de papel: para ver el último tema había que pasar ciento sesenta y un dibujos.
+  Hoy se elige el tema en un `select` —nativo, una línea, sin tira que se desplace en horizontal
+  (§21.1)— y se ven los suyos. **Al abrir se posa en el tema del icono que ya está puesto**, que es
+  donde quien viene a cambiarlo espera aterrizar.
+- **Buscar por palabra, y en todos.** Las claves del contrato son inglesas (`piggy-bank`,
+  `graduation-cap`), así que la búsqueda va contra el **nombre en español**, contra las palabras del
+  negocio —«arriendo», «nómina», «pensión», «gasolina»— y contra el tema. Sin tildes ni mayúsculas
+  en ninguno de los dos lados (`fold`, §94). Mientras hay texto **el tema se calla y se dice cuántos
+  hay**: quien escribe «vacuna» no sabe en qué tema cayó, y buscar solo dentro del tema abierto no
+  encontraría nada sin explicar por qué.
 - **Aplicar al tocar.** Es un selector, no un formulario: el cambio se ve arriba al instante y
   «Listo» solo cierra. Quien decide si se guarda es el formulario de fuera.
+
+Los grupos van sobre las **mismas claves** del contrato —cuyo orden ya es temático—, no sobre una
+lista aparte, y una prueba obliga a que cada clave esté en uno y en uno solo: el día que el backend
+añada una, no puede quedarse fuera del selector en silencio.
+
+**Y la rejilla no se sale.** Sus celdas son cuadradas y del **ancho de su columna**
+(`aspect-square w-full`), no de un tamaño fijo. Con el objetivo táctil de §43 puesto como medida
+—`size-11` en puntero grueso— cada celda pasaba a medir más que la columna que la sostenía, así que
+en el teléfono la rejilla desbordaba el diálogo y aparecía un desplazamiento horizontal encima del
+vertical. Un tamaño fijo dentro de una rejilla que reparte el ancho son dos verdades sobre lo mismo:
+manda la columna, y el objetivo táctil se consigue con el mínimo del `minmax`.
 
 **«Sin poner» es una opción visible**, tanto en icono como en color. Las organizaciones que ya
 existían tienen los dos en `null` y hace falta poder volver ahí; el hueco de no elegir no es lo
@@ -5652,6 +5666,13 @@ dentro de los temas que el enum ya tenía y no al final.
    lo que §11.1.12 decía que este diseño tenía que garantizar.
 
 **Verificación:** typecheck limpio, 0 warnings de lint, 572 tests en verde, build OK.
+
+Y al verlo en un teléfono con todo dentro salieron tres cosas más, arregladas en el mismo sitio: la
+rejilla **desbordaba a lo ancho** —celda de tamaño fijo dentro de una columna que reparte el ancho,
+§11.1.12—, los once temas seguidos convertían el diálogo en un rollo de papel, y el buscador,
+suelto entre el color y los iconos, no decía qué buscaba. Hoy hay un tema a la vez, elegido, y el
+buscador vive bajo el rótulo «Icono». `ambulance` se pasa a Salud: iba entre los vehículos porque
+así llegó del enum, y ahí no es lo que alguien busca.
 
 ---
 

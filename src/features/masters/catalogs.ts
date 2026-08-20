@@ -482,7 +482,7 @@ export const CATALOG_ICON_GROUPS: { label: string; icons: IconKey[] }[] = [
   {
     label: 'General',
     icons: [
-      'tag', 'folder', 'star', 'bookmark', 'package', 'boxes', 'grid', 'calendar', 'repeat'
+      'tag', 'folder', 'star', 'bookmark', 'package', 'boxes', 'grid', 'calendar', 'repeat',
     ],
   },
   {
@@ -490,7 +490,7 @@ export const CATALOG_ICON_GROUPS: { label: string; icons: IconKey[] }[] = [
     icons: [
       'wallet', 'banknote', 'coins', 'hand-coins', 'credit-card', 'piggy-bank', 'vault',
       'receipt', 'landmark', 'percent', 'trending-up', 'trending-down', 'file-text',
-      'calculator', 'scale', 'gavel'
+      'calculator', 'scale', 'gavel',
     ],
   },
   {
@@ -498,14 +498,14 @@ export const CATALOG_ICON_GROUPS: { label: string; icons: IconKey[] }[] = [
     icons: [
       'home', 'door-open', 'key', 'lightbulb', 'lamp', 'plug', 'droplet', 'flame', 'wifi',
       'phone', 'trash-2', 'sofa', 'armchair', 'bed', 'bath', 'shower-head', 'washing-machine',
-      'refrigerator'
+      'refrigerator',
     ],
   },
   {
     label: 'Transporte',
     icons: [
       'car', 'car-front', 'car-taxi-front', 'bus', 'bus-front', 'fuel', 'plane', 'bike', 'truck',
-      'tractor', 'ambulance', 'ship', 'sailboat', 'train-front'
+      'tractor', 'ship', 'sailboat', 'train-front',
     ],
   },
   {
@@ -513,28 +513,28 @@ export const CATALOG_ICON_GROUPS: { label: string; icons: IconKey[] }[] = [
     icons: [
       'utensils', 'chef-hat', 'pizza', 'sandwich', 'salad', 'soup', 'beef', 'fish', 'egg',
       'croissant', 'cookie', 'ice-cream-cone', 'coffee', 'wine', 'shopping-cart', 'shopping-bag',
-      'apple', 'beer', 'cake', 'store'
+      'apple', 'beer', 'cake', 'store',
     ],
   },
   {
     label: 'Ocio',
     icons: [
       'popcorn', 'film', 'clapperboard', 'camera', 'music', 'headphones', 'mic', 'guitar',
-      'gamepad-2', 'puzzle', 'tv', 'ticket', 'palette', 'dumbbell', 'luggage'
+      'gamepad-2', 'puzzle', 'tv', 'ticket', 'palette', 'dumbbell', 'luggage',
     ],
   },
   {
     label: 'Salud',
     icons: [
       'heart-pulse', 'pill', 'syringe', 'bandage', 'thermometer', 'stethoscope', 'brain', 'eye',
-      'glasses', 'microscope', 'test-tube', 'hospital'
+      'glasses', 'microscope', 'test-tube', 'ambulance', 'hospital',
     ],
   },
   {
     label: 'Educación',
     icons: [
       'graduation-cap', 'school', 'library', 'book-open', 'notebook', 'notebook-pen', 'backpack',
-      'pencil', 'highlighter', 'ruler', 'presentation'
+      'pencil', 'highlighter', 'ruler', 'presentation',
     ],
   },
   {
@@ -542,21 +542,21 @@ export const CATALOG_ICON_GROUPS: { label: string; icons: IconKey[] }[] = [
     icons: [
       'award', 'briefcase', 'building', 'building-2', 'warehouse', 'hotel', 'users',
       'user-round', 'badge', 'handshake', 'megaphone', 'network', 'wrench', 'hammer', 'hard-hat',
-      'factory', 'shield'
+      'factory', 'shield',
     ],
   },
   {
     label: 'Tecnología',
     icons: [
       'laptop', 'smartphone', 'tablet', 'server', 'database', 'cloud', 'monitor', 'keyboard',
-      'mouse', 'headset', 'printer', 'scan', 'qr-code'
+      'mouse', 'headset', 'printer', 'scan', 'qr-code',
     ],
   },
   {
     label: 'Otros',
     icons: [
       'dog', 'cat', 'paw-print', 'bird', 'rabbit', 'bone', 'trees', 'leaf', 'sun', 'baby',
-      'gift', 'shirt', 'crown', 'umbrella', 'sparkles', 'scissors'
+      'gift', 'shirt', 'crown', 'umbrella', 'sparkles', 'scissors',
     ],
   },
 ]
@@ -625,7 +625,6 @@ export const ICON_LABELS: Record<IconKey, string> = {
   bike: 'Bicicleta',
   truck: 'Camión',
   tractor: 'Tractor',
-  ambulance: 'Ambulancia',
   ship: 'Barco',
   sailboat: 'Velero',
   'train-front': 'Tren',
@@ -678,6 +677,7 @@ export const ICON_LABELS: Record<IconKey, string> = {
   glasses: 'Gafas',
   microscope: 'Microscopio',
   'test-tube': 'Laboratorio',
+  ambulance: 'Ambulancia',
   hospital: 'Hospital',
   // Educación
   'graduation-cap': 'Matrícula',

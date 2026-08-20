@@ -131,6 +131,9 @@ test('el icono y el color elegidos viajan en el alta', async () => {
   await user.type(within(dialogo).getByLabelText(/Nombre/), 'Internet')
 
   const selector = await abrirSelector(user, dialogo)
+  // Se elige el tema y se ven los suyos: con los once puestos había que recorrer
+  // 161 dibujos para llegar al último.
+  await user.selectOptions(within(selector).getByLabelText('Tema'), 'Casa y servicios')
   // Por su nombre en español: la clave del contrato es `wifi`, y nadie busca eso.
   await user.click(within(selector).getByRole('button', { name: 'Internet' }))
   await user.click(within(selector).getByRole('button', { name: 'Azul' }))
@@ -157,6 +160,9 @@ test('«sin icono» es una opción, no el hueco de no elegir', async () => {
   ).toBeVisible()
 
   const selector = await abrirSelector(user, dialogo)
+  // Y abre en el tema donde vive lo elegido, no en el primero de la lista.
+  expect(within(selector).getByLabelText('Tema')).toHaveValue('Casa y servicios')
+
   await user.click(within(selector).getByRole('button', { name: 'Sin icono' }))
   await user.click(within(selector).getByRole('button', { name: 'Sin color' }))
   await user.click(within(selector).getByRole('button', { name: 'Listo' }))
@@ -255,10 +261,15 @@ test('el buscador encuentra el icono por lo que es y por el gasto que nombra', a
 
   await user.type(within(selector).getByLabelText('Buscar icono'), 'arriendo')
 
+  // Busca en todos los temas, no en el que esté abierto: quien escribe no sabe
+  // en cuál cayó, y por eso mientras hay texto el tema se calla.
   expect(within(selector).getByRole('button', { name: 'Casa' })).toBeVisible()
+  expect(within(selector).getByRole('button', { name: 'Llave' })).toBeVisible()
   expect(within(selector).queryByRole('button', { name: 'Internet' })).not.toBeInTheDocument()
+  expect(within(selector).queryByLabelText('Tema')).not.toBeInTheDocument()
+
   // Y con lo que no existe se dice, en vez de dejar la rejilla vacía.
   await user.clear(within(selector).getByLabelText('Buscar icono'))
   await user.type(within(selector).getByLabelText('Buscar icono'), 'unicornio')
-  expect(within(selector).getByText(/Ningún icono se llama así/)).toBeVisible()
+  expect(within(selector).getByText('Ningún icono se llama así.')).toBeVisible()
 })
