@@ -21,7 +21,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { initials, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { useListFilters } from '@/lib/use-list-filters'
+import { useKeepFilters, useListFilters } from '@/lib/use-list-filters'
 import type {
   Contact,
   GetApiV1OrganizationsOrgIdContactsParams,
@@ -32,6 +32,9 @@ import { useContacts } from './hooks'
 
 /** Diez, como el resto de listados. */
 const PAGE_SIZE = 10
+
+/** El alta, que es ruta hija de la lista y abre en cajón sobre ella. */
+const NEW = '/contactos/nuevo'
 
 /** Criterios que viven en la URL, en español como las rutas (§87.5). */
 const FILTER_KEYS = ['tipo', 'estado', 'orden', 'dir', 'pagina'] as const
@@ -145,6 +148,7 @@ export function ContactsListPage() {
   const navigate = useNavigate()
 
   const { values, set, clear } = useListFilters<FilterKey>('nummo:contactos:filtros', FILTER_KEYS)
+  const keepFilters = useKeepFilters()
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -189,7 +193,7 @@ export function ContactsListPage() {
       <PageHeader title="Contactos" description="Personas y empresas de la organización.">
         {canEdit && (
           <Button asChild size="sm" aria-label="Nuevo contacto">
-            <Link to="/contactos/nuevo">
+            <Link to={keepFilters(NEW)}>
               <Plus aria-hidden className="size-4" />
               <span className="hidden sm:inline">Nuevo contacto</span>
             </Link>
@@ -220,7 +224,9 @@ export function ContactsListPage() {
             columns={columns}
             rows={contacts}
             getRowId={(c) => c.id}
-            onRowClick={(c) => navigate(`/contactos/${c.id}`)}
+            // Con los criterios puestos: la lista se queda montada detrás del
+            // cajón y sin ellos volvería a «Todos» (§21.1).
+            onRowClick={(c) => navigate(keepFilters(`/contactos/${c.id}`))}
             // Una persona se reconoce por su nombre, no por un icono de persona.
             rowIcon={(c) => ({ initials: initials(c.displayName), shape: 'round' })}
             sort={{
@@ -241,7 +247,7 @@ export function ContactsListPage() {
                   action={
                     canEdit && (
                       <Button asChild size="sm">
-                        <Link to="/contactos/nuevo">
+                        <Link to={keepFilters(NEW)}>
                           <Plus className="size-4" />
                           Nuevo contacto
                         </Link>

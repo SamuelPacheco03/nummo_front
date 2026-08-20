@@ -35,7 +35,7 @@ import {
   type RecurringRow,
 } from '@/lib/recurring-list'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { useListFilters } from '@/lib/use-list-filters'
+import { useKeepFilters, useListFilters } from '@/lib/use-list-filters'
 
 /** Diez, como el resto de listados. */
 const PAGE_SIZE = 10
@@ -111,6 +111,7 @@ export function RecurringList({
     storageKey,
     RECURRING_FILTER_KEYS,
   )
+  const keepFilters = useKeepFilters()
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -214,7 +215,7 @@ export function RecurringList({
 
   const newButton = (
     <Button asChild size="sm" aria-label={copy.action}>
-      <Link to={newTo}>
+      <Link to={keepFilters(newTo)}>
         <Plus aria-hidden className="size-4" />
         <span className="hidden sm:inline">{copy.action}</span>
       </Link>
@@ -256,7 +257,9 @@ export function RecurringList({
             columns={columns}
             rows={items}
             getRowId={(row) => row.id}
-            onRowClick={(row) => navigate(detailTo(row.id))}
+            // Con los criterios puestos: la lista se queda montada detrás del
+            // cajón y sin ellos volvería a «Todos» (§21.1).
+            onRowClick={(row) => navigate(keepFilters(detailTo(row.id)))}
             // El del concepto o la categoría, con su color (§11.1.12); el papel
             // es para las plantillas cuyo catálogo todavía no ha llegado.
             rowIcon={(row) => catalogRowIcon(catalogMap.get(row.catalogId), FileText)}

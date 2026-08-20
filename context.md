@@ -1380,6 +1380,40 @@ Las claves van **en español**, como las rutas (§87.5):
 preferencia. Que dentro de una semana la lista abra filtrada por algo elegido hoy desorienta más
 de lo que ayuda.
 
+### Los criterios viajan a la ficha, y vuelven con ella
+
+La ficha de un registro es una **ruta hija** de su lista y abre en cajón por encima, con **la
+lista montada detrás** (§87.5). Eso es lo que hace que cerrar sea instantáneo y que no se pierda
+el scroll — y también lo que hace que los filtros se caigan si se navega mal: los criterios se
+derivan de la URL **en cada render**, así que abrir la ficha con solo su `pathname` deja a la
+lista de detrás sin ninguno. Las fichas de estado saltan a «Todos», la lista vuelve a pedir la
+página sin filtrar, y al cerrar aparece un listado que no es el que se estaba mirando.
+
+**El rescate de `sessionStorage` no lo tapa, y está bien que no lo tape:** ocurre una vez por
+montaje, y aquí no hay montaje nuevo — la lista nunca se fue. Hacer que un efecto reescribiera la
+URL cada vez que se queda sin criterios lo arreglaría de refilón, pero a cambio la lista
+parpadearía —un render sin filtrar, una petición de más y otro render— cada vez que se abre una
+ficha. La causa no es que falte un rescate: es la navegación, que se dejaba los criterios por el
+camino.
+
+Así que se navega **con los criterios puestos, en las dos direcciones**, y lo resuelve
+`useKeepFilters` (`lib/use-list-filters.ts`), que devuelve el mismo destino con el `search` que ya
+lleva la URL:
+
+| Movimiento | Quién lo pone |
+| --- | --- |
+| Lista → ficha, alta o edición | La lista: `navigate(keepFilters(…))` o `<Link to={keepFilters(…)}>` |
+| Ficha → su lista | `DetailDrawer`, **una vez** para todas las fichas y formularios de la app |
+
+**La excepción es la que da la regla:** `DetailDrawer` solo devuelve los criterios si `closeTo` es
+**su propia lista** —de la que la ficha es ruta hija—. Registrar un egreso desde una cuenta por
+pagar cierra hacia la cuenta, no hacia la lista de egresos, y ahí las mismas claves —`estado`,
+`orden`, `pagina`— filtrarían una lista ajena. Un criterio solo vale dentro de la lista que lo
+escribió.
+
+De paso, la URL de una ficha compartida lleva el contexto en el que se abrió, que es lo que se
+quiere: quien la reciba ve la misma lista debajo.
+
 ### Qué cifras van en la cabecera
 
 No todas las listas se resumen igual, y copiar el resumen de al lado es la forma rápida de poner
@@ -4752,6 +4786,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `formatRelativeTime` · `localDay` | `lib/format.ts` | «hace 5 min» y el día del reloj de quien lee, no el de UTC |
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
+| `useKeepFilters` | `lib/use-list-filters.ts` | Navegar a la ficha —y volver— sin dejarse los criterios (§21.1) |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
 
 ---
@@ -5038,6 +5073,28 @@ fila de otra en una lista donde todas eran el mismo billete.
 
 Se cierra devolviendo `conceptIcon` / `conceptColor` —o el objeto entero, como ya se hace con
 `payerName`— en las vistas de saldos, en las dos de recurrentes y en las dos de movimientos.
+
+### 95.20. Abrir una ficha borraba los filtros de su lista — ✅ **cerrada**
+
+§21.1 se titula «Filtros que sobreviven a la navegación» y prometía justo eso desde hacía tiempo.
+No sobrevivían a la navegación más corta de todas: **abrir una ficha de la propia lista**.
+
+La lista no se desmonta —la ficha es una ruta hija que abre en cajón encima—, y sus criterios se
+derivan de la URL en cada render. Pulsar una fila navegaba solo al `pathname`, así que la lista de
+detrás se quedaba sin criterios en el mismo momento en que se abría el cajón: las fichas de estado
+saltaban a «Todos» y se pedía otra vez la página sin filtrar. Cerrar remataba la faena, porque
+`DetailDrawer` volvía también con el `pathname` pelado. Filtrar por «Vencidas», abrir una cuenta y
+cerrarla dejaba la cartera entera sin filtrar, y lo mismo en las otras seis listas.
+
+Con el botón «atrás» del navegador no pasaba —la entrada anterior del historial sí llevaba los
+criterios—, y por eso el fallo se leía como un capricho: la misma acción con dos resultados según
+por dónde se cerrara.
+
+**Resuelto:** se navega con los criterios puestos en las dos direcciones (`useKeepFilters`), y el
+regreso lo pone `DetailDrawer` una vez para toda la app — devolviéndolos **solo** cuando vuelve a
+su propia lista, que es lo que impide que el «volver» de registrar un pago desde una cuenta lleve
+los filtros de una lista a otra. Probado en `detail-drawer.test.tsx` (el cierre) y en las suites de
+cartera y de pagos/egresos (la apertura).
 
 ### 95.15. Lo que ya cumple
 
