@@ -34,7 +34,7 @@ export function CreateExpenseDialog({
     page: 1,
     pageSize: 100,
     isActive: 'true',
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
 

@@ -195,12 +195,24 @@ Sobre EMAIL y WHATSAPP: no hace falta esconderlos a mano. Hoy ningún tipo los d
 
 ## 🆕 Icono, color y orden en conceptos y categorías · auto-registro de recurrentes · alta por nombre
 
-Está en el contrato y **no construido todavía en el front**. El handoff completo, en
-`contract/HANDOFF-fase-10.md`. Lo que hay que recordar al abordarlo:
+El handoff completo, en `contract/HANDOFF-fase-10.md`.
 
-- `icon` y `color` son **enums cerrados** en el contrato (84 claves de icono, 18 tokens de color):
-  se leen de ahí, no se copian a una constante nuestra. Hace falta un icono de reserva para el
-  `null`, y las dos listas ordenan por `position`.
+### Icono, color y orden — ✅ construido (§11.1.12)
+
+Los dos catálogos tienen su identidad y su orden: `IdentityField` en los dos formularios con «sin
+poner» como opción visible, el icono junto al nombre en la tabla y en la tarjeta, y un cajón para
+reordenar que manda **un `PATCH` por elemento movido** y ninguno más. Las trece consultas que
+alimentan un selector de conceptos o categorías piden ya `sort=position`.
+
+Los dos enums se leen del contrato, no de una constante nuestra, y la tabla va tipada contra el
+enum generado: una clave nueva rompe el `tsc` del front en vez de dejar filas sin icono.
+
+**Petición de contrato:** las listas de dinero no pueden pintar ese icono. `ReceivableBalance` y
+`ExpenseBalance` traen `billingConceptId` / `expenseCategoryId` y nada más, así que la fila no sabe
+cómo se dibuja sin un segundo viaje al catálogo. Se cierra devolviendo `conceptIcon`/`conceptColor`
+—o el objeto, como ya hacéis con `payerName`— en las dos vistas de saldos. Detalle en §95.19.
+
+### Lo que queda de este bloque
 - `PUT …/auto-charge` es una **unión discriminada**: `{ mode: 'OFF' }` o
   `{ mode: 'AUTO_RECORD', financialAccountId, paymentMethodId }`. «Encendido sin cuenta» no se
   puede expresar, y así tiene que quedar en la UI: interruptor con confirmación propia, nunca un

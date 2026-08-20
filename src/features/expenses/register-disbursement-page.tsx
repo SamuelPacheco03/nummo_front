@@ -63,7 +63,7 @@ export function RegisterDisbursementPage() {
     page: 1,
     pageSize: 100,
     isActive: 'true',
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const { items: expenses } = useExpenses(oid, {

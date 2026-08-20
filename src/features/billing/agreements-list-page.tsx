@@ -51,7 +51,7 @@ function useAgreementRows(params: RecurringQuery): RecurringListResult {
   const { items: concepts } = useBillingConcepts(orgId, {
     page: 1,
     pageSize: 100,
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])

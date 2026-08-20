@@ -53,7 +53,7 @@ export function ReceivablesListPage() {
   const { items: concepts } = useBillingConcepts(orgId, {
     page: 1,
     pageSize: 100,
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
 

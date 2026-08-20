@@ -72,7 +72,7 @@ export function ScheduleFormPage() {
   const { schedule, isPending: loading } = useExpenseSchedule(orgId, scheduleId)
   const create = useCreateSchedule(oid)
   const update = useUpdateSchedule(oid)
-  const { items: categories } = useExpenseCategories(orgId, { page: 1, pageSize: 100, isActive: 'true', sort: 'name', order: 'asc' })
+  const { items: categories } = useExpenseCategories(orgId, { page: 1, pageSize: 100, isActive: 'true', sort: 'position', order: 'asc' })
 
   const {
     register,

@@ -866,10 +866,11 @@ Tres reglas que salieron de verlo funcionando:
    línea, no. De ahí los prefijos que solo aparecen por debajo de `lg` («Vence 15 jul»).
 
 **El icono es de la tarjeta, no de la tabla** (`rowIcon` → `RowIconBadge`). Un icono por fila en
-una rejilla densa es ruido, y en escritorio la columna ya dice de qué categoría es. Hoy lo rellena
-cada pantalla con uno fijo, o con las iniciales cuando la fila es una persona; **está preparado
-para lo que viene**: cuando las categorías de gasto y los conceptos de cobro tengan icono y color
-propios, la lista los pasa desde la fila y la tarjeta no cambia una línea. Los tonos son
+una rejilla densa es ruido, y en escritorio la columna ya dice de qué categoría es. Casi todas las
+pantallas lo rellenan con uno fijo, o con las iniciales cuando la fila es una persona. **Los dos
+catálogos con identidad propia ya lo pasan desde la fila** (§11.1.12) y la tarjeta no cambió una
+línea, que era justo lo que esto venía a permitir: para eso `RowIcon` acepta un `className`, porque
+un color elegido por el usuario no es ninguno de los cinco tonos. Los tonos siguen siendo
 semánticos (`neutral`, `brand`, `success`, `warning`, `destructive`), no colores sueltos.
 
 **El ancho lo pone el layout, no cada página.** Unas iban a `max-w-2xl` y otras a todo lo ancho,
@@ -1226,6 +1227,53 @@ decide si vibra, y solo `CRITICAL` se queda hasta que alguien lo mire. Y al puls
 pestaña abierta y **se navega**, aunque eso recargue: mandarle un mensaje para que navegue con su
 router dependería de que esa pestaña tenga una versión de la app que sepa escucharlo, y una que no
 lo sepa se queda enfocada sin ir a ninguna parte.
+
+## 11.1.12. El icono y el color de un catálogo
+
+Un concepto de cobro y una categoría de gasto llevan **icono, color y orden propios**. Los tres
+salen del contrato: 84 claves de icono —nombres de `lucide-react`—, 18 tokens de color —nombres de
+la paleta de Tailwind— y un `position` que es el orden por defecto de las dos listas.
+
+**El backend manda una clave, no un dibujo ni un hex**, y esa es toda la gracia: la iconografía
+sigue siendo nuestra (§37) y el día que cambie, cambia en `features/masters/catalogs.ts` y en
+ningún otro sitio. La tabla va tipada contra el enum generado, así que una clave nueva rompe `tsc`
+en vez de dejar filas sin icono.
+
+**Los colores de la paleta son la segunda excepción viva a §91, y va acotada.** Un color crudo en
+un componente está prohibido porque es una decisión de diseño escrita a mano; este no lo es: es un
+**dato que elige el usuario**, publicado como enum cerrado. No hay token semántico que valga —«la
+categoría Netflix es roja» no significa error— y meter dieciocho pares en `index.css` sería declarar
+como sistema lo que es contenido. Cada uno lleva su variante oscura, porque el color es justo lo que
+aquí hay que distinguir de un vistazo.
+
+**El icono va pegado al nombre, también en la tabla.** §11.1.3b lo reserva a la tarjeta de móvil
+porque en una rejilla densa es ruido y «la columna ya dice de qué categoría es» — pero aquí la fila
+**es** la categoría: el icono no repite un dato, es la identidad de lo que se está editando. En la
+tarjeta lo lleva `RowIconBadge`, que gana una prop `className` para poder pintar el color del
+contrato en vez de uno de los cinco tonos semánticos, que ahí no significarían nada.
+
+**«Sin poner» es una opción visible**, tanto en icono como en color. Las organizaciones que ya
+existían tienen los dos en `null` y hace falta poder volver ahí; el hueco de no elegir no es lo
+mismo que elegir nada.
+
+### Reordenar
+
+`position` no tiene columna —como «Creación»— y se ofrece solo en el cajón de filtros (§18.1,
+regla 9). Cambiarlo es otra cosa: un **cajón propio** con la lista entera y dos flechas por fila.
+
+Tres decisiones, y las tres se explican solas al intentar la alternativa:
+
+- **En un cajón y no en la propia lista**, porque la lista pagina de diez en diez: con flechas por
+  fila, el primero de la página dos no tendría a dónde subir. Aquí se piden los cien de una vez.
+- **Flechas y no arrastrar.** Arrastrar pide una dependencia (§63) y deja fuera al teclado (§46);
+  dos botones no hacen ninguna de las dos cosas.
+- **Se guarda al final y solo lo que se movió.** El contrato no tiene reordenamiento masivo —es un
+  `PATCH` por elemento—, así que mandar los treinta por mover uno serían veintinueve escrituras que
+  no cambian nada.
+
+**Y el orden se respeta donde importa**, que son los selectores: las trece consultas que alimentan
+un desplegable de conceptos o de categorías piden `sort=position`. Un orden propio que solo se ve
+en su propia pantalla no sirve para nada.
 
 ## 21.1. Filtros que sobreviven a la navegación
 
@@ -4273,8 +4321,10 @@ usa una máscara, por qué `--primary` no se aclara en hover). Sigue ese estilo:
 
 - **Toda** clase compuesta pasa por `cn()`. Nunca concatenación con plantillas.
 - **Solo tokens semánticos.** `bg-card`, `text-muted-foreground`, `border-border`. Nunca
-  `bg-slate-100` ni un hex. La única excepción viva es `THEME_COLOR` en `theme-provider.tsx`,
-  que alimenta la meta `theme-color` del navegador y no puede ser una variable CSS.
+  `bg-slate-100` ni un hex. Hay **dos** excepciones vivas, las dos por el mismo motivo —no son
+  decisiones de diseño—: `THEME_COLOR` en `theme-provider.tsx`, que alimenta la meta `theme-color`
+  del navegador y no puede ser una variable CSS; y la tabla de colores de `masters/catalogs.ts`,
+  que traduce el enum de paleta **que elige el usuario** para sus conceptos y categorías (§11.1.12).
 - Un token nuevo se declara en `src/index.css` en **los tres sitios**: `:root`, `.dark` y
   `@theme inline`. Un token que solo existe en claro es un bug de modo oscuro.
 - El orden de utilidades sigue el del resto del archivo (layout → caja → tipografía → color →
@@ -4517,6 +4567,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList`, con su papel en la tarjeta |
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
+| `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
+| `IdentityField` | `features/masters/identity-field.tsx` | Elegir el icono y el color de un catálogo, en los dos |
+| `CatalogOrderDrawer` | `features/masters/order-drawer.tsx` | El orden propio de un catálogo, con la lista entera |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
 | `ListToolbar` | `components/ui/list-toolbar.tsx` | La fila de controles de un listado |
@@ -4805,6 +4858,22 @@ envío, que es cuando el backend la borra al recibir un 410.
 
 Se cierra devolviendo el `endpoint` en `PushSubscription` —es del propio usuario— o un `isCurrent`
 resuelto en el servidor.
+
+### 95.19. Las listas de dinero no traen el icono de su concepto o su categoría — ⏸️ **abierta, es petición de contrato**
+
+§11.1.3b prometía que, en cuanto los conceptos de cobro y las categorías de gasto tuvieran icono y
+color, las listas de cartera y de gastos los pasarían desde la fila. Se cumplió en los dos catálogos
+(§11.1.12) y **no se puede cumplir en las listas de dinero**: `ReceivableBalance` y `ExpenseBalance`
+traen `billingConceptId` y `expenseCategoryId`, y nada más.
+
+Pintarlo hoy exigiría cruzar cada fila contra el catálogo cargado aparte —que es lo que ya se hace
+para el **nombre**— y eso funciona porque son cien registros como mucho; extenderlo al icono y al
+color es la misma consulta y el mismo cruce, así que la brecha no es de rendimiento sino de dónde
+vive la verdad: una lista que se pagina en el servidor no debería necesitar un segundo viaje para
+saber cómo se pinta cada fila.
+
+Se cierra devolviendo `conceptIcon` / `conceptColor` —o el objeto entero, como ya se hace con
+`payerName`— en las dos vistas de saldos.
 
 ### 95.15. Lo que ya cumple
 
@@ -5180,6 +5249,27 @@ reparto, incluidos los catálogos que se parecen y el recurso desconocido), buil
 
 ---
 
+## Fase 17 — La identidad de los catálogos ✅ **completada**
+
+Conceptos de cobro y categorías de gasto con icono, color y orden propios (§11.1.12).
+
+1. `masters/catalogs.ts` traduce los dos enums del contrato —84 iconos, 18 colores— a glifos y a
+   clases, tipado contra el enum generado.
+2. `IdentityField` en los dos formularios, con «sin poner» como opción visible en ambos.
+3. El icono junto al nombre en la tabla y en la tarjeta; `RowIcon` gana un `className` para poder
+   llevar un color que no es ninguno de los cinco tonos semánticos.
+4. `position` entra en el orden que ofrecen las dos listas (§18.1) y es su valor por defecto, con
+   un cajón propio para cambiarlo. Las **trece** consultas que alimentan un selector piden ese
+   orden: uno que solo se ve en su pantalla no sirve de nada.
+5. `MasterCrud` gana `rowIcon`, `sortChoices`, `defaultSort` y `actions` — los otros tres maestros
+   siguen exactamente igual, y `namedSort` impide que `position` les llegue.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 515 tests en verde (13 nuevos: la tabla de
+catálogos y el recorrido de la pantalla, incluido que ordenar solo escriba lo que se movió),
+build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5200,6 +5290,7 @@ reparto, incluidos los catálogos que se parecen y el recurso desconocido), buil
 | ✅ 14 | Preferencias y política de avisos | bajo | 13 |
 | ✅ 15 | Web Push | medio | 14 |
 | ✅ 16 | Las listas se refrescan solas | bajo | 13 |
+| ✅ 17 | La identidad de los catálogos | medio | — (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

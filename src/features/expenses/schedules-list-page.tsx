@@ -51,7 +51,7 @@ function useScheduleRows(params: RecurringQuery): RecurringListResult {
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
     pageSize: 100,
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])

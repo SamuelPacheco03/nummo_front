@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ReceiptText } from 'lucide-react'
+import { ArrowUpDown, ReceiptText } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { FormDialog } from '@/components/ui/form-dialog'
 import { MoneyField } from '@/components/money-field'
@@ -17,6 +18,15 @@ import { formatAmount } from '@/lib/format'
 import type { BillingConcept } from '@/api/generated/model'
 import { MasterCrud, type Column } from './master-crud'
 import { isValidAmount } from './labels'
+import { CatalogIcon } from './catalog-icon'
+import {
+  catalogColorClass,
+  catalogIcon,
+  CATALOG_DEFAULT_SORT,
+  CATALOG_SORT_CHOICES,
+} from './catalogs'
+import { IdentityField, type CatalogIdentity } from './identity-field'
+import { CatalogOrderDrawer } from './order-drawer'
 import { useBillingConcepts, useCreateBillingConcept, useUpdateBillingConcept } from './hooks'
 import type { MasterParams } from './hooks'
 
@@ -41,7 +51,19 @@ const COLUMNS: Column<BillingConcept>[] = [
     cell: (r) => <span className="nums text-muted-foreground">{r.code ?? '—'}</span>,
     hideOnCard: true,
   },
-  { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
+  {
+    header: 'Nombre',
+    // El icono va **pegado al nombre**, no en columna propia: aquí no es el
+    // adorno de una fila densa, es la identidad de lo que se está editando.
+    cell: (r) => (
+      <span className="flex items-center gap-2">
+        <CatalogIcon icon={r.icon} color={r.color} fallback={ReceiptText} />
+        {r.name}
+      </span>
+    ),
+    card: 'title',
+    sortField: 'name',
+  },
   {
     header: 'Monto por defecto',
     cell: (r) => formatAmount(r.defaultAmount),
@@ -73,8 +95,15 @@ function ConceptDialog({
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
+  /*
+    El icono y el color no son campos de texto, así que viven en su propio
+    estado en vez de en el formulario: pasarlos por RHF obligaría a registrar dos
+    controles ocultos para no ganar nada.
+  */
+  const [identity, setIdentity] = useState<CatalogIdentity>({ icon: null, color: null })
+
   useEffect(() => {
-    if (open)
+    if (open) {
       reset({
         code: editing?.code ?? '',
         name: editing?.name ?? '',
@@ -82,6 +111,8 @@ function ConceptDialog({
         defaultAmount: editing?.defaultAmount ?? '',
         isActive: editing?.isActive ?? true,
       })
+      setIdentity({ icon: editing?.icon ?? null, color: editing?.color ?? null })
+    }
   }, [open, editing, reset])
 
   const onSubmit = handleSubmit(async (v) => {
@@ -90,6 +121,7 @@ function ConceptDialog({
       name: v.name,
       description: nn(v.description),
       defaultAmount: nn(v.defaultAmount),
+      ...identity,
     }
     try {
       if (isEdit && editing) {
@@ -134,6 +166,7 @@ function ConceptDialog({
       <Field label="Descripción" htmlFor="bc-desc" error={errors.description?.message}>
         <Textarea id="bc-desc" rows={2} {...register('description')} />
       </Field>
+      <IdentityField value={identity} onChange={setIdentity} fallback={ReceiptText} />
       {isEdit && (
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="size-4 accent-primary" {...register('isActive')} />
@@ -155,7 +188,9 @@ export function BillingConceptsPage() {
   const can = useCan()
   const canManage = can('billing_concepts.manage')
   const [open, setOpen] = useState(false)
+  const [ordering, setOrdering] = useState(false)
   const [editing, setEditing] = useState<BillingConcept | null>(null)
+  const update = useUpdateBillingConcept(orgId ?? '')
 
   return (
     <>
@@ -170,6 +205,20 @@ export function BillingConceptsPage() {
         entity={['concepto', 'conceptos']}
         useList={useBillingConceptRows}
         columns={COLUMNS}
+        sortChoices={CATALOG_SORT_CHOICES}
+        defaultSort={CATALOG_DEFAULT_SORT}
+        rowIcon={(row) => ({
+          Icon: catalogIcon(row.icon) ?? ReceiptText,
+          className: catalogColorClass(row.color),
+        })}
+        actions={
+          canManage && (
+            <Button variant="outline" size="sm" onClick={() => setOrdering(true)}>
+              <ArrowUpDown aria-hidden className="size-4" />
+              <span className="hidden sm:inline">Ordenar</span>
+            </Button>
+          )
+        }
         onNew={() => {
           setEditing(null)
           setOpen(true)
@@ -180,6 +229,20 @@ export function BillingConceptsPage() {
         }}
       />
       {orgId && <ConceptDialog orgId={orgId} open={open} onOpenChange={setOpen} editing={editing} />}
+      {orgId && (
+        <CatalogOrderDrawer
+          open={ordering}
+          onOpenChange={setOrdering}
+          title="Ordenar conceptos"
+          fallback={ReceiptText}
+          useList={useBillingConceptRows}
+          onSave={async (moves) => {
+            for (const move of moves) {
+              await update.mutateAsync({ orgId, id: move.id, data: { position: move.position } })
+            }
+          }}
+        />
+      )}
     </>
   )
 }

@@ -89,14 +89,14 @@ export function AgreementFormPage() {
     page: 1,
     pageSize: 100,
     isActive: 'true',
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const { items: policies } = useInterestPolicies(orgId, {
     page: 1,
     pageSize: 100,
     isActive: 'true',
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const { branches } = useBranches(orgId)

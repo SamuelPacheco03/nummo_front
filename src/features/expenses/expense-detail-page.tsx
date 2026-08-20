@@ -47,7 +47,7 @@ export function ExpenseDetailPage() {
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
     pageSize: 100,
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const catalogName = useMemo(

@@ -28,11 +28,24 @@ export interface RowIcon {
   /** Alternativa al icono: una o dos letras. Lo que usan las personas. */
   initials?: string
   tone?: RowIconTone
+  /**
+   * Sustituye al tono, para lo que trae **su propio color del contrato**: el
+   * icono de un concepto de cobro o de una categoría de gasto, que la
+   * organización elige de una paleta cerrada. Los cinco tonos son semánticos y
+   * ahí no significarían nada (§11.1.3b).
+   */
+  className?: string
   /** Redonda para quien tiene nombre; cuadrada para lo demás. */
   shape?: 'square' | 'round'
 }
 
-export function RowIconBadge({ Icon, initials, tone = 'neutral', shape = 'square' }: RowIcon) {
+export function RowIconBadge({
+  Icon,
+  initials,
+  tone = 'neutral',
+  className,
+  shape = 'square',
+}: RowIcon) {
   if (!Icon && !initials) return null
   return (
     <span
@@ -40,7 +53,7 @@ export function RowIconBadge({ Icon, initials, tone = 'neutral', shape = 'square
       className={cn(
         'grid size-9 shrink-0 place-items-center text-xs font-semibold',
         shape === 'round' ? 'rounded-full' : 'rounded-lg',
-        TONES[tone],
+        className ?? TONES[tone],
       )}
     >
       {Icon ? <Icon className="size-4.5" /> : initials}

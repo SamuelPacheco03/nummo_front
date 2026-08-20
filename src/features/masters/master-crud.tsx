@@ -14,6 +14,7 @@ import {
   type SortChoice,
 } from '@/components/ui/filter-sheet'
 import { listColumns, type CardRole } from '@/components/ui/list-columns'
+import type { RowIcon } from '@/components/ui/row-icon'
 import { ListToolbar } from '@/components/ui/list-toolbar'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusDot } from '@/components/ui/status-badge'
@@ -40,13 +41,20 @@ const VISIBILITY = [
   { value: 'todos', label: 'Todos', isActive: undefined },
 ]
 
-/** Los maestros solo ordenan por estas dos, según el contrato (NamedListQuery). */
+/**
+ * Lo que acepta un maestro cualquiera, según el contrato (`NamedListQuery`).
+ *
+ * Los dos catálogos con orden propio —conceptos y categorías— pasan el suyo con
+ * `position` delante: §18.1 pide que una lista ordene por **todo** lo que su
+ * endpoint acepta, ni una menos.
+ */
 const SORT_CHOICES: SortChoice[] = [
   { field: 'name', label: 'Nombre', asc: 'De la A a la Z', desc: 'De la Z a la A' },
   { field: 'createdAt', label: 'Creación', asc: 'Más antiguos', desc: 'Más recientes' },
 ]
 
 const DEFAULT_SORT = 'name'
+
 
 /** Una columna del maestro: cabecera y cómo se pinta la celda. */
 export interface Column<T> {
@@ -113,6 +121,10 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
   storageKey,
   canManage,
   Icon,
+  rowIcon,
+  actions,
+  sortChoices = SORT_CHOICES,
+  defaultSort = DEFAULT_SORT,
   newLabel = 'Nuevo',
   searchPlaceholder = 'Buscar…',
   entity,
@@ -134,6 +146,16 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
    * fila y la tarjeta no cambia.
    */
   Icon?: LucideIcon
+  /**
+   * El icono de **cada fila**, cuando el registro trae el suyo del contrato.
+   * Gana a `Icon`, que es el de la sección entera.
+   */
+  rowIcon?: (row: T) => RowIcon
+  /** Lo que va junto al botón de crear: reordenar, exportar… */
+  actions?: ReactNode
+  /** Si el endpoint acepta más orden que el de siempre (§18.1). */
+  sortChoices?: SortChoice[]
+  defaultSort?: string
   newLabel?: string
   searchPlaceholder?: string
   /** Cómo se cuenta: `['concepto', 'conceptos']`. */
@@ -150,7 +172,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const page = Number(values.pagina) || 1
-  const sortField = values.orden || DEFAULT_SORT
+  const sortField = values.orden || defaultSort
   const desc = values.dir === 'desc'
 
   /** Cambiar cualquier criterio devuelve a la primera página. */
@@ -158,7 +180,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
 
   /** El orden por defecto se calla en la URL: solo estorba al compartirla. */
   const sortBy = (field: string, descending: boolean) =>
-    filter({ orden: field === DEFAULT_SORT ? '' : field, dir: descending ? 'desc' : '' })
+    filter({ orden: field === defaultSort ? '' : field, dir: descending ? 'desc' : '' })
 
   const visibility = VISIBILITY.find((v) => v.value === values.estado) ?? VISIBILITY[0]
 
@@ -260,6 +282,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
   return (
     <div className="space-y-5">
       <PageHeader title={title} description={description}>
+        {actions}
         {canManage && newButton(true)}
       </PageHeader>
 
@@ -289,11 +312,11 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
             columns={allColumns}
             rows={items}
             getRowId={(row) => row.id}
-            rowIcon={Icon ? () => ({ Icon }) : undefined}
+            rowIcon={rowIcon ?? (Icon ? () => ({ Icon }) : undefined)}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, Boolean(next[0]?.desc)),
-              options: SORT_CHOICES.map(({ field, label }) => ({ field, label })),
+              options: sortChoices.map(({ field, label }) => ({ field, label })),
             }}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}
@@ -344,7 +367,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
           </NativeSelect>
         </FilterField>
 
-        <FilterSortField choices={SORT_CHOICES} field={sortField} desc={desc} onChange={sortBy} />
+        <FilterSortField choices={sortChoices} field={sortField} desc={desc} onChange={sortBy} />
       </FilterSheet>
     </div>
   )

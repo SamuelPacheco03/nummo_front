@@ -34,7 +34,13 @@ export interface MasterParams {
   pageSize: number
   q?: string
   isActive?: 'true' | 'false'
-  sort?: 'name' | 'createdAt'
+  /**
+   * `position` es el orden propio de la organización y solo lo aceptan los dos
+   * catálogos que lo tienen —conceptos de cobro y categorías de gasto—, donde
+   * además es el valor por defecto del contrato. Los otros tres maestros ordenan
+   * por `name` y `createdAt`.
+   */
+  sort?: 'position' | 'name' | 'createdAt'
   order?: 'asc' | 'desc'
 }
 
@@ -46,6 +52,18 @@ interface ListResult<T> {
   isError: boolean
   error: unknown
   isFetching: boolean
+}
+
+/**
+ * Los tres maestros sin orden propio no conocen `position`.
+ *
+ * No puede llegarles —sus `sortChoices` no lo ofrecen— pero el tipo compartido
+ * lo admite, así que se estrecha aquí. Un `as` lo taparía y dejaría pasar el día
+ * que alguien sí se lo pase por error; esto manda el orden por defecto del
+ * endpoint, que es la respuesta correcta a «ordena por algo que no tengo».
+ */
+export function namedSort(sort: MasterParams['sort']): 'name' | 'createdAt' | undefined {
+  return sort === 'position' ? undefined : sort
 }
 
 function normalize<T>(query: {
@@ -124,7 +142,7 @@ export function useUpdateExpenseCategory(orgId: string) {
 
 /* ---------- Payment methods ---------- */
 export function usePaymentMethods(orgId: string | undefined, params: MasterParams): ListResult<PaymentMethod> {
-  const query = useGetApiV1OrganizationsOrgIdPaymentMethods(orgId ?? '', params, {
+  const query = useGetApiV1OrganizationsOrgIdPaymentMethods(orgId ?? '', { ...params, sort: namedSort(params.sort) }, {
     query: { enabled: !!orgId, placeholderData: keepPreviousData },
   })
   return normalize<PaymentMethod>(query)
@@ -150,7 +168,7 @@ export function useUpdatePaymentMethod(orgId: string) {
 
 /* ---------- Financial accounts ---------- */
 export function useFinancialAccounts(orgId: string | undefined, params: MasterParams): ListResult<FinancialAccount> {
-  const query = useGetApiV1OrganizationsOrgIdFinancialAccounts(orgId ?? '', params, {
+  const query = useGetApiV1OrganizationsOrgIdFinancialAccounts(orgId ?? '', { ...params, sort: namedSort(params.sort) }, {
     query: { enabled: !!orgId, placeholderData: keepPreviousData },
   })
   return normalize<FinancialAccount>(query)

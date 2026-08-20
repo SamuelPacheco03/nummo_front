@@ -19,7 +19,7 @@ import type {
   GetApiV1OrganizationsOrgIdBillingAgreementsParams,
   InterestPolicy,
 } from '@/api/generated/model'
-import type { MasterParams } from '@/features/masters/hooks'
+import { namedSort, type MasterParams } from '@/features/masters/hooks'
 import type { ListResult } from '@/lib/list-result'
 
 function pageOf<T>(data: unknown): { data: T[]; total: number; totalPages: number } | undefined {
@@ -32,9 +32,13 @@ export function useInterestPolicies(
   orgId: string | undefined,
   params: MasterParams,
 ): ListResult<InterestPolicy> {
-  const query = useGetApiV1OrganizationsOrgIdInterestPolicies(orgId ?? '', params, {
-    query: { enabled: !!orgId, placeholderData: keepPreviousData },
-  })
+  const query = useGetApiV1OrganizationsOrgIdInterestPolicies(
+    orgId ?? '',
+    { ...params, sort: namedSort(params.sort) },
+    {
+      query: { enabled: !!orgId, placeholderData: keepPreviousData },
+    },
+  )
   const page = pageOf<InterestPolicy>(query.data)
   return {
     items: page?.data ?? [],

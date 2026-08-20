@@ -35,7 +35,7 @@ export function ScheduleDetailPage() {
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
     pageSize: 100,
-    sort: 'name',
+    sort: 'position',
     order: 'asc',
   })
   const categoryName = useMemo(
