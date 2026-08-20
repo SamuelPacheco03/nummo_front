@@ -13,6 +13,12 @@ export interface SseChannel {
   start(sessionId: string): void
   chunk(text: string): void
   done(sessionId: string, reply: string, stopped?: boolean): void
+  /**
+   * `done` sin cerrar el cuerpo: el servidor ya dijo todo lo que tenía que decir y la
+   * conexión todavía tarda en irse (un proxy, su keep-alive). Es el caso que dejaba el
+   * botón de detener puesto sobre una respuesta ya terminada.
+   */
+  doneWithoutClosing(sessionId: string, reply: string): void
   /** Un fallo a mitad del flujo, con el cuerpo de error de siempre. */
   fail(code: string, message: string, details?: unknown): void
   /** Cierra sin `done`: la conexión se cayó. */
@@ -47,6 +53,7 @@ export function sseChannel(): SseChannel {
       push('done', { sessionId, reply, stopped })
       controller.close()
     },
+    doneWithoutClosing: (sessionId, reply) => push('done', { sessionId, reply, stopped: false }),
     fail: (code, message, details) => {
       push('error', { error: { code, message, ...(details ? { details } : {}) } })
       controller.close()

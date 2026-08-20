@@ -2441,17 +2441,39 @@ nueva en el acto, que es lo que el backend haría igualmente con un id que ya no
 
 **Numi atiende un turno a la vez, pero escribir no espera a nadie.** Antes, mientras
 contestaba, el botón de enviar se apagaba: lo escrito en ese rato no iba a ninguna parte.
-Ahora entra en la **cola del hilo** —marcado «En espera»— y sale solo en cuanto hay turno
+Ahora entra en la **cola del hilo** —marcado con un reloj— y sale solo en cuanto hay turno
 libre, en el orden en que se escribió. La cola vive en el hilo y no en la pantalla: cerrar
 el chat con algo esperando no lo pierde.
 
 Grabar sí espera, y es la única excepción: una nota de voz no se puede encolar porque su
 audio es un `blob:` de esta página y no sobrevive a guardarlo.
 
-**Cada mensaje propio dice en qué anda**, debajo de su burbuja: «En espera», «Enviando»,
-«No se envió». **Lo entregado no lleva marca** — en un chat lo normal es que llegue, y una
-palomita por línea es ruido. Reintentar cuelga del mensaje que falló, que es lo que se
-quiere reenviar; devolverlo a la cola es todo lo que hace.
+**Cada mensaje propio dice en qué anda, en palomitas** — a la derecha de la hora y dentro
+de la burbuja, como en WhatsApp:
+
+| Estado | Qué se ve | Qué significa |
+| --- | --- | --- |
+| `queued` | Un reloj | Espera turno; Numi está con otra cosa |
+| `sending` | Una palomita | Salió de aquí, nadie ha dicho todavía que llegara |
+| `sent`, o sin marca | Dos palomitas | El servidor lo tiene |
+| `failed` | — | Su propia línea debajo (más abajo) |
+
+**Sin estado son dos palomitas**, y no ninguna: un mensaje propio sin marca vino del
+historial del servidor, así que llegó por definición. Dejarlo pelado pondría los mensajes
+de hoy con palomitas y los de ayer sin ellas.
+
+Estuvo como una línea de texto debajo de la burbuja —«En espera», «Enviando»— y ahí hacía
+ruido: una frase por mensaje propio pesa más que el mensaje. Un símbolo de doce píxeles
+dice lo mismo sin robarle sitio a lo dicho, y es el que la gente ya sabe leer.
+
+**Y la segunda palomita llega cuando el servidor coge el turno**, no cuando el turno
+termina. Antes se marcaba al final, así que la marca de «en camino» seguía puesta con la
+respuesta ya a media página. Vale cualquier señal de vida del flujo —`start` es la primera
+y llega siempre; el primer trozo cubre el turno que no la traiga—.
+
+**Lo que falló sí lleva línea**, debajo de la burbuja: entre la hora y las palomitas no
+cabe un «Reintentar», y un fallo sin salida no sirve de nada. Reintentar cuelga del mensaje
+que falló, que es lo que se quiere reenviar; devolverlo a la cola es todo lo que hace.
 
 **Y un fallo dice cuál fue.** No es lo mismo quedarse sin internet que quedarse sin cuota,
 y hasta ahora las dos cosas se leían igual: «No se pudo contactar a Numi», con un botón de
@@ -2482,11 +2504,22 @@ devolverlo, que es justo lo que aquí no se puede hacer.
 vacía en cuanto hay turno y la primera palabra sustituye los puntos en el mismo sitio: nada
 aparece ni desaparece, y el hilo no salta.
 
-**Detener** es un botón sobre la caja de escribir —no en el de enviar, que sigue haciendo
-falta porque lo que se escriba mientras tanto se pone en la cola (§32.5)—. Detener **aborta
-la petición**, y eso es todo: para el servidor, cortar la conexión y cerrar la pestaña son lo
-mismo, y los dos dejan de gastar tokens. **Lo ya escrito se queda**, aquí y en el archivo: es
-texto real que el usuario leyó. Detener antes de la primera palabra no deja burbuja vacía.
+**Detener vive dentro de la caja de escribir, en el sitio del micrófono.** El botón de la
+derecha es uno solo y dice qué se puede hacer ahora mismo: la flecha de enviar en cuanto hay
+algo escrito —que sigue haciendo falta, porque lo que se escriba mientras tanto se pone en la
+cola (§32.5)—; con la caja vacía, el cuadrado de detener mientras Numi contesta y el
+micrófono cuando no. Grabar no compite por ese sitio: una nota de voz no se encola, así que
+mientras hay turno el micrófono no serviría de nada.
+
+Estuvo como una pastilla flotando sobre el composer, y eso es una fila que nace y muere con
+cada turno: empuja el hilo, aparece lejos del pulgar y ocupa sitio para decir lo mismo. Es la
+misma idea de los puntos dentro de la burbuja, llevada al botón — nada aparece ni desaparece,
+cambia lo que ya estaba.
+
+Detener **aborta la petición**, y eso es todo: para el servidor, cortar la conexión y cerrar
+la pestaña son lo mismo, y los dos dejan de gastar tokens. **Lo ya escrito se queda**, aquí y
+en el archivo: es texto real que el usuario leyó. Detener antes de la primera palabra no deja
+burbuja vacía.
 
 Tres detalles que cuestan un bug si se olvidan:
 
@@ -2498,9 +2531,26 @@ Tres detalles que cuestan un bug si se olvidan:
 - **Un turno que falla retira su burbuja**, con lo que llevara escrito. Media frase que nadie
   va a terminar se lee como si fuera la respuesta buena, y al reintentar quedarían las dos.
   Detener es distinto: ahí sí se conserva, porque fue una decisión y no un fallo.
+- **El turno acaba en `done`, no cuando se cierre la conexión.** Se leía hasta agotar el
+  cuerpo, y entre el último evento y el cierre están el proxy y su keep-alive: el botón de
+  detener se quedaba puesto unos segundos sobre una respuesta terminada, ofreciendo cortar
+  algo que ya nadie escribía. Con `done` está todo lo que hacía falta, así que se suelta el
+  flujo ahí mismo.
 
 Lo que llega por el evento `error` se clasifica exactamente igual que un error HTTP (§32.5):
 la cuota agotada a media respuesta dice lo mismo y tampoco ofrece reintentar.
+
+**Un turno pueden ser dos generaciones, y no se leen como una.** Cuando Numi consulta datos
+antes de contestar, primero dice lo que va a hacer, consulta y después responde — y las dos
+partes salen por el mismo flujo sin nada entre ellas: «…lo más urgente!Con datos de hoy…»,
+pegadas y sin un espacio. Se parten en dos párrafos al pintar (`splitGlued`), reconociendo la
+juntura por lo que es: un punto o un cierre de exclamación **y acto seguido una mayúscula**,
+que dentro de una misma respuesta no lo escribe ningún modelo. Se exige minúscula delante del
+punto para no partir «Semillas S.A.S.» ni «J.P. Rojas» por la mitad.
+
+Es una heurística y se sabe: lo correcto es que el flujo marque el corte, y está pedido en
+`contract/HANDOFF-numi-streaming.md` junto con el retraso del `done`. Cuando llegue el
+marcador, esto se retira.
 
 ## 32.7. El hilo se lee: fechas, tandas, copiar y citar
 

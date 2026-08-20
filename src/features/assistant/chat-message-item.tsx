@@ -1,5 +1,16 @@
 import { type ReactNode } from 'react'
-import { AlertCircle, ChevronDown, Clock, Copy, Mic, Quote, ThumbsDown, ThumbsUp } from 'lucide-react'
+import {
+  AlertCircle,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  Clock,
+  Copy,
+  Mic,
+  Quote,
+  ThumbsDown,
+  ThumbsUp,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,21 +86,41 @@ export function AssistantRow({
 }
 
 /**
- * Qué fue del mensaje, debajo de su burbuja.
+ * **En qué anda el mensaje, en palomitas.**
  *
- * Solo se dice cuando hay algo que decir: lo entregado no lleva marca, porque en un
- * chat lo normal es que llegue y una palomita en cada línea es ruido. Lo que espera y
- * lo que falló sí, y esto último con la salida al lado.
+ * Al lado de la hora y dentro de la burbuja, como en WhatsApp: el reloj mientras
+ * espera turno, una palomita cuando sale y dos cuando Numi lo tiene. Estuvo como una
+ * línea de texto debajo —«En espera», «Enviando»— y ahí hacía ruido: una frase por
+ * mensaje propio pesa más que el mensaje, y encima se quedaba puesta.
+ *
+ * **Sin estado son dos palomitas.** Un mensaje propio sin marca vino del historial del
+ * servidor, así que llegó por definición; dejarlo pelado pondría los mensajes de hoy
+ * con palomitas y los de ayer sin ellas.
+ *
+ * Lo que falló no se cuenta aquí: lleva su propia línea debajo, que es donde cabe el
+ * «Reintentar».
+ */
+function DeliveryTicks({ status }: { status?: ChatMessageStatus }) {
+  if (status === 'failed') return null
+  const [Icon, label] =
+    status === 'queued'
+      ? ([Clock, 'En espera'] as const)
+      : status === 'sending'
+        ? ([Check, 'Enviado'] as const)
+        : ([CheckCheck, 'Entregado'] as const)
+  return (
+    <span role="img" aria-label={label} title={label} className="grid shrink-0 place-items-center">
+      <Icon aria-hidden className="size-3" />
+    </span>
+  )
+}
+
+/**
+ * Que un mensaje no saliera es lo único que se dice debajo de la burbuja: es un
+ * fallo con salida, y la salida —«Reintentar»— no cabe entre la hora y las
+ * palomitas. Lo demás lo cuenta `DeliveryTicks` dentro de la burbuja.
  */
 function MessageStatus({ status, onRetry }: { status?: ChatMessageStatus; onRetry?: () => void }) {
-  if (status === 'queued' || status === 'sending') {
-    return (
-      <p className="text-muted-foreground mt-0.5 flex items-center justify-end gap-1 text-[0.65rem]">
-        <Clock aria-hidden className="size-3" />
-        {status === 'queued' ? 'En espera' : 'Enviando'}
-      </p>
-    )
-  }
   if (status !== 'failed') return null
   return (
     <p className="text-destructive mt-0.5 flex items-center justify-end gap-1 text-[0.65rem]">
@@ -236,8 +267,13 @@ function QuotedBlock({ author, quote }: { author: string; quote: string }) {
   )
 }
 
-/** Ancho que la hora reserva al final de la última línea del mensaje. */
-const TIME_SLOT = 'inline-block w-[3.4rem] align-baseline'
+/**
+ * Ancho que la hora reserva al final de la última línea del mensaje. En los propios
+ * hay que contar también las palomitas, que van a su derecha.
+ */
+const TIME_SLOT = 'inline-block align-baseline'
+const TIME_SLOT_WIDTH = 'w-[3.4rem]'
+const TIME_SLOT_WIDTH_TICKS = 'w-[4.4rem]'
 
 /**
  * Fila de un mensaje. La hora va anclada abajo a la derecha y el texto le deja
@@ -276,7 +312,12 @@ export function ChatMessageItem({
   const touch = useTouchInput()
   // La cita viaja dentro del texto; aquí se vuelve a separar para pintarla como bloque.
   const quoted = isUser ? splitQuote(message.content) : null
-  const spacer = <span aria-hidden className={TIME_SLOT} />
+  const spacer = (
+    <span
+      aria-hidden
+      className={cn(TIME_SLOT, isUser ? TIME_SLOT_WIDTH_TICKS : TIME_SLOT_WIDTH)}
+    />
+  )
 
   /*
     Suena si el audio está aquí (recién grabado) o si el servidor lo guarda y
@@ -303,6 +344,7 @@ export function ChatMessageItem({
           peaks={message.waveform}
           seconds={message.audioSeconds}
           at={message.at}
+          trailing={isUser ? <DeliveryTicks status={message.status} /> : undefined}
         />
       ) : isUser ? (
         <>
@@ -324,15 +366,17 @@ export function ChatMessageItem({
         <RichText text={message.content} trailing={spacer} />
       )}
       {!playable && message.content !== '' && (
-        <time
-          dateTime={message.at}
+        <span
           className={cn(
-            'absolute right-3 bottom-1.5 text-[0.6rem] tabular-nums',
+            'absolute right-3 bottom-1.5 flex items-center gap-1 text-[0.6rem] tabular-nums',
             isUser ? 'text-chat-bubble-foreground/60' : 'text-muted-foreground',
           )}
         >
-          {formatTime(message.at)}
-        </time>
+          <time dateTime={message.at}>{formatTime(message.at)}</time>
+          {/* A la derecha de la hora, como en WhatsApp. Solo en lo propio: de lo que
+              dice Numi no hay nada que entregar. */}
+          {isUser && <DeliveryTicks status={message.status} />}
+        </span>
       )}
     </ChatBubble>
   )

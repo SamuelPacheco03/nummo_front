@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type Ref,
 } from 'react'
-import { ArrowUp, Mic, Paperclip, X } from 'lucide-react'
+import { ArrowUp, Mic, Paperclip, Square, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTouchInput } from '@/lib/use-touch-input'
 import { withQuote, type QuoteAuthor } from './quote'
@@ -71,12 +71,16 @@ function ComposerAction({
 /**
  * Barra de escritura: acciones, texto y envío en UNA sola pieza que se ilumina
  * al enfocar. Enter envía, Shift+Enter salta de línea y la barra crece con el
- * texto. Con la caja vacía, el botón de la derecha es el micrófono (nota de voz);
- * al escribir, pasa a ser la flecha de enviar.
+ * texto.
+ *
+ * **El botón de la derecha es uno solo y dice qué toca ahora**: la flecha de
+ * enviar en cuanto hay algo escrito; con la caja vacía, el cuadrado de detener
+ * mientras Numi contesta y el micrófono cuando no.
  */
 export function ChatComposer({
   onSend,
   onSendAudio,
+  onStop,
   busy = false,
   quoted = null,
   onClearQuote,
@@ -84,6 +88,12 @@ export function ChatComposer({
 }: {
   onSend: (text: string) => void
   onSendAudio?: (blob: Blob) => void
+  /**
+   * Corta la respuesta en curso. **Ocupa el sitio del micrófono** mientras Numi
+   * escribe: es el mismo botón de la derecha diciendo qué se puede hacer ahora
+   * mismo, no una barra flotante que aparece y desaparece sobre la caja.
+   */
+  onStop?: () => void
   /**
    * Numi está contestando. **Escribir y enviar siguen abiertos** —lo enviado entra en
    * la cola del hilo—; lo que espera es grabar, porque una nota de voz no se puede
@@ -177,8 +187,8 @@ export function ChatComposer({
 
     Y tiene que ser un escucha **no pasivo**, puesto a mano: los que registra
     React son pasivos y ahí `preventDefault` no hace nada. Se vuelve a poner
-    cuando el botón cambia —con texto escrito, el micrófono deja su sitio al de
-    enviar—.
+    cada vez que el botón cambia: con texto escrito el micrófono deja su sitio al
+    de enviar, y mientras Numi contesta al de detener.
   */
   useEffect(() => {
     const el = micRef.current
@@ -186,7 +196,7 @@ export function ChatComposer({
     const noLongPress = (e: TouchEvent) => e.preventDefault()
     el.addEventListener('touchstart', noLongPress, { passive: false })
     return () => el.removeEventListener('touchstart', noLongPress)
-  }, [hasText])
+  }, [hasText, busy, onStop])
 
   const submit = () => {
     if (!canSend) return
@@ -497,6 +507,30 @@ export function ChatComposer({
             )}
           >
             <ArrowUp className="size-4" />
+          </button>
+        ) : busy && onStop ? (
+          /*
+            **Detener ocupa el sitio del micrófono, no un sitio propio.**
+
+            Es el botón de la derecha contando lo único que se puede hacer con la
+            caja vacía mientras Numi escribe: grabar no se puede —una nota de voz no
+            se encola (§32.5)— y parar sí. Con algo escrito manda enviar, que sigue
+            haciendo falta porque lo que se escriba entretanto entra en la cola.
+
+            Va con el mismo relleno que enviar, y no como icono suelto: es la acción
+            principal del momento, y se pulsa donde ya estaba el pulgar.
+          */
+          <button
+            type="button"
+            onClick={onStop}
+            aria-label="Detener la respuesta"
+            title="Detener la respuesta"
+            className={cn(
+              'bg-primary text-primary-foreground hover:bg-primary-hover grid size-8 shrink-0 place-items-center rounded-full transition-all active:scale-95',
+              'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+            )}
+          >
+            <Square aria-hidden className="size-3 fill-current" />
           </button>
         ) : (
           <ComposerAction

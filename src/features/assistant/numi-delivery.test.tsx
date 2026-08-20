@@ -92,7 +92,7 @@ test('escribir mientras Numi contesta no se pierde: espera turno y sale después
   // Con el turno todavía en el aire, la caja sigue viva y admite el siguiente.
   await escribir(user, 'y los egresos del mes')
   expect(await screen.findByText('y los egresos del mes')).toBeInTheDocument()
-  expect(screen.getByText('En espera')).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'En espera' })).toBeInTheDocument()
   // Un turno a la vez: el segundo no ha salido todavía.
   expect(m.turnos).toHaveLength(1)
 
@@ -101,7 +101,7 @@ test('escribir mientras Numi contesta no se pierde: espera turno y sale después
   // Al quedar libre, la cola se vacía sola y en orden.
   await waitFor(() => expect(m.turnos).toHaveLength(2))
   expect(m.turnos[1]?.message).toBe('y los egresos del mes')
-  await waitFor(() => expect(screen.queryByText('En espera')).not.toBeInTheDocument())
+  await waitFor(() => expect(screen.queryByRole('img', { name: 'En espera' })).not.toBeInTheDocument())
 })
 
 test('un mensaje que no salió lo dice, y reintentar lo vuelve a mandar', async () => {

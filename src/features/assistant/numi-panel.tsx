@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeft, Copy, MessagesSquare, Quote, RotateCcw, Square, X } from 'lucide-react'
+import { ArrowLeft, Copy, MessagesSquare, Quote, RotateCcw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChatComposer } from './chat-composer'
 import { ChatThread } from './chat-thread'
@@ -204,21 +204,12 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             onSelect={setSelectedId}
             onLeave={onClose}
           />
-          {isTyping && (
-            <div className="flex justify-center pb-1">
-              <button
-                type="button"
-                onClick={stop}
-                className="bg-card text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-              >
-                <Square aria-hidden className="size-3 fill-current" />
-                Detener
-              </button>
-            </div>
-          )}
           <ChatComposer
             onSend={(text) => void send(text)}
             onSendAudio={(blob) => void sendAudio(blob)}
+            // Detener vive dentro de la caja de escribir, en el sitio del micrófono
+            // (§32.6): no hay barra que aparezca y desaparezca sobre el composer.
+            onStop={stop}
             busy={isTyping}
             quoted={quoted}
             onClearQuote={() => setQuoted(null)}
