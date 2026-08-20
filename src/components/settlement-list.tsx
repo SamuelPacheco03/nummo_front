@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
 import { Banknote, Plus } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { CashflowKpis } from '@/components/cashflow-kpis'
 import { ContactPicker } from '@/components/contact-picker'
 import { PageHeader } from '@/components/page-header'
@@ -67,6 +68,7 @@ export function SettlementList({
   detailTo,
   purposes,
   purposeLabels,
+  purposeIcons,
   sortChoices,
   dateField,
   statuses,
@@ -90,6 +92,12 @@ export function SettlementList({
   /** Propósitos del contrato, en el orden en que se ofrecen. */
   purposes: { value: string; label: string }[]
   purposeLabels: Record<string, string>
+  /**
+   * El icono de la fila cuando no pertenece a ningún catálogo, según su
+   * propósito. Es lo más que se puede decir de un abono a cuenta o de un
+   * anticipo: el contrato no dice a qué concepto fueron (§95.19).
+   */
+  purposeIcons: Record<string, LucideIcon>
   sortChoices: SortChoice[]
   /**
    * Cómo llama *este* endpoint a la fecha del movimiento: `receivedAt` cuando
@@ -268,9 +276,12 @@ export function SettlementList({
             getRowId={(row) => row.id}
             onRowClick={(row) => navigate(detailTo(row.id))}
             // El del concepto o la categoría cuando el movimiento va directo a
-            // uno; el billete, cuando no pertenece a ninguno (§11.1.12).
+            // uno (§11.1.12); si no, el de su propósito.
             rowIcon={(row) =>
-              catalogRowIcon(row.catalogId ? catalogMap.get(row.catalogId) : undefined, Banknote)
+              catalogRowIcon(
+                row.catalogId ? catalogMap.get(row.catalogId) : undefined,
+                purposeIcons[row.purpose] ?? Banknote,
+              )
             }
             sort={{
               value: [{ id: sortField, desc }],

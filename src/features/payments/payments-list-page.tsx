@@ -14,7 +14,7 @@ import type {
   GetApiV1OrganizationsOrgIdPaymentsSort,
 } from '@/api/generated/model'
 import { PAYMENT_STATUSES } from '@/lib/settlement-list'
-import { PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
+import { PAYMENT_PURPOSE_ICONS, PAYMENT_PURPOSE_LABELS, paymentStatus } from './labels'
 import { usePayments } from './hooks'
 
 const COPY: SettlementListCopy = {
@@ -103,6 +103,7 @@ export function PaymentsListPage() {
       detailTo={(id) => `/cartera/pagos/${id}`}
       purposes={PURPOSES}
       purposeLabels={PAYMENT_PURPOSE_LABELS}
+      purposeIcons={PAYMENT_PURPOSE_ICONS}
       sortChoices={SORT_CHOICES}
       dateField={DATE_FIELD}
       statuses={PAYMENT_STATUSES}

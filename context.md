@@ -4690,6 +4690,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
 | `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
 | `catalogRowIcon` · `CatalogRef` | `features/masters/catalogs.ts` | El icono de la tarjeta de una fila que pertenece a un catálogo, cruzado por id (§95.19) |
+| `notificationRoute` | `features/notifications/deep-link.ts` | Del `deepLink` del contrato a una ruta que existe aquí — puente temporal (§95.16) |
 | `IdentityField` | `features/masters/identity-field.tsx` | Elegir el icono y el color de un catálogo, en los dos |
 | `CatalogOrderDrawer` | `features/masters/order-drawer.tsx` | El orden propio de un catálogo, con la lista entera |
 | `AutoChargeSection` | `components/auto-charge-section.tsx` | **El auto-registro de un recurrente**, en las dos caras (§11.1.13) |
@@ -4921,7 +4922,7 @@ también muertas desde que existe `ListToolbar`); las clases por columna de `Mas
 nadie leía y dejaban los importes de los maestros alineados a la izquierda; y la negrita por
 posición, que destacaba el código en vez del nombre (§18.2).
 
-### 95.16. Los deep links de las notificaciones no llevan a ninguna parte — ⏸️ **abierta, es petición de contrato**
+### 95.16. Los deep links de las notificaciones no llevan a ninguna parte — ⏸️ **puenteado en el cliente; la petición de contrato sigue**
 
 Cada notificación trae un `deepLink` ya compuesto por el backend, y **ninguno de los once
 coincide con una ruta de esta aplicación**. No es un despiste puntual: es un vocabulario de rutas
@@ -4941,17 +4942,24 @@ distinto del nuestro, escrito antes de mirar el router.
 | `/caja/cuentas/:id` | `/caja/cuentas` — **no hay ficha por cuenta**, es un resumen de saldos (§18.1) |
 | `/configuracion/miembros` | `/config/miembros` |
 
-**Se arregla en el backend, no aquí.** Una tabla de traducción en el cliente sería una segunda
-fuente de verdad para las rutas —§87.5 las declara en un solo sitio— y viviría para siempre: el
-día que el backend añadiera un destino nuevo, el front lo mandaría a un 404 sin que nadie se
-entere. El propio backend ya tiene el sitio correcto para el cambio, `deep-link.ts`, y su
-comentario explica por qué los enlaces se componen ahí y no viajan como dato.
+**Se arregla en el backend**, y ahí sigue pedido: el propio backend tiene el sitio correcto para el
+cambio, `deep-link.ts`, y su comentario explica por qué los enlaces se componen ahí y no viajan
+como dato. Una tabla de traducción en el cliente es una segunda fuente de verdad para las rutas,
+que §87.5 declara en un solo sitio.
+
+**Y aun así hay una, porque el 404 era peor.** Pulsar un aviso llevaba a una pantalla que no
+existe: eso no es una brecha pendiente, es el centro de notificaciones roto. El puente vive en
+`features/notifications/deep-link.ts` (`notificationRoute`) y está escrito para **retirarse solo**:
+lo que no reconoce pasa tal cual, así que el día que el backend publique las rutas de arriba
+ninguna regla casa, todo sigue funcionando y el archivo se borra de una pieza. Su prueba recorre
+los once destinos, y el aviso de ejemplo del centro trae ya el enlace **tal como lo manda el
+contrato**, no el que nos vendría bien.
 
 Las claves de los filtros van **en español** y son las de `useListFilters` (§21.1), no `filter=`.
 
-Mientras tanto el centro funciona entero —se lee, se marca, se descarta, el contador se mueve— y
-un `deepLink` que no case lleva a una pantalla vacía. **Ninguno se reescribe en el cliente**: en
-cuanto el backend publique los de arriba, empiezan a funcionar sin tocar una línea de front.
+Lo que el puente no puede arreglar es lo que no existe: `/caja/cuentas/:id` cae en el resumen de
+saldos porque aquí no hay ficha por cuenta, y `?action=approve` se descarta porque aprobar y
+rechazar están en la propia ficha (§47.4).
 
 ### 95.17. El contrato no publica los días de antelación que hay — ⏸️ **abierta, es petición de contrato**
 
@@ -4997,9 +5005,11 @@ se pagina en el servidor no debería necesitar un segundo viaje para saber cómo
 un catálogo de más de cien elementos dejaría filas sin icono sin decirlo.
 
 Y en **pagos y egresos** falta además el dato, no solo el adorno: `PaymentListItem` solo trae
-concepto cuando el movimiento es directo (`directBillingConceptId`), así que un pago aplicado a
-cartera —que puede saldar cuentas de conceptos distintos— y un abono a cuenta se quedan con el icono
-de la sección. Es lo honesto (§70), pero es también todo lo que esas dos listas pueden decir hoy.
+concepto cuando el movimiento es directo (`directBillingConceptId`), así que de un pago aplicado a
+cartera —que puede saldar cuentas de conceptos distintos— y de un anticipo no se puede decir de qué
+concepto son. Ahí la fila dice **qué es** en vez de de qué es: el icono lo pone su propósito
+(`PAYMENT_PURPOSE_ICONS` y su espejo), que es lo máximo que el contrato permite y ya distingue una
+fila de otra en una lista donde todas eran el mismo billete.
 
 Se cierra devolviendo `conceptIcon` / `conceptColor` —o el objeto entero, como ya se hace con
 `payerName`— en las vistas de saldos, en las dos de recurrentes y en las dos de movimientos.
@@ -5456,6 +5466,25 @@ build OK.
 
 ---
 
+## Fase 21 — Que un aviso lleve a alguna parte ✅ **completada**
+
+1. **Pulsar una notificación llevaba a un 404.** Los once `deepLink` que compone el backend usan
+   un vocabulario de rutas que no es el del router (§95.16), y eso rompía el centro entero: se leía
+   el aviso y se aterrizaba en una pantalla que no existe. `notificationRoute` traduce lo conocido
+   y **deja pasar lo demás**, así que el día que el backend publique las rutas de verdad el puente
+   deja de tocar nada y se borra. El aviso de ejemplo de la suite trae ya el enlace tal como lo
+   manda el contrato: si se hubiera escrito así desde el principio, el 404 no habría llegado a la
+   pantalla de nadie.
+2. **En pagos y egresos el icono ya distingue las filas.** El concepto solo viaja en los
+   movimientos directos, así que el resto lo pone su propósito: un abono a cuenta, un anticipo y un
+   ingreso directo dejan de ser el mismo billete repetido (§95.19).
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 555 tests en verde (14 nuevos: los once
+destinos del contrato, lo que no se reconoce, lo que no es interno, y que ningún propósito se quede
+sin icono en las dos caras), build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5480,6 +5509,7 @@ build OK.
 | ✅ 18 | El auto-registro de un recurrente | medio | 17 |
 | ✅ 19 | Alta de contraparte por nombre | bajo | — (contrato) |
 | ✅ 20 | El catálogo en las listas y la edición en móvil | bajo | 17 |
+| ✅ 21 | Que un aviso lleve a alguna parte | bajo | 13 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

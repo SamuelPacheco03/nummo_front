@@ -14,7 +14,11 @@ import type {
   GetApiV1OrganizationsOrgIdDisbursementsSort,
 } from '@/api/generated/model'
 import { DISBURSEMENT_STATUSES } from '@/lib/settlement-list'
-import { DISBURSEMENT_PURPOSE_LABELS, disbursementStatus } from './labels'
+import {
+  DISBURSEMENT_PURPOSE_ICONS,
+  DISBURSEMENT_PURPOSE_LABELS,
+  disbursementStatus,
+} from './labels'
 import { useDisbursements } from './hooks'
 
 const COPY: SettlementListCopy = {
@@ -103,6 +107,7 @@ export function DisbursementsListPage() {
       detailTo={(id) => `/gastos/egresos/${id}`}
       purposes={PURPOSES}
       purposeLabels={DISBURSEMENT_PURPOSE_LABELS}
+      purposeIcons={DISBURSEMENT_PURPOSE_ICONS}
       sortChoices={SORT_CHOICES}
       dateField={DATE_FIELD}
       statuses={DISBURSEMENT_STATUSES}

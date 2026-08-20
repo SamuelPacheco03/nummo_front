@@ -22,24 +22,13 @@ import {
   useNotifications,
   useUnreadNotifications,
 } from './hooks'
+import { notificationRoute } from './deep-link'
 import { notificationCategory, notificationIcon, NOTIFICATION_CATEGORIES } from './labels'
 
 const PAGE_SIZE = 20
 
 /** Filtro de lectura. Solo dos estados, que es lo que el endpoint acepta. */
 type ReadFilter = 'all' | 'unread'
-
-/**
- * Solo rutas internas.
- *
- * El `deepLink` lo compone el backend a partir de un catálogo cerrado, así que
- * hoy no puede traer nada raro. Aun así no se pasa a `navigate()` sin mirarlo:
- * es un valor que llega por la red, y `//otro.sitio` es una URL absoluta
- * disfrazada de ruta. Es la misma comprobación que hace `returnPath` (§87.5).
- */
-function internalPath(link: string | null): string | null {
-  return link && link.startsWith('/') && !link.startsWith('//') ? link : null
-}
 
 function NotificationRow({
   notification,
@@ -54,7 +43,7 @@ function NotificationRow({
 }) {
   const { Icon, className } = notificationIcon(notification.icon)
   const unread = notification.readAt == null
-  const link = internalPath(notification.deepLink)
+  const link = notificationRoute(notification.deepLink)
 
   return (
     <li className="relative">
@@ -198,7 +187,7 @@ export function NotificationsDrawer({
     if (notification.readAt == null && canManage && orgId) {
       markRead.mutate({ orgId, notificationId: notification.id })
     }
-    const link = internalPath(notification.deepLink)
+    const link = notificationRoute(notification.deepLink)
     if (!link) return
     onOpenChange(false)
     navigate(link)

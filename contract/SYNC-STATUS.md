@@ -152,10 +152,12 @@ donde mirarlo; si no, quizá `INAPP` no debería salir en `supportedChannels`.
 
 ### ⚠️ Petición de contrato — los `deepLink` no coinciden con el router
 
-**Ninguno de los once destinos de `deep-link.ts` existe en esta aplicación.** No se reescriben en
-el cliente: una tabla de traducción sería una segunda fuente de verdad para las rutas y el
-siguiente destino que añadáis volvería a caer en un 404 sin que nadie se entere. La lista completa,
-con la ruta real de cada uno, está en `context.md` §95.16; el resumen:
+**Ninguno de los once destinos de `deep-link.ts` existe en esta aplicación**, así que pulsar un
+aviso aterrizaba en un 404. Mientras eso se corrige aquí hay un puente que traduce los once
+(`features/notifications/deep-link.ts`) y **deja pasar todo lo que no reconoce**: en cuanto
+publiquéis las rutas de abajo deja de tocar nada y se borra. No es donde queremos que viva —una
+tabla de rutas en el cliente es una segunda fuente de verdad—, pero el centro no podía quedarse sin
+llevar a ninguna parte. La lista completa está en `context.md` §95.16; el resumen:
 
 | `deep-link.ts` | Debería ser |
 | --- | --- |

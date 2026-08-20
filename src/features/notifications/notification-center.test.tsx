@@ -34,7 +34,9 @@ function aviso(over: Record<string, unknown> = {}) {
     title: 'Laura Gómez se venció',
     body: 'Mensualidad de agosto por $350.000',
     icon: 'receivable-overdue',
-    deepLink: '/cartera/cxc/r1',
+    // Tal como lo compone el backend, que **no** es una ruta de esta aplicación:
+    // el puente de `deep-link.ts` es parte de lo que se prueba aquí (§95.16).
+    deepLink: '/cartera/cobros/r1',
     data: {},
     groupKey: null,
     readAt: null,
@@ -197,7 +199,7 @@ test('un aviso se lee entero: título, cuerpo, categoría y cuánto hace', async
   expect(within(fila(panel)).getByText('Sin leer')).toBeInTheDocument()
 })
 
-test('abrir un aviso lo marca leído y lleva a su destino', async () => {
+test('abrir un aviso lo marca leído y lleva a su destino, ya traducido', async () => {
   const user = userEvent.setup()
   const panel = await abrir(user)
 

@@ -1,5 +1,10 @@
 import { expect, test } from 'vitest'
-import { disbursementStatus } from './labels'
+import { PAYMENT_PURPOSE_ICONS, PAYMENT_PURPOSE_LABELS } from '@/features/payments/labels'
+import {
+  disbursementStatus,
+  DISBURSEMENT_PURPOSE_ICONS,
+  DISBURSEMENT_PURPOSE_LABELS,
+} from './labels'
 import { isVoidedSettlement } from '@/lib/settlement-list'
 
 test('los cuatro estados de un egreso dicen cosas distintas', () => {
@@ -25,4 +30,19 @@ test('solo va tachado lo que no movió dinero y ya no lo moverá', () => {
   // Un pendiente todavía puede salir: tacharlo lo leería como cancelado.
   expect(isVoidedSettlement('PENDING_APPROVAL')).toBe(false)
   expect(isVoidedSettlement('POSTED')).toBe(false)
+})
+
+test('los dos lados dan un icono a cada propósito del contrato', () => {
+  /*
+    En la tarjeta de un movimiento el icono es lo único que distingue un abono a
+    cuenta de un anticipo: el concepto solo viaja en los directos (§95.19). Un
+    propósito sin icono no rompe nada visible —cae al billete de la sección— y
+    por eso hay que sujetarlo aquí. Las dos caras juntas, como pide §92.3.
+  */
+  for (const purpose of Object.keys(DISBURSEMENT_PURPOSE_LABELS)) {
+    expect(DISBURSEMENT_PURPOSE_ICONS[purpose]).toBeDefined()
+  }
+  for (const purpose of Object.keys(PAYMENT_PURPOSE_LABELS)) {
+    expect(PAYMENT_PURPOSE_ICONS[purpose]).toBeDefined()
+  }
 })

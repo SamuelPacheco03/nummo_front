@@ -1,3 +1,5 @@
+import { Banknote, ReceiptText, Wallet } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { StatusTone } from '@/components/ui/status-badge'
 
 export const EXPENSE_STATUS_LABELS: Record<string, string> = {
@@ -43,6 +45,17 @@ export const DISBURSEMENT_PURPOSE_LABELS: Record<string, string> = {
   EXPENSE: 'Pago de gasto',
   ADVANCE: 'Anticipo',
   DIRECT_EXPENSE: 'Egreso directo',
+}
+
+/**
+ * El icono de la fila **según a dónde fue el dinero**. Espejo del de pagos, y
+ * por el mismo motivo: la categoría solo viaja en los egresos directos (§95.19),
+ * así que el resto dice qué es en lugar de de qué es.
+ */
+export const DISBURSEMENT_PURPOSE_ICONS: Record<string, LucideIcon> = {
+  EXPENSE: ReceiptText,
+  ADVANCE: Wallet,
+  DIRECT_EXPENSE: Banknote,
 }
 
 export const RECURRENCE_LABELS: Record<string, string> = { MONTHLY: 'Mensual' }
