@@ -1,8 +1,6 @@
+import { fold } from '@/lib/text'
 import { GLOSSARY } from './help-data'
 import { TOPICS } from './topics'
-
-/** Sin tildes y en minúsculas: nadie escribe «matrícula» con tilde en un buscador. */
-const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
 export interface GuideHit {
   to: string

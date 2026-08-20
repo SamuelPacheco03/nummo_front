@@ -184,6 +184,35 @@ Dos notas sobre esa tabla:
   aprobar y rechazar a quien tiene el permiso (§47.4). Si preferís conservarlo como señal, decidlo
   y lo leemos.
 
+### ⚠️ Petición de contrato — más iconos para los catálogos
+
+Los 84 de `BillingConceptIcon` se quedan cortos en cuanto una organización tiene un catálogo real:
+almuerzos, ruta escolar y uniformes acaban compartiendo `package` porque no hay con qué
+distinguirlos. El front ya los agrupa por temas y los busca por nombre y por palabra del negocio
+(«arriendo», «nómina», «gasolina»), así que el problema no es encontrarlos: es que no están.
+
+**Solo hay que añadir claves al enum** —el front las dibuja sin tocar el contrato: su tabla va
+tipada contra el enum generado, así que `tsc` obliga a mapear cada nueva y una prueba obliga a
+colocarla en un tema—. Estas 77 están verificadas contra la versión de `lucide-react` que usa el
+front, o sea que ninguna llega sin dibujo:
+
+| Tema | Claves |
+| --- | --- |
+| Dinero | `hand-coins` `badge-dollar-sign` `arrow-left-right` `chart-pie` `chart-column` `vault` `scale` `wallet-cards` |
+| Casa y servicios | `bed` `bath` `washing-machine` `plug` `lamp` `paint-roller` `air-vent` |
+| Transporte | `car-taxi-front` `parking-meter` `caravan` `sailboat` `tram-front` `route` |
+| Comida y compras | `pizza` `sandwich` `ice-cream-cone` `wine` `milk` `egg` `soup` `croissant` `candy` |
+| Ocio | `film` `headphones` `guitar` `trophy` `party-popper` `camera` `tent` `waves` `dices` |
+| Salud | `syringe` `activity` `brain` `bandage` `ambulance` `eye` |
+| Educación | `school` `notebook-pen` `library` `presentation` `ruler` `microscope` |
+| Trabajo | `id-card` `clipboard-list` `printer` `mail` `phone-call` `calendar-clock` `boxes` `warehouse` `gavel` |
+| Tecnología | `hard-drive` `code` `bot` `database` `mouse-pointer-click` `plug-zap` |
+| Otros | `paw-print` `bone` `flower-2` `tree-pine` `recycle` `globe` `map-pin` `umbrella` `church` `heart` `hand-heart` |
+
+Con los colores pasa lo mismo y apremia menos: los 18 de `BillingConceptColor` son las familias de
+Tailwind menos `sky`, `stone`, `zinc` y `neutral`. Si queréis las cuatro, el front las pinta igual
+—cada una con su variante oscura— el día que estén en el enum.
+
 ### Lo que falta por construir en el front
 
 **Nada de las dos tandas.** Centro, preferencias, política, Web Push, las tramas `resource`, la

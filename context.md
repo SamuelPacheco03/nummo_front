@@ -905,6 +905,14 @@ migran **todos** los llamadores en el mismo commit, o se anota cuáles faltan.
 En una palabra: **cuelga de una lista → cajón; es un formulario corto de ajustes → diálogo
 centrado.**
 
+**Y un diálogo nunca es más alto que la pantalla.** Está centrado con `translate`, así que cuando
+su contenido crecía se salía **por arriba y por abajo a la vez** y no había forma de llegar al pie:
+en un teléfono, el formulario de un catálogo dejaba «Guardar» fuera y el registro no se podía
+guardar. El alto máximo y el desplazamiento son de `DialogContent` —`max-h-[calc(100dvh-2rem)]` y
+`overflow-y-auto`—, no de cada pantalla: uno a uno, el siguiente diálogo largo volvería a nacer
+roto. Lo que se ocupa de su propio desplazamiento —la paleta de comandos, el selector de iconos—
+manda `overflow-y-hidden`, que es del mismo grupo de utilidades y por eso gana.
+
 **Y el velo de detrás es uno solo**, `--scrim` (`bg-scrim`), para los tres —cajón, diálogo y hoja—.
 Cada primitiva traía el suyo (`bg-black/50` en dos, `bg-slate-950/45` con desenfoque en la otra),
 así que el fondo cambiaba según qué lo hubiera abierto; y un `slate` crudo en un componente es lo
@@ -1260,6 +1268,26 @@ tarjeta lo lleva `RowIconBadge`, que gana una prop `className` para poder pintar
 contrato en vez de uno de los cinco tonos semánticos, que ahí no significarían nada. Por eso el de
 la celda es `hidden lg:block` (§11.1.3b, regla 2): sin eso el mismo icono salía dos veces en la
 misma línea de la tarjeta, uno en la pastilla y otro pegado al nombre.
+
+### Elegirlos
+
+Los ciento dos —dieciocho colores y ochenta y cuatro iconos— **vivían abiertos dentro del
+formulario**, y ocupaban más que los campos que de verdad hay que rellenar: en un teléfono
+empujaban «Guardar» fuera de la pantalla (§11.1.3). Hoy el formulario enseña **una fila** —lo
+elegido, cómo se llama y un chevron— y todo lo demás vive en `IconColorPicker`, su propio diálogo.
+
+Tres cosas que ese diálogo hace y la rejilla suelta no podía:
+
+- **Buscar por palabra.** Las claves del contrato son inglesas (`piggy-bank`, `graduation-cap`), así
+  que la búsqueda va contra el **nombre en español**, contra las palabras del negocio —«arriendo»,
+  «nómina», «pensión», «gasolina»— y contra el tema. Sin tildes ni mayúsculas en ninguno de los dos
+  lados (`fold`, §94): nadie escribe «matrícula» con tilde en un buscador.
+- **Agrupar por temas.** Recorrer ochenta y cuatro dibujos seguidos no es elegir, es rendirse en el
+  veinte. Los grupos van sobre las **mismas claves** del contrato —cuyo orden ya es temático—, no
+  sobre una lista aparte, y una prueba obliga a que cada clave esté en uno y en uno solo: el día que
+  el backend añada una, no puede quedarse fuera del selector en silencio.
+- **Aplicar al tocar.** Es un selector, no un formulario: el cambio se ve arriba al instante y
+  «Listo» solo cierra. Quien decide si se guarda es el formulario de fuera.
 
 **«Sin poner» es una opción visible**, tanto en icono como en color. Las organizaciones que ya
 existían tienen los dos en `null` y hace falta poder volver ahí; el hueco de no elegir no es lo
@@ -4708,6 +4736,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
 | `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
 | `catalogRowIcon` · `CatalogRef` | `features/masters/catalogs.ts` | El icono de la tarjeta de una fila que pertenece a un catálogo, cruzado por id (§95.19) |
+| `IconColorPicker` | `features/masters/icon-color-picker.tsx` | Elegir icono y color en su propio diálogo, con buscador y temas (§11.1.12) |
+| `fold` | `lib/text.ts` | Comparar texto sin tildes ni mayúsculas — la paleta, la guía y el selector de iconos |
 | `notificationRoute` | `features/notifications/deep-link.ts` | Del `deepLink` del contrato a una ruta que existe aquí — puente temporal (§95.16) |
 | `NotFoundPage` | `features/platform/not-found-page.tsx` | La ruta `*`: explica y ofrece salir, y rescata los destinos que llegan crudos (§11.1.15) |
 | `IdentityField` | `features/masters/identity-field.tsx` | Elegir el icono y el color de un catálogo, en los dos |
@@ -5038,6 +5068,22 @@ fila de otra en una lista donde todas eran el mismo billete.
 
 Se cierra devolviendo `conceptIcon` / `conceptColor` —o el objeto entero, como ya se hace con
 `payerName`— en las vistas de saldos, en las dos de recurrentes y en las dos de movimientos.
+
+### 95.20. Ochenta y cuatro iconos se quedan cortos — ⏸️ **abierta, es petición de contrato**
+
+El selector ya busca y agrupa por temas (§11.1.12), y con eso se ve lo que falta: **variedad**. Una
+organización que factura almuerzos, rutas escolares y uniformes acaba eligiendo el mismo `package`
+tres veces, porque no hay pizza, ni bus escolar, ni camiseta más allá de una.
+
+No se puede resolver en el cliente: `BillingConceptIcon` es un enum cerrado y una clave que no esté
+en él es un 422 al guardar. Se cierra **añadiendo claves al enum**, y el front no necesita nada más
+—la tabla va tipada contra el enum generado, así que `tsc` obliga a dibujar cada clave nueva y la
+prueba obliga a colocarla en un tema—.
+
+La lista propuesta —77 claves, todas verificadas contra la versión de `lucide-react` que ya usa el
+front, así que ninguna llega sin dibujo— está en `contract/SYNC-STATUS.md`. Con los colores pasa lo
+mismo pero apremia menos: los 18 son las familias de Tailwind menos `sky`, `stone`, `zinc` y
+`neutral`.
 
 ### 95.15. Lo que ya cumple
 
@@ -5514,6 +5560,25 @@ crudo acabe en su ficha, y que ningún propósito se quede sin icono en las dos 
 
 ---
 
+## Fase 22 — Elegir un icono sin perder el botón de guardar ✅ **completada**
+
+1. **Un diálogo ya no crece más que la pantalla.** Estaba centrado con `translate` y sin alto
+   máximo, así que un formulario largo se salía por los dos lados y «Guardar» quedaba fuera de
+   alcance en un teléfono. El arreglo es de `DialogContent`, no de cada pantalla (§11.1.3).
+2. **El icono y el color se eligen en su propio diálogo** (`IconColorPicker`), con **buscador** y
+   los iconos **por temas** (§11.1.12). El formulario se queda con una fila que resume lo elegido.
+3. La búsqueda entiende el negocio, no el inglés del contrato: «arriendo» encuentra la casa,
+   «nómina» el equipo, «matrícula» el birrete. Y `fold` deja de estar copiado en tres sitios.
+
+Lo que **no** se pudo hacer aquí: más iconos. El enum del contrato tiene 84 y una clave inventada
+es un 422 — la petición, con 77 claves ya verificadas contra `lucide-react`, queda en §95.20.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 565 tests en verde (8 nuevos: los temas
+cubren todas las claves sin repetirlas, cada icono y cada color tienen nombre, la búsqueda por
+nombre, por palabra del negocio y por tema, y el recorrido de elegir en el selector), build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5539,6 +5604,7 @@ crudo acabe en su ficha, y que ningún propósito se quede sin icono en las dos 
 | ✅ 19 | Alta de contraparte por nombre | bajo | — (contrato) |
 | ✅ 20 | El catálogo en las listas y la edición en móvil | bajo | 17 |
 | ✅ 21 | Que un aviso lleve a alguna parte | bajo | 13 |
+| ✅ 22 | Elegir un icono sin perder el botón de guardar | bajo | 17 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

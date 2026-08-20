@@ -1,30 +1,15 @@
-import { Ban } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   catalogColorClass,
   catalogIcon,
-  CATALOG_COLORS,
-  CATALOG_ICONS,
-  type ColorKey,
-  type IconKey,
+  COLOR_LABELS,
+  ICON_LABELS,
+  type CatalogIdentity,
 } from './catalogs'
-
-/**
- * Lo que elige esta pieza. `null` en cualquiera de los dos es «sin poner».
- *
- * Va tipado contra los enums del contrato y no como `string`: es lo que hace que
- * el objeto entre tal cual en el cuerpo del `POST` y que una clave inventada no
- * llegue nunca al API.
- */
-export interface CatalogIdentity {
-  icon: IconKey | null
-  color: ColorKey | null
-}
-
-/** Un objetivo de 44 px con el glifo a tamaño de texto dentro (§43). */
-const CELL =
-  'grid size-9 place-items-center rounded-md transition-colors pointer-coarse:size-11 focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none'
+import { IconColorPicker } from './icon-color-picker'
 
 /**
  * **El icono y el color de un concepto de cobro o de una categoría de gasto.**
@@ -32,14 +17,11 @@ const CELL =
  * Una sola pieza para los dos catálogos: lo que cambia entre ellos son las
  * palabras de alrededor, no esto (§94.0).
  *
- * Los dos catálogos —84 iconos, 18 colores— **salen del contrato**
- * (`catalog-icon.tsx`), no de una lista escrita aquí: el backend los publica
- * como enums cerrados precisamente para que el cliente los pueda dibujar todos.
- *
- * **«Sin poner» es una opción visible en los dos**, y no el hueco que queda al
- * no elegir: un catálogo que nace sin identidad es lo normal —las
- * organizaciones que ya existían tienen los dos en `null`— y hace falta poder
- * volver ahí.
+ * En el formulario ocupa **una fila**: lo elegido, cómo se llama y un chevron.
+ * La rejilla entera —dieciocho colores y ochenta y cuatro iconos— vivía aquí
+ * abierta, ocupaba más que los campos que de verdad hay que rellenar y en un
+ * teléfono empujaba «Guardar» fuera de la pantalla. Ahora se abre en su propio
+ * diálogo, que además puede buscar (§11.1.12).
  */
 export function IdentityField({
   value,
@@ -53,129 +35,46 @@ export function IdentityField({
   fallback: LucideIcon
   disabled?: boolean
 }) {
+  const [open, setOpen] = useState(false)
   const Preview = catalogIcon(value.icon) ?? fallback
+  const iconName = value.icon ? ICON_LABELS[value.icon] : 'Sin icono propio'
+  const colorName = value.color ? COLOR_LABELS[value.color] : 'Sin color'
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">Icono y color</span>
-        {/* Lo elegido, al tamaño al que se va a ver en la lista. */}
-        <Preview aria-hidden className={cn('size-5', catalogColorClass(value.color))} />
-        <span className="text-muted-foreground text-xs">
-          {value.icon ? 'Así se verá en las listas' : 'Sin icono propio'}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Color">
-        <ColorSwatch
-          color={null}
-          selected={value.color == null}
-          disabled={disabled}
-          onSelect={() => onChange({ ...value, color: null })}
-        />
-        {CATALOG_COLORS.map((color) => (
-          <ColorSwatch
-            key={color}
-            color={color}
-            selected={value.color === color}
-            disabled={disabled}
-            onSelect={() => onChange({ ...value, color })}
-          />
-        ))}
-      </div>
-
+    <div className="space-y-2">
       {/*
-        Los 84 caben en una rejilla con scroll de unos cinco renglones. Un
-        desplegable los escondería detrás de un clic más y una búsqueda por
-        nombre pediría saber cómo se llama cada dibujo en inglés.
+        Rótulo suelto y no `<Label>`: un `<label>` sin control asociado no nombra
+        nada, y a un botón no se le nombra desde fuera. Lo que lee un lector de
+        pantalla es el `aria-label`, que además dice **qué hay elegido** — leer
+        solo «Icono y color» obligaría a entrar para saberlo.
       */}
-      <div
-        role="group"
-        aria-label="Icono"
-        className="scrollbar-slim grid max-h-44 grid-cols-[repeat(auto-fill,minmax(2.25rem,1fr))] gap-1 overflow-y-auto rounded-md border p-2"
+      <p className="text-sm font-medium">Icono y color</p>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+        aria-label={`Icono y color: ${iconName}, ${colorName}`}
+        className="bg-card hover:bg-secondary focus-visible:ring-ring/50 flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none disabled:opacity-50"
       >
-        <IconCell
-          Icon={Ban}
-          label="Sin icono"
-          selected={value.icon == null}
-          disabled={disabled}
-          onSelect={() => onChange({ ...value, icon: null })}
-        />
-        {CATALOG_ICONS.map((icon) => {
-          const Icon = catalogIcon(icon)
-          if (!Icon) return null
-          return (
-            <IconCell
-              key={icon}
-              Icon={Icon}
-              label={icon}
-              selected={value.icon === icon}
-              disabled={disabled}
-              onSelect={() => onChange({ ...value, icon })}
-            />
-          )
-        })}
-      </div>
+        <span className="bg-secondary grid size-9 shrink-0 place-items-center rounded-lg">
+          <Preview aria-hidden className={cn('size-4.5', catalogColorClass(value.color))} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm">{iconName}</span>
+          <span className="text-muted-foreground block truncate text-xs">
+            {colorName} · Toca para elegir
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0" />
+      </button>
+
+      <IconColorPicker
+        open={open}
+        onOpenChange={setOpen}
+        value={value}
+        onChange={onChange}
+        fallback={fallback}
+      />
     </div>
-  )
-}
-
-function ColorSwatch({
-  color,
-  selected,
-  disabled,
-  onSelect,
-}: {
-  color: ColorKey | null
-  selected: boolean
-  disabled?: boolean
-  onSelect: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      aria-pressed={selected}
-      aria-label={color ?? 'Sin color'}
-      className={cn(CELL, 'size-7 pointer-coarse:size-11', selected && 'ring-ring ring-2')}
-    >
-      {/*
-        `bg-current` hereda el color del texto, así que la muestra sale de la
-        misma tabla que el icono en vez de pedir una segunda con los fondos.
-      */}
-      <span className={cn('size-5 rounded-full bg-current', catalogColorClass(color))} />
-    </button>
-  )
-}
-
-function IconCell({
-  Icon,
-  label,
-  selected,
-  disabled,
-  onSelect,
-}: {
-  Icon: LucideIcon
-  label: string
-  selected: boolean
-  disabled?: boolean
-  onSelect: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      aria-pressed={selected}
-      aria-label={label}
-      className={cn(
-        CELL,
-        'hover:bg-secondary',
-        selected ? 'bg-secondary ring-ring ring-2' : 'text-muted-foreground',
-      )}
-    >
-      <Icon aria-hidden className="size-4" />
-    </button>
   )
 }

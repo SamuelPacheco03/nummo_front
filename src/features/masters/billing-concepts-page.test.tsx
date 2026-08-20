@@ -87,6 +87,16 @@ const esperarFilas = (texto: string) => screen.findAllByText(texto)
  * elige la presentación apilada sin ambigüedad.
  */
 const tarjeta = (texto: string | RegExp) => screen.findByRole('button', { name: texto })
+
+/**
+ * Abre el selector de icono y color, que es **otro diálogo** encima del
+ * formulario: la rejilla entera dentro dejaba «Guardar» fuera de la pantalla en
+ * un teléfono (§11.1.12).
+ */
+async function abrirSelector(user: ReturnType<typeof userEvent.setup>, dialogo: HTMLElement) {
+  await user.click(within(dialogo).getByRole('button', { name: /^Icono y color/ }))
+  return screen.findByRole('dialog', { name: 'Icono y color' })
+}
 const escrituras = () => conceptos().filter((c) => c.method !== 'GET')
 
 beforeEach(() => {
@@ -119,9 +129,14 @@ test('el icono y el color elegidos viajan en el alta', async () => {
   await user.click(screen.getByRole('button', { name: 'Nuevo concepto' }))
   const dialogo = await screen.findByRole('dialog')
   await user.type(within(dialogo).getByLabelText(/Nombre/), 'Internet')
-  await user.click(within(dialogo).getByRole('button', { name: 'wifi' }))
-  await user.click(within(dialogo).getByRole('button', { name: 'blue' }))
-  await user.click(within(dialogo).getByRole('button', { name: 'Crear' }))
+
+  const selector = await abrirSelector(user, dialogo)
+  // Por su nombre en español: la clave del contrato es `wifi`, y nadie busca eso.
+  await user.click(within(selector).getByRole('button', { name: 'Internet' }))
+  await user.click(within(selector).getByRole('button', { name: 'Azul' }))
+  await user.click(within(selector).getByRole('button', { name: 'Listo' }))
+
+  await user.click(await screen.findByRole('button', { name: 'Crear' }))
 
   await waitFor(() => expect(escrituras()).toHaveLength(1))
   expect(escrituras()[0].body).toMatchObject({ name: 'Internet', icon: 'wifi', color: 'blue' })
@@ -136,15 +151,17 @@ test('«sin icono» es una opción, no el hueco de no elegir', async () => {
 
   await user.click(await tarjeta(/Mensualidad/))
   const dialogo = await screen.findByRole('dialog')
-  // Lo guardado llega marcado.
-  expect(within(dialogo).getByRole('button', { name: 'wifi' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  )
+  // Lo guardado se lee sin abrir el selector, que es de lo que sirve la fila.
+  expect(
+    within(dialogo).getByRole('button', { name: 'Icono y color: Internet, Azul' }),
+  ).toBeVisible()
 
-  await user.click(within(dialogo).getByRole('button', { name: 'Sin icono' }))
-  await user.click(within(dialogo).getByRole('button', { name: 'Sin color' }))
-  await user.click(within(dialogo).getByRole('button', { name: 'Guardar' }))
+  const selector = await abrirSelector(user, dialogo)
+  await user.click(within(selector).getByRole('button', { name: 'Sin icono' }))
+  await user.click(within(selector).getByRole('button', { name: 'Sin color' }))
+  await user.click(within(selector).getByRole('button', { name: 'Listo' }))
+
+  await user.click(await screen.findByRole('button', { name: 'Guardar' }))
 
   await waitFor(() => expect(escrituras()).toHaveLength(1))
   expect(escrituras()[0].body).toMatchObject({ icon: null, color: null })
@@ -222,4 +239,26 @@ test('sin permiso la fila no abre nada', async () => {
 
   await esperarFilas('Mensualidad')
   expect(screen.queryByRole('button', { name: /Mensualidad/ })).not.toBeInTheDocument()
+})
+
+test('el buscador encuentra el icono por lo que es y por el gasto que nombra', async () => {
+  /*
+    Las claves del contrato son inglesas (`home`, `piggy-bank`), así que buscar
+    en ellas no serviría de nada. Se busca por el nombre en español y por las
+    palabras del negocio: quien está creando «Arriendo» escribe eso, no «casa».
+  */
+  const user = userEvent.setup()
+  montar()
+
+  await user.click(await screen.findByRole('button', { name: 'Nuevo concepto' }))
+  const selector = await abrirSelector(user, await screen.findByRole('dialog'))
+
+  await user.type(within(selector).getByLabelText('Buscar icono'), 'arriendo')
+
+  expect(within(selector).getByRole('button', { name: 'Casa' })).toBeVisible()
+  expect(within(selector).queryByRole('button', { name: 'Internet' })).not.toBeInTheDocument()
+  // Y con lo que no existe se dice, en vez de dejar la rejilla vacía.
+  await user.clear(within(selector).getByLabelText('Buscar icono'))
+  await user.type(within(selector).getByLabelText('Buscar icono'), 'unicornio')
+  expect(within(selector).getByText(/Ningún icono se llama así/)).toBeVisible()
 })

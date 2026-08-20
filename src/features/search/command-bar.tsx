@@ -11,6 +11,7 @@ import { GROUPS as SETTINGS_GROUPS } from '@/features/config/settings-nav'
 import { SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
+import { fold } from '@/lib/text'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
 import { useRecents, type RecentItem } from './recents'
@@ -38,12 +39,7 @@ type CommandGroup = { title: string; items: Command[] }
 /** Coincidencia laxa: sin acentos, sin mayúsculas, por subcadena. */
 function matches(haystack: string, needle: string): boolean {
   if (!needle) return true
-  const norm = (t: string) =>
-    t
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-  return norm(haystack).includes(norm(needle))
+  return fold(haystack).includes(fold(needle))
 }
 
 /**
@@ -292,7 +288,7 @@ export function CommandBar({
           'inset-0 top-0 left-0 max-h-none w-full max-w-none translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 rounded-none p-0',
           // Escritorio: paleta anclada arriba, con sitio para la vista previa.
           'sm:inset-auto sm:top-[8%] sm:left-[50%] sm:h-auto sm:max-h-[32rem] sm:max-w-3xl sm:translate-x-[-50%] sm:rounded-xl',
-          'overflow-hidden',
+          'overflow-x-hidden overflow-y-hidden',
         )}
       >
         <DialogTitle className="sr-only">Buscar o preguntarle algo a Numi</DialogTitle>

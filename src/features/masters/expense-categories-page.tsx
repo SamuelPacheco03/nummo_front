@@ -17,8 +17,13 @@ import type { ListResult } from '@/lib/list-result'
 import type { ExpenseCategory } from '@/api/generated/model'
 import { MasterCrud, type Column } from './master-crud'
 import { CatalogIcon } from './catalog-icon'
-import { catalogRowIcon, CATALOG_DEFAULT_SORT, CATALOG_SORT_CHOICES } from './catalogs'
-import { IdentityField, type CatalogIdentity } from './identity-field'
+import {
+  catalogRowIcon,
+  CATALOG_DEFAULT_SORT,
+  CATALOG_SORT_CHOICES,
+  type CatalogIdentity,
+} from './catalogs'
+import { IdentityField } from './identity-field'
 import { CatalogOrderDrawer } from './order-drawer'
 import { useCreateExpenseCategory, useExpenseCategories, useUpdateExpenseCategory } from './hooks'
 import type { MasterParams } from './hooks'

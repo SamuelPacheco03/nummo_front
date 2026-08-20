@@ -4,9 +4,13 @@ import {
   catalogColorClass,
   catalogIcon,
   catalogRowIcon,
+  iconMatches,
   CATALOG_COLORS,
+  CATALOG_ICON_GROUPS,
   CATALOG_ICONS,
   CATALOG_SORT_CHOICES,
+  COLOR_LABELS,
+  ICON_LABELS,
 } from './catalogs'
 
 /*
@@ -87,5 +91,50 @@ describe('el icono de una fila que pertenece a un catálogo', () => {
   it('sin catálogo —o mientras no llega— el icono de la sección', () => {
     expect(catalogRowIcon(undefined, Coins)).toEqual({ Icon: Coins, className: undefined })
     expect(catalogRowIcon({ id: 'k1', name: 'Otros' }, Coins).Icon).toBe(Coins)
+  })
+})
+
+describe('los iconos por temas', () => {
+  it('cada uno está en un grupo y en uno solo', () => {
+    // Es lo que impide que el día que el contrato añada una clave se quede fuera
+    // del selector sin que nadie lo note: no saldría, y no fallaría nada.
+    const agrupados = CATALOG_ICON_GROUPS.flatMap((group) => group.icons)
+    expect([...agrupados].sort()).toEqual([...CATALOG_ICONS].sort())
+    expect(new Set(agrupados).size).toBe(agrupados.length)
+  })
+
+  it('todos tienen nombre, y no hay dos que se llamen igual', () => {
+    // Dos «Casa» en la rejilla serían dos botones indistinguibles para quien no
+    // ve el dibujo (§46), y una búsqueda con dos resultados iguales.
+    const nombres = CATALOG_ICONS.map((icon) => ICON_LABELS[icon])
+    expect(nombres.filter(Boolean)).toHaveLength(CATALOG_ICONS.length)
+    expect(new Set(nombres).size).toBe(nombres.length)
+  })
+
+  it('todos los colores tienen nombre: un círculo sin nombre no dice nada', () => {
+    for (const color of CATALOG_COLORS) expect(COLOR_LABELS[color]).toBeTruthy()
+  })
+})
+
+describe('buscar un icono', () => {
+  it('por su nombre, sin tildes ni mayúsculas', () => {
+    expect(iconMatches('graduation-cap', 'MATRÍCULA')).toBe(true)
+    expect(iconMatches('graduation-cap', 'matricula')).toBe(true)
+  })
+
+  it('por la palabra del negocio, que es la que se escribe', () => {
+    // Quien crea la categoría «Arriendo» no busca «casa».
+    expect(iconMatches('home', 'arriendo')).toBe(true)
+    expect(iconMatches('users', 'nomina')).toBe(true)
+    expect(iconMatches('wifi', 'internet')).toBe(true)
+    expect(iconMatches('home', 'nomina')).toBe(false)
+  })
+
+  it('por el tema, para bajar a un grupo entero', () => {
+    expect(iconMatches('coins', 'dinero')).toBe(true)
+  })
+
+  it('sin texto, todos', () => {
+    expect(CATALOG_ICONS.every((icon) => iconMatches(icon, '   '))).toBe(true)
   })
 })
