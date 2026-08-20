@@ -1275,6 +1275,38 @@ Tres decisiones, y las tres se explican solas al intentar la alternativa:
 un desplegable de conceptos o de categorías piden `sort=position`. Un orden propio que solo se ve
 en su propia pantalla no sirve para nada.
 
+## 11.1.13. El auto-registro de un recurrente
+
+Un acuerdo de cobro y un gasto recurrente pueden **registrarse solos** el día que vencen. Es el
+mismo concepto en los dos sentidos, con el mismo esquema, así que es **un componente**
+(`AutoChargeSection`) y no dos: lo que cambia son una docena de palabras y a qué endpoint escribe
+(§94.0).
+
+**Es un interruptor con su propia confirmación, no un campo del formulario.** Encenderlo le da a un
+trabajo automático la autoridad de mover dinero todos los meses, y eso no puede ser el efecto
+colateral de corregir un importe. Por eso el contrato le da endpoint propio, `autoCharge` llega
+**embebido y de solo lectura** en el recurrente, y aquí tiene su propio diálogo (§54).
+
+**«Encendido sin cuenta de dónde sacar» no se puede expresar.** El contrato lo hace imposible —es
+una unión discriminada, no tres campos opcionales— y la pantalla dice lo mismo: la cuenta y el
+método se eligen en el mismo acto de encenderlo, y sin los dos no sale nada hacia el API.
+
+**Lo que hay que saber va en el diálogo, antes de aceptar**, y es distinto en cada cara:
+
+| Cara | Lo que nadie adivina |
+| --- | --- |
+| Cobrar | Marcar un cobro como pagado **apaga su mora, su interés y sus recordatorios**. Si el pago no llega de verdad, la cuenta queda saldada y nadie vuelve a perseguirla |
+| Pagar | Por encima del umbral de aprobación **no paga**: deja una solicitud esperando firma, sin mover dinero (§47.4) |
+
+**El permiso no es el del recurrente.** Encender el automático pide el de **registrar el movimiento
+que va a registrar solo** —`payments.create` de un lado, `disbursements.create` del otro—, no
+`agreements.manage`. Llega como prop, porque un componente compartido no decide autorización
+(§87.2).
+
+Y cuando uno falla, el backend emite un aviso de prioridad alta (§11.1.8). La ficha enlaza a las
+preferencias, que es donde se elige por dónde enterarse: un automático que falla en silencio es
+peor que no tenerlo.
+
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
@@ -4570,6 +4602,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
 | `IdentityField` | `features/masters/identity-field.tsx` | Elegir el icono y el color de un catálogo, en los dos |
 | `CatalogOrderDrawer` | `features/masters/order-drawer.tsx` | El orden propio de un catálogo, con la lista entera |
+| `AutoChargeSection` | `components/auto-charge-section.tsx` | **El auto-registro de un recurrente**, en las dos caras (§11.1.13) |
 | `KpiStrip` + `KpiTile` | `components/kpi-tile.tsx` | Cifras de cabecera en una sola superficie |
 | `FilterChips` | `components/ui/filter-chips.tsx` | Filtro principal como fichas visibles con contador |
 | `ListToolbar` | `components/ui/list-toolbar.tsx` | La fila de controles de un listado |
@@ -5270,6 +5303,23 @@ build OK.
 
 ---
 
+## Fase 18 — El auto-registro de un recurrente ✅ **completada**
+
+`AutoChargeSection` en las fichas de acuerdo y de gasto recurrente (§11.1.13).
+
+1. Un componente para las dos caras: lo que cambia son las palabras y el endpoint.
+2. Interruptor con confirmación propia, y la cuenta y el método dentro de esa confirmación — la
+   unión discriminada del contrato no admite «encendido sin cuenta», y la pantalla tampoco.
+3. Cada cara dice lo suyo antes de aceptar: en cartera, que marcar cobrado apaga mora, interés y
+   recordatorios; en gastos, que por encima del umbral no paga sino que pide firma.
+4. El permiso es el de registrar el movimiento, no el de gestionar el recurrente, y viaja como prop.
+5. `DetailSection` gana un `action`, que es lo que deja poner el interruptor junto a su título.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 521 tests en verde (6 nuevos en una sola
+suite para las dos caras, §92.3), build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5291,6 +5341,7 @@ build OK.
 | ✅ 15 | Web Push | medio | 14 |
 | ✅ 16 | Las listas se refrescan solas | bajo | 13 |
 | ✅ 17 | La identidad de los catálogos | medio | — (contrato) |
+| ✅ 18 | El auto-registro de un recurrente | medio | 17 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

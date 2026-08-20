@@ -11,6 +11,7 @@ import {
   usePostApiV1OrganizationsOrgIdBillingAgreements,
   usePostApiV1OrganizationsOrgIdBillingAgreementsIdEnd,
   usePostApiV1OrganizationsOrgIdBillingAgreementsIdPause,
+  usePutApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge,
   usePostApiV1OrganizationsOrgIdBillingAgreementsIdResume,
   usePostApiV1OrganizationsOrgIdInterestPolicies,
 } from '@/api/generated/endpoints/billing/billing'
@@ -121,6 +122,21 @@ export function useCreateAgreement(orgId: string) {
 export function useUpdateAgreement(orgId: string) {
   const qc = useQueryClient()
   return usePatchApiV1OrganizationsOrgIdBillingAgreementsId({
+    mutation: { onSuccess: (_res, vars) => invalidateAgreements(qc, orgId, vars.id) },
+  })
+}
+
+/**
+ * Enciende o apaga el auto-registro de un acuerdo.
+ *
+ * Endpoint propio y no un campo del `PATCH`: encenderlo le da a un trabajo
+ * automático la autoridad de mover dinero, y eso no puede colarse en un cambio
+ * de importe. Pide `payments.create` — el permiso de registrar el pago que va a
+ * registrar solo.
+ */
+export function useSetAgreementAutoCharge(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge({
     mutation: { onSuccess: (_res, vars) => invalidateAgreements(qc, orgId, vars.id) },
   })
 }

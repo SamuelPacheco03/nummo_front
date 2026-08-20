@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DetailDrawer, DetailRow, DetailRows, DetailSection } from '@/components/ui/detail-drawer'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { AutoChargeSection } from '@/components/auto-charge-section'
 import { useContact } from '@/features/contacts/hooks'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -14,9 +15,35 @@ import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { RECURRENCE_LABELS, scheduleStatus } from './labels'
-import { useEndSchedule, useExpenseSchedule, usePauseSchedule, useResumeSchedule } from './hooks'
+import {
+  useEndSchedule,
+  useExpenseSchedule,
+  usePauseSchedule,
+  useResumeSchedule,
+  useSetScheduleAutoCharge,
+} from './hooks'
 
 const LIST = '/gastos/recurrentes'
+
+/**
+ * La otra cara del espejo, y lo que la distingue no es el tono: por encima del
+ * umbral de aprobación de la organización el cargo automático **no paga**, deja
+ * una solicitud esperando firma. Sin decirlo, alguien pone un automático de tres
+ * millones y da por hecho que el dinero salió.
+ */
+const COPY = {
+  title: 'Pago automático',
+  description:
+    'Cada gasto de este recurrente se registra como pagado el día que vence, sin que nadie lo toque.',
+  warning: {
+    title: 'Por encima del umbral no paga: pide firma',
+    body:
+      'Si el monto supera el umbral de aprobación de la organización, el automático deja una solicitud esperando aprobación y no mueve dinero. Por debajo, el egreso se registra solo.',
+  },
+  enableTitle: 'Activar el pago automático',
+  disableDescription:
+    'Los próximos gastos de este recurrente volverán a esperar que alguien registre el egreso. Lo ya registrado se queda como está.',
+}
 
 /** Ficha de un gasto recurrente. Abre como cajón sobre la lista. */
 export function ScheduleDetailPage() {
@@ -24,11 +51,15 @@ export function ScheduleDetailPage() {
   const { orgId } = useCurrentOrg()
   const can = useCan()
   const canManage = can('expense_schedules.manage')
+  // El permiso de registrar el egreso que va a registrar solo, no el de
+  // gestionar el recurrente.
+  const canAutoCharge = can('disbursements.create')
 
   const { schedule: s, isPending, isError, error } = useExpenseSchedule(orgId, scheduleId)
   const pause = usePauseSchedule(orgId ?? '')
   const resume = useResumeSchedule(orgId ?? '')
   const end = useEndSchedule(orgId ?? '')
+  const autoCharge = useSetScheduleAutoCharge(orgId ?? '')
   const [endOpen, setEndOpen] = useState(false)
 
   const { contact: supplier } = useContact(orgId, s?.supplierContactId)
@@ -121,6 +152,13 @@ export function ScheduleDetailPage() {
             <DetailRow label="Notas">{s.notes}</DetailRow>
           </DetailRows>
         </DetailSection>
+
+        <AutoChargeSection
+          autoCharge={s.autoCharge}
+          canManage={canAutoCharge}
+          copy={COPY}
+          onSave={(data) => autoCharge.mutateAsync({ orgId: orgId ?? '', id: s.id, data })}
+        />
       </DetailDrawer>
 
       <ConfirmDialog

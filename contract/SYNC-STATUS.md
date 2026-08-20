@@ -212,11 +212,16 @@ enum generado: una clave nueva rompe el `tsc` del front en vez de dejar filas si
 cómo se dibuja sin un segundo viaje al catálogo. Se cierra devolviendo `conceptIcon`/`conceptColor`
 —o el objeto, como ya hacéis con `payerName`— en las dos vistas de saldos. Detalle en §95.19.
 
+### Auto-registro — ✅ construido (§11.1.13)
+
+`AutoChargeSection`, una para las dos caras. Interruptor con confirmación propia y la cuenta y el
+método **dentro** de esa confirmación: la unión discriminada no admite «encendido sin cuenta» y la
+pantalla tampoco deja mandarlo. Cada cara dice lo suyo antes de aceptar —que marcar cobrado apaga
+mora, interés y recordatorios; que por encima del umbral no paga sino que pide firma— y el permiso
+que se mira es el de registrar el movimiento, no el de gestionar el recurrente.
+
 ### Lo que queda de este bloque
-- `PUT …/auto-charge` es una **unión discriminada**: `{ mode: 'OFF' }` o
-  `{ mode: 'AUTO_RECORD', financialAccountId, paymentMethodId }`. «Encendido sin cuenta» no se
-  puede expresar, y así tiene que quedar en la UI: interruptor con confirmación propia, nunca un
-  campo más del formulario de importe.
+
 - `payerName` / `supplierName` son **exactamente uno** con su contraparte por id. La regla es un
   refine de Zod y no baja al JSON Schema, así que el cliente generado los tipa a los dos como
   opcionales: lo impone el formulario.

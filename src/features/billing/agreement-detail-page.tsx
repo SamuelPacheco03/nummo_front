@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { AutoChargeSection } from '@/components/auto-charge-section'
 import { useContact } from '@/features/contacts/hooks'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
@@ -28,9 +29,30 @@ import {
   useInterestPolicies,
   usePauseAgreement,
   useResumeAgreement,
+  useSetAgreementAutoCharge,
 } from './hooks'
 
 const LIST = '/cartera/acuerdos'
+
+/**
+ * Lo propio de esta cara del espejo. Lo que hay que decir antes de encenderlo no
+ * es un detalle de copy: marcar cobrado **apaga la mora, el interés y los
+ * recordatorios** de ese cobro, así que un automático puesto sobre plata que no
+ * entra deja de perseguirla.
+ */
+const COPY = {
+  title: 'Cobro automático',
+  description:
+    'Cada cobro de este acuerdo se registra como pagado el día que vence, sin que nadie lo toque.',
+  warning: {
+    title: 'Solo para plata que sabes que entra',
+    body:
+      'Marcar un cobro como pagado apaga su mora, su interés y sus recordatorios. Si el pago no llega de verdad, la cuenta queda saldada y nadie vuelve a perseguirla.',
+  },
+  enableTitle: 'Activar el cobro automático',
+  disableDescription:
+    'Los próximos cobros de este acuerdo volverán a esperar que alguien registre el pago. Lo ya registrado se queda como está.',
+}
 
 /**
  * Ficha de un acuerdo de cobro. Abre como cajón sobre la lista (§11.1.3).
@@ -43,11 +65,15 @@ export function AgreementDetailPage() {
   const { orgId } = useCurrentOrg()
   const can = useCan()
   const canManage = can('agreements.manage')
+  // El auto-registro pide el permiso de **registrar el pago** que va a
+  // registrar solo, no el de gestionar el acuerdo: son dos cosas distintas.
+  const canAutoCharge = can('payments.create')
 
   const { agreement, isPending, isError, error } = useAgreement(orgId, agreementId)
   const pause = usePauseAgreement(orgId ?? '')
   const resume = useResumeAgreement(orgId ?? '')
   const end = useEndAgreement(orgId ?? '')
+  const autoCharge = useSetAgreementAutoCharge(orgId ?? '')
   const [endOpen, setEndOpen] = useState(false)
 
   const { contact: payer } = useContact(orgId, agreement?.payerContactId)
@@ -61,7 +87,7 @@ export function AgreementDetailPage() {
   const { items: policies } = useInterestPolicies(orgId, {
     page: 1,
     pageSize: 100,
-    sort: 'position',
+    sort: 'name',
     order: 'asc',
   })
   const { branches } = useBranches(orgId)
@@ -186,6 +212,15 @@ export function AgreementDetailPage() {
             <DetailRow label="Interés de mora">{policyName ?? 'Sin interés de mora'}</DetailRow>
           </DetailRows>
         </DetailSection>
+
+        <AutoChargeSection
+          autoCharge={agreement.autoCharge}
+          canManage={canAutoCharge}
+          copy={COPY}
+          onSave={(data) =>
+            autoCharge.mutateAsync({ orgId: orgId ?? '', id: agreement.id, data })
+          }
+        />
 
         <DetailSection title="Quién">
           <DetailRows>

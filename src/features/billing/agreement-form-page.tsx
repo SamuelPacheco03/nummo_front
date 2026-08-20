@@ -96,7 +96,7 @@ export function AgreementFormPage() {
     page: 1,
     pageSize: 100,
     isActive: 'true',
-    sort: 'position',
+    sort: 'name',
     order: 'asc',
   })
   const { branches } = useBranches(orgId)

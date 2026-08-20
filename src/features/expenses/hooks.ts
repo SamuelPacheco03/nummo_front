@@ -13,6 +13,7 @@ import {
   usePostApiV1OrganizationsOrgIdExpenseSchedules,
   usePostApiV1OrganizationsOrgIdExpenseSchedulesIdEnd,
   usePostApiV1OrganizationsOrgIdExpenseSchedulesIdPause,
+  usePutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge,
   usePostApiV1OrganizationsOrgIdExpenseSchedulesIdResume,
   usePostApiV1OrganizationsOrgIdExpenses,
   usePostApiV1OrganizationsOrgIdExpensesGenerate,
@@ -101,6 +102,17 @@ export function useUpdateSchedule(orgId: string) {
     mutation: { onSuccess: (_r, vars) => invSchedules(qc, orgId, vars.id) },
   })
 }
+/**
+ * Enciende o apaga el auto-registro de un gasto recurrente. El espejo de
+ * `useSetAgreementAutoCharge`, con su permiso: `disbursements.create`.
+ */
+export function useSetScheduleAutoCharge(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge({
+    mutation: { onSuccess: (_r, vars) => invSchedules(qc, orgId, vars.id) },
+  })
+}
+
 export function usePauseSchedule(orgId: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdExpenseSchedulesIdPause({

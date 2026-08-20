@@ -39,10 +39,24 @@ export function DetailDrawer({
  * prohíbe. Las versaditas se quedan donde sí significan algo —las cabeceras de
  * una tabla de datos—, no en los títulos de contenido.
  */
-export function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+export function DetailSection({
+  title,
+  action,
+  children,
+}: {
+  title: string
+  /** Lo que se hace con esta sección: un interruptor, un botón. */
+  action?: ReactNode
+  children: ReactNode
+}) {
   return (
     <section className="space-y-2">
-      <h3 className="text-sm font-medium">{title}</h3>
+      {/* El título y su acción en la misma línea: bajarla la dejaría flotando
+          entre dos secciones sin decir de cuál es. */}
+      <div className="flex min-h-8 items-center justify-between gap-3">
+        <h3 className="text-sm font-medium">{title}</h3>
+        {action}
+      </div>
       {children}
     </section>
   )
