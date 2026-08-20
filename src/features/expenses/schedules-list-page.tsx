@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { RecurringList } from '@/components/recurring-list'
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { RECURRING_SECTIONS } from '@/features/navigation/sections'
@@ -32,9 +31,8 @@ const COPY: RecurringListCopy = {
 /**
  * Traduce lo que pide la lista al contrato de recurrentes y normaliza las filas.
  *
- * El API devuelve ids; el nombre de la categoría se resuelve aquí con un mapa
- * (suficiente para el catálogo de una org; a gran escala el backend debería
- * denormalizarlo en el listado).
+ * El API devuelve el id de la categoría y nada más; quien lo cruza contra el
+ * catálogo es la lista, que necesita de él el nombre **y** el icono (§95.19).
  */
 function useScheduleRows(params: RecurringQuery): RecurringListResult {
   const { orgId } = useCurrentOrg()
@@ -48,20 +46,14 @@ function useScheduleRows(params: RecurringQuery): RecurringListResult {
     status: params.status as GetApiV1OrganizationsOrgIdExpenseSchedulesParams['status'],
   }
   const list = useExpenseSchedules(orgId, query)
-  const { items: categories } = useExpenseCategories(orgId, {
-    page: 1,
-    pageSize: 100,
-    sort: 'position',
-    order: 'asc',
-  })
-  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
 
   return {
     ...list,
     items: list.items.map((s) => ({
       id: s.id,
       contactId: s.supplierContactId,
-      subtitle: s.name ?? categoryMap.get(s.expenseCategoryId) ?? '—',
+      name: s.name,
+      catalogId: s.expenseCategoryId,
       recurrenceType: s.recurrenceType,
       dueDay: s.dueDay,
       status: s.status,
@@ -76,11 +68,19 @@ function useScheduleRows(params: RecurringQuery): RecurringListResult {
  * la pantalla (`RecurringList`) y solo aporta las palabras y su endpoint.
  */
 export function SchedulesListPage() {
+  const { orgId } = useCurrentOrg()
   const can = useCan()
+  const { items: categories } = useExpenseCategories(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'position',
+    order: 'asc',
+  })
 
   return (
     <RecurringList
       copy={COPY}
+      catalog={categories}
       storageKey="nummo:recurrentes:filtros"
       sections={RECURRING_SECTIONS}
       newTo="/gastos/recurrentes/nuevo"

@@ -19,12 +19,7 @@ import type { BillingConcept } from '@/api/generated/model'
 import { MasterCrud, type Column } from './master-crud'
 import { isValidAmount } from './labels'
 import { CatalogIcon } from './catalog-icon'
-import {
-  catalogColorClass,
-  catalogIcon,
-  CATALOG_DEFAULT_SORT,
-  CATALOG_SORT_CHOICES,
-} from './catalogs'
+import { catalogRowIcon, CATALOG_DEFAULT_SORT, CATALOG_SORT_CHOICES } from './catalogs'
 import { IdentityField, type CatalogIdentity } from './identity-field'
 import { CatalogOrderDrawer } from './order-drawer'
 import { useBillingConcepts, useCreateBillingConcept, useUpdateBillingConcept } from './hooks'
@@ -53,11 +48,22 @@ const COLUMNS: Column<BillingConcept>[] = [
   },
   {
     header: 'Nombre',
-    // El icono va **pegado al nombre**, no en columna propia: aquí no es el
-    // adorno de una fila densa, es la identidad de lo que se está editando.
+    /*
+      El icono va **pegado al nombre**, no en columna propia: aquí no es el
+      adorno de una fila densa, es la identidad de lo que se está editando.
+
+      Solo en la tabla (`lg:block`, §11.1.3b regla 2): en la tarjeta de móvil ese
+      mismo icono ya es la pastilla de la izquierda, y salía dos veces en la
+      misma línea.
+    */
     cell: (r) => (
       <span className="flex items-center gap-2">
-        <CatalogIcon icon={r.icon} color={r.color} fallback={ReceiptText} />
+        <CatalogIcon
+          icon={r.icon}
+          color={r.color}
+          fallback={ReceiptText}
+          className="hidden lg:block"
+        />
         {r.name}
       </span>
     ),
@@ -207,10 +213,7 @@ export function BillingConceptsPage() {
         columns={COLUMNS}
         sortChoices={CATALOG_SORT_CHOICES}
         defaultSort={CATALOG_DEFAULT_SORT}
-        rowIcon={(row) => ({
-          Icon: catalogIcon(row.icon) ?? ReceiptText,
-          className: catalogColorClass(row.color),
-        })}
+        rowIcon={(row) => catalogRowIcon(row, ReceiptText)}
         actions={
           canManage && (
             <Button variant="outline" size="sm" onClick={() => setOrdering(true)}>

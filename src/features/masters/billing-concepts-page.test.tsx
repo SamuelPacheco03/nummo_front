@@ -81,6 +81,12 @@ const conceptos = () => estado.llamadas.filter((c) => c.url.includes('/billing-c
   espera a que estén, sin elegir cuál.
 */
 const esperarFilas = (texto: string) => screen.findAllByText(texto)
+/**
+ * La tarjeta de móvil de una fila: es un botón, y su nombre accesible empieza
+ * por el título. La tabla de escritorio no tiene rol de botón, así que esto
+ * elige la presentación apilada sin ambigüedad.
+ */
+const tarjeta = (texto: string | RegExp) => screen.findByRole('button', { name: texto })
 const escrituras = () => conceptos().filter((c) => c.method !== 'GET')
 
 beforeEach(() => {
@@ -128,7 +134,7 @@ test('«sin icono» es una opción, no el hueco de no elegir', async () => {
   const user = userEvent.setup()
   montar()
 
-  await user.click(await screen.findByRole('button', { name: 'Editar' }))
+  await user.click(await tarjeta(/Mensualidad/))
   const dialogo = await screen.findByRole('dialog')
   // Lo guardado llega marcado.
   expect(within(dialogo).getByRole('button', { name: 'wifi' })).toHaveAttribute(
@@ -193,4 +199,27 @@ test('sin permiso no se ofrece ni crear ni ordenar', async () => {
   await esperarFilas('Mensualidad')
   expect(screen.queryByRole('button', { name: 'Ordenar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Nuevo concepto' })).not.toBeInTheDocument()
+})
+
+test('la fila entera edita, que es la única manera de hacerlo en móvil', async () => {
+  /*
+    El lápiz vivía en una columna `hideOnStack`, así que por debajo de `lg` no
+    había con qué abrir la edición: la tarjeta se pulsaba y no pasaba nada.
+  */
+  const user = userEvent.setup()
+  montar()
+  await esperarFilas('Mensualidad')
+
+  await user.click(await tarjeta(/Mensualidad/))
+
+  const dialogo = await screen.findByRole('dialog')
+  expect(within(dialogo).getByLabelText(/Nombre/)).toHaveValue('Mensualidad')
+})
+
+test('sin permiso la fila no abre nada', async () => {
+  estado.permisos = []
+  montar()
+
+  await esperarFilas('Mensualidad')
+  expect(screen.queryByRole('button', { name: /Mensualidad/ })).not.toBeInTheDocument()
 })

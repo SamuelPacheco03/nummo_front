@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
 import { FileText, Plus } from 'lucide-react'
 import { ContactPicker } from '@/components/contact-picker'
@@ -20,6 +20,7 @@ import { ListToolbar } from '@/components/ui/list-toolbar'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { useContacts } from '@/features/contacts/hooks'
+import { catalogRowIcon, type CatalogRef } from '@/features/masters/catalogs'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatAmount, plural } from '@/lib/format'
 import {
@@ -75,6 +76,7 @@ const column = listColumns<RecurringRow>()
  */
 export function RecurringList({
   copy,
+  catalog,
   storageKey,
   sections,
   newTo,
@@ -85,6 +87,11 @@ export function RecurringList({
   useList,
 }: {
   copy: RecurringListCopy
+  /**
+   * Conceptos de cobro o categorías de gasto: la segunda línea de las filas sin
+   * nombre propio, y el icono de cada tarjeta.
+   */
+  catalog: CatalogRef[]
   /** Clave de `sessionStorage` para recordar los filtros de la sesión. */
   storageKey: string
   /** El par de rutas espejo, para el salto de móvil. */
@@ -133,6 +140,11 @@ export function RecurringList({
   const { contacts } = useContacts(orgId, { page: 1, pageSize: 100, sort: 'name', order: 'asc' })
   const contactName = (id: string) => contacts.find((c) => c.id === id)?.displayName ?? '—'
 
+  const catalogMap = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog])
+  /** El nombre propio, y si no se le puso ninguno, el del concepto o categoría. */
+  const subtitleOf = (row: RecurringRow) =>
+    row.name ?? catalogMap.get(row.catalogId)?.name ?? '—'
+
   const statusChoices = [{ value: '', label: 'Todos' }, ...RECURRING_FREQUENT_STATUSES]
   // Si el estado activo salió del cajón, se muestra igualmente: si no, el usuario
   // vería la lista filtrada y ninguna ficha marcada.
@@ -151,7 +163,7 @@ export function RecurringList({
           {/* En la tarjeta el subtítulo va en su línea de contexto; `lg:block`
               lo deja solo para la tabla. */}
           <p className="text-muted-foreground hidden truncate text-xs lg:block">
-            {row.original.subtitle}
+            {subtitleOf(row.original)}
           </p>
         </div>
       ),
@@ -160,7 +172,7 @@ export function RecurringList({
       id: 'subtitle',
       header: 'Concepto',
       meta: { hideOnTable: true, card: 'meta' },
-      cell: ({ row }) => row.original.subtitle,
+      cell: ({ row }) => subtitleOf(row.original),
     }),
     column.display({
       id: 'recurrence',
@@ -245,7 +257,9 @@ export function RecurringList({
             rows={items}
             getRowId={(row) => row.id}
             onRowClick={(row) => navigate(detailTo(row.id))}
-            rowIcon={() => ({ Icon: FileText })}
+            // El del concepto o la categoría, con su color (§11.1.12); el papel
+            // es para las plantillas cuyo catálogo todavía no ha llegado.
+            rowIcon={(row) => catalogRowIcon(catalogMap.get(row.catalogId), FileText)}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? DEFAULT_SORT, next[0]?.desc !== false),

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router'
 import { Banknote, Plus } from 'lucide-react'
 import { CashflowKpis } from '@/components/cashflow-kpis'
@@ -21,6 +21,7 @@ import { listColumns } from '@/components/ui/list-columns'
 import { ListToolbar } from '@/components/ui/list-toolbar'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
+import { catalogRowIcon, type CatalogRef } from '@/features/masters/catalogs'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import {
@@ -59,6 +60,7 @@ const column = listColumns<SettlementRow>()
  */
 export function SettlementList({
   copy,
+  catalog,
   storageKey,
   sections,
   newTo,
@@ -74,6 +76,11 @@ export function SettlementList({
   useList,
 }: {
   copy: SettlementListCopy
+  /**
+   * Conceptos de cobro o categorías de gasto, para el icono de las filas que
+   * pertenecen a uno. El contrato manda el id y nada más (§95.19).
+   */
+  catalog: CatalogRef[]
   /** Clave de `sessionStorage` para recordar los filtros de la sesión. */
   storageKey: string
   /** El par de rutas espejo, para el salto de móvil. */
@@ -108,6 +115,8 @@ export function SettlementList({
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  const catalogMap = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog])
 
   const page = Number(values.pagina) || 1
   const defaultSort = sortChoices[0]?.field ?? ''
@@ -258,7 +267,11 @@ export function SettlementList({
             rows={items}
             getRowId={(row) => row.id}
             onRowClick={(row) => navigate(detailTo(row.id))}
-            rowIcon={() => ({ Icon: Banknote })}
+            // El del concepto o la categoría cuando el movimiento va directo a
+            // uno; el billete, cuando no pertenece a ninguno (§11.1.12).
+            rowIcon={(row) =>
+              catalogRowIcon(row.catalogId ? catalogMap.get(row.catalogId) : undefined, Banknote)
+            }
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) => sortBy(next[0]?.id ?? defaultSort, next[0]?.desc !== false),

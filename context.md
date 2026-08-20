@@ -864,14 +864,21 @@ Tres reglas que salieron de verlo funcionando:
    duplicar la columna.
 3. **La cabecera no está en la tarjeta.** «15 jul» bajo la columna VENCE se entiende; suelto en una
    línea, no. De ahí los prefijos que solo aparecen por debajo de `lg` («Vence 15 jul»).
+4. **Lo que abre la fila no puede vivir en una columna.** Los cinco maestros tenían un botón de
+   lápiz en la última columna, y esa columna era `hideOnStack`: por debajo de `lg` no había con qué
+   editar, la tarjeta se pulsaba y no pasaba nada. Abrir es de la **fila entera** (`onRowClick`),
+   como en todas las demás listas; el chevron solo lo anuncia, y por eso él sí es de la tabla.
 
 **El icono es de la tarjeta, no de la tabla** (`rowIcon` → `RowIconBadge`). Un icono por fila en
-una rejilla densa es ruido, y en escritorio la columna ya dice de qué categoría es. Casi todas las
-pantallas lo rellenan con uno fijo, o con las iniciales cuando la fila es una persona. **Los dos
-catálogos con identidad propia ya lo pasan desde la fila** (§11.1.12) y la tarjeta no cambió una
+una rejilla densa es ruido, y en escritorio la columna ya dice de qué categoría es. Las pantallas
+sin catálogo detrás lo rellenan con uno fijo, o con las iniciales cuando la fila es una persona;
+**las que sí lo tienen pintan el del concepto o la categoría de esa fila** —cartera, gastos,
+recurrentes, pagos y egresos, además de los dos catálogos (§11.1.12)—, y la tarjeta no cambió una
 línea, que era justo lo que esto venía a permitir: para eso `RowIcon` acepta un `className`, porque
-un color elegido por el usuario no es ninguno de los cinco tonos. Los tonos siguen siendo
-semánticos (`neutral`, `brand`, `success`, `warning`, `destructive`), no colores sueltos.
+un color elegido por el usuario no es ninguno de los cinco tonos. **Se suma al tono, no lo
+sustituye:** el color del catálogo es solo el del glifo, y sustituyendo, una categoría sin color
+elegido se quedaba también sin pastilla. Los tonos siguen siendo semánticos (`neutral`, `brand`,
+`success`, `warning`, `destructive`), no colores sueltos.
 
 **El ancho lo pone el layout, no cada página.** Unas iban a `max-w-2xl` y otras a todo lo ancho,
 así que saltar de Empresa a Sedes cambiaba el tamaño de la columna y parecía otra pantalla. Hoy
@@ -1246,11 +1253,13 @@ categoría Netflix es roja» no significa error— y meter dieciocho pares en `i
 como sistema lo que es contenido. Cada uno lleva su variante oscura, porque el color es justo lo que
 aquí hay que distinguir de un vistazo.
 
-**El icono va pegado al nombre, también en la tabla.** §11.1.3b lo reserva a la tarjeta de móvil
+**El icono va pegado al nombre en la tabla, y solo ahí.** §11.1.3b lo reserva a la tarjeta de móvil
 porque en una rejilla densa es ruido y «la columna ya dice de qué categoría es» — pero aquí la fila
 **es** la categoría: el icono no repite un dato, es la identidad de lo que se está editando. En la
 tarjeta lo lleva `RowIconBadge`, que gana una prop `className` para poder pintar el color del
-contrato en vez de uno de los cinco tonos semánticos, que ahí no significarían nada.
+contrato en vez de uno de los cinco tonos semánticos, que ahí no significarían nada. Por eso el de
+la celda es `hidden lg:block` (§11.1.3b, regla 2): sin eso el mismo icono salía dos veces en la
+misma línea de la tarjeta, uno en la pastilla y otro pegado al nombre.
 
 **«Sin poner» es una opción visible**, tanto en icono como en color. Las organizaciones que ya
 existían tienen los dos en `null` y hace falta poder volver ahí; el hueco de no elegir no es lo
@@ -4680,6 +4689,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList`, con su papel en la tarjeta |
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
 | `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
+| `catalogRowIcon` · `CatalogRef` | `features/masters/catalogs.ts` | El icono de la tarjeta de una fila que pertenece a un catálogo, cruzado por id (§95.19) |
 | `IdentityField` | `features/masters/identity-field.tsx` | Elegir el icono y el color de un catálogo, en los dos |
 | `CatalogOrderDrawer` | `features/masters/order-drawer.tsx` | El orden propio de un catálogo, con la lista entera |
 | `AutoChargeSection` | `components/auto-charge-section.tsx` | **El auto-registro de un recurrente**, en las dos caras (§11.1.13) |
@@ -4972,21 +4982,27 @@ envío, que es cuando el backend la borra al recibir un 410.
 Se cierra devolviendo el `endpoint` en `PushSubscription` —es del propio usuario— o un `isCurrent`
 resuelto en el servidor.
 
-### 95.19. Las listas de dinero no traen el icono de su concepto o su categoría — ⏸️ **abierta, es petición de contrato**
+### 95.19. Las listas de dinero traen el id del catálogo, no su icono — ⏸️ **pintado con el cruce que ya había; el campo sigue pedido**
 
 §11.1.3b prometía que, en cuanto los conceptos de cobro y las categorías de gasto tuvieran icono y
 color, las listas de cartera y de gastos los pasarían desde la fila. Se cumplió en los dos catálogos
-(§11.1.12) y **no se puede cumplir en las listas de dinero**: `ReceivableBalance` y `ExpenseBalance`
-traen `billingConceptId` y `expenseCategoryId`, y nada más.
+(§11.1.12) y en el contrato de las listas de dinero **no hay de dónde**: `ReceivableBalance`,
+`ExpenseBalance`, `BillingAgreement`, `ExpenseSchedule` y los dos de pagos traen `billingConceptId` /
+`expenseCategoryId` y nada más.
 
-Pintarlo hoy exigiría cruzar cada fila contra el catálogo cargado aparte —que es lo que ya se hace
-para el **nombre**— y eso funciona porque son cien registros como mucho; extenderlo al icono y al
-color es la misma consulta y el mismo cruce, así que la brecha no es de rendimiento sino de dónde
-vive la verdad: una lista que se pagina en el servidor no debería necesitar un segundo viaje para
-saber cómo se pinta cada fila.
+Se pinta igualmente, **cruzando cada fila contra el catálogo que esas mismas pantallas ya cargaban
+para el nombre** (`catalogRowIcon`, §94): son cien registros como mucho, el viaje ya se hacía y no
+hay uno nuevo. Lo que sigue abierto no es de rendimiento sino de dónde vive la verdad: una lista que
+se pagina en el servidor no debería necesitar un segundo viaje para saber cómo se pinta cada fila, y
+un catálogo de más de cien elementos dejaría filas sin icono sin decirlo.
+
+Y en **pagos y egresos** falta además el dato, no solo el adorno: `PaymentListItem` solo trae
+concepto cuando el movimiento es directo (`directBillingConceptId`), así que un pago aplicado a
+cartera —que puede saldar cuentas de conceptos distintos— y un abono a cuenta se quedan con el icono
+de la sección. Es lo honesto (§70), pero es también todo lo que esas dos listas pueden decir hoy.
 
 Se cierra devolviendo `conceptIcon` / `conceptColor` —o el objeto entero, como ya se hace con
-`payerName`— en las dos vistas de saldos.
+`payerName`— en las vistas de saldos, en las dos de recurrentes y en las dos de movimientos.
 
 ### 95.15. Lo que ya cumple
 
@@ -5416,6 +5432,30 @@ selector, incluido que elegir un contacto borre el nombre escrito), build OK.
 
 ---
 
+## Fase 20 — El catálogo se ve en las listas, y un maestro se edita en móvil ✅ **completada**
+
+Tres cosas que se vieron al usar la aplicación en el teléfono, no al leer el contrato.
+
+1. **Editar un maestro por debajo de `lg` era imposible.** El lápiz vivía en una columna
+   `hideOnStack`: la tarjeta se pulsaba y no pasaba nada. Ahora abre la fila entera (`onRowClick`)
+   y el chevron lo anuncia, como en todas las demás listas (§11.1.3b, regla 4).
+2. **El icono salía dos veces en la tarjeta de los dos catálogos**, en la pastilla y pegado al
+   nombre; el de la celda pasa a ser `hidden lg:block` (§11.1.12).
+3. **Las listas de dinero pintan el icono de su concepto o su categoría** —cartera, cuentas por
+   pagar, acuerdos, recurrentes, pagos y egresos— con el cruce contra el catálogo que ya se hacía
+   para el nombre (`catalogRowIcon`). En pagos y egresos solo lo tienen los movimientos directos:
+   el contrato no dice a qué concepto se aplicó lo demás (§95.19).
+
+De paso, dos duplicados menos: `RecurringList` resuelve el nombre del catálogo una vez en lugar de
+hacerlo cada cara en su hook, y `RowIcon.className` **suma** al tono en vez de sustituirlo —así una
+categoría sin color elegido no pierde también la pastilla—.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 541 tests en verde (5 nuevos: el cruce del
+icono en sus tres casos y que la fila de un maestro abra su edición con permiso y no sin él),
+build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5439,6 +5479,7 @@ selector, incluido que elegir un contacto borre el nombre escrito), build OK.
 | ✅ 17 | La identidad de los catálogos | medio | — (contrato) |
 | ✅ 18 | El auto-registro de un recurrente | medio | 17 |
 | ✅ 19 | Alta de contraparte por nombre | bajo | — (contrato) |
+| ✅ 20 | El catálogo en las listas y la edición en móvil | bajo | 17 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

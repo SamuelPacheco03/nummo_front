@@ -86,6 +86,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { SortChoice } from '@/components/ui/filter-sheet'
+import type { RowIcon } from '@/components/ui/row-icon'
 import type { BillingConceptColor, BillingConceptIcon } from '@/api/generated/model'
 
 /*
@@ -255,6 +256,35 @@ export function catalogIcon(icon: string | null | undefined): LucideIcon | undef
   return icon ? ICONS[icon as IconKey] : undefined
 }
 
+/**
+ * Lo poco que hace falta saber de un concepto de cobro o de una categoría de
+ * gasto para **pintar la fila de otra lista**: cómo se llama y cómo se ve.
+ *
+ * Las listas de dinero reciben del contrato el id del catálogo y nada más, así
+ * que ya cruzaban contra él para el **nombre** (§95.19). El icono y el color
+ * salen del mismo cruce, sin un viaje más.
+ */
+export interface CatalogRef {
+  id: string
+  name: string
+  icon?: string | null
+  color?: string | null
+}
+
+/**
+ * El icono de un catálogo tal como lo quiere la tarjeta de una fila (§11.1.3b).
+ *
+ * `fallback` es el icono de la sección —un billete en pagos, un papel en los
+ * recurrentes—: lo que se pinta cuando la fila no pertenece a ningún catálogo, o
+ * cuando el catálogo todavía no ha llegado. Un genérico aquí no esconde nada,
+ * porque el nombre va al lado.
+ */
+export function catalogRowIcon(item: CatalogRef | undefined, fallback: LucideIcon): RowIcon {
+  return {
+    Icon: catalogIcon(item?.icon) ?? fallback,
+    className: item?.color ? catalogColorClass(item.color) : undefined,
+  }
+}
 
 /**
  * Lo que aceptan los dos catálogos con orden propio. `position` es su valor por

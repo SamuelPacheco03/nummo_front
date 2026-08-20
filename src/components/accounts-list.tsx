@@ -31,6 +31,7 @@ import { ListToolbar } from '@/components/ui/list-toolbar'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { ErrorState } from '@/components/ui/error-state'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
+import { catalogRowIcon, type CatalogRef } from '@/features/masters/catalogs'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { downloadCsv } from '@/lib/csv'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
@@ -111,8 +112,12 @@ export function AccountsList({
   /** Clave de `sessionStorage` para recordar los filtros de la sesión. */
   storageKey: string
   detailTo: (id: string) => string
-  /** Conceptos de cobro o categorías de gasto, para la columna y el filtro. */
-  catalog: { id: string; name: string }[]
+  /**
+   * Conceptos de cobro o categorías de gasto: la columna, el filtro y **el icono
+   * de cada fila**. El contrato manda el id y nada más (§95.19), así que el
+   * nombre ya se cruzaba aquí; el icono y el color salen del mismo cruce.
+   */
+  catalog: CatalogRef[]
   statusLabels: Record<string, string>
   statusOf: (status: string) => { tone: StatusTone; label: string }
   summary: AccountsSummary | undefined
@@ -161,7 +166,7 @@ export function AccountsList({
     dueBefore: values.hasta || undefined,
   })
 
-  const catalogMap = useMemo(() => new Map(catalog.map((c) => [c.id, c.name])), [catalog])
+  const catalogMap = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog])
 
   /*
    * **Cada ficha cuenta lo suyo, preguntándoselo al propio listado.**
@@ -240,7 +245,7 @@ export function AccountsList({
               {/* En la tarjeta el catálogo va en su propia línea de contexto,
                   así que aquí solo estorbaría: `lg:block` lo deja para la tabla. */}
               <p className="text-muted-foreground hidden truncate text-xs lg:block">
-                {catalogMap.get(row.original.catalogId) ?? '—'}
+                {catalogMap.get(row.original.catalogId)?.name ?? '—'}
               </p>
             </div>
           ),
@@ -249,7 +254,7 @@ export function AccountsList({
           id: 'catalog',
           header: copy.catalog,
           meta: { hideOnTable: true, card: 'meta' },
-          cell: ({ row }) => catalogMap.get(row.original.catalogId) ?? copy.catalogNone,
+          cell: ({ row }) => catalogMap.get(row.original.catalogId)?.name ?? copy.catalogNone,
         }),
         column.display({
           id: 'dueDate',
@@ -293,7 +298,7 @@ export function AccountsList({
       [copy.contact, copy.catalog, 'Vence', 'Estado', 'Saldo'],
       items.map((r) => [
         r.contactName,
-        catalogMap.get(r.catalogId) ?? '',
+        catalogMap.get(r.catalogId)?.name ?? '',
         r.dueDate,
         statusLabels[r.displayStatus] ?? r.displayStatus,
         r.balance,
@@ -409,9 +414,9 @@ export function AccountsList({
             rows={items}
             getRowId={(r) => r.id}
             onRowClick={(r) => navigate(detailTo(r.id))}
-            // Un icono fijo mientras los catálogos no traigan el suyo: el hueco
-            // ya está, y el día que lo traigan se cambia solo esta línea.
-            rowIcon={() => ({ Icon: Coins })}
+            // El del concepto o la categoría de la fila, con su color; las
+            // monedas son para las que no tienen catálogo (§11.1.12).
+            rowIcon={(r) => catalogRowIcon(catalogMap.get(r.catalogId), Coins)}
             sort={{
               value: [{ id: sortField, desc }],
               onChange: (next) =>

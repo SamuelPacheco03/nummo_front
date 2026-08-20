@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { Coins } from 'lucide-react'
 import {
   catalogColorClass,
   catalogIcon,
+  catalogRowIcon,
   CATALOG_COLORS,
   CATALOG_ICONS,
   CATALOG_SORT_CHOICES,
@@ -63,5 +65,27 @@ describe('el orden que ofrecen estos dos catálogos', () => {
       expect(choice.asc).not.toMatch(/ascendente|descendente/i)
       expect(choice.desc).not.toMatch(/ascendente|descendente/i)
     }
+  })
+})
+
+describe('el icono de una fila que pertenece a un catálogo', () => {
+  it('pinta el del concepto, con su color', () => {
+    const concepto = { id: 'k1', name: 'Internet', icon: 'wifi', color: 'blue' }
+    expect(catalogRowIcon(concepto, Coins)).toEqual({
+      Icon: catalogIcon('wifi'),
+      className: catalogColorClass('blue'),
+    })
+  })
+
+  it('sin color no manda ninguna clase: la pastilla conserva su tono', () => {
+    // `RowIconBadge` suma la clase al tono, así que mandar el gris de «sin
+    // color» sería repetir lo que el tono neutro ya dice.
+    const sinColor = { id: 'k1', name: 'Internet', icon: 'wifi' }
+    expect(catalogRowIcon(sinColor, Coins).className).toBeUndefined()
+  })
+
+  it('sin catálogo —o mientras no llega— el icono de la sección', () => {
+    expect(catalogRowIcon(undefined, Coins)).toEqual({ Icon: Coins, className: undefined })
+    expect(catalogRowIcon({ id: 'k1', name: 'Otros' }, Coins).Icon).toBe(Coins)
   })
 })

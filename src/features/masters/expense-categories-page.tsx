@@ -17,12 +17,7 @@ import type { ListResult } from '@/lib/list-result'
 import type { ExpenseCategory } from '@/api/generated/model'
 import { MasterCrud, type Column } from './master-crud'
 import { CatalogIcon } from './catalog-icon'
-import {
-  catalogColorClass,
-  catalogIcon,
-  CATALOG_DEFAULT_SORT,
-  CATALOG_SORT_CHOICES,
-} from './catalogs'
+import { catalogRowIcon, CATALOG_DEFAULT_SORT, CATALOG_SORT_CHOICES } from './catalogs'
 import { IdentityField, type CatalogIdentity } from './identity-field'
 import { CatalogOrderDrawer } from './order-drawer'
 import { useCreateExpenseCategory, useExpenseCategories, useUpdateExpenseCategory } from './hooks'
@@ -53,11 +48,14 @@ const COLUMNS: Column<ExpenseCategory>[] = [
   },
   {
     header: 'Nombre',
-    // El icono va pegado al nombre: aquí es la identidad de lo que se edita, no
-    // el adorno de una fila densa.
+    /*
+      El icono va pegado al nombre: aquí es la identidad de lo que se edita, no
+      el adorno de una fila densa. Solo en la tabla: en la tarjeta ya es la
+      pastilla de la izquierda (§11.1.3b, regla 2).
+    */
     cell: (r) => (
       <span className="flex items-center gap-2">
-        <CatalogIcon icon={r.icon} color={r.color} fallback={Tags} />
+        <CatalogIcon icon={r.icon} color={r.color} fallback={Tags} className="hidden lg:block" />
         {r.name}
       </span>
     ),
@@ -214,10 +212,7 @@ export function ExpenseCategoriesPage() {
         columns={COLUMNS}
         sortChoices={CATALOG_SORT_CHOICES}
         defaultSort={CATALOG_DEFAULT_SORT}
-        rowIcon={(row) => ({
-          Icon: catalogIcon(row.icon) ?? Tags,
-          className: catalogColorClass(row.color),
-        })}
+        rowIcon={(row) => catalogRowIcon(row, Tags)}
         actions={
           canManage && (
             <Button variant="outline" size="sm" onClick={() => setOrdering(true)}>

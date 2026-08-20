@@ -1,4 +1,5 @@
 import { SettlementList } from '@/components/settlement-list'
+import { useExpenseCategories } from '@/features/masters/hooks'
 import type { SortChoice } from '@/components/ui/filter-sheet'
 import { LEDGER_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -73,6 +74,7 @@ function useDisbursementRows(params: SettlementQuery): SettlementListResult {
       amount: d.amount,
       status: d.status,
       purpose: d.purpose,
+      catalogId: d.directExpenseCategoryId,
     })),
   }
 }
@@ -82,11 +84,19 @@ function useDisbursementRows(params: SettlementQuery): SettlementListResult {
  * (`SettlementList`) y solo aporta lo suyo: las palabras y su endpoint.
  */
 export function DisbursementsListPage() {
+  const { orgId } = useCurrentOrg()
   const can = useCan()
+  const { items: categories } = useExpenseCategories(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'position',
+    order: 'asc',
+  })
 
   return (
     <SettlementList
       copy={COPY}
+      catalog={categories}
       storageKey="nummo:egresos:filtros"
       sections={LEDGER_SECTIONS}
       newTo="/gastos/egresos/nuevo"

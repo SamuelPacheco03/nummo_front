@@ -1,4 +1,5 @@
 import { SettlementList } from '@/components/settlement-list'
+import { useBillingConcepts } from '@/features/masters/hooks'
 import type { SortChoice } from '@/components/ui/filter-sheet'
 import { LEDGER_SECTIONS } from '@/features/navigation/sections'
 import { useCurrentOrg } from '@/features/organizations/hooks'
@@ -73,6 +74,7 @@ function usePaymentRows(params: SettlementQuery): SettlementListResult {
       amount: p.amount,
       status: p.status,
       purpose: p.purpose,
+      catalogId: p.directBillingConceptId,
     })),
   }
 }
@@ -82,11 +84,19 @@ function usePaymentRows(params: SettlementQuery): SettlementListResult {
  * (`SettlementList`) y solo aporta lo suyo: las palabras y su endpoint.
  */
 export function PaymentsListPage() {
+  const { orgId } = useCurrentOrg()
   const can = useCan()
+  const { items: concepts } = useBillingConcepts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'position',
+    order: 'asc',
+  })
 
   return (
     <SettlementList
       copy={COPY}
+      catalog={concepts}
       storageKey="nummo:pagos:filtros"
       sections={LEDGER_SECTIONS}
       newTo="/cartera/pagos/nuevo"

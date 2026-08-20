@@ -47,8 +47,14 @@ export interface RecurringRow {
   id: string
   /** Quién paga o a quién se paga. */
   contactId: string
-  /** Segunda línea: el nombre propio, o el concepto si no lo tiene. */
-  subtitle: string
+  /** El nombre propio de la plantilla, si se le puso uno. */
+  name: string | null
+  /**
+   * Concepto de cobro o categoría de gasto. La lista lo cruza contra el catálogo
+   * para la segunda línea —cuando no hay nombre propio— y para el icono de la
+   * tarjeta: el contrato manda el id y nada más (§95.19).
+   */
+  catalogId: string
   recurrenceType: string
   dueDay: number
   status: string

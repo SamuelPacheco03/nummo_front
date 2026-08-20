@@ -28,6 +28,11 @@ vi.mock('@/features/reports/hooks', () => ({
   defaultPeriod: () => ({ from: '2026-08-01', to: '2026-08-31' }),
   useCashflow: () => ({ report: undefined, isPending: false }),
 }))
+// El catálogo se cruza contra el id que trae la fila, para su icono: aquí basta
+// con que exista y no salga a la red.
+vi.mock('@/features/masters/hooks', () => ({
+  useBillingConcepts: () => ({ items: [] }),
+}))
 vi.mock('./hooks', () => ({
   usePayments: (_orgId: string, params: Record<string, unknown>) => {
     ultimosParams = params

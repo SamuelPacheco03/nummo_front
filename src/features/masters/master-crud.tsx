@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { Pencil, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
-import { DataList } from '@/components/ui/data-list'
+import { DataList, RowChevron } from '@/components/ui/data-list'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import {
@@ -240,23 +240,19 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
           meta: { card: 'status' },
           cell: ({ row }) => <StatusDot active={row.original.isActive} />,
         }),
+        /*
+          Abrir es de la fila entera, como en todas las demás listas: el chevron
+          solo lo anuncia. Con un botón de lápiz en su columna la tarjeta de
+          móvil se quedaba sin manera de editar —esa columna es `hideOnStack`—,
+          así que por debajo de `lg` el maestro era de solo lectura sin decirlo.
+        */
         ...(canManage
           ? [
               column.display({
-                id: 'edit',
+                id: 'chevron',
                 header: '',
                 meta: { hideOnStack: true },
-                cell: ({ row }) => (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    onClick={() => onEditRef.current(row.original)}
-                    aria-label="Editar"
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                ),
+                cell: () => <RowChevron />,
               }),
             ]
           : []),
@@ -312,6 +308,7 @@ export function MasterCrud<T extends { id: string; isActive: boolean }>({
             columns={allColumns}
             rows={items}
             getRowId={(row) => row.id}
+            onRowClick={canManage ? (row) => onEditRef.current(row) : undefined}
             rowIcon={rowIcon ?? (Icon ? () => ({ Icon }) : undefined)}
             sort={{
               value: [{ id: sortField, desc }],

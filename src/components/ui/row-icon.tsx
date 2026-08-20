@@ -29,10 +29,14 @@ export interface RowIcon {
   initials?: string
   tone?: RowIconTone
   /**
-   * Sustituye al tono, para lo que trae **su propio color del contrato**: el
+   * Se **suma** al tono, para lo que trae **su propio color del contrato**: el
    * icono de un concepto de cobro o de una categoría de gasto, que la
    * organización elige de una paleta cerrada. Los cinco tonos son semánticos y
    * ahí no significarían nada (§11.1.3b).
+   *
+   * Suma y no sustituye porque el color del catálogo es solo el del glifo
+   * (`text-…`): sustituyendo, una categoría sin color elegido se quedaba también
+   * sin la pastilla de fondo y su tarjeta parecía otra lista.
    */
   className?: string
   /** Redonda para quien tiene nombre; cuadrada para lo demás. */
@@ -53,7 +57,8 @@ export function RowIconBadge({
       className={cn(
         'grid size-9 shrink-0 place-items-center text-xs font-semibold',
         shape === 'round' ? 'rounded-full' : 'rounded-lg',
-        className ?? TONES[tone],
+        TONES[tone],
+        className,
       )}
     >
       {Icon ? <Icon className="size-4.5" /> : initials}

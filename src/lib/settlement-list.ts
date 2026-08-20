@@ -70,6 +70,17 @@ export interface SettlementRow {
   amount: string
   status: string
   purpose: string
+  /**
+   * Concepto de cobro o categoría de gasto, **solo cuando el movimiento va
+   * directo a uno**: un ingreso o un gasto directo lo trae en el contrato
+   * (`directBillingConceptId` / `directExpenseCategoryId`).
+   *
+   * Un pago aplicado a cartera no tiene uno: puede saldar varias cuentas de
+   * conceptos distintos, y el listado no dice cuáles. Un abono a cuenta no
+   * pertenece a ninguno todavía. En esos dos casos la fila se queda con el
+   * icono de la sección, que es lo honesto (§70).
+   */
+  catalogId?: string | null
 }
 
 export type SettlementListResult = ListResult<SettlementRow>

@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { RecurringList } from '@/components/recurring-list'
 import { useBillingConcepts } from '@/features/masters/hooks'
 import { RECURRING_SECTIONS } from '@/features/navigation/sections'
@@ -32,9 +31,8 @@ const COPY: RecurringListCopy = {
 /**
  * Traduce lo que pide la lista al contrato de acuerdos y normaliza las filas.
  *
- * El API devuelve ids; el nombre del concepto se resuelve aquí con un mapa
- * (suficiente para el catálogo de una org; a gran escala el backend debería
- * denormalizarlo en el listado).
+ * El API devuelve el id del concepto y nada más; quien lo cruza contra el
+ * catálogo es la lista, que necesita de él el nombre **y** el icono (§95.19).
  */
 function useAgreementRows(params: RecurringQuery): RecurringListResult {
   const { orgId } = useCurrentOrg()
@@ -48,20 +46,14 @@ function useAgreementRows(params: RecurringQuery): RecurringListResult {
     status: params.status as GetApiV1OrganizationsOrgIdBillingAgreementsParams['status'],
   }
   const list = useAgreements(orgId, query)
-  const { items: concepts } = useBillingConcepts(orgId, {
-    page: 1,
-    pageSize: 100,
-    sort: 'position',
-    order: 'asc',
-  })
-  const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts])
 
   return {
     ...list,
     items: list.items.map((a) => ({
       id: a.id,
       contactId: a.payerContactId,
-      subtitle: a.name ?? conceptMap.get(a.billingConceptId) ?? '—',
+      name: a.name,
+      catalogId: a.billingConceptId,
       recurrenceType: a.recurrenceType,
       dueDay: a.dueDay,
       status: a.status,
@@ -77,11 +69,19 @@ function useAgreementRows(params: RecurringQuery): RecurringListResult {
  * endpoint.
  */
 export function AgreementsListPage() {
+  const { orgId } = useCurrentOrg()
   const can = useCan()
+  const { items: concepts } = useBillingConcepts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'position',
+    order: 'asc',
+  })
 
   return (
     <RecurringList
       copy={COPY}
+      catalog={concepts}
       storageKey="nummo:acuerdos:filtros"
       sections={RECURRING_SECTIONS}
       newTo="/cartera/acuerdos/nuevo"
