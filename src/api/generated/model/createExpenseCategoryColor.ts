@@ -12,6 +12,9 @@ export type CreateExpenseCategoryColor = typeof CreateExpenseCategoryColor[keyof
 export const CreateExpenseCategoryColor = {
   slate: 'slate',
   gray: 'gray',
+  zinc: 'zinc',
+  neutral: 'neutral',
+  stone: 'stone',
   red: 'red',
   orange: 'orange',
   amber: 'amber',
@@ -21,6 +24,7 @@ export const CreateExpenseCategoryColor = {
   emerald: 'emerald',
   teal: 'teal',
   cyan: 'cyan',
+  sky: 'sky',
   blue: 'blue',
   indigo: 'indigo',
   violet: 'violet',

@@ -12,6 +12,9 @@ export type BillingConceptColor = typeof BillingConceptColor[keyof typeof Billin
 export const BillingConceptColor = {
   slate: 'slate',
   gray: 'gray',
+  zinc: 'zinc',
+  neutral: 'neutral',
+  stone: 'stone',
   red: 'red',
   orange: 'orange',
   amber: 'amber',
@@ -21,6 +24,7 @@ export const BillingConceptColor = {
   emerald: 'emerald',
   teal: 'teal',
   cyan: 'cyan',
+  sky: 'sky',
   blue: 'blue',
   indigo: 'indigo',
   violet: 'violet',

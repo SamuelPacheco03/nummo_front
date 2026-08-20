@@ -20,8 +20,8 @@ import {
 */
 
 describe('el catálogo de iconos', () => {
-  it('tiene los 84 del contrato y todos resuelven a un glifo', () => {
-    expect(CATALOG_ICONS).toHaveLength(84)
+  it('tiene los 161 del contrato y todos resuelven a un glifo', () => {
+    expect(CATALOG_ICONS).toHaveLength(161)
     expect(CATALOG_ICONS.filter((key) => !catalogIcon(key))).toEqual([])
   })
 
@@ -35,8 +35,8 @@ describe('el catálogo de iconos', () => {
 })
 
 describe('el catálogo de colores', () => {
-  it('tiene los 18 del contrato', () => {
-    expect(CATALOG_COLORS).toHaveLength(18)
+  it('tiene los 22 del contrato', () => {
+    expect(CATALOG_COLORS).toHaveLength(22)
   })
 
   it('cada color trae su variante oscura', () => {

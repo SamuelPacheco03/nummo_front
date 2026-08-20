@@ -30,7 +30,7 @@ const CELL =
 /**
  * **Elegir el icono y el color de un catálogo, en su propio diálogo.**
  *
- * Vivía dentro del formulario, abierto: dieciocho colores y ochenta y cuatro
+ * Vivía dentro del formulario, abierto: veintidós colores y ciento sesenta y un
  * iconos ocupaban más que los campos que de verdad hay que rellenar, y en un
  * teléfono empujaban «Guardar» fuera de la pantalla. Ahora el formulario enseña
  * una fila —lo elegido y un botón— y todo esto se abre solo cuando hace falta.
@@ -40,7 +40,7 @@ const CELL =
  * - **Se busca por palabra, no por dibujo.** Las claves del contrato son
  *   inglesas (`piggy-bank`), así que la búsqueda va contra el nombre en español,
  *   los sinónimos del negocio —«arriendo», «nómina», «pensión»— y el grupo.
- * - **Los iconos van por temas** (§11.1.12): recorrer ochenta y cuatro seguidos
+ * - **Los iconos van por temas** (§11.1.12): recorrer ciento sesenta y uno seguidos
  *   no es elegir, es rendirse en el veinte.
  * - **Se aplica al tocar, no al aceptar.** Es un selector, no un formulario: el
  *   cambio se ve al instante en la muestra de arriba y «Listo» solo cierra. Lo

@@ -12,6 +12,9 @@ export type UpdateBillingConceptColor = typeof UpdateBillingConceptColor[keyof t
 export const UpdateBillingConceptColor = {
   slate: 'slate',
   gray: 'gray',
+  zinc: 'zinc',
+  neutral: 'neutral',
+  stone: 'stone',
   red: 'red',
   orange: 'orange',
   amber: 'amber',
@@ -21,6 +24,7 @@ export const UpdateBillingConceptColor = {
   emerald: 'emerald',
   teal: 'teal',
   cyan: 'cyan',
+  sky: 'sky',
   blue: 'blue',
   indigo: 'indigo',
   violet: 'violet',

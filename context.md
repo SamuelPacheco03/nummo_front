@@ -1246,8 +1246,8 @@ lo sepa se queda enfocada sin ir a ninguna parte.
 ## 11.1.12. El icono y el color de un catálogo
 
 Un concepto de cobro y una categoría de gasto llevan **icono, color y orden propios**. Los tres
-salen del contrato: 84 claves de icono —nombres de `lucide-react`—, 18 tokens de color —nombres de
-la paleta de Tailwind— y un `position` que es el orden por defecto de las dos listas.
+salen del contrato: 161 claves de icono —nombres de `lucide-react`—, 22 tokens de color —la paleta
+de Tailwind entera— y un `position` que es el orden por defecto de las dos listas.
 
 **El backend manda una clave, no un dibujo ni un hex**, y esa es toda la gracia: la iconografía
 sigue siendo nuestra (§37) y el día que cambie, cambia en `features/masters/catalogs.ts` y en
@@ -1271,7 +1271,7 @@ misma línea de la tarjeta, uno en la pastilla y otro pegado al nombre.
 
 ### Elegirlos
 
-Los ciento dos —dieciocho colores y ochenta y cuatro iconos— **vivían abiertos dentro del
+Los ciento ochenta y tres —veintidós colores y ciento sesenta y un iconos— **vivían abiertos dentro del
 formulario**, y ocupaban más que los campos que de verdad hay que rellenar: en un teléfono
 empujaban «Guardar» fuera de la pantalla (§11.1.3). Hoy el formulario enseña **una fila** —lo
 elegido, cómo se llama y un chevron— y todo lo demás vive en `IconColorPicker`, su propio diálogo.
@@ -1282,8 +1282,8 @@ Tres cosas que ese diálogo hace y la rejilla suelta no podía:
   que la búsqueda va contra el **nombre en español**, contra las palabras del negocio —«arriendo»,
   «nómina», «pensión», «gasolina»— y contra el tema. Sin tildes ni mayúsculas en ninguno de los dos
   lados (`fold`, §94): nadie escribe «matrícula» con tilde en un buscador.
-- **Agrupar por temas.** Recorrer ochenta y cuatro dibujos seguidos no es elegir, es rendirse en el
-  veinte. Los grupos van sobre las **mismas claves** del contrato —cuyo orden ya es temático—, no
+- **Agrupar por temas.** Recorrer ciento sesenta y un dibujos seguidos no es elegir, es rendirse en
+  el veinte. Los grupos van sobre las **mismas claves** del contrato —cuyo orden ya es temático—, no
   sobre una lista aparte, y una prueba obliga a que cada clave esté en uno y en uno solo: el día que
   el backend añada una, no puede quedarse fuera del selector en silencio.
 - **Aplicar al tocar.** Es un selector, no un formulario: el cambio se ve arriba al instante y
@@ -4768,7 +4768,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `useAppUpdate` · `checkForUpdate` · `clearAppCache` | `pwa/app-update.ts` | Detectar y aplicar un despliegue nuevo (§40.1) |
 | `listColumns` | `components/ui/list-columns.ts` | Declarar columnas tipadas para `DataList`, con su papel en la tarjeta |
 | `RowIconBadge` | `components/ui/row-icon.tsx` | Icono o iniciales de una fila, solo en la tarjeta de móvil |
-| `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
+| `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 161 iconos y los 22 colores del contrato, y el glifo con su color (§11.1.12) |
 | `catalogRowIcon` · `CatalogRef` | `features/masters/catalogs.ts` | El icono de la tarjeta de una fila que pertenece a un catálogo, cruzado por id (§95.19) |
 | `IconColorPicker` | `features/masters/icon-color-picker.tsx` | Elegir icono y color en su propio diálogo, con buscador y temas (§11.1.12) |
 | `fold` | `lib/text.ts` | Comparar texto sin tildes ni mayúsculas — la paleta, la guía y el selector de iconos |
@@ -5126,21 +5126,21 @@ su propia lista, que es lo que impide que el «volver» de registrar un pago des
 los filtros de una lista a otra. Probado en `detail-drawer.test.tsx` (el cierre) y en las suites de
 cartera y de pagos/egresos (la apertura).
 
-### 95.21. Ochenta y cuatro iconos se quedan cortos — ⏸️ **abierta, es petición de contrato**
+### 95.21. Ochenta y cuatro iconos se quedaban cortos — ✅ **cerrada en el contrato**
 
-El selector ya busca y agrupa por temas (§11.1.12), y con eso se ve lo que falta: **variedad**. Una
-organización que factura almuerzos, rutas escolares y uniformes acaba eligiendo el mismo `package`
-tres veces, porque no hay pizza, ni bus escolar, ni camiseta más allá de una.
+Una organización que factura almuerzos, rutas escolares y uniformes acababa eligiendo el mismo
+`package` tres veces: no había pizza, ni bus escolar, ni camiseta. No se podía resolver en el
+cliente —`BillingConceptIcon` es un enum cerrado y una clave que no esté en él es un 422 al
+guardar—, así que se pidió al backend con una lista verificada contra `lucide-react`.
 
-No se puede resolver en el cliente: `BillingConceptIcon` es un enum cerrado y una clave que no esté
-en él es un 422 al guardar. Se cierra **añadiendo claves al enum**, y el front no necesita nada más
-—la tabla va tipada contra el enum generado, así que `tsc` obliga a dibujar cada clave nueva y la
-prueba obliga a colocarla en un tema—.
+**Resuelto de un tirón:** el contrato pasa de 84 a **161 iconos** y de 18 a **22 colores** —la
+paleta de Tailwind entera, con `sky`, `stone`, `zinc` y `neutral`—. Los 77 nuevos entran por temas
+en el mismo orden del enum, con su nombre en español y sus palabras del negocio, y las cuatro
+familias nuevas llevan su variante oscura como las demás.
 
-La lista propuesta —77 claves, todas verificadas contra la versión de `lucide-react` que ya usa el
-front, así que ninguna llega sin dibujo— está en `contract/SYNC-STATUS.md`. Con los colores pasa lo
-mismo pero apremia menos: los 18 son las familias de Tailwind menos `sky`, `stone`, `zinc` y
-`neutral`.
+Y funcionó como estaba pensado que funcionara: al regenerar, `tsc` señaló las 77 claves sin dibujo
+y las 4 sin clase, y la prueba de cobertura no dejó pasar ninguna sin tema. Nada se quedó fuera del
+selector en silencio, que era justo el riesgo.
 
 ### 95.15. Lo que ya cumple
 
@@ -5520,8 +5520,8 @@ reparto, incluidos los catálogos que se parecen y el recurso desconocido), buil
 
 Conceptos de cobro y categorías de gasto con icono, color y orden propios (§11.1.12).
 
-1. `masters/catalogs.ts` traduce los dos enums del contrato —84 iconos, 18 colores— a glifos y a
-   clases, tipado contra el enum generado.
+1. `masters/catalogs.ts` traduce los dos enums del contrato —84 iconos y 18 colores entonces; hoy
+   161 y 22 (§95.21)— a glifos y a clases, tipado contra el enum generado.
 2. `IdentityField` en los dos formularios, con «sin poner» como opción visible en ambos.
 3. El icono junto al nombre en la tabla y en la tarjeta; `RowIcon` gana un `className` para poder
    llevar un color que no es ninguno de los cinco tonos semánticos.
@@ -5637,6 +5637,24 @@ selector), build OK.
 
 ---
 
+## Fase 23 — El catálogo de presentación, completo ✅ **completada**
+
+El backend cerró §95.21 de un tirón: **161 iconos y 22 colores**, con las claves nuevas colocadas
+dentro de los temas que el enum ya tenía y no al final.
+
+1. `pnpm api:gen` y las tablas de `catalogs.ts` regeneradas desde el enum: glifos, temas, nombres en
+   español y palabras del negocio para el buscador —«ruta escolar» encuentra `bus-front`, «vacuna»
+   encuentra `syringe`, «lavandería» encuentra `washing-machine`—.
+2. Las cuatro familias nuevas (`sky`, `stone`, `zinc`, `neutral`) con su variante oscura, y los
+   grises con `-300` como los otros grises: un `-400` en gris oscuro sobre tarjeta se lee mal.
+3. **El aviso funcionó.** `tsc` señaló las 77 claves sin dibujo y las 4 sin clase, y la prueba de
+   cobertura las 77 sin tema. Ninguna se quedó fuera del selector en silencio, que es exactamente
+   lo que §11.1.12 decía que este diseño tenía que garantizar.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 572 tests en verde, build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5663,6 +5681,7 @@ selector), build OK.
 | ✅ 20 | El catálogo en las listas y la edición en móvil | bajo | 17 |
 | ✅ 21 | Que un aviso lleve a alguna parte | bajo | 13 |
 | ✅ 22 | Elegir un icono sin perder el botón de guardar | bajo | 17 |
+| ✅ 23 | El catálogo de presentación, completo | bajo | 22 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

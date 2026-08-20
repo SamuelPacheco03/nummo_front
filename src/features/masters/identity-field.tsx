@@ -18,7 +18,7 @@ import { IconColorPicker } from './icon-color-picker'
  * palabras de alrededor, no esto (§94.0).
  *
  * En el formulario ocupa **una fila**: lo elegido, cómo se llama y un chevron.
- * La rejilla entera —dieciocho colores y ochenta y cuatro iconos— vivía aquí
+ * La rejilla entera —veintidós colores y ciento sesenta y un iconos— vivía aquí
  * abierta, ocupaba más que los campos que de verdad hay que rellenar y en un
  * teléfono empujaba «Guardar» fuera de la pantalla. Ahora se abre en su propio
  * diálogo, que además puede buscar (§11.1.12).
