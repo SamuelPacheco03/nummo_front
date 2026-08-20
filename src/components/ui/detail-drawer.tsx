@@ -1,6 +1,7 @@
 import { type ComponentProps, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { Drawer } from '@/components/ui/drawer'
+import { useKeepFilters } from '@/lib/use-list-filters'
 import { cn } from '@/lib/utils'
 
 /**
@@ -10,6 +11,9 @@ import { cn } from '@/lib/utils'
  * lista sigue montada detrás y `closeTo` es la ruta a la que se vuelve al
  * cerrar, de modo que la URL del detalle se puede compartir y recargar. Todo lo
  * demás —el eje, la cabecera, el pie fijo— lo pone el panel.
+ *
+ * **Cerrar devuelve a la lista tal como estaba** (§21.1): los criterios viajan
+ * en la URL, así que vuelven con ella.
  */
 export function DetailDrawer({
   closeTo,
@@ -19,12 +23,23 @@ export function DetailDrawer({
   closeTo: string
 }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const keepFilters = useKeepFilters()
+
+  /*
+    Los criterios vuelven **solo si volvemos a nuestra propia lista**, de la que
+    esta ficha es ruta hija. `closeTo` no siempre lo es: registrar un pago desde
+    una cuenta por cobrar cierra hacia la cuenta (§34, el «volver» del enlace), y
+    ahí las mismas claves —`estado`, `orden`, `pagina`— filtrarían una lista que
+    no es la suya.
+  */
+  const backToOwnList = pathname === closeTo || pathname.startsWith(`${closeTo}/`)
 
   return (
     <Drawer
       open
       onOpenChange={(open) => {
-        if (!open) navigate(closeTo)
+        if (!open) navigate(backToOwnList ? keepFilters(closeTo) : closeTo)
       }}
       {...panel}
     />

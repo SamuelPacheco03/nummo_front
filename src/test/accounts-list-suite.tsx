@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import type { ComponentType } from 'react'
+import { routeOf } from '@/test/navigation'
 
 /**
  * **La misma suite para las dos caras de la cartera.**
@@ -119,7 +120,20 @@ export function runAccountsListSuite(c: AccountsListCase) {
     await screen.findByRole('heading', { name: c.titulo })
 
     await userEvent.click(screen.getAllByText('Ana Torres')[0] as HTMLElement)
-    await waitFor(() => expect(window.__ultimaRuta).toBe(c.detalle))
+    await waitFor(() => expect(routeOf(window.__ultimaRuta)).toBe(c.detalle))
+  })
+
+  test('la ficha se abre con los filtros puestos, que la lista sigue detrás', async () => {
+    pintar(c.Page, '/?estado=PAID')
+    await screen.findByRole('heading', { name: c.titulo })
+
+    await userEvent.click(screen.getAllByText('Ana Torres')[0] as HTMLElement)
+    /*
+      Abrirla con solo el `pathname` dejaba a la lista —montada detrás del
+      cajón— sin criterios: las fichas saltaban a «Todas», se volvía a pedir la
+      página sin filtrar y al cerrar aparecía otra lista (§21.1).
+    */
+    await waitFor(() => expect(routeOf(window.__ultimaRuta)).toBe(`${c.detalle}?estado=PAID`))
   })
 
   test('sin nada que enseñar invita a crear', async () => {
@@ -144,12 +158,4 @@ export function runAccountsListSuite(c: AccountsListCase) {
     expect(screen.queryByText(c.vacio)).not.toBeInTheDocument()
     window.__listaFalla = false
   })
-}
-
-declare global {
-  interface Window {
-    __ultimaRuta?: string
-    __listaVacia?: boolean
-    __listaFalla?: boolean
-  }
 }

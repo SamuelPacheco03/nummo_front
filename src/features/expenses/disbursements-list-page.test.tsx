@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, vi } from 'vitest'
+import type { To } from 'react-router'
 import { cleanup } from '@testing-library/react'
 import { runSettlementListSuite } from '@/test/settlement-list-suite'
 import { DisbursementsListPage } from './disbursements-list-page'
@@ -53,7 +54,7 @@ vi.mock('react-router', async () => {
   const real = await vi.importActual<typeof import('react-router')>('react-router')
   return {
     ...real,
-    useNavigate: () => (to: string) => {
+    useNavigate: () => (to: To) => {
       window.__ultimaRuta = to
     },
   }

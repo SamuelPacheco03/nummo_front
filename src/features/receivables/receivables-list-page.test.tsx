@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, vi } from 'vitest'
+import type { To } from 'react-router'
 import { cleanup } from '@testing-library/react'
 import { runAccountsListSuite } from '@/test/accounts-list-suite'
 import { ReceivablesListPage } from './receivables-list-page'
@@ -56,7 +57,7 @@ vi.mock('./create-receivable-dialog', () => ({ CreateReceivableDialog: () => nul
 
 vi.mock('react-router', async () => {
   const real = await vi.importActual<typeof import('react-router')>('react-router')
-  return { ...real, useNavigate: () => (to: string) => { window.__ultimaRuta = to } }
+  return { ...real, useNavigate: () => (to: To) => { window.__ultimaRuta = to } }
 })
 
 beforeEach(() => {

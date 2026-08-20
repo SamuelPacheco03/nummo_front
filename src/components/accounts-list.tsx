@@ -36,7 +36,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { downloadCsv } from '@/lib/csv'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { useListFilters } from '@/lib/use-list-filters'
+import { useKeepFilters, useListFilters } from '@/lib/use-list-filters'
 import {
   ACCOUNTS_ADVANCED_KEYS,
   ACCOUNTS_DEFAULT_SORT,
@@ -137,6 +137,7 @@ export function AccountsList({
   // moneda son del shell, no algo que cada cara tenga que ir pasando.
   const { orgId, organization } = useCurrentOrg()
   const { values, set, clear } = useListFilters<AccountsFilterKey>(storageKey, ACCOUNTS_FILTER_KEYS)
+  const keepFilters = useKeepFilters()
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
   const [createOpen, setCreateOpen] = useState(false)
@@ -413,7 +414,9 @@ export function AccountsList({
             columns={columns}
             rows={items}
             getRowId={(r) => r.id}
-            onRowClick={(r) => navigate(detailTo(r.id))}
+            // Con los criterios puestos: la lista se queda montada detrás del
+            // cajón y sin ellos volvería a «Todas» (§21.1).
+            onRowClick={(r) => navigate(keepFilters(detailTo(r.id)))}
             // El del concepto o la categoría de la fila, con su color; las
             // monedas son para las que no tienen catálogo (§11.1.12).
             rowIcon={(r) => catalogRowIcon(catalogMap.get(r.catalogId), Coins)}

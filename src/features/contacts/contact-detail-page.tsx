@@ -32,6 +32,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
+import { useKeepFilters } from '@/lib/use-list-filters'
 import { cn } from '@/lib/utils'
 import type { ContactRelationship } from '@/api/generated/model'
 import { AddRelationshipDialog } from './add-relationship-dialog'
@@ -46,6 +47,7 @@ const LIST = '/contactos'
  */
 export function ContactDetailPage() {
   const { contactId } = useParams()
+  const keepFilters = useKeepFilters()
   const { orgId } = useCurrentOrg()
   const can = useCan()
   const canEdit = can('contacts.write')
@@ -116,7 +118,7 @@ export function ContactDetailPage() {
           canEdit && (
             <>
               <Button asChild size="sm">
-                <Link to={`/contactos/${contact.id}/editar`}>
+                <Link to={keepFilters(`/contactos/${contact.id}/editar`)}>
                   <Pencil aria-hidden className="size-4" />
                   Editar
                 </Link>

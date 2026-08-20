@@ -15,7 +15,7 @@ import { orgStatus } from '@/features/organizations/labels'
 import { planLabel } from '@/features/platform/labels'
 import { formatDateHuman } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { useListFilters } from '@/lib/use-list-filters'
+import { useKeepFilters, useListFilters } from '@/lib/use-list-filters'
 import type {
   AdminOrganizationDto,
   GetApiV1AdminOrganizationsParams,
@@ -121,6 +121,7 @@ const columns = column.columns([
 export function AdminOrganizationsPage() {
   const navigate = useNavigate()
   const { values, set, clear } = useListFilters<FilterKey>('nummo:plataforma:orgs', FILTER_KEYS)
+  const keepFilters = useKeepFilters()
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -174,7 +175,9 @@ export function AdminOrganizationsPage() {
             columns={columns}
             rows={organizations}
             getRowId={(o) => o.id}
-            onRowClick={(o) => navigate(`/plataforma/organizaciones/${o.id}`)}
+            // Con los criterios puestos: la lista se queda montada detrás del
+            // cajón y sin ellos volvería a «Todas» (§21.1).
+            onRowClick={(o) => navigate(keepFilters(`/plataforma/organizaciones/${o.id}`))}
             isLoading={isPending}
             skeletonRows={PAGE_SIZE}
             emptyText={
