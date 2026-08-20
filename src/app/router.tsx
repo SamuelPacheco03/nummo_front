@@ -414,6 +414,20 @@ export const router = createBrowserRouter([
               },
             ],
           },
+
+          /*
+            Lo que no casa con nada. Va dentro del shell a propósito: quien
+            llega a una URL que no existe necesita la navegación para salir,
+            no una pantalla en blanco. Y rescata los avisos que entran desde
+            el service worker, que navega con el enlace del contrato tal cual
+            (§95.16).
+          */
+          {
+            path: '*',
+            lazy: async () => ({
+              Component: (await import('@/features/platform/not-found-page')).NotFoundPage,
+            }),
+          },
         ],
       },
     ],

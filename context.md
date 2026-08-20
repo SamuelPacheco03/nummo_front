@@ -1462,6 +1462,24 @@ conviene comprobar que el caso real no se resuelve con un desempate fijo en el b
 
 ---
 
+## 11.1.15. La pantalla de «no encontramos eso»
+
+Hasta ahora **no había ruta `*`**: cualquier URL que no casara —un enlace viejo compartido por
+WhatsApp, una ficha borrada— enseñaba la pantalla de error del propio router, en inglés y sin la
+navegación de la aplicación. Quien llegaba ahí no tenía manera de volver más que borrar la barra de
+direcciones.
+
+Ahora es una pantalla más, **dentro del shell**: la navegación sigue puesta, dice qué pasó en una
+línea y ofrece el inicio. No pide disculpas ni echa la culpa (§70): un enlace puede estar mal
+escrito o llevar a algo que ya no está, y las dos cosas son normales.
+
+**Y hace un segundo trabajo, prestado y temporal**: antes de rendirse pasa la ruta por
+`notificationRoute` (§95.16). Es lo que rescata los avisos de Web Push, que entran por el service
+worker con el enlace del contrato tal cual. El día que el backend publique las rutas de verdad, esa
+línea deja de traducir nada y la pantalla se queda solo con lo suyo.
+
+---
+
 ## 11.2. Los componentes heredan su superficie
 
 Desde que el sidebar va oscuro también en tema claro (§4), la aplicación tiene **dos superficies
@@ -4691,6 +4709,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `catalogs.ts` · `CatalogIcon` | `features/masters/` | Los 84 iconos y los 18 colores del contrato, y el glifo con su color (§11.1.12) |
 | `catalogRowIcon` · `CatalogRef` | `features/masters/catalogs.ts` | El icono de la tarjeta de una fila que pertenece a un catálogo, cruzado por id (§95.19) |
 | `notificationRoute` | `features/notifications/deep-link.ts` | Del `deepLink` del contrato a una ruta que existe aquí — puente temporal (§95.16) |
+| `NotFoundPage` | `features/platform/not-found-page.tsx` | La ruta `*`: explica y ofrece salir, y rescata los destinos que llegan crudos (§11.1.15) |
 | `IdentityField` | `features/masters/identity-field.tsx` | Elegir el icono y el color de un catálogo, en los dos |
 | `CatalogOrderDrawer` | `features/masters/order-drawer.tsx` | El orden propio de un catálogo, con la lista entera |
 | `AutoChargeSection` | `components/auto-charge-section.tsx` | **El auto-registro de un recurrente**, en las dos caras (§11.1.13) |
@@ -4960,6 +4979,12 @@ Las claves de los filtros van **en español** y son las de `useListFilters` (§2
 Lo que el puente no puede arreglar es lo que no existe: `/caja/cuentas/:id` cae en el resumen de
 saldos porque aquí no hay ficha por cuenta, y `?action=approve` se descarta porque aprobar y
 rechazar están en la propia ficha (§47.4).
+
+**Y se traduce en dos sitios, porque se entra por dos.** El centro traduce antes de navegar; el
+service worker de Web Push **no puede** —es un script clásico que abre la URL tal cual, sin router
+al que preguntar—, así que la ruta llega cruda a la aplicación. Por eso la traducción vuelve a
+intentarse en la pantalla de «no encontrada» (§11.1.15): quien aterriza en un destino del contrato
+acaba en su ficha, y quien aterriza en cualquier otra cosa ve una pantalla que se lo explica.
 
 ### 95.17. El contrato no publica los días de antelación que hay — ⏸️ **abierta, es petición de contrato**
 
@@ -5475,13 +5500,17 @@ build OK.
    deja de tocar nada y se borra. El aviso de ejemplo de la suite trae ya el enlace tal como lo
    manda el contrato: si se hubiera escrito así desde el principio, el 404 no habría llegado a la
    pantalla de nadie.
-2. **En pagos y egresos el icono ya distingue las filas.** El concepto solo viaja en los
+2. **Y se entra por dos sitios, no por uno.** El service worker de Web Push abre la URL tal cual
+   —no tiene router al que preguntar—, así que la aplicación gana por fin su ruta `*`
+   (§11.1.15): explica qué pasó con la navegación puesta, y antes de rendirse vuelve a intentar la
+   traducción. Sin eso, el aviso del teléfono seguía cayendo en un 404 aunque el centro ya no.
+3. **En pagos y egresos el icono ya distingue las filas.** El concepto solo viaja en los
    movimientos directos, así que el resto lo pone su propósito: un abono a cuenta, un anticipo y un
    ingreso directo dejan de ser el mismo billete repetido (§95.19).
 
-**Verificación:** typecheck limpio, 0 warnings de lint, 555 tests en verde (14 nuevos: los once
-destinos del contrato, lo que no se reconoce, lo que no es interno, y que ningún propósito se quede
-sin icono en las dos caras), build OK.
+**Verificación:** typecheck limpio, 0 warnings de lint, 557 tests en verde (16 nuevos: los once
+destinos del contrato, lo que no se reconoce, lo que no es interno, que aterrizar en un destino
+crudo acabe en su ficha, y que ningún propósito se quede sin icono en las dos caras), build OK.
 
 ---
 
