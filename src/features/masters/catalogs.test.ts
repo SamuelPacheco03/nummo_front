@@ -4,7 +4,6 @@ import {
   catalogColorClass,
   catalogIcon,
   catalogRowIcon,
-  iconMatches,
   CATALOG_COLORS,
   CATALOG_ICON_GROUPS,
   CATALOG_ICONS,
@@ -116,25 +115,3 @@ describe('los iconos por temas', () => {
   })
 })
 
-describe('buscar un icono', () => {
-  it('por su nombre, sin tildes ni mayúsculas', () => {
-    expect(iconMatches('graduation-cap', 'MATRÍCULA')).toBe(true)
-    expect(iconMatches('graduation-cap', 'matricula')).toBe(true)
-  })
-
-  it('por la palabra del negocio, que es la que se escribe', () => {
-    // Quien crea la categoría «Arriendo» no busca «casa».
-    expect(iconMatches('home', 'arriendo')).toBe(true)
-    expect(iconMatches('users', 'nomina')).toBe(true)
-    expect(iconMatches('wifi', 'internet')).toBe(true)
-    expect(iconMatches('home', 'nomina')).toBe(false)
-  })
-
-  it('por el tema, para bajar a un grupo entero', () => {
-    expect(iconMatches('coins', 'dinero')).toBe(true)
-  })
-
-  it('sin texto, todos', () => {
-    expect(CATALOG_ICONS.every((icon) => iconMatches(icon, '   '))).toBe(true)
-  })
-})

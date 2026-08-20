@@ -247,29 +247,3 @@ test('sin permiso la fila no abre nada', async () => {
   expect(screen.queryByRole('button', { name: /Mensualidad/ })).not.toBeInTheDocument()
 })
 
-test('el buscador encuentra el icono por lo que es y por el gasto que nombra', async () => {
-  /*
-    Las claves del contrato son inglesas (`home`, `piggy-bank`), así que buscar
-    en ellas no serviría de nada. Se busca por el nombre en español y por las
-    palabras del negocio: quien está creando «Arriendo» escribe eso, no «casa».
-  */
-  const user = userEvent.setup()
-  montar()
-
-  await user.click(await screen.findByRole('button', { name: 'Nuevo concepto' }))
-  const selector = await abrirSelector(user, await screen.findByRole('dialog'))
-
-  await user.type(within(selector).getByLabelText('Buscar icono'), 'arriendo')
-
-  // Busca en todos los temas, no en el que esté abierto: quien escribe no sabe
-  // en cuál cayó, y por eso mientras hay texto el tema se calla.
-  expect(within(selector).getByRole('button', { name: 'Casa' })).toBeVisible()
-  expect(within(selector).getByRole('button', { name: 'Llave' })).toBeVisible()
-  expect(within(selector).queryByRole('button', { name: 'Internet' })).not.toBeInTheDocument()
-  expect(within(selector).queryByLabelText('Tema')).not.toBeInTheDocument()
-
-  // Y con lo que no existe se dice, en vez de dejar la rejilla vacía.
-  await user.clear(within(selector).getByLabelText('Buscar icono'))
-  await user.type(within(selector).getByLabelText('Buscar icono'), 'unicornio')
-  expect(within(selector).getByText('Ningún icono se llama así.')).toBeVisible()
-})

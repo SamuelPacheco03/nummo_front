@@ -1276,21 +1276,21 @@ formulario**, y ocupaban más que los campos que de verdad hay que rellenar: en 
 empujaban «Guardar» fuera de la pantalla (§11.1.3). Hoy el formulario enseña **una fila** —lo
 elegido, cómo se llama y un chevron— y todo lo demás vive en `IconColorPicker`, su propio diálogo.
 
-Tres cosas que ese diálogo hace y la rejilla suelta no podía:
+Dos cosas que ese diálogo hace y la rejilla suelta no podía:
 
-- **Un tema a la vez, y lo elige quien busca.** Los once puestos uno detrás de otro convertían el
-  diálogo en un rollo de papel: para ver el último tema había que pasar ciento sesenta y un dibujos.
-  Hoy se elige el tema en un `select` —nativo, una línea, sin tira que se desplace en horizontal
-  (§21.1)— y se ven los suyos. **Al abrir se posa en el tema del icono que ya está puesto**, que es
-  donde quien viene a cambiarlo espera aterrizar.
-- **Buscar por palabra, y en todos.** Las claves del contrato son inglesas (`piggy-bank`,
-  `graduation-cap`), así que la búsqueda va contra el **nombre en español**, contra las palabras del
-  negocio —«arriendo», «nómina», «pensión», «gasolina»— y contra el tema. Sin tildes ni mayúsculas
-  en ninguno de los dos lados (`fold`, §94). Mientras hay texto **el tema se calla y se dice cuántos
-  hay**: quien escribe «vacuna» no sabe en qué tema cayó, y buscar solo dentro del tema abierto no
-  encontraría nada sin explicar por qué.
+- **Un tema a la vez, elegido.** Los once puestos uno detrás de otro convertían el diálogo en un
+  rollo de papel: para ver el último había que pasar ciento sesenta y un dibujos. Hoy se elige el
+  tema en un `select` —nativo, una línea, sin tira que se desplace en horizontal (§21.1)— y se ven
+  los suyos. **Al abrir se posa en el tema del icono que ya está puesto**, que es donde quien viene
+  a cambiarlo espera aterrizar.
 - **Aplicar al tocar.** Es un selector, no un formulario: el cambio se ve arriba al instante y
   «Listo» solo cierra. Quien decide si se guarda es el formulario de fuera.
+
+**Hubo un buscador y se quitó**, y vale la pena dejar escrito por qué: con once temas de veinte
+dibujos cada uno, elegir el tema ya deja a la vista lo que se busca, y el campo de texto encima de
+la rejilla competía con él —dos maneras de llegar al mismo sitio en un diálogo de tres cosas—. Se
+fue con él la tabla de sinónimos del negocio; está en el historial si algún día el catálogo crece
+hasta que haga falta.
 
 Los grupos van sobre las **mismas claves** del contrato —cuyo orden ya es temático—, no sobre una
 lista aparte, y una prueba obliga a que cada clave esté en uno y en uno solo: el día que el backend
@@ -5665,14 +5665,16 @@ dentro de los temas que el enum ya tenía y no al final.
    cobertura las 77 sin tema. Ninguna se quedó fuera del selector en silencio, que es exactamente
    lo que §11.1.12 decía que este diseño tenía que garantizar.
 
-**Verificación:** typecheck limpio, 0 warnings de lint, 572 tests en verde, build OK.
+**Verificación:** typecheck limpio, 0 warnings de lint, 567 tests en verde —cinco menos: se fueron
+con el buscador—, build OK.
 
-Y al verlo en un teléfono con todo dentro salieron tres cosas más, arregladas en el mismo sitio: la
-rejilla **desbordaba a lo ancho** —celda de tamaño fijo dentro de una columna que reparte el ancho,
-§11.1.12—, los once temas seguidos convertían el diálogo en un rollo de papel, y el buscador,
-suelto entre el color y los iconos, no decía qué buscaba. Hoy hay un tema a la vez, elegido, y el
-buscador vive bajo el rótulo «Icono». `ambulance` se pasa a Salud: iba entre los vehículos porque
-así llegó del enum, y ahí no es lo que alguien busca.
+Y al verlo en un teléfono con todo dentro salieron cuatro cosas más, arregladas en el mismo sitio:
+la rejilla **desbordaba a lo ancho** —celda de tamaño fijo dentro de una columna que reparte el
+ancho, §11.1.12—, el **aro de lo seleccionado salía cortado** contra el borde del contenedor que lo
+recorta, los once temas seguidos convertían el diálogo en un rollo de papel, y el buscador sobraba
+teniendo el tema. Hoy hay un tema a la vez, elegido, y la rejilla vive en un panel con acolchado.
+`ambulance` se pasa a Salud: iba entre los vehículos porque así llegó del enum, y ahí no es lo que
+alguien busca.
 
 ---
 

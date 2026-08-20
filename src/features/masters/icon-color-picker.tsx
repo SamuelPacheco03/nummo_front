@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Ban, Search } from 'lucide-react'
+import { useState } from 'react'
+import { Ban } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,14 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
-import { plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   catalogColorClass,
   catalogIcon,
-  iconMatches,
   CATALOG_COLORS,
   CATALOG_ICON_GROUPS,
   COLOR_LABELS,
@@ -43,17 +40,12 @@ function themeOf(icon: IconKey | null): string {
  * iconos ocupaban más que los campos que de verdad hay que rellenar, y en un
  * teléfono empujaban «Guardar» fuera de la pantalla.
  *
- * Dentro, tres decisiones:
+ * Dentro, dos decisiones:
  *
  * - **Un tema a la vez, elegido.** Con los once puestos uno detrás de otro había
  *   que recorrer ciento sesenta y un dibujos para ver el último, y el diálogo se
  *   volvía un rollo de papel. Se elige el tema y se ven los suyos; al abrir,
  *   el que ya está puesto (§11.1.12).
- * - **Se busca por palabra, no por dibujo.** Las claves del contrato son
- *   inglesas (`piggy-bank`), así que la búsqueda va contra el nombre en español,
- *   los sinónimos del negocio —«arriendo», «nómina», «pensión»— y el tema. Y
- *   busca **en todos**: quien escribe «vacuna» no sabe en qué tema cayó, así que
- *   mientras hay texto el tema se calla y se dice cuántos hay.
  * - **Se aplica al tocar, no al aceptar.** Es un selector, no un formulario: el
  *   cambio se ve al instante en la muestra de arriba y «Listo» solo cierra. Lo
  *   que se descarta —o no— lo decide el formulario de fuera, que es quien
@@ -107,18 +99,8 @@ function PickerBody({
   fallback: LucideIcon
   onDone: () => void
 }) {
-  const [query, setQuery] = useState('')
   const [theme, setTheme] = useState(() => themeOf(value.icon))
-  const searching = query.trim().length > 0
-
-  const icons = useMemo(() => {
-    if (searching) {
-      return CATALOG_ICON_GROUPS.flatMap((group) => group.icons).filter((icon) =>
-        iconMatches(icon, query),
-      )
-    }
-    return CATALOG_ICON_GROUPS.find((group) => group.label === theme)?.icons ?? []
-  }, [query, searching, theme])
+  const icons = CATALOG_ICON_GROUPS.find((group) => group.label === theme)?.icons ?? []
 
   const Preview = catalogIcon(value.icon) ?? fallback
 
@@ -156,59 +138,38 @@ function PickerBody({
 
       <div className="space-y-2">
         <h3 className="text-muted-foreground text-xs tracking-wider uppercase">Icono</h3>
-
-        <div className="relative">
-          <Search
-            aria-hidden
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-          />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar: arriendo, nómina, gasolina…"
-            aria-label="Buscar icono"
-            className="pl-9"
-          />
-        </div>
-
-        {searching ? (
-          <p className="text-muted-foreground text-sm" role="status">
-            {icons.length === 0
-              ? 'Ningún icono se llama así.'
-              : `${plural(icons.length, 'icono', 'iconos')} en todos los temas`}
-          </p>
-        ) : (
-          <NativeSelect
-            value={theme}
-            onChange={(event) => setTheme(event.target.value)}
-            aria-label="Tema"
-          >
-            {CATALOG_ICON_GROUPS.map((group) => (
-              <option key={group.label} value={group.label}>
-                {group.label}
-              </option>
-            ))}
-          </NativeSelect>
-        )}
+        <NativeSelect
+          value={theme}
+          onChange={(event) => setTheme(event.target.value)}
+          aria-label="Tema"
+        >
+          {CATALOG_ICON_GROUPS.map((group) => (
+            <option key={group.label} value={group.label}>
+              {group.label}
+            </option>
+          ))}
+        </NativeSelect>
       </div>
 
-      {/* Lo único que se desplaza, y solo hacia abajo. */}
-      <div className="scrollbar-slim min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+      {/*
+        Lo único que se desplaza, y solo hacia abajo. El acolchado no es estético:
+        el aro de lo seleccionado se pinta **fuera** de la celda, y pegado al
+        borde de un contenedor que recorta lo que sobresale salía cortado por la
+        mitad en la primera columna y en la última.
+      */}
+      <div className="scrollbar-slim min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-lg border p-2">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1">
           {/*
             «Sin icono» va **dentro de la rejilla y siempre**, no en una sección
             propia: quitar el icono es una opción más, y con sección propia era
-            un título con un solo botón debajo. Al buscar no aparece, que no es
-            un resultado.
+            un título con un solo botón debajo.
           */}
-          {!searching && (
-            <IconCell
-              Icon={Ban}
-              label="Sin icono"
-              selected={value.icon == null}
-              onSelect={() => onChange({ ...value, icon: null })}
-            />
-          )}
+          <IconCell
+            Icon={Ban}
+            label="Sin icono"
+            selected={value.icon == null}
+            onSelect={() => onChange({ ...value, icon: null })}
+          />
           {icons.map((icon) => {
             const Icon = catalogIcon(icon)
             if (!Icon) return null
@@ -223,12 +184,6 @@ function PickerBody({
             )
           })}
         </div>
-
-        {searching && icons.length === 0 && (
-          <p className="text-muted-foreground py-6 text-center text-sm">
-            Prueba con lo que es —«casa», «carro»— o con el gasto —«arriendo», «matrícula»—.
-          </p>
-        )}
       </div>
 
       <DialogFooter>
