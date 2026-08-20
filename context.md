@@ -1157,6 +1157,52 @@ Un detalle del contrato que se ve en la pantalla: **`lowBalanceCurrency` es de s
 llega con `COP` por defecto, así que el umbral se compara con las cuentas de esa moneda y no
 necesariamente con las de la organización. La pantalla lo dice en vez de suponerlo (§70).
 
+## 11.1.11. Los avisos con la app cerrada (Web Push)
+
+Un aviso que llega al teléfono con Nummo cerrada. Vive **fuera de la organización** —un teléfono es
+de una persona, no de una empresa— y por eso sus endpoints cuelgan de `/me`.
+
+**Las dos escuchas del service worker van en `public/push-sw.js`**, que entra por
+`workbox.importScripts` (`vite.config.ts`). La alternativa era pasar la app a `injectManifest`, y
+eso significa hacerse cargo del precache entero —el shell, el fallback de navegación, la regla
+`NetworkOnly` del API— para añadir dos escuchas. El archivo entra en el manifiesto con su revisión,
+así que al cambiarlo cambia `sw.js` y el navegador se entera (§40.1).
+
+**Sin clave pública no se pide el permiso.** `GET /me/push-subscriptions/public-key` devuelve `null`
+cuando el despliegue no tiene push configurado, y eso hay que mirarlo **antes** de tocar nada: un
+permiso de notificaciones denegado **no se vuelve a preguntar**, así que gastarlo donde no se puede
+enviar nada deja a esa persona sin push para siempre. Es la única regla de esta sección que no
+admite matices.
+
+Por lo mismo, los otros dos callejones se explican en vez de ofrecer un botón que no puede
+funcionar: **el navegador sin soporte** —en iPhone hace falta la PWA instalada en la pantalla de
+inicio, así que ahí se ofrece instalarla— y **el permiso ya denegado**, que solo se arregla desde
+los ajustes del sitio.
+
+**El botón vive en la pantalla de preferencias, no en «Aplicación».** Es estado del aparato, sí,
+pero quien marca la columna «Móvil» de un aviso y no lo ha activado no recibe nada y no tiene forma
+de saberlo. El interruptor y su condición se miran juntos. Va en **su propia tarjeta y fuera del
+formulario**: activar abre el diálogo de permisos del navegador, así que es una acción con su botón
+y no una casilla que se guarda al final.
+
+**Cuál de los dispositivos de la lista es este** no lo dice el servidor: `PushSubscription` firma
+`id`, `deviceLabel` y `lastUsedAt`, pero no el `endpoint` con el que cruzarlo. Se guarda en el
+navegador el `id` que devolvió el alta **junto a su `endpoint`**, para tirarlo cuando el push
+service rote la suscripción. Sin esa nota —otro navegador, almacenamiento limpio— la fila sigue
+ahí hasta el siguiente envío, que es cuando el backend la borra al recibir un 410. Pedido al
+contrato en §95.18; el día que llegue, esa nota local sobra.
+
+**El `deviceLabel` lo pone el cliente** («Chrome · Android»), con una heurística sobre el
+`user-agent`. Es una etiqueta y no una decisión: nada depende de acertar, y lo único que no puede
+pasar es que tres aparatos se llamen igual.
+
+**Lo que el sistema operativo enseña no se diseña**: se controlan el texto, el icono, el `tag` y a
+dónde lleva. `tag` reemplaza en pantalla —tres avisos del mismo cobro no se apilan—; la prioridad
+decide si vibra, y solo `CRITICAL` se queda hasta que alguien lo mire. Y al pulsarlo se enfoca la
+pestaña abierta y **se navega**, aunque eso recargue: mandarle un mensaje para que navegue con su
+router dependería de que esa pestaña tenga una versión de la app que sepa escucharlo, y una que no
+lo sepa se queda enfocada sin ir a ninguna parte.
+
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
@@ -2631,6 +2677,13 @@ más que un botón que no hace nada.
 **La versión es el commit**, no la fecha de compilación (`__BUILD_ID__`, `vite.config.ts`). Una
 fecha cambia en cada `vite build` aunque no haya cambiado una línea: se cuela en el bundle, mueve
 el hash y hace que el service worker anuncie «versión nueva» por un rebuild del mismo código.
+
+**Ojo con lo que Workbox serializa.** La regla `NetworkOnly` del API se escribía con una función
+que leía `API_PATHS`, una constante del `vite.config.ts`. Workbox **convierte esa función a texto**
+para meterla en el service worker, así que la constante llegaba al worker como un identificador que
+no existe y la regla reventaba con un `ReferenceError` en vez de aplicarse —en silencio, porque el
+comportamiento por defecto (ir a la red) coincidía—. Los patrones van escritos dentro del cuerpo,
+repetidos. `navigateFallbackDenylist` sí puede leerlos: recibe los regex como dato, no como código.
 
 **Y una salida de emergencia**, `/config/aplicacion`: comprobar a mano, ver la versión instalada y
 **vaciar y recargar** —borra las cachés, da de baja los workers y vuelve a descargar—. No toca
@@ -4471,6 +4524,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `useNotificationStream` | `features/notifications/hooks.ts` | Enterarse de un aviso nuevo sin recargar (§11.1.9) |
 | `NotificationPreferencesPage` | `features/notifications/preferences-page.tsx` | De qué te avisamos y por dónde (§11.1.10) |
 | `NotificationPolicyPage` | `features/notifications/policy-page.tsx` | La política de avisos de la organización (§11.1.10) |
+| `PushDevices` | `features/notifications/push-devices.tsx` | Activar los avisos con la app cerrada, y los dispositivos suscritos (§11.1.11) |
+| `pushSupported` · `subscribeToPush` · `deviceLabel` | `pwa/push.ts` | La mecánica de Web Push en el navegador |
+| `push-sw.js` | `public/push-sw.js` | Lo que hace el service worker con un aviso que llega (§11.1.11) |
 | `subscribeToRealtime` | `lib/realtime-stream.ts` | **La conexión en vivo de la app**, una para todos (§11.1.9) |
 | `formatRelativeTime` · `localDay` | `lib/format.ts` | «hace 5 min» y el día del reloj de quien lee, no el de UTC |
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
@@ -4710,6 +4766,20 @@ es peor que no tenerlo, así que hoy los días **se leen** («Te avisamos 5 y 1 
 Se cierra con un campo: los días que ofrece la organización para ese tipo, junto a
 `supportsLeadDays`. Con eso el selector es directo — las casillas son ese conjunto y lo marcado es
 `leadDays`.
+
+### 95.18. La lista de dispositivos no dice cuál es este — ⏸️ **abierta, es petición de contrato**
+
+`GET /me/push-subscriptions` devuelve `id`, `deviceLabel` y `lastUsedAt`. Sin el `endpoint` no hay
+forma de cruzar esa lista con la suscripción que tiene el navegador delante, así que tres filas que
+digan «Chrome · Android» son indistinguibles y «dar de baja este» es adivinar.
+
+Hoy se resuelve guardando en el navegador el `id` que devolvió el alta junto a su `endpoint`. Es
+suficiente para el caso normal y **se queda corto en los de siempre**: almacenamiento limpio, otro
+perfil, una suscripción que el push service rotó. Ahí la fila sigue en la lista hasta el siguiente
+envío, que es cuando el backend la borra al recibir un 410.
+
+Se cierra devolviendo el `endpoint` en `PushSubscription` —es del propio usuario— o un `isCurrent`
+resuelto en el servidor.
 
 ### 95.15. Lo que ya cumple
 
@@ -5049,6 +5119,26 @@ preferencias, 9 de la política y 8 de las palabras), build OK.
 
 ---
 
+## Fase 15 — Web Push ✅ **completada**
+
+Los avisos llegan al teléfono con la aplicación cerrada (§11.1.11).
+
+1. `public/push-sw.js` con las escuchas `push` y `notificationclick`, enganchado por
+   `workbox.importScripts` para no tener que pasar la app a `injectManifest`.
+2. `pwa/push.ts`: soporte, permiso, la conversión de la clave VAPID y el nombre del aparato, todo
+   probado sin montar React.
+3. `PushDevices` en la pantalla de preferencias —donde está la columna «Móvil», que sin esto no
+   entrega nada— con sus tres callejones explicados: sin clave pública, sin soporte y con el
+   permiso denegado.
+4. De paso, un fallo del service worker que llevaba tiempo y no se veía: la regla `NetworkOnly` del
+   API leía una constante del `vite.config.ts` que Workbox no puede serializar (§40.1).
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 495 tests en verde (16 nuevos: 8 de la
+mecánica del navegador y 8 de las decisiones de la pantalla), build OK con `push-sw.js` en el
+manifiesto.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5067,6 +5157,7 @@ preferencias, 9 de la política y 8 de las palabras), build OK.
 | ✅ 12 | Aprobación de egresos | medio | 7, 9 |
 | ✅ 13 | Centro de notificaciones | medio | 7 (contrato) |
 | ✅ 14 | Preferencias y política de avisos | bajo | 13 |
+| ✅ 15 | Web Push | medio | 14 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

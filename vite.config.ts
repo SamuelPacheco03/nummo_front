@@ -99,6 +99,14 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          /*
+            Las dos escuchas de Web Push (`push` y `notificationclick`) viven en
+            `public/push-sw.js` y entran aquí. Es lo que evita pasar la app a
+            `injectManifest`, que obligaría a hacernos cargo del precache entero
+            para añadir dos escuchas. El archivo entra en el manifiesto con su
+            revisión, así que al cambiarlo cambia `sw.js` y el navegador lo nota.
+          */
+          importScripts: ['/push-sw.js'],
           // Shell de la app precacheado (app-shell + assets con hash).
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
           // El chunk principal supera los 2 MiB por defecto solo en algunos builds;
@@ -109,7 +117,20 @@ export default defineConfig(({ mode }) => {
           // Datos financieros y sesión: siempre red, nunca caché.
           runtimeCaching: [
             {
-              urlPattern: ({ url }) => API_PATHS.some((re) => re.test(url.pathname)),
+              /*
+                Los patrones van **escritos aquí dentro**, repetidos, y no leyendo
+                `API_PATHS`. Workbox serializa esta función al texto del service
+                worker, así que cualquier variable de fuera del cuerpo llega al
+                worker como un identificador que no existe: la regla reventaba con
+                un `ReferenceError` en vez de aplicarse. El único sitio donde se
+                nota es aquí; `navigateFallbackDenylist` recibe los regex como
+                dato y sí funciona.
+              */
+              urlPattern: ({ url }) =>
+                /^\/api\//.test(url.pathname) ||
+                url.pathname === '/health' ||
+                url.pathname === '/openapi.json' ||
+                url.pathname.startsWith('/docs'),
               handler: 'NetworkOnly',
             },
           ],

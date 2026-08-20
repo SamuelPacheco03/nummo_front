@@ -62,6 +62,11 @@ contador en las dos cabeceras, panel en el `Drawer` de siempre, filtro por leíd
 marcar una, marcar todas, descartar. Y el enganche al stream, que refresca el contador sin
 recargar (§11.1.9).
 
+**Web Push** (§11.1.11): las dos escuchas del service worker (`public/push-sw.js`, enganchado por
+`workbox.importScripts`), y en la pantalla de preferencias el botón de activar este dispositivo con
+la lista de los suscritos. **No se pide el permiso del navegador si `publicKey` viene `null`** — un
+permiso denegado no se vuelve a preguntar.
+
 **La política de la organización** (`/config/avisos`, §11.1.10): la hora de los recordatorios y los
 dos umbrales, en Configuración › Organización y detrás de `notifications.settings.manage`. Se lee
 con `notifications.read`, así que se enseña a cualquiera y lo que desaparece es el botón. Un umbral
@@ -98,6 +103,29 @@ conjunto de la organización en los dos casos. Por eso hoy la pantalla **los ens
 
 Se cierra con un campo al lado de `supportsLeadDays`: los días que la organización ofrece para ese
 tipo. Con eso las casillas son ese conjunto y lo marcado es `leadDays`.
+
+### ⚠️ Petición de contrato — la lista de dispositivos no dice cuál es el que mira
+
+`GET /me/push-subscriptions` devuelve `id`, `deviceLabel` y `lastUsedAt`. Sin el `endpoint` no hay
+con qué cruzarla contra la suscripción del navegador, así que tres filas «Chrome · Android» son
+indistinguibles y «dar de baja este» es adivinar.
+
+Hoy lo tapamos guardando en el navegador el `id` del alta junto a su `endpoint`. Se queda corto en
+los casos de siempre —almacenamiento limpio, otro perfil, una suscripción rotada por el push
+service— y ahí la fila aguanta hasta el siguiente envío, cuando la borráis por el 410.
+
+Se cierra con el `endpoint` en el DTO (es del propio usuario) o con un `isCurrent` resuelto en el
+servidor.
+
+### `availableChannels` dice `PUSH` aunque no haya VAPID configurado
+
+`AVAILABLE_CHANNELS` es una constante del dominio, no una lectura de la configuración, así que un
+despliegue sin claves VAPID publica `PUSH` como canal disponible y a la vez responde `publicKey:
+null`. La pantalla de preferencias enseña entonces una columna «Móvil» que no puede entregar nada.
+
+Lo cubrimos cruzando las dos respuestas —si no hay clave, la tarjeta de dispositivos lo dice—, pero
+lo natural sería que `availableChannels` no incluyera `PUSH` cuando no hay remitente, que es
+exactamente lo que su comentario promete: «channels with a sender wired today».
 
 ### `lowBalanceCurrency` es de solo lectura y nace en `COP`
 
@@ -152,10 +180,9 @@ Dos notas sobre esa tabla:
 
 ### Lo que falta por construir en el front
 
-Por este orden, salvo que digáis otra cosa: Web Push (`/me/push-subscriptions` + service worker),
-y las tramas
-`resource` del stream, que hoy llegan y **nadie las escucha** — la conexión ya está, lo que falta
-es decidir qué invalida cada uno de los cinco recursos.
+Queda una cosa de esta tanda: las tramas `resource` del stream, que hoy llegan y **nadie las
+escucha** — la conexión ya está, lo que falta es decidir qué invalida cada uno de los cinco
+recursos.
 
 Sobre EMAIL y WHATSAPP: no hace falta esconderlos a mano. Hoy ningún tipo los declara en
 `supportedChannels`, así que la pantalla no los dibuja; el día que tengan remitente y entren en

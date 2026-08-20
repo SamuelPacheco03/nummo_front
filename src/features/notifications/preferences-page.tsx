@@ -27,6 +27,7 @@ import {
   useUpdateNotificationPreferences,
   useUpdatePushPreview,
 } from './hooks'
+import { PushDevices } from './push-devices'
 import {
   channelColumn,
   channelLabel,
@@ -294,6 +295,10 @@ export function NotificationPreferencesPage() {
         title="Notificaciones"
         description="Elige de qué te avisamos y por dónde. Es tu configuración, no la de la organización."
       />
+
+      {/* Antes que los interruptores: marcar «Móvil» sin esto activado no
+          entrega nada, y es la pregunta que deja esa columna abierta. */}
+      <PushDevices />
 
       {isPending ? (
         <Skeleton className="h-96 w-full" />

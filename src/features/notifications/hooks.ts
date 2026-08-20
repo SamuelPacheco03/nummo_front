@@ -15,12 +15,18 @@ import {
   usePutApiV1OrganizationsOrgIdNotificationsPreferences,
   usePutApiV1OrganizationsOrgIdNotificationsPreferencesPushPreview,
   usePutApiV1OrganizationsOrgIdNotificationsSettings,
+  getGetApiV1MePushSubscriptionsQueryKey,
+  useDeleteApiV1MePushSubscriptionsId,
+  useGetApiV1MePushSubscriptions,
+  useGetApiV1MePushSubscriptionsPublicKey,
+  usePostApiV1MePushSubscriptions,
 } from '@/api/generated/endpoints/notifications/notifications'
 import type {
   GetApiV1OrganizationsOrgIdNotificationsParams,
   Notification,
   NotificationPreferences,
   NotificationSettings,
+  PushSubscription as PushDevice,
 } from '@/api/generated/model'
 import { asArray } from '@/lib/list-result'
 import { subscribeToRealtime } from '@/lib/realtime-stream'
@@ -185,6 +191,54 @@ export function useUpdateNotificationSettings(orgId: string) {
         }),
     },
   })
+}
+
+/* ---------- Web Push ---------- */
+
+/**
+ * La clave pública VAPID del despliegue, o `null` si no tiene push configurado.
+ *
+ * **`null` no es un error, es una respuesta**, y hay que hacerle caso antes de
+ * tocar nada: pedir el permiso de notificaciones del navegador para luego no
+ * poder mandar ninguna gasta la única oportunidad que hay: un permiso denegado
+ * no se vuelve a preguntar.
+ *
+ * Fuera de la organización, como su endpoint: un teléfono es de una persona, no
+ * de una empresa.
+ */
+export function usePushPublicKey() {
+  const query = useGetApiV1MePushSubscriptionsPublicKey({
+    query: { staleTime: 60 * 60_000 },
+  })
+  return {
+    publicKey: query.data?.data?.publicKey ?? null,
+    isPending: query.isPending,
+    isError: query.isError,
+  }
+}
+
+/** Mis dispositivos suscritos, los de esta cuenta y no los de esta organización. */
+export function usePushDevices(enabled: boolean) {
+  const query = useGetApiV1MePushSubscriptions({ query: { enabled } })
+  return { ...query, devices: asArray<PushDevice>(query.data?.data) }
+}
+
+export function useRegisterPushDevice() {
+  const qc = useQueryClient()
+  return usePostApiV1MePushSubscriptions({
+    mutation: { onSuccess: () => invalidatePushDevices(qc) },
+  })
+}
+
+export function useRemovePushDevice() {
+  const qc = useQueryClient()
+  return useDeleteApiV1MePushSubscriptionsId({
+    mutation: { onSuccess: () => invalidatePushDevices(qc) },
+  })
+}
+
+function invalidatePushDevices(qc: QueryClient): void {
+  void qc.invalidateQueries({ queryKey: getGetApiV1MePushSubscriptionsQueryKey() })
 }
 
 /* ---------- Tiempo real ---------- */
