@@ -1,17 +1,22 @@
 import { useEffect } from 'react'
 import { keepPreviousData, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import {
+  getGetApiV1OrganizationsOrgIdNotificationsPreferencesQueryKey,
   getGetApiV1OrganizationsOrgIdNotificationsQueryKey,
   getGetApiV1OrganizationsOrgIdNotificationsUnreadCountQueryKey,
   useDeleteApiV1OrganizationsOrgIdNotificationsNotificationId,
   useGetApiV1OrganizationsOrgIdNotifications,
+  useGetApiV1OrganizationsOrgIdNotificationsPreferences,
   useGetApiV1OrganizationsOrgIdNotificationsUnreadCount,
   usePostApiV1OrganizationsOrgIdNotificationsNotificationIdRead,
   usePostApiV1OrganizationsOrgIdNotificationsReadAll,
+  usePutApiV1OrganizationsOrgIdNotificationsPreferences,
+  usePutApiV1OrganizationsOrgIdNotificationsPreferencesPushPreview,
 } from '@/api/generated/endpoints/notifications/notifications'
 import type {
   GetApiV1OrganizationsOrgIdNotificationsParams,
   Notification,
+  NotificationPreferences,
 } from '@/api/generated/model'
 import { asArray } from '@/lib/list-result'
 import { subscribeToRealtime } from '@/lib/realtime-stream'
@@ -99,6 +104,52 @@ export function useDismissNotification(orgId: string) {
   const qc = useQueryClient()
   return useDeleteApiV1OrganizationsOrgIdNotificationsNotificationId({
     mutation: { onSuccess: () => invalidateNotifications(qc, orgId) },
+  })
+}
+
+/* ---------- Preferencias ---------- */
+
+/**
+ * Lo que esta persona quiere que le avisen, en esta organización.
+ *
+ * Devuelve **el catálogo entero**, no solo lo que tocó: un tipo sin fila propia
+ * vuelve con los valores por defecto del backend, así que la pantalla no tiene
+ * que saber cuáles existen ni rellenar huecos.
+ */
+export function useNotificationPreferences(orgId: string | undefined) {
+  const query = useGetApiV1OrganizationsOrgIdNotificationsPreferences(orgId ?? '', {
+    query: { enabled: !!orgId },
+  })
+  return {
+    ...query,
+    preferences: query.data?.data as NotificationPreferences | undefined,
+  }
+}
+
+/**
+ * Guarda **solo los tipos que la persona tocó**; el resto se queda como está.
+ * Quién decide qué se tocó es la pantalla, comparando su borrador con lo que
+ * firmó el servidor — un diff al enviar es más fiable que ir marcando sucio cada
+ * casilla, porque volver a poner algo como estaba deja de contar como cambio.
+ */
+export function useUpdateNotificationPreferences(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdNotificationsPreferences({
+    mutation: { onSuccess: () => invalidatePreferences(qc, orgId) },
+  })
+}
+
+/** Cuánto detalle sale en la pantalla de bloqueo: FULL o DISCREET. */
+export function useUpdatePushPreview(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdNotificationsPreferencesPushPreview({
+    mutation: { onSuccess: () => invalidatePreferences(qc, orgId) },
+  })
+}
+
+function invalidatePreferences(qc: QueryClient, orgId: string): void {
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdNotificationsPreferencesQueryKey(orgId),
   })
 }
 

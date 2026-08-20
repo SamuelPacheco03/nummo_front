@@ -62,16 +62,45 @@ contador en las dos cabeceras, panel en el `Drawer` de siempre, filtro por leíd
 marcar una, marcar todas, descartar. Y el enganche al stream, que refresca el contador sin
 recargar (§11.1.9).
 
+**Las preferencias de la persona** (`/config/notificaciones`, §11.1.10): el catálogo entero
+agrupado por categoría, con su interruptor por tipo, una columna por canal que interrumpa y el
+detalle que sale en la pantalla de bloqueo. Todo dibujado desde `preferences[]`,
+`supportedChannels` y `availableChannels` — ninguna lista nuestra en paralelo. Se manda solo lo que
+la persona tocó, calculado como diff al enviar.
+
 Tres cosas del contrato que conviene tener presentes al construir lo demás:
 
 - La lista pagina con **`page` / `pageSize`** (no `limit`), y `unread` es la **cadena** `'true'`,
   no un booleano.
 - `POST /notifications/read-all` responde **200 con cuerpo**, no 204. Las otras dos escrituras sí
   son 204.
-- Las **tres** escrituras piden `notifications.manage`, también marcar una sola como leída. Quien
-  tenga solo `notifications.read` ve el centro y no puede vaciarlo: el front lo respeta —lee y
-  navega, sin botones—, pero merece una segunda mirada del lado del backend, porque hoy el
-  contador de esa persona no baja nunca.
+- Las **tres** escrituras piden `notifications.manage`, también marcar una sola como leída, y lo
+  mismo las preferencias propias. Los cinco roles lo llevan de serie (está en
+  `VIEWER_PERMISSIONS`), así que en la práctica solo muerde a un **rol propio** que lo deje fuera:
+  esa persona vería su centro sin poder vaciarlo, y sus preferencias sin poder cambiarlas. El
+  front lo respeta —mira y no toca—, pero conviene decidir si «gestionar mi propio centro» y
+  «apagarme un aviso a mí mismo» deberían depender de un permiso que un rol propio puede quitar.
+
+### ⚠️ Petición de contrato — los días de antelación que hay no se publican
+
+`GET /notifications/preferences` firma `supportsLeadDays` y un `leadDays` **ya resuelto**: los días
+de la organización menos los que esa persona descartó. Falta el conjunto del que se resta.
+
+Sin él, un selector solo puede quitar días: quien pase de «5 y 1» a «1» no vuelve a ver el 5. Y
+`leadDays` no distingue «los elegí todos» de «no elegí ninguno» — `resolveLeadDays` devuelve el
+conjunto de la organización en los dos casos. Por eso hoy la pantalla **los enseña como frase**
+(«Te avisamos 5 y 1 días antes») en vez de ofrecer un control que va en una sola dirección.
+
+Se cierra con un campo al lado de `supportsLeadDays`: los días que la organización ofrece para ese
+tipo. Con eso las casillas son ese conjunto y lo marcado es `leadDays`.
+
+### Un detalle de `supportedChannels`
+
+`INAPP` viaja en `supportedChannels` de todos los tipos, pero `interruptingChannels` lo descarta y
+`shouldRecord` solo mira `enabled`: un miembro que quitara `INAPP` de sus canales **seguiría
+viéndolo todo en el centro**. Es coherente —el centro es el registro, no un canal—, así que la
+pantalla no dibuja esa casilla: apagarla sería una mentira. Si la intención era otra, es el sitio
+donde mirarlo; si no, quizá `INAPP` no debería salir en `supportedChannels`.
 
 ### ⚠️ Petición de contrato — los `deepLink` no coinciden con el router
 
@@ -107,12 +136,14 @@ Dos notas sobre esa tabla:
 
 ### Lo que falta por construir en el front
 
-Por este orden, salvo que digáis otra cosa: preferencias por tipo y canal
-(`/notifications/preferences`, con `supportedChannels` y `supportsLeadDays` mandando la pantalla,
-y EMAIL/WHATSAPP como «próximamente» mientras no tengan remitente), la política de la organización
+Por este orden, salvo que digáis otra cosa: la política de la organización
 (`/notifications/settings`), Web Push (`/me/push-subscriptions` + service worker), y las tramas
 `resource` del stream, que hoy llegan y **nadie las escucha** — la conexión ya está, lo que falta
 es decidir qué invalida cada uno de los cinco recursos.
+
+Sobre EMAIL y WHATSAPP: no hace falta esconderlos a mano. Hoy ningún tipo los declara en
+`supportedChannels`, así que la pantalla no los dibuja; el día que tengan remitente y entren en
+`availableChannels`, la columna aparece sola.
 
 ## 🆕 Icono, color y orden en conceptos y categorías · auto-registro de recurrentes · alta por nombre
 

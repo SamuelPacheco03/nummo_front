@@ -1,4 +1,5 @@
 import {
+  Bell,
   Bot,
   Building2,
   CreditCard,
@@ -39,6 +40,7 @@ export const GROUPS: SectionGroup[] = [
     title: 'Preferencias',
     items: [
       { to: '/config/apariencia', label: 'Apariencia', Icon: Palette },
+      { to: '/config/notificaciones', label: 'Notificaciones', Icon: Bell },
       { to: '/config/asistente', label: 'Asistente', Icon: Bot },
       { to: '/config/aplicacion', label: 'Aplicación', Icon: RefreshCw },
     ],

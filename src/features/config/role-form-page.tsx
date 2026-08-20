@@ -68,7 +68,7 @@ function PermissionToggle({
  * **El editor de un rol propio.**
  *
  * Va en cajón y no en diálogo centrado porque cuelga de la lista de roles y
- * porque no es un formulario corto: son 53 permisos. La regla de §11.1.3 mira
+ * porque no es un formulario corto: son 57 permisos. La regla de §11.1.3 mira
  * las dos cosas —de qué cuelga y cuánto ocupa—, y aquí las dos apuntan al mismo
  * sitio.
  *

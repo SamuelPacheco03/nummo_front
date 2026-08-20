@@ -1083,6 +1083,52 @@ página que ya estuviera cargada con otro filtro.
 No se reintenta a mano al fallar: `EventSource` reconecta solo, con su propia espera. El latido de
 25 s del servidor es un comentario SSE, no un evento: no hay nada que hacer con él.
 
+## 11.1.10. Las preferencias de avisos
+
+`/config/notificaciones` es la pantalla **de la persona**: de qué te avisamos y por dónde. La
+política común —a qué hora salen los recordatorios, desde qué saldo se avisa— es otra cosa, con
+otro permiso, y no comparte pantalla con esta.
+
+**Se dibuja desde el contrato, entera.** Qué tipos existen, qué canales admite cada uno y cuáles
+están encendidos en este despliegue vienen en la respuesta (`preferences[]`, `supportedChannels`,
+`availableChannels`). Una lista nuestra en paralelo se desincronizaría con el primer tipo nuevo del
+backend — y ese sería justo el que nadie podría apagar.
+
+**El rótulo del interruptor es el titular del aviso**, palabra por palabra: «Tienes un cobro
+vencido», no «Vencimientos de cartera». Quien acaba de recibir la notificación y viene a apagarla
+busca esa frase; una paráfrasis nuestra le obliga a deducir cuál de las veintiuna era. Es la única
+tabla de la feature que se escribe a mano, y va sobre el enum del contrato para que un tipo nuevo
+rompa `tsc` en vez de aparecer como `receivable.due_soon`.
+
+**«En la app» no es una casilla.** El centro es el registro, no un canal: el motor descarta `INAPP`
+al decidir por dónde interrumpir, así que una casilla que no apaga nada sería una mentira en la
+pantalla. Lo que se marca es **por dónde te interrumpe** —hoy solo el móvil—, y el texto lo dice:
+«todo lo que dejes encendido queda en tu centro de notificaciones».
+
+**Una columna por canal, no una casilla suelta por fila.** Veintiún avisos con su rótulo repetido
+(«Avisarme también en el móvil») son veintiuna veces la misma frase; una rejilla con la cabecera
+arriba se lee de un vistazo y crece bien: el día que exista remitente de correo, la columna aparece
+sola porque sale de `availableChannels`. Un tipo que no admite ese canal deja un «—», no una
+casilla muerta.
+
+**Guardar es explícito, y manda solo lo que cambió.** El diff se calcula **al enviar**, comparando
+el borrador con lo que firmó el servidor, y no marcando sucia cada casilla que se toca: apagar algo
+y volver a encenderlo deja de contar como cambio, que es lo que cualquiera espera. Los dos
+endpoints —las preferencias y el detalle en la pantalla de bloqueo— viven detrás del mismo botón:
+que sean dos es del contrato, no algo que el usuario tenga que entender.
+
+**Y la pantalla se queda tras guardar**, así que se vuelve a marcar limpia a mano con **la
+respuesta del servidor** y no con el borrador (§45.7): si el backend normaliza algo, con el
+borrador el botón se quedaría encendido para siempre.
+
+**Los días de antelación se leen, no se editan.** «Te avisamos 5 y 1 días antes». El contrato
+devuelve los que quedan tras restar la elección de la persona a los de la organización, pero **no
+publica los que hay**, así que un selector podría apagar días y no volver a encenderlos (§95.17).
+Un control que solo va en una dirección es peor que una frase.
+
+Sin `notifications.manage` la pantalla se mira y no se toca —sin pie de acciones, con un `Note` que
+lo dice—; sin `notifications.read` no se pide nada y sale el candado (§45.2c).
+
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
@@ -4395,6 +4441,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `NotificationBell` | `features/notifications/notification-bell.tsx` | La campana de la cabecera con su contador — **solo el botón** (§11.1.8) |
 | `NotificationsDrawer` | `features/notifications/notifications-drawer.tsx` | **El centro de notificaciones**, montado una vez en el shell (§11.1.8) |
 | `useNotificationStream` | `features/notifications/hooks.ts` | Enterarse de un aviso nuevo sin recargar (§11.1.9) |
+| `NotificationPreferencesPage` | `features/notifications/preferences-page.tsx` | De qué te avisamos y por dónde (§11.1.10) |
 | `subscribeToRealtime` | `lib/realtime-stream.ts` | **La conexión en vivo de la app**, una para todos (§11.1.9) |
 | `formatRelativeTime` · `localDay` | `lib/format.ts` | «hace 5 min» y el día del reloj de quien lee, no el de UTC |
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
@@ -4619,6 +4666,21 @@ Las claves de los filtros van **en español** y son las de `useListFilters` (§2
 Mientras tanto el centro funciona entero —se lee, se marca, se descarta, el contador se mueve— y
 un `deepLink` que no case lleva a una pantalla vacía. **Ninguno se reescribe en el cliente**: en
 cuanto el backend publique los de arriba, empiezan a funcionar sin tocar una línea de front.
+
+### 95.17. El contrato no publica los días de antelación que hay — ⏸️ **abierta, es petición de contrato**
+
+`GET /notifications/preferences` devuelve `supportsLeadDays` y un `leadDays` que ya viene
+**resuelto**: los días de la organización menos los que esa persona haya descartado. Lo que no
+devuelve es **cuáles hay**.
+
+Con eso, un selector de días solo puede restar. Quien pase de «5 y 1» a «1» no vuelve a ver el 5
+por ninguna parte, y encima el front no distingue «los elegí todos» de «no elegí ninguno»: las dos
+respuestas son el mismo array. Un control que va en una sola dirección en una pantalla de ajustes
+es peor que no tenerlo, así que hoy los días **se leen** («Te avisamos 5 y 1 días antes»).
+
+Se cierra con un campo: los días que ofrece la organización para ese tipo, junto a
+`supportsLeadDays`. Con eso el selector es directo — las casillas son ese conjunto y lo marcado es
+`leadDays`.
 
 ### 95.15. Lo que ya cumple
 
@@ -4938,6 +5000,23 @@ nombre.
 
 ---
 
+## Fase 14 — Preferencias de avisos ✅ **completada**
+
+`/config/notificaciones` (§11.1.10): el catálogo entero por categorías, con su interruptor, la
+columna de móvil y el detalle que sale en la pantalla de bloqueo.
+
+1. La pantalla se dibuja desde el contrato —tipos, `supportedChannels`, `availableChannels`— y lo
+   único escrito a mano es el rótulo de cada aviso, que es el titular con el que va a llegar.
+2. `INAPP` no se ofrece como casilla: el motor lo descarta al interrumpir, así que apagarla no
+   apagaría nada.
+3. Un botón, dos endpoints, y solo viaja lo que cambió — el diff se calcula al enviar.
+4. Los días de antelación se leen: el contrato no publica los que hay (95.17).
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 470 tests en verde (20 nuevos: 12 de la
+pantalla y 8 de las palabras), build OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -4955,6 +5034,7 @@ nombre.
 | ✅ 11 | Roles propios de la organización | medio | 7 |
 | ✅ 12 | Aprobación de egresos | medio | 7, 9 |
 | ✅ 13 | Centro de notificaciones | medio | 7 (contrato) |
+| ✅ 14 | Preferencias de avisos | bajo | 13 |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.
