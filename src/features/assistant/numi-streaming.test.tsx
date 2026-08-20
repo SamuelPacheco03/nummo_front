@@ -162,21 +162,23 @@ test('detener ocupa el sitio del micrófono mientras Numi escribe', async () => 
   expect(screen.queryByRole('button', { name: 'Detener la respuesta' })).not.toBeInTheDocument()
 })
 
-test('«Enviando» se apaga cuando Numi coge el turno, no cuando termina', async () => {
+test('la segunda palomita llega cuando Numi coge el turno, no cuando termina', async () => {
   const user = userEvent.setup()
   const sse = await preguntar(user)
 
-  expect(await screen.findByText('Enviando')).toBeInTheDocument()
+  // Una palomita: salió de aquí y todavía nadie ha dicho que llegara.
+  expect(await screen.findByRole('img', { name: 'Enviado' })).toBeInTheDocument()
 
-  // El servidor contestó: la pregunta llegó, y decir «Enviando» a partir de aquí es
-  // decir algo que ya no es verdad.
+  // El servidor contestó, así que la pregunta llegó: segunda palomita.
   sse.start('s1')
-  await waitFor(() => expect(screen.queryByText('Enviando')).not.toBeInTheDocument())
+  expect(await screen.findByRole('img', { name: 'Entregado' })).toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: 'Enviado' })).not.toBeInTheDocument()
 
-  // Y sigue apagado mientras la respuesta se escribe, que es donde más se veía.
+  // Y se queda así mientras la respuesta se escribe, que es donde antes se leía
+  // «Enviando» con la contestación ya a media página.
   sse.chunk('Te deben ')
   expect(await screen.findByText(/Te deben/)).toBeInTheDocument()
-  expect(screen.queryByText('Enviando')).not.toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Entregado' })).toBeInTheDocument()
 })
 
 test('el turno acaba con `done`, sin esperar a que se cierre la conexión', async () => {

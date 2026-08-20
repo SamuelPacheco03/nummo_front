@@ -28,3 +28,35 @@ test('un mensaje dictado sin audio guardado se lee tal cual', () => {
   expect(screen.getByText('cuánto me debe Ana Torres')).toBeInTheDocument()
   expect(screen.getByLabelText('Mensaje dictado')).toBeInTheDocument()
 })
+
+test('las palomitas cuentan en qué anda un mensaje propio', () => {
+  const { rerender } = render(<ChatMessageItem message={{ ...BASE, status: 'queued' }} />)
+  expect(screen.getByRole('img', { name: 'En espera' })).toBeInTheDocument()
+
+  rerender(<ChatMessageItem message={{ ...BASE, status: 'sending' }} />)
+  expect(screen.getByRole('img', { name: 'Enviado' })).toBeInTheDocument()
+
+  rerender(<ChatMessageItem message={{ ...BASE, status: 'sent' }} />)
+  expect(screen.getByRole('img', { name: 'Entregado' })).toBeInTheDocument()
+})
+
+test('un mensaje propio traído del historial ya está entregado', () => {
+  // Sin marca porque vino del servidor: dejarlo pelado pondría los mensajes de hoy
+  // con palomitas y los de ayer sin ellas.
+  render(<ChatMessageItem message={BASE} />)
+  expect(screen.getByRole('img', { name: 'Entregado' })).toBeInTheDocument()
+})
+
+test('lo que dice Numi no lleva palomitas: no hay nada que entregar', () => {
+  render(<ChatMessageItem message={{ ...BASE, role: 'assistant', content: 'Te deben $50.000' }} />)
+  expect(screen.queryByRole('img', { name: 'Entregado' })).not.toBeInTheDocument()
+})
+
+test('lo que no salió lo dice debajo, con su salida', () => {
+  render(<ChatMessageItem message={{ ...BASE, status: 'failed' }} onRetry={vi.fn()} />)
+
+  // Un fallo no cabe entre la hora y las palomitas: necesita el «Reintentar» al lado.
+  expect(screen.getByText('No se envió')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: 'Entregado' })).not.toBeInTheDocument()
+})

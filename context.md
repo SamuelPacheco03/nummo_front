@@ -2118,23 +2118,39 @@ nueva en el acto, que es lo que el backend haría igualmente con un id que ya no
 
 **Numi atiende un turno a la vez, pero escribir no espera a nadie.** Antes, mientras
 contestaba, el botón de enviar se apagaba: lo escrito en ese rato no iba a ninguna parte.
-Ahora entra en la **cola del hilo** —marcado «En espera»— y sale solo en cuanto hay turno
+Ahora entra en la **cola del hilo** —marcado con un reloj— y sale solo en cuanto hay turno
 libre, en el orden en que se escribió. La cola vive en el hilo y no en la pantalla: cerrar
 el chat con algo esperando no lo pierde.
 
 Grabar sí espera, y es la única excepción: una nota de voz no se puede encolar porque su
 audio es un `blob:` de esta página y no sobrevive a guardarlo.
 
-**Cada mensaje propio dice en qué anda**, debajo de su burbuja: «En espera», «Enviando»,
-«No se envió». **Lo entregado no lleva marca** — en un chat lo normal es que llegue, y una
-palomita por línea es ruido. Reintentar cuelga del mensaje que falló, que es lo que se
-quiere reenviar; devolverlo a la cola es todo lo que hace.
+**Cada mensaje propio dice en qué anda, en palomitas** — a la derecha de la hora y dentro
+de la burbuja, como en WhatsApp:
 
-Y **«Enviando» se apaga en cuanto el servidor coge el turno**, no cuando el turno termina.
-Se apagaba al final, así que la marca seguía puesta debajo de la pregunta con la respuesta
-ya a media página: se leía «Enviando» junto a algo que evidentemente había llegado. Vale
-cualquier señal de vida del flujo —`start` es la primera y llega siempre; el primer trozo
-cubre el turno que no la traiga—.
+| Estado | Qué se ve | Qué significa |
+| --- | --- | --- |
+| `queued` | Un reloj | Espera turno; Numi está con otra cosa |
+| `sending` | Una palomita | Salió de aquí, nadie ha dicho todavía que llegara |
+| `sent`, o sin marca | Dos palomitas | El servidor lo tiene |
+| `failed` | — | Su propia línea debajo (más abajo) |
+
+**Sin estado son dos palomitas**, y no ninguna: un mensaje propio sin marca vino del
+historial del servidor, así que llegó por definición. Dejarlo pelado pondría los mensajes
+de hoy con palomitas y los de ayer sin ellas.
+
+Estuvo como una línea de texto debajo de la burbuja —«En espera», «Enviando»— y ahí hacía
+ruido: una frase por mensaje propio pesa más que el mensaje. Un símbolo de doce píxeles
+dice lo mismo sin robarle sitio a lo dicho, y es el que la gente ya sabe leer.
+
+**Y la segunda palomita llega cuando el servidor coge el turno**, no cuando el turno
+termina. Antes se marcaba al final, así que la marca de «en camino» seguía puesta con la
+respuesta ya a media página. Vale cualquier señal de vida del flujo —`start` es la primera
+y llega siempre; el primer trozo cubre el turno que no la traiga—.
+
+**Lo que falló sí lleva línea**, debajo de la burbuja: entre la hora y las palomitas no
+cabe un «Reintentar», y un fallo sin salida no sirve de nada. Reintentar cuelga del mensaje
+que falló, que es lo que se quiere reenviar; devolverlo a la cola es todo lo que hace.
 
 **Y un fallo dice cuál fue.** No es lo mismo quedarse sin internet que quedarse sin cuota,
 y hasta ahora las dos cosas se leían igual: «No se pudo contactar a Numi», con un botón de

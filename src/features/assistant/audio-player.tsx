@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { Pause, Play, RotateCcw } from 'lucide-react'
 import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
@@ -57,6 +57,7 @@ export function AudioPlayer({
   peaks: given,
   seconds,
   at,
+  trailing,
 }: {
   src?: string
   /** Trae la URL del audio. Se invoca al pulsar play; `force` salta la caché. */
@@ -66,6 +67,8 @@ export function AudioPlayer({
   /** Duración conocida en segundos, para no enseñar 0:00 antes de reproducir. */
   seconds?: number
   at: string
+  /** Va a la derecha de la hora: en una nota propia, sus palomitas. */
+  trailing?: ReactNode
 }) {
   const ref = useRef<HTMLAudioElement>(null)
   const [resolved, setResolved] = useState<string | undefined>(src)
@@ -184,7 +187,10 @@ export function AudioPlayer({
             ? 'No se pudo cargar'
             : formatDuration(playing || current ? current : duration)}
         </span>
-        <time dateTime={at}>{formatTime(at)}</time>
+        <span className="flex items-center gap-1">
+          <time dateTime={at}>{formatTime(at)}</time>
+          {trailing}
+        </span>
       </div>
 
       <audio
