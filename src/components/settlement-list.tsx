@@ -36,7 +36,7 @@ import {
   type SettlementRow,
 } from '@/lib/settlement-list'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
-import { useListFilters } from '@/lib/use-list-filters'
+import { useKeepFilters, useListFilters } from '@/lib/use-list-filters'
 import { cn } from '@/lib/utils'
 
 /** Diez caben en una pantalla sin scroll infinito, igual que en cartera. */
@@ -120,6 +120,7 @@ export function SettlementList({
     storageKey,
     SETTLEMENT_FILTER_KEYS,
   )
+  const keepFilters = useKeepFilters()
   const [search, setSearch] = useState('')
   const q = useDebouncedValue(search.trim(), 300)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -239,7 +240,7 @@ export function SettlementList({
       <PageHeader title={copy.title} description={copy.description}>
         {canRegister && (
           <Button asChild size="sm" aria-label={copy.action}>
-            <Link to={newTo}>
+            <Link to={keepFilters(newTo)}>
               <Plus aria-hidden className="size-4" />
               <span className="hidden sm:inline">{copy.action}</span>
             </Link>
@@ -274,7 +275,9 @@ export function SettlementList({
             columns={columns}
             rows={items}
             getRowId={(row) => row.id}
-            onRowClick={(row) => navigate(detailTo(row.id))}
+            // Con los criterios puestos: la lista se queda montada detrás del
+            // cajón y sin ellos volvería a «Todos» (§21.1).
+            onRowClick={(row) => navigate(keepFilters(detailTo(row.id)))}
             // El del concepto o la categoría cuando el movimiento va directo a
             // uno (§11.1.12); si no, el de su propósito.
             rowIcon={(row) =>
@@ -301,7 +304,7 @@ export function SettlementList({
                   action={
                     canRegister && (
                       <Button asChild size="sm">
-                        <Link to={newTo}>
+                        <Link to={keepFilters(newTo)}>
                           <Plus className="size-4" />
                           {copy.action}
                         </Link>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation, useSearchParams, type To } from 'react-router'
 import {
   readFromParams,
   readStored,
@@ -86,6 +86,27 @@ export function useListFilters<K extends string>(
   }, [fromUrl, keys])
 
   return { values, set, clear }
+}
+
+/**
+ * El mismo destino, **con los criterios que ya viajan en la URL**.
+ *
+ * La ficha de un registro es una ruta hija de su lista y la lista **no se
+ * desmonta**: se queda montada detrás del cajón (§87.5). Sus filtros se derivan
+ * de la URL en cada render, así que navegar a la ficha con solo su `pathname`
+ * deja la lista de detrás sin criterios: las fichas de estado saltan a «Todos»,
+ * la lista vuelve a pedir la página sin filtrar y, al cerrar, se vuelve a un
+ * listado que ya no es el que se estaba mirando.
+ *
+ * El rescate de la sesión no lo cubre: ocurre **una vez por montaje**, y aquí no
+ * hay montaje nuevo — la lista nunca se fue.
+ *
+ * Se usa en las dos direcciones: al abrir (la lista navega a su hija) y al
+ * cerrar (`DetailDrawer` vuelve a su lista).
+ */
+export function useKeepFilters(): (pathname: string) => To {
+  const { search } = useLocation()
+  return useCallback((pathname: string) => ({ pathname, search }), [search])
 }
 
 /*

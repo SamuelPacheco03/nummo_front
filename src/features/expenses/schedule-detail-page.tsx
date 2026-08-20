@@ -14,6 +14,7 @@ import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
+import { useKeepFilters } from '@/lib/use-list-filters'
 import { RECURRENCE_LABELS, scheduleStatus } from './labels'
 import {
   useEndSchedule,
@@ -48,6 +49,7 @@ const COPY = {
 /** Ficha de un gasto recurrente. Abre como cajón sobre la lista. */
 export function ScheduleDetailPage() {
   const { scheduleId } = useParams()
+  const keepFilters = useKeepFilters()
   const { orgId } = useCurrentOrg()
   const can = useCan()
   const canManage = can('expense_schedules.manage')
@@ -121,7 +123,7 @@ export function ScheduleDetailPage() {
               {(s.status === 'ACTIVE' || s.status === 'PAUSED') && (
                 <>
                   <Button asChild variant="outline" size="sm">
-                    <Link to={`/gastos/recurrentes/${s.id}/editar`}>
+                    <Link to={keepFilters(`/gastos/recurrentes/${s.id}/editar`)}>
                       <Pencil className="size-4" />
                       Editar
                     </Link>

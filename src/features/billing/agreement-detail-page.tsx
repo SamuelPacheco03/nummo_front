@@ -22,6 +22,7 @@ import { useCan } from '@/features/platform/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman } from '@/lib/format'
+import { useKeepFilters } from '@/lib/use-list-filters'
 import { RECURRENCE_LABELS, agreementStatus } from './labels'
 import {
   useAgreement,
@@ -62,6 +63,7 @@ const COPY = {
  */
 export function AgreementDetailPage() {
   const { agreementId } = useParams()
+  const keepFilters = useKeepFilters()
   const { orgId } = useCurrentOrg()
   const can = useCan()
   const canManage = can('agreements.manage')
@@ -178,7 +180,7 @@ export function AgreementDetailPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
-                    <Link to={`/cartera/acuerdos/${agreement.id}/editar`}>
+                    <Link to={keepFilters(`/cartera/acuerdos/${agreement.id}/editar`)}>
                       <Pencil className="size-4" />
                       Editar acuerdo
                     </Link>
