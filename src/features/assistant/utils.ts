@@ -1,4 +1,4 @@
-import { formatDateHuman } from '@/lib/format'
+import { formatDateHuman, localDay } from '@/lib/format'
 import type { ChatMessage } from './types'
 
 /**
@@ -121,21 +121,6 @@ export function formatConversationStamp(iso: string, today: Date = new Date()): 
 
 /** Cuánto silencio rompe una tanda de mensajes seguidos del mismo lado. */
 const GROUP_GAP_MS = 5 * 60 * 1000
-
-/**
- * Día local de una marca ISO, como `YYYY-MM-DD`.
- *
- * Recortar los diez primeros caracteres del ISO daría el día **en UTC**, y en Colombia
- * eso adelanta la fecha cinco horas: un mensaje de las 9 de la noche aparecería bajo el
- * separador de mañana. El día tiene que salir del reloj de quien lee.
- */
-function localDay(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const mes = String(d.getMonth() + 1).padStart(2, '0')
-  const dia = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${mes}-${dia}`
-}
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1)
 

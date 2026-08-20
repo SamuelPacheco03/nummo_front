@@ -47,6 +47,8 @@ const SIN_FEATURES = {
   bank_reconciliation: false,
   approvals: false,
   api_access: false,
+  notifications_email: false,
+  notifications_whatsapp: false,
 }
 
 function plan(over: Partial<PublicPlan>): PublicPlan {

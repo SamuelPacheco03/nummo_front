@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { NumiWidget } from '@/features/assistant/numi-widget'
 import { UserMenu } from '@/features/auth/user-menu'
 import { useLogout } from '@/features/auth/hooks'
+import { NotificationBell } from '@/features/notifications/notification-bell'
+import { NotificationsDrawer } from '@/features/notifications/notifications-drawer'
+import { useNotificationStream } from '@/features/notifications/hooks'
 import { CreateOrgDialog } from '@/features/organizations/create-org-dialog'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { ReadOnlyBanner } from '@/features/platform/read-only-banner'
@@ -72,11 +75,20 @@ function NoOrgOnboarding() {
 }
 
 export function AppShell() {
-  const { isLoading, hasNoOrgs } = useCurrentOrg()
+  const { isLoading, hasNoOrgs, orgId } = useCurrentOrg()
   const [commandOpen, setCommandOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const openCommand = useCallback(() => setCommandOpen(true), [])
+  const openNotifications = useCallback(() => setNotificationsOpen(true), [])
   useCommandBarShortcut(openCommand)
   const navigate = useNavigate()
+
+  /*
+    Una sola suscripción al stream para todo el centro, aquí y no dentro del
+    panel: el globo tiene que enterarse de lo que llega **con el panel cerrado**,
+    que es cuando importa. La conexión la comparte con el chat (§11.1.9).
+  */
+  useNotificationStream(orgId)
 
   /*
     El shell vive dentro del router y los avisos no (el `Toaster` se monta por
@@ -119,9 +131,13 @@ export function AppShell() {
               ⌘K
             </kbd>
           </button>
-          {/* Preferencia y cuenta: a la derecha, fuera del camino de la búsqueda
-              pero siempre a mano. El menú de perfil incluye cerrar sesión. */}
+          {/* Avisos, preferencia y cuenta: a la derecha, fuera del camino de la
+              búsqueda pero siempre a mano. El menú de perfil incluye cerrar
+              sesión. La campana es el tercer control de esta esquina y el único
+              que puede pedir atención sola: por eso está y no se esconde en un
+              menú (§11.1.1). */}
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            <NotificationBell onClick={openNotifications} />
             <ThemeToggle />
             <UserMenu />
           </div>
@@ -142,6 +158,7 @@ export function AppShell() {
           >
             <Search aria-hidden className="size-5" />
           </button>
+          <NotificationBell onClick={openNotifications} />
           <UserMenu />
         </header>
 
@@ -163,6 +180,9 @@ export function AppShell() {
       <BottomNav />
 
       <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />
+
+      {/* Uno solo para las dos cabeceras: las dos están en el DOM a la vez. */}
+      <NotificationsDrawer open={notificationsOpen} onOpenChange={setNotificationsOpen} />
 
       {/* Numi: botón flotante en escritorio; en móvil su sitio es la barra. */}
       <NumiWidget />

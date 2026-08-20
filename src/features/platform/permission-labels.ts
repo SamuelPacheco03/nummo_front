@@ -4,10 +4,10 @@ import type { Permission } from './permissions'
  * Los permisos en las palabras del usuario, **compuestos y no escritos uno a
  * uno**.
  *
- * Son 53 hoy y el catálogo crece: una tabla con 53 entradas se queda coja a la
- * primera clave nueva y nadie se entera —el permiso aparecería en la pantalla
- * como `disbursements.approve`—. Como todos tienen la forma `recurso.acción`,
- * dos tablas pequeñas los cubren todos y **componen el que venga**.
+ * Son 57 hoy y el catálogo crece: una tabla con una entrada por permiso se queda
+ * coja a la primera clave nueva y nadie se entera —el permiso aparecería en la
+ * pantalla como `disbursements.approve`—. Como todos tienen la forma
+ * `recurso.acción`, dos tablas pequeñas los cubren todos y **componen el que venga**.
  *
  * Lo que llegue sin traducción se enseña crudo, que es feo pero honesto: se ve
  * al mirar la pantalla en vez de desaparecer.
@@ -22,6 +22,7 @@ type Area =
   | 'Catálogos'
   | 'Informes'
   | 'Asistente'
+  | 'Notificaciones'
 
 /** El orden en que se presentan los grupos: el de la navegación (§14). */
 const AREA_ORDER: Area[] = [
@@ -32,6 +33,7 @@ const AREA_ORDER: Area[] = [
   'Informes',
   'Catálogos',
   'Asistente',
+  'Notificaciones',
   'Organización',
 ]
 
@@ -60,12 +62,17 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   knowledge: { label: 'Base de conocimiento', area: 'Informes' },
   assistant: { label: 'Numi', area: 'Asistente' },
   'assistant.settings': { label: 'Ajustes de Numi', area: 'Asistente' },
+  notifications: { label: 'Notificaciones', area: 'Notificaciones' },
+  'notifications.settings': { label: 'Política de avisos', area: 'Notificaciones' },
 }
 
 /** La última parte: el verbo. */
 const ACTIONS: Record<string, string> = {
   read: 'Ver',
   use: 'Usar',
+  // De audiencia, no de dato: solo resta destinatarios. Quien no lo tiene deja de
+  // recibir lo que registran los demás; nunca da acceso a algo que no pudiera ver.
+  team_activity: 'Recibir la actividad del equipo',
   write: 'Crear y editar',
   archive: 'Archivar',
   create: 'Registrar',
@@ -107,7 +114,7 @@ interface PermissionGroup {
 
 /**
  * Los permisos agrupados por área y, dentro, por recurso: es como se decide
- * «este rol lleva la cartera» sin leer 53 casillas sueltas.
+ * «este rol lleva la cartera» sin leer cincuenta y siete casillas sueltas.
  *
  * Un recurso que el catálogo estrene y esta tabla no conozca **no se pierde**:
  * cae en «Otros», con su clave cruda a la vista.

@@ -99,6 +99,51 @@ export function formatDateHuman(value: string | null | undefined, today: Date = 
   return target.getFullYear() === base.getFullYear() ? label : `${label} ${target.getFullYear()}`
 }
 
+/**
+ * Día local de una marca ISO, como `YYYY-MM-DD`.
+ *
+ * Recortar los diez primeros caracteres del ISO daría el día **en UTC**, y en
+ * Colombia eso adelanta la fecha cinco horas: algo ocurrido a las nueve de la
+ * noche quedaría fechado mañana. El día sale del reloj de quien lee.
+ */
+export function localDay(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mes}-${dia}`
+}
+
+/**
+ * Cuánto hace que llegó algo: "ahora" · "hace 5 min" · "hace 2 h", y de ahí para
+ * atrás la fecha de siempre ("ayer", "el martes", "7 ago").
+ *
+ * Las primeras horas se cuentan y lo anterior se nombra **a propósito**: de un
+ * aviso recién llegado se pregunta cuánto hace, y de uno viejo, qué día. "Hace
+ * 37 h" no responde ninguna de las dos.
+ *
+ * `now` es inyectable para probarla sin congelar el reloj (§92.2).
+ */
+export function formatRelativeTime(
+  value: string | null | undefined,
+  now: Date = new Date(),
+): string {
+  if (value == null || value === '') return '—'
+  const at = new Date(value)
+  if (Number.isNaN(at.getTime())) return value
+
+  const minutes = Math.floor((now.getTime() - at.getTime()) / 60_000)
+  // Un reloj del navegador atrasado respecto al servidor no puede imprimir
+  // "hace -3 min": lo que acaba de pasar, y lo que dice que pasará, es "ahora".
+  if (minutes < 1) return 'ahora'
+  if (minutes < 60) return `hace ${minutes} min`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `hace ${hours} h`
+
+  return formatDateHuman(localDay(value), now)
+}
+
 /** 'YYYY-MM' → "ago" (año actual) o "ago 27" (otro año). Para ejes de gráficos. */
 export function formatMonthLabel(ym: string, today: Date = new Date()): string {
   const [y, m] = ym.slice(0, 7).split('-').map(Number)

@@ -1,6 +1,6 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-19 (contrato traído de `dev`, 111 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral.**
+**Fecha:** 2026-08-20 (contrato traído de `dev`, 127 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral + centro de notificaciones + Web Push + stream único de eventos + identidad de conceptos y categorías + auto-registro de recurrentes.**
 
 ## ⚠️ ROMPE — el estado de la organización salió de `PATCH /organizations/:orgId`
 
@@ -47,6 +47,88 @@ Dos convenciones que valen para todo el bloque:
 
 Es la fuente para **esconder o deshabilitar** en vez de dejar que el usuario choque contra un
 403. Pero el backend sigue validando: la UI decide qué mostrar, nunca qué se permite.
+
+## 🆕 Centro de notificaciones, Web Push y stream único — regenera con `pnpm api:gen`
+
+Tres bloques que llegan juntos y suman **13 paths**. `openapi.json` pasa a **127 paths / 160
+operaciones**, con cuatro permisos nuevos (`notifications.read`, `notifications.manage`,
+`notifications.settings.manage`, `notifications.team_activity` — 57 en total) y dos features de
+plan (`notifications_email`, `notifications_whatsapp`, ninguna encendida todavía).
+
+### Lo que ya está construido en el front
+
+**El centro de notificaciones** (`features/notifications/`, §11.1.8 de `context.md`): campana con
+contador en las dos cabeceras, panel en el `Drawer` de siempre, filtro por leídas y por categoría,
+marcar una, marcar todas, descartar. Y el enganche al stream, que refresca el contador sin
+recargar (§11.1.9).
+
+Tres cosas del contrato que conviene tener presentes al construir lo demás:
+
+- La lista pagina con **`page` / `pageSize`** (no `limit`), y `unread` es la **cadena** `'true'`,
+  no un booleano.
+- `POST /notifications/read-all` responde **200 con cuerpo**, no 204. Las otras dos escrituras sí
+  son 204.
+- Las **tres** escrituras piden `notifications.manage`, también marcar una sola como leída. Quien
+  tenga solo `notifications.read` ve el centro y no puede vaciarlo: el front lo respeta —lee y
+  navega, sin botones—, pero merece una segunda mirada del lado del backend, porque hoy el
+  contador de esa persona no baja nunca.
+
+### ⚠️ Petición de contrato — los `deepLink` no coinciden con el router
+
+**Ninguno de los once destinos de `deep-link.ts` existe en esta aplicación.** No se reescriben en
+el cliente: una tabla de traducción sería una segunda fuente de verdad para las rutas y el
+siguiente destino que añadáis volvería a caer en un 404 sin que nadie se entere. La lista completa,
+con la ruta real de cada uno, está en `context.md` §95.16; el resumen:
+
+| `deep-link.ts` | Debería ser |
+| --- | --- |
+| `receivable` | `/cartera/cxc/:id` |
+| `overdueReceivables` | `/cartera/cxc?estado=OVERDUE` |
+| `receivables` | `/cartera/cxc` |
+| `payment` | `/cartera/pagos/:id` |
+| `payable` | `/gastos/cxp/:id` |
+| `overduePayables` | `/gastos/cxp?estado=OVERDUE` |
+| `payables` | `/gastos/cxp` |
+| `disbursement` | `/gastos/egresos/:id` |
+| `disbursementApproval` | `/gastos/egresos/:id` |
+| `account` | `/caja/cuentas` |
+| `members` | `/config/miembros` |
+
+Dos notas sobre esa tabla:
+
+- Las claves de filtro van **en español** y son las de `useListFilters`: `estado=OVERDUE`, no
+  `filter=vencidos`.
+- **`/caja/cuentas` no tiene ficha por cuenta**: es un resumen de saldos, no un listado paginado.
+  El aviso de saldo bajo puede apuntar a la lista, o hacednos saber si vais a publicar un endpoint
+  de detalle de cuenta y le montamos la ficha.
+- `disbursementApproval` puede dejar de llevar `?action=approve`: la ficha del egreso ya ofrece
+  aprobar y rechazar a quien tiene el permiso (§47.4). Si preferís conservarlo como señal, decidlo
+  y lo leemos.
+
+### Lo que falta por construir en el front
+
+Por este orden, salvo que digáis otra cosa: preferencias por tipo y canal
+(`/notifications/preferences`, con `supportedChannels` y `supportsLeadDays` mandando la pantalla,
+y EMAIL/WHATSAPP como «próximamente» mientras no tengan remitente), la política de la organización
+(`/notifications/settings`), Web Push (`/me/push-subscriptions` + service worker), y las tramas
+`resource` del stream, que hoy llegan y **nadie las escucha** — la conexión ya está, lo que falta
+es decidir qué invalida cada uno de los cinco recursos.
+
+## 🆕 Icono, color y orden en conceptos y categorías · auto-registro de recurrentes · alta por nombre
+
+Está en el contrato y **no construido todavía en el front**. El handoff completo, en
+`contract/HANDOFF-fase-10.md`. Lo que hay que recordar al abordarlo:
+
+- `icon` y `color` son **enums cerrados** en el contrato (84 claves de icono, 18 tokens de color):
+  se leen de ahí, no se copian a una constante nuestra. Hace falta un icono de reserva para el
+  `null`, y las dos listas ordenan por `position`.
+- `PUT …/auto-charge` es una **unión discriminada**: `{ mode: 'OFF' }` o
+  `{ mode: 'AUTO_RECORD', financialAccountId, paymentMethodId }`. «Encendido sin cuenta» no se
+  puede expresar, y así tiene que quedar en la UI: interruptor con confirmación propia, nunca un
+  campo más del formulario de importe.
+- `payerName` / `supplierName` son **exactamente uno** con su contraparte por id. La regla es un
+  refine de Zod y no baja al JSON Schema, así que el cliente generado los tipa a los dos como
+  opcionales: lo impone el formulario.
 
 ## 🆕 Dos errores nuevos, y por qué no son un 402
 
@@ -449,7 +531,7 @@ pnpm api:gen
 - **Docs interactivos:** `http://localhost:4010/docs` (Scalar).
 
 ## Handoffs disponibles (léelos por área)
-`HANDOFF-fase-0..9.md` en esta carpeta. Resumen de lo que ya puedes construir:
+`HANDOFF-fase-0..10.md` en esta carpeta. Resumen de lo que ya puedes construir:
 
 | Área | Endpoints base | Handoff |
 |---|---|---|
@@ -463,6 +545,7 @@ pnpm api:gen
 | Caja: transferencias, saldos, movimientos | `/financial-accounts/balances`, `/financial-accounts/transfers`, `/financial-movements` | 7 |
 | Reportes (dashboard) | `/reports/{cashflow,receivables-summary,payables-summary,top-debtors,upcoming-receivables,income-by-concept,expenses-by-category}` | 7 |
 | Endurecimiento (ops) | `GET /health`, `GET /metrics` | 8 |
+| Identidad de conceptos y categorías, auto-registro y alta por nombre | `/billing-concepts`, `/expense-categories`, `…/auto-charge` | 10 |
 
 ## Cambios importantes de Fase 8 para el front
 - **Rate limit en login/register**: maneja **HTTP 429** (`{ error: { code: 'RATE_LIMITED' } }`) con mensaje amable/backoff.

@@ -13,4 +13,6 @@ export interface FeatureMap {
   bank_reconciliation: boolean;
   approvals: boolean;
   api_access: boolean;
+  notifications_email: boolean;
+  notifications_whatsapp: boolean;
 }

@@ -4,9 +4,11 @@ import {
   formatCompactAmount,
   formatDateHuman,
   formatMoney,
+  formatRelativeTime,
   formatMonthLabel,
   formatMonthName,
   groupAmountDisplay,
+  localDay,
   parseAmountInput,
   plural,
 } from './format'
@@ -202,4 +204,55 @@ it('formatMonthName nombra el mes para leerlo en una frase', () => {
   // se nombra; construirlo en la del navegador lo correría un mes.
   expect(formatMonthName('2026-12')).toBe('diciembre de 2026')
   expect(formatMonthName('vacío')).toBe('vacío')
+})
+
+describe('formatRelativeTime', () => {
+  /** Una marca ISO a `min` minutos antes de `now`, en la zona de quien prueba. */
+  const haceMinutos = (now: Date, min: number) =>
+    new Date(now.getTime() - min * 60_000).toISOString()
+
+  const AHORA = new Date(2026, 7, 20, 15, 30) // 20 ago 2026, 15:30 local
+
+  it('lo recién llegado se cuenta en minutos y horas', () => {
+    expect(formatRelativeTime(haceMinutos(AHORA, 0), AHORA)).toBe('ahora')
+    expect(formatRelativeTime(haceMinutos(AHORA, 1), AHORA)).toBe('hace 1 min')
+    expect(formatRelativeTime(haceMinutos(AHORA, 59), AHORA)).toBe('hace 59 min')
+    expect(formatRelativeTime(haceMinutos(AHORA, 60), AHORA)).toBe('hace 1 h')
+    expect(formatRelativeTime(haceMinutos(AHORA, 23 * 60), AHORA)).toBe('hace 23 h')
+  })
+
+  it('a partir del día se nombra la fecha, no se siguen contando horas', () => {
+    // "Hace 37 h" no responde ni cuánto hace ni qué día.
+    expect(formatRelativeTime(haceMinutos(AHORA, 25 * 60), AHORA)).toBe('ayer')
+    expect(formatRelativeTime(haceMinutos(AHORA, 49 * 60), AHORA)).toBe('anteayer')
+    expect(formatRelativeTime(haceMinutos(AHORA, 30 * 24 * 60), AHORA)).toBe('21 jul')
+  })
+
+  it('un reloj del navegador atrasado no imprime tiempos negativos', () => {
+    // El servidor puede ir por delante: lo que dice haber pasado dentro de un
+    // minuto es "ahora", no "hace -1 min".
+    expect(formatRelativeTime(haceMinutos(AHORA, -5), AHORA)).toBe('ahora')
+  })
+
+  it('sin valor o con basura no rompe la fila', () => {
+    expect(formatRelativeTime(null, AHORA)).toBe('—')
+    expect(formatRelativeTime('', AHORA)).toBe('—')
+    expect(formatRelativeTime('no es una fecha', AHORA)).toBe('no es una fecha')
+  })
+})
+
+describe('localDay', () => {
+  it('el día sale del reloj de quien lee, no de UTC', () => {
+    /*
+      Recortar los diez primeros caracteres del ISO daría el día en UTC. En
+      Colombia (UTC-5) las nueve de la noche del 20 ya son las dos de la mañana
+      del 21 en UTC, así que ese recorte fecharía mañana lo de hoy.
+    */
+    const nueveDeLaNoche = new Date(2026, 7, 20, 21, 0)
+    expect(localDay(nueveDeLaNoche.toISOString())).toBe('2026-08-20')
+  })
+
+  it('una marca ilegible devuelve vacío en vez de reventar', () => {
+    expect(localDay('no es una fecha')).toBe('')
+  })
 })

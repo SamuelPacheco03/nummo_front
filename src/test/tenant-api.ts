@@ -38,6 +38,8 @@ export const CAPABILITIES = {
     bank_reconciliation: false,
     approvals: false,
     api_access: false,
+    notifications_email: false,
+    notifications_whatsapp: false,
   },
   limits: {
     max_contacts: null,

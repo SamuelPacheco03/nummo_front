@@ -732,7 +732,7 @@ todavía no está jerarquizado.
 
 | Zona | Qué lleva |
 | --- | --- |
-| **Cabecera** | La barra de comandos (ocupa el ancho útil), el selector de tema y el menú de perfil —que incluye cerrar sesión— |
+| **Cabecera** | La barra de comandos (ocupa el ancho útil), la campana de avisos, el selector de tema y el menú de perfil —que incluye cerrar sesión— |
 | **Sidebar** | La organización activa, la navegación del negocio y, al pie, lo que no es negocio: configuración, ayuda, instalar app |
 
 El **selector de organización va en el sidebar, no en la cabecera**: es contexto permanente, no
@@ -762,8 +762,14 @@ a la vista, y el pie del sidebar los oculta (`lg:hidden`). Por debajo de `lg` no
 escritorio y ese mismo cuerpo es la hoja de «Más», así que ahí es su único sitio. `SidebarBody`
 se usa en las dos, de modo que **la decisión es del breakpoint, no del componente que lo monta**.
 
-Llenar la barra superior de iconos es otra forma de la sopa de tarjetas. Dos controles a la
-derecha es el techo; el resto vive donde le corresponde.
+Llenar la barra superior de iconos es otra forma de la sopa de tarjetas. **Tres controles a la
+derecha es el techo**; el resto vive donde le corresponde.
+
+Fueron dos hasta que llegó el centro de notificaciones (§11.1.8), y el tercero entra por lo único
+que distingue a esa campana de los demás iconos que se han querido meter ahí: **es el único que
+puede pedir atención sola**. Un contador de avisos sin leer escondido dentro de un menú no avisa
+de nada, que es literalmente su trabajo. La regla que queda para el siguiente candidato: a la
+cabecera solo sube lo que tiene algo que decir sin que nadie lo abra.
 
 ## 11.1.2. Barras de desplazamiento
 
@@ -1013,6 +1019,69 @@ va en la cabecera: va en su propia fila justo debajo, que es donde vive la barra
 cualquier listado.
 
 ---
+
+## 11.1.8. El centro de notificaciones
+
+La campana de la cabecera con su contador, y detrás el `Drawer` de siempre con lo que ha llegado
+(`features/notifications/`). Está en las **dos** cabeceras —escritorio y móvil—: es lo que hay que
+ver sin buscarlo.
+
+**El panel se monta una sola vez, en el shell.** Las dos cabeceras están las dos en el DOM y solo
+las separa un `lg:`, así que montar el cajón dentro de `NotificationBell` dejaría dos paneles
+vivos con estados propios, y cambiar el ancho de la ventana enseñaría el que no era. La campana es
+**solo el botón**; quién lo abre es del shell, igual que con la barra de comandos.
+
+**Cajón y no pantalla propia.** El centro se abre **encima** de lo que estabas mirando y casi todo
+lo que hay dentro lleva a otro sitio: una ruta propia obligaría a volver de ella para llegar a la
+ficha que el aviso anuncia. Por lo mismo sus filtros van en `useState` y no en la URL (§21.1):
+nadie comparte por enlace «mira mis notificaciones sin leer», y la URL que sí se comparte es la de
+la pantalla de detrás.
+
+**El globo va en `brand`, no en rojo.** El rojo de §7 significa vencido o fallido, y «tienes tres
+avisos» no es ninguna de las dos cosas — el aviso rojo permanente es el que se aprende a ignorar
+(§45.6). Es el mismo criterio que el punto de Numi (§32.3). Por encima de 99 el globo dice `99+`,
+pero **el rótulo dice la cifra exacta**: lo que se recorta es el dibujo, no el dato.
+
+**El icono lo pone la clave semántica, no el tipo.** El backend firma un `icon`
+(`receivable-overdue`, `payment-in`, `auto-charge-failed`…) precisamente para que la iconografía
+sea nuestra: `labels.ts` lo traduce a un glifo de `lucide-react` (§37) y a uno de los cuatro tonos
+de §7. Una clave que ese mapa no conozca cae en la campana genérica en vez de dejar la fila coja
+— el contrato tipa `icon` como cadena libre, así que va a pasar. **Sin la pastilla tintada
+detrás**: el icono va al tamaño del texto y el color lo lleva él (§11.1).
+
+**Abrir es leer**, y el destino es el `deepLink` que trae el aviso. Se comprueba antes de navegar
+—solo rutas internas, que `//otro.sitio` es una URL absoluta disfrazada de ruta (§87.5)— aunque
+hoy lo componga el backend desde un catálogo cerrado: es un valor que llega por la red.
+
+**Las tres escrituras van juntas detrás de `notifications.manage`**: marcar una, marcar todas y
+descartar. Quien solo tiene `notifications.read` sigue teniendo un centro útil —lee y navega—, y
+lo que desaparece son los botones, no la lista. Descartar **no borra el hecho**: quita el aviso de
+la bandeja, que es lo que §24 pide distinguir.
+
+**No hay sondeo.** Quien avisa de que hay algo nuevo es el stream (§11.1.9), y el contador se
+vuelve a pedir cuando llega la señal. Un `refetchInterval` por encima sería pagar dos veces por la
+misma noticia.
+
+## 11.1.9. Una sola conexión en vivo
+
+`lib/realtime-stream.ts` mantiene **un** `EventSource` contra `/organizations/:orgId/events` para
+toda la aplicación, con cuenta de suscriptores: se abre con el primero y se cierra con el último.
+Lo comparten hoy el chat de Numi (§32.3) y el centro de notificaciones; una pestaña con una
+conexión por función acabaría con cuatro diciendo lo mismo.
+
+**Lo que viaja son avisos, nunca datos.** Una trama dice que algo se movió —`{ notificationId }`,
+`{ conversationId }`, `{ resource }`— y quien la recibe **lo pide por su endpoint de siempre**.
+Esa asimetría es lo que sostiene el diseño: la puesta al día es la misma llamada tanto si llegó un
+aviso como si acabamos de reconectar, así que hay un solo camino por el que entran los datos y el
+flujo no tiene que garantizar orden ni entrega. Un aviso emitido mientras el móvil estaba sin
+cobertura se pierde y da igual.
+
+Por eso el centro **invalida y no inserta**: con el id en la mano sería tentador pedir ese aviso
+suelto y meterlo en la caché, y eso son dos caminos de entrada que se desincronizan a la primera
+página que ya estuviera cargada con otro filtro.
+
+No se reintenta a mano al fallar: `EventSource` reconecta solo, con su propia espera. El latido de
+25 s del servidor es un comentario SSE, no un evento: no hay nada que hacer con él.
 
 ## 21.1. Filtros que sobreviven a la navegación
 
@@ -2896,7 +2965,7 @@ que cambian cómo se piensa la pantalla de miembros:
    los rechaza nombrándolos, así que el error dice cuál sobra. *(Anotado como petición de
    contrato en `SYNC-STATUS.md`.)*
 
-**Los 53 permisos no se nombran uno a uno.** Todos tienen la forma `recurso.acción`, así que dos
+**Los 57 permisos no se nombran uno a uno.** Todos tienen la forma `recurso.acción`, así que dos
 tablas pequeñas —24 recursos y 13 verbos— los componen todos y **componen el que venga**:
 `payments.reverse` → «Pagos · Reversar». Una tabla de 53 entradas se queda coja a la primera clave
 nueva y nadie se entera; con esto, un recurso desconocido cae en «Otros» con su clave a la vista.
@@ -3872,9 +3941,9 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, 111 paths / 141 operaciones) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, 127 paths / 160 operaciones) y en vivo en
   `http://localhost:4010/openapi.json`.
-- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`, y el
+- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-10.md`, y el
   resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
 - Cuando el backend publica un contrato nuevo: se copia el `openapi.json` a `contract/` y se
   corre `pnpm api:gen`.
@@ -3930,7 +3999,7 @@ se renueva al causar mora, no al generar mensualidades.
 ## 88.5. Permisos: qué se ofrece y qué no
 
 El backend **dejó de autorizar por nombre de rol**. Cada operación del contrato viene anotada con
-`x-required-permission` (62 de las 127) y `GET /organizations/:orgId/me/capabilities` responde de
+`x-required-permission` (135 de las 160) y `GET /organizations/:orgId/me/capabilities` responde de
 una vez lo que la UI necesita: rol, `permissions[]`, plan, features, topes, período y consumo.
 
 En el front eso es **una sola pieza**:
@@ -4241,7 +4310,7 @@ componente evita que las pantallas se separen; solo las pruebas avisan cuando se
 | `MetricCard` | ✅ `KpiTile` | `components/kpi-tile.tsx` |
 | `StatusBadge` | ✅ `StatusBadge` (+ atajo `StatusDot`) | `components/ui/status-badge.tsx` |
 | `Money` | ✅ como función, no como componente | `formatMoney` / `formatAmount` en `lib/format.ts` (§9.1) |
-| `DateDisplay` | ❌ no existe como componente | función `formatDateHuman` en `lib/format.ts` |
+| `DateDisplay` | ❌ no existe como componente | funciones `formatDateHuman` y `formatRelativeTime` en `lib/format.ts` |
 | `DataTable` | ✅ `DataList` (tabla + tarjetas apiladas, y las cabeceras que ordenan — §18.1) | `components/ui/data-list.tsx` |
 | `EmptyState` | ✅ `EmptyState` + `NoResults` | `components/ui/empty-state.tsx` |
 | `NumiLoader` | ✅ `NumiLoader` | `components/ui/loader.tsx` |
@@ -4313,7 +4382,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `useLimitUsage` | `features/platform/use-limit-usage.ts` | Cuánto llevas de cada tope — aparte, que el sidebar no lo necesita |
 | `PlanPage` | `features/platform/plan-page.tsx` | «Plan y consumo»: el destino de todo `LIMIT_EXCEEDED` |
 | `useFeature` | `features/platform/permissions.ts` | ¿El plan incluye esta feature? Orientativo, como `useCan` |
-| `permissionLabel` · `groupPermissions` | `features/platform/permission-labels.ts` | Los 53 permisos en palabras, **compuestos** (§47.3) |
+| `permissionLabel` · `groupPermissions` | `features/platform/permission-labels.ts` | Los 57 permisos en palabras, **compuestos** (§47.3) |
 | `RolesPage` · `RoleFormPage` | `features/config/` | Roles propios de la organización y su editor (§47.3) |
 | `ApprovalPolicyPage` | `features/config/approval-policy-page.tsx` | El umbral de aprobación de egresos (§47.4) |
 | `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
@@ -4323,6 +4392,11 @@ Todos son parte del sistema y deben reutilizarse:
 | `AdminPlansPage` | `features/admin/plans-page.tsx` | Editar planes, con la decisión de si alcanzan a los actuales |
 | `planLabel` · `featureLabel` · `limitLabel` | `features/platform/labels.ts` | Planes, features y topes en las palabras del usuario |
 | `orgStatus` | `features/organizations/labels.ts` | Tono y nombre del estado de una organización |
+| `NotificationBell` | `features/notifications/notification-bell.tsx` | La campana de la cabecera con su contador — **solo el botón** (§11.1.8) |
+| `NotificationsDrawer` | `features/notifications/notifications-drawer.tsx` | **El centro de notificaciones**, montado una vez en el shell (§11.1.8) |
+| `useNotificationStream` | `features/notifications/hooks.ts` | Enterarse de un aviso nuevo sin recargar (§11.1.9) |
+| `subscribeToRealtime` | `lib/realtime-stream.ts` | **La conexión en vivo de la app**, una para todos (§11.1.9) |
+| `formatRelativeTime` · `localDay` | `lib/format.ts` | «hace 5 min» y el día del reloj de quien lee, no el de UTC |
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
@@ -4513,6 +4587,38 @@ la barra de `DataList`, que **ninguna** lista usaba (y con él sus props `search
 también muertas desde que existe `ListToolbar`); las clases por columna de `MasterCrud`, que
 nadie leía y dejaban los importes de los maestros alineados a la izquierda; y la negrita por
 posición, que destacaba el código en vez del nombre (§18.2).
+
+### 95.16. Los deep links de las notificaciones no llevan a ninguna parte — ⏸️ **abierta, es petición de contrato**
+
+Cada notificación trae un `deepLink` ya compuesto por el backend, y **ninguno de los once
+coincide con una ruta de esta aplicación**. No es un despiste puntual: es un vocabulario de rutas
+distinto del nuestro, escrito antes de mirar el router.
+
+| Lo que manda el backend | La ruta que existe aquí |
+| --- | --- |
+| `/cartera/cobros/:id` | `/cartera/cxc/:id` |
+| `/cartera?filter=vencidos` | `/cartera/cxc?estado=OVERDUE` |
+| `/cartera` | `/cartera/cxc` |
+| `/pagos/:id` | `/cartera/pagos/:id` |
+| `/gastos/cuentas/:id` | `/gastos/cxp/:id` |
+| `/gastos?filter=vencidos` | `/gastos/cxp?estado=OVERDUE` |
+| `/gastos` | `/gastos/cxp` |
+| `/egresos/:id` | `/gastos/egresos/:id` |
+| `/egresos/:id?action=approve` | `/gastos/egresos/:id` (la ficha ya trae aprobar/rechazar, §47.4) |
+| `/caja/cuentas/:id` | `/caja/cuentas` — **no hay ficha por cuenta**, es un resumen de saldos (§18.1) |
+| `/configuracion/miembros` | `/config/miembros` |
+
+**Se arregla en el backend, no aquí.** Una tabla de traducción en el cliente sería una segunda
+fuente de verdad para las rutas —§87.5 las declara en un solo sitio— y viviría para siempre: el
+día que el backend añadiera un destino nuevo, el front lo mandaría a un 404 sin que nadie se
+entere. El propio backend ya tiene el sitio correcto para el cambio, `deep-link.ts`, y su
+comentario explica por qué los enlaces se componen ahí y no viajan como dato.
+
+Las claves de los filtros van **en español** y son las de `useListFilters` (§21.1), no `filter=`.
+
+Mientras tanto el centro funciona entero —se lee, se marca, se descarta, el contador se mueve— y
+un `deepLink` que no case lleva a una pantalla vacía. **Ninguno se reescribe en el cliente**: en
+cuanto el backend publique los de arriba, empiezan a funcionar sin tocar una línea de front.
 
 ### 95.15. Lo que ya cumple
 
@@ -4786,7 +4892,7 @@ justo a esto.
 
 ## Fase 11 — Roles propios ✅ **completada**
 
-Configuración › Roles y su editor (§47.3), y la asignación en Miembros. Los 53 permisos se
+Configuración › Roles y su editor (§47.3), y la asignación en Miembros. Los 57 permisos se
 componen de dos tablas pequeñas en vez de nombrarse uno a uno, así que el catálogo puede crecer
 sin que nadie se acuerde de esta pantalla.
 
@@ -4800,6 +4906,35 @@ El umbral en Configuración › Gastos y el aprobar/rechazar en la ficha del egr
 slot nuevo de `SettlementDetail` — porque un pago que entra no lo aprueba nadie.
 
 **Verificación:** typecheck limpio, 0 warnings, 341 tests en verde, build OK.
+
+---
+
+## Fase 13 — Centro de notificaciones ✅ **completada**
+
+La campana con su contador y el panel detrás (§11.1.8), enganchados al stream único de la
+aplicación (§11.1.9), que ya existía porque el chat lo estrenó.
+
+1. Contrato nuevo copiado y `pnpm api:gen`: 127 paths / 160 operaciones. De paso entran cuatro
+   permisos (`notifications.*`, 57 en total) y dos features de plan (`notifications_email`,
+   `notifications_whatsapp`) — la prueba de `permission-labels` avisó de los primeros, que es
+   justo para lo que está.
+2. `features/notifications/`: hooks, traducción de la clave de icono a glifo y tono, campana y
+   cajón. Las tres escrituras detrás de `notifications.manage`; la campana, detrás de
+   `notifications.read`.
+3. `formatRelativeTime` en `lib/format.ts`, y `localDay` sube ahí desde el asistente, que lo tenía
+   privado: dos copias del mismo cálculo de fecha eran el duplicado de siempre esperando a
+   separarse.
+4. La cabecera pasa de dos controles a tres, con la razón escrita en §11.1.1.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 450 tests en verde (22 nuevos: 16 del
+centro —incluido el recorrido campana → panel → API y la trama del stream— y 6 de las dos
+funciones de fecha), build OK.
+
+**Lo que queda de esta tanda del backend, y no es deuda del front:** los `deepLink` no coinciden
+con el router (95.16, petición de contrato). Y sin construir todavía: preferencias por tipo y
+canal, la política de la organización, Web Push, las tramas `resource` del stream, el icono y el
+color de conceptos y categorías, el auto-registro de recurrentes y el alta de contraparte por
+nombre.
 
 ---
 
@@ -4819,6 +4954,7 @@ slot nuevo de `SettlementDetail` — porque un pago que entra no lo aprueba nadi
 | ✅ 10 | Consola de plataforma | medio | 7, 9 |
 | ✅ 11 | Roles propios de la organización | medio | 7 |
 | ✅ 12 | Aprobación de egresos | medio | 7, 9 |
+| ✅ 13 | Centro de notificaciones | medio | 7 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.

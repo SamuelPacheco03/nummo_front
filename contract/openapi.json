@@ -76,6 +76,14 @@
       "description": "Platform knowledge base (RAG) for support and how-to answers"
     },
     {
+      "name": "Realtime",
+      "description": "Flujo único de avisos en vivo: notificaciones, conversaciones y listas que se quedaron viejas"
+    },
+    {
+      "name": "Notifications",
+      "description": "Centro de notificaciones del usuario, sus preferencias por tipo y la política de la organización"
+    },
+    {
       "name": "Search",
       "description": "Global search across contacts, receivables, payables, payments and disbursements"
     }
@@ -2661,9 +2669,10 @@
             "in": "query",
             "name": "sort",
             "schema": {
-              "default": "name",
+              "default": "position",
               "type": "string",
               "enum": [
+                "position",
                 "name",
                 "createdAt"
               ]
@@ -3455,6 +3464,74 @@
           }
         },
         "x-required-permission": "agreements.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/billing-agreements/{id}/auto-charge": {
+      "put": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Arm or disarm auto-record for an agreement (requiere payments.create). Con AUTO_RECORD, la cuenta por cobrar que venza se registra como cobrada sin intervención. Solo para plata que sabes que entra: marcarla cobrada apaga su mora, su interés y sus recordatorios.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAutoCharge"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAgreement"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "payments.create"
       }
     },
     "/api/v1/organizations/{orgId}/billing-agreements/{id}/pause": {
@@ -4937,9 +5014,10 @@
             "in": "query",
             "name": "sort",
             "schema": {
-              "default": "name",
+              "default": "position",
               "type": "string",
               "enum": [
+                "position",
                 "name",
                 "createdAt"
               ]
@@ -5470,6 +5548,74 @@
           }
         },
         "x-required-permission": "expense_schedules.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/expense-schedules/{id}/auto-charge": {
+      "put": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Arm or disarm auto-record for a schedule (requiere disbursements.create). Con AUTO_RECORD, el gasto que venza se registra como pagado sin intervención; por encima del umbral de aprobación queda como solicitud, sin mover dinero.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAutoCharge"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseSchedule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "disbursements.create"
       }
     },
     "/api/v1/organizations/{orgId}/expense-schedules/{id}/pause": {
@@ -8878,55 +9024,6 @@
         "x-required-permission": "assistant.use"
       }
     },
-    "/api/v1/organizations/{orgId}/assistant/events": {
-      "get": {
-        "tags": [
-          "Assistant"
-        ],
-        "summary": "Enterarse de lo que pasó en otro dispositivo",
-        "description": "Flujo de Server-Sent Events abierto mientras la pestaña vive. Manda **avisos, no datos**: `message` con `{ conversationId }` cuando se dijo algo nuevo, y `conversation` cuando la lista cambió (se renombró, se borró o nació una). Al recibirlo, pide lo nuevo con `GET .../messages?after=<último id que tengas>` — que es la misma llamada que debes hacer al reconectar, porque un aviso emitido mientras estabas desconectado no se guarda. Como es un GET con cookie, `EventSource` sirve tal cual. Cada 25 s llega un comentario de latido para que ningún proxy cierre la conexión por silencio.",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "orgId",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Flujo de avisos.",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "x-required-permission": "assistant.use"
-      }
-    },
     "/api/v1/organizations/{orgId}/assistant/conversations": {
       "get": {
         "tags": [
@@ -9595,6 +9692,773 @@
         "x-required-permission": "knowledge.read"
       }
     },
+    "/api/v1/organizations/{orgId}/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List the caller’s notifications in this organization",
+        "description": "Siempre las del usuario autenticado: no hay forma de leer el centro de otro miembro.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "unread",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECEIVABLES",
+                "PAYABLES",
+                "TREASURY",
+                "TEAM"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "receivable.due_soon",
+                "receivable.overdue",
+                "receivable.overdue_digest",
+                "payment.received",
+                "payment.reversed",
+                "recurring.receivables_generated",
+                "auto_collect.failed",
+                "payable.due_soon",
+                "payable.overdue",
+                "payable.overdue_digest",
+                "disbursement.pending_approval",
+                "disbursement.approved",
+                "disbursement.rejected",
+                "recurring.expenses_generated",
+                "auto_charge.failed",
+                "account.low_balance",
+                "team.receivable_registered",
+                "team.expense_registered",
+                "team.disbursement_registered",
+                "member.joined",
+                "member.role_changed"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated notifications.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Notification"
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page",
+                    "pageSize",
+                    "total",
+                    "totalPages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.read"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Unread notification count",
+        "description": "Endpoint propio porque se consulta en cada carga y no debe traer filas.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unread count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationUnreadCount"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.read"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/read-all": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark every notification as read",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resulting unread count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationUnreadCount"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/preferences": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "The caller’s notification preferences",
+        "description": "Devuelve el catálogo completo, con los valores por defecto para los tipos que el miembro nunca tocó. `availableChannels` dice qué canales tienen envío hoy.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.read"
+      },
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Update the caller’s notification preferences",
+        "description": "Parche: solo se envían los tipos que cambian. Los días de antelación solo pueden recortar el calendario de la organización, nunca ampliarlo.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferencesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/preferences/push-preview": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Cuánto detalle sale en la pantalla de bloqueo",
+        "description": "`FULL` muestra el aviso entero; `DISCREET` lo reduce a «Tienes una notificación nueva» y deja el detalle para cuando se abra la aplicación. El payload de Web Push viaja cifrado y el proveedor no lo lee, pero el teléfono sí lo enseña encendido sobre una mesa. Es un ajuste de la persona, no de la organización.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberNotificationSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preferencias actualizadas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/settings": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "The organization’s notification policy",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.read"
+      },
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Update the organization’s notification policy",
+        "description": "Hora local de los avisos diarios y umbral de saldo bajo (null lo apaga, que es su valor por defecto).",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.settings.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/{notificationId}/read": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark one notification as read",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "notificationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Marked."
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/notifications/{notificationId}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Dismiss a notification",
+        "description": "La archiva: sale del centro y deja de contar como no leída.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "notificationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Dismissed."
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "notifications.manage"
+      }
+    },
+    "/api/v1/me/push-subscriptions/public-key": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "La clave pública VAPID que el navegador necesita para suscribirse",
+        "description": "Devuelve `null` cuando este despliegue no tiene el push configurado. En ese caso no ofrezcas activarlo: un permiso de notificaciones denegado no se vuelve a pedir.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clave pública, o null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VapidPublicKey"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/push-subscriptions": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mis dispositivos registrados",
+        "description": "Sin `endpoint` ni claves: son secretos del dispositivo y quien los tenga puede escribirle. Va lo justo para reconocerlo y poder darlo de baja.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dispositivos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PushSubscription"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Registrar este dispositivo",
+        "description": "El cuerpo es lo que devuelve `PushManager.subscribe()`, tal cual. Idempotente por `endpoint`: volver a suscribir el mismo navegador actualiza sus claves en vez de dejar dos filas, que se traducirían en dos avisos por notificación.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterPushSubscriptionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dispositivo registrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscription"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/push-subscriptions/{id}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Dar de baja un dispositivo",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Dado de baja."
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{orgId}/events": {
+      "get": {
+        "tags": [
+          "Realtime"
+        ],
+        "summary": "Enterarse en vivo de lo que pasa en la organización",
+        "description": "Flujo de Server-Sent Events abierto mientras la pestaña vive, y el único de la aplicación: por aquí llegan las notificaciones, las conversaciones de Numi y los avisos de que una lista se quedó vieja.\n\nManda **avisos, no datos**. Cuatro eventos:\n\n- `notification` con `{ notificationId }` — tienes algo nuevo en tu centro.\n- `message` con `{ conversationId }` — se dijo algo nuevo en una conversación.\n- `conversation` — la lista de conversaciones cambió.\n- `resource` con `{ resource }` (`receivables` · `payments` · `expenses` · `disbursements` · `treasury`) — esa lista se quedó vieja.\n\nAl recibir uno, pide lo nuevo por su endpoint normal, que es la misma llamada que haces al reconectar: un aviso emitido mientras estabas desconectado no se guarda, y por eso el flujo no tiene que garantizar orden, ni entrega, ni tamaño.\n\nComo es un GET con cookie, `EventSource` sirve tal cual. Cada 25 s llega un comentario de latido para que ningún proxy cierre la conexión por silencio. Las tramas `resource` se filtran por conexión según lo que su titular pueda leer.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flujo de avisos.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.read"
+      }
+    },
     "/api/v1/organizations/{orgId}/search": {
       "get": {
         "tags": [
@@ -10020,6 +10884,8 @@
                 "knowledge.read",
                 "subscription.read",
                 "assistant.use",
+                "notifications.read",
+                "notifications.manage",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -10049,6 +10915,8 @@
                 "financial_accounts.manage",
                 "assistant.settings.read",
                 "assistant.settings.manage",
+                "notifications.settings.manage",
+                "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
                 "subscription.manage"
@@ -10106,6 +10974,8 @@
                 "knowledge.read",
                 "subscription.read",
                 "assistant.use",
+                "notifications.read",
+                "notifications.manage",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -10135,6 +11005,8 @@
                 "financial_accounts.manage",
                 "assistant.settings.read",
                 "assistant.settings.manage",
+                "notifications.settings.manage",
+                "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
                 "subscription.manage"
@@ -10246,7 +11118,9 @@
             "accounting",
             "bank_reconciliation",
             "approvals",
-            "api_access"
+            "api_access",
+            "notifications_email",
+            "notifications_whatsapp"
           ]
         },
         "additionalProperties": {
@@ -10667,6 +11541,137 @@
                 "type": "null"
               }
             ]
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tag",
+                  "folder",
+                  "star",
+                  "bookmark",
+                  "package",
+                  "grid",
+                  "calendar",
+                  "repeat",
+                  "wallet",
+                  "banknote",
+                  "coins",
+                  "credit-card",
+                  "piggy-bank",
+                  "receipt",
+                  "landmark",
+                  "percent",
+                  "trending-up",
+                  "trending-down",
+                  "file-text",
+                  "calculator",
+                  "home",
+                  "key",
+                  "lightbulb",
+                  "droplet",
+                  "flame",
+                  "wifi",
+                  "phone",
+                  "trash-2",
+                  "sofa",
+                  "car",
+                  "bus",
+                  "fuel",
+                  "plane",
+                  "bike",
+                  "truck",
+                  "ship",
+                  "train-front",
+                  "utensils",
+                  "coffee",
+                  "shopping-cart",
+                  "shopping-bag",
+                  "apple",
+                  "beer",
+                  "cake",
+                  "store",
+                  "popcorn",
+                  "music",
+                  "gamepad-2",
+                  "tv",
+                  "ticket",
+                  "palette",
+                  "dumbbell",
+                  "luggage",
+                  "heart-pulse",
+                  "pill",
+                  "stethoscope",
+                  "hospital",
+                  "graduation-cap",
+                  "book-open",
+                  "backpack",
+                  "pencil",
+                  "briefcase",
+                  "building-2",
+                  "users",
+                  "user-round",
+                  "handshake",
+                  "megaphone",
+                  "wrench",
+                  "hammer",
+                  "factory",
+                  "shield",
+                  "laptop",
+                  "smartphone",
+                  "server",
+                  "cloud",
+                  "monitor",
+                  "dog",
+                  "cat",
+                  "baby",
+                  "gift",
+                  "shirt",
+                  "scissors",
+                  "leaf",
+                  "sun"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slate",
+                  "gray",
+                  "red",
+                  "orange",
+                  "amber",
+                  "yellow",
+                  "lime",
+                  "green",
+                  "emerald",
+                  "teal",
+                  "cyan",
+                  "blue",
+                  "indigo",
+                  "violet",
+                  "purple",
+                  "fuchsia",
+                  "pink",
+                  "rose"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
           }
         },
         "required": [
@@ -10713,6 +11718,137 @@
                 "type": "null"
               }
             ]
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tag",
+                  "folder",
+                  "star",
+                  "bookmark",
+                  "package",
+                  "grid",
+                  "calendar",
+                  "repeat",
+                  "wallet",
+                  "banknote",
+                  "coins",
+                  "credit-card",
+                  "piggy-bank",
+                  "receipt",
+                  "landmark",
+                  "percent",
+                  "trending-up",
+                  "trending-down",
+                  "file-text",
+                  "calculator",
+                  "home",
+                  "key",
+                  "lightbulb",
+                  "droplet",
+                  "flame",
+                  "wifi",
+                  "phone",
+                  "trash-2",
+                  "sofa",
+                  "car",
+                  "bus",
+                  "fuel",
+                  "plane",
+                  "bike",
+                  "truck",
+                  "ship",
+                  "train-front",
+                  "utensils",
+                  "coffee",
+                  "shopping-cart",
+                  "shopping-bag",
+                  "apple",
+                  "beer",
+                  "cake",
+                  "store",
+                  "popcorn",
+                  "music",
+                  "gamepad-2",
+                  "tv",
+                  "ticket",
+                  "palette",
+                  "dumbbell",
+                  "luggage",
+                  "heart-pulse",
+                  "pill",
+                  "stethoscope",
+                  "hospital",
+                  "graduation-cap",
+                  "book-open",
+                  "backpack",
+                  "pencil",
+                  "briefcase",
+                  "building-2",
+                  "users",
+                  "user-round",
+                  "handshake",
+                  "megaphone",
+                  "wrench",
+                  "hammer",
+                  "factory",
+                  "shield",
+                  "laptop",
+                  "smartphone",
+                  "server",
+                  "cloud",
+                  "monitor",
+                  "dog",
+                  "cat",
+                  "baby",
+                  "gift",
+                  "shirt",
+                  "scissors",
+                  "leaf",
+                  "sun"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slate",
+                  "gray",
+                  "red",
+                  "orange",
+                  "amber",
+                  "yellow",
+                  "lime",
+                  "green",
+                  "emerald",
+                  "teal",
+                  "cyan",
+                  "blue",
+                  "indigo",
+                  "violet",
+                  "purple",
+                  "fuchsia",
+                  "pink",
+                  "rose"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
           },
           "isActive": {
             "type": "boolean"
@@ -10851,6 +11987,11 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
+          "payerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
           "beneficiaryContactId": {
             "anyOf": [
               {
@@ -10954,7 +12095,6 @@
           }
         },
         "required": [
-          "payerContactId",
           "billingConceptId",
           "agreedAmount",
           "startDate",
@@ -11069,6 +12209,47 @@
             ]
           }
         }
+      },
+      "SetAutoCharge": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "OFF"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "AUTO_RECORD"
+              },
+              "financialAccountId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "paymentMethodId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": [
+              "mode",
+              "financialAccountId",
+              "paymentMethodId"
+            ]
+          }
+        ],
+        "type": "object"
       },
       "CreateReceivable": {
         "type": "object",
@@ -11391,6 +12572,137 @@
               "BUSINESS",
               "PERSONAL"
             ]
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tag",
+                  "folder",
+                  "star",
+                  "bookmark",
+                  "package",
+                  "grid",
+                  "calendar",
+                  "repeat",
+                  "wallet",
+                  "banknote",
+                  "coins",
+                  "credit-card",
+                  "piggy-bank",
+                  "receipt",
+                  "landmark",
+                  "percent",
+                  "trending-up",
+                  "trending-down",
+                  "file-text",
+                  "calculator",
+                  "home",
+                  "key",
+                  "lightbulb",
+                  "droplet",
+                  "flame",
+                  "wifi",
+                  "phone",
+                  "trash-2",
+                  "sofa",
+                  "car",
+                  "bus",
+                  "fuel",
+                  "plane",
+                  "bike",
+                  "truck",
+                  "ship",
+                  "train-front",
+                  "utensils",
+                  "coffee",
+                  "shopping-cart",
+                  "shopping-bag",
+                  "apple",
+                  "beer",
+                  "cake",
+                  "store",
+                  "popcorn",
+                  "music",
+                  "gamepad-2",
+                  "tv",
+                  "ticket",
+                  "palette",
+                  "dumbbell",
+                  "luggage",
+                  "heart-pulse",
+                  "pill",
+                  "stethoscope",
+                  "hospital",
+                  "graduation-cap",
+                  "book-open",
+                  "backpack",
+                  "pencil",
+                  "briefcase",
+                  "building-2",
+                  "users",
+                  "user-round",
+                  "handshake",
+                  "megaphone",
+                  "wrench",
+                  "hammer",
+                  "factory",
+                  "shield",
+                  "laptop",
+                  "smartphone",
+                  "server",
+                  "cloud",
+                  "monitor",
+                  "dog",
+                  "cat",
+                  "baby",
+                  "gift",
+                  "shirt",
+                  "scissors",
+                  "leaf",
+                  "sun"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slate",
+                  "gray",
+                  "red",
+                  "orange",
+                  "amber",
+                  "yellow",
+                  "lime",
+                  "green",
+                  "emerald",
+                  "teal",
+                  "cyan",
+                  "blue",
+                  "indigo",
+                  "violet",
+                  "purple",
+                  "fuchsia",
+                  "pink",
+                  "rose"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
           }
         },
         "required": [
@@ -11434,6 +12746,137 @@
               "PERSONAL"
             ]
           },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tag",
+                  "folder",
+                  "star",
+                  "bookmark",
+                  "package",
+                  "grid",
+                  "calendar",
+                  "repeat",
+                  "wallet",
+                  "banknote",
+                  "coins",
+                  "credit-card",
+                  "piggy-bank",
+                  "receipt",
+                  "landmark",
+                  "percent",
+                  "trending-up",
+                  "trending-down",
+                  "file-text",
+                  "calculator",
+                  "home",
+                  "key",
+                  "lightbulb",
+                  "droplet",
+                  "flame",
+                  "wifi",
+                  "phone",
+                  "trash-2",
+                  "sofa",
+                  "car",
+                  "bus",
+                  "fuel",
+                  "plane",
+                  "bike",
+                  "truck",
+                  "ship",
+                  "train-front",
+                  "utensils",
+                  "coffee",
+                  "shopping-cart",
+                  "shopping-bag",
+                  "apple",
+                  "beer",
+                  "cake",
+                  "store",
+                  "popcorn",
+                  "music",
+                  "gamepad-2",
+                  "tv",
+                  "ticket",
+                  "palette",
+                  "dumbbell",
+                  "luggage",
+                  "heart-pulse",
+                  "pill",
+                  "stethoscope",
+                  "hospital",
+                  "graduation-cap",
+                  "book-open",
+                  "backpack",
+                  "pencil",
+                  "briefcase",
+                  "building-2",
+                  "users",
+                  "user-round",
+                  "handshake",
+                  "megaphone",
+                  "wrench",
+                  "hammer",
+                  "factory",
+                  "shield",
+                  "laptop",
+                  "smartphone",
+                  "server",
+                  "cloud",
+                  "monitor",
+                  "dog",
+                  "cat",
+                  "baby",
+                  "gift",
+                  "shirt",
+                  "scissors",
+                  "leaf",
+                  "sun"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slate",
+                  "gray",
+                  "red",
+                  "orange",
+                  "amber",
+                  "yellow",
+                  "lime",
+                  "green",
+                  "emerald",
+                  "teal",
+                  "cyan",
+                  "blue",
+                  "indigo",
+                  "violet",
+                  "purple",
+                  "fuchsia",
+                  "pink",
+                  "rose"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          },
           "isActive": {
             "type": "boolean"
           }
@@ -11446,6 +12889,11 @@
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "supplierName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
           },
           "expenseCategoryId": {
             "type": "string",
@@ -11526,7 +12974,6 @@
           }
         },
         "required": [
-          "supplierContactId",
           "expenseCategoryId",
           "agreedAmount",
           "startDate",
@@ -12174,6 +13621,175 @@
           "audio"
         ]
       },
+      "UpdateNotificationPreferencesInput": {
+        "type": "object",
+        "properties": {
+          "preferences": {
+            "minItems": 1,
+            "maxItems": 21,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "receivable.due_soon",
+                    "receivable.overdue",
+                    "receivable.overdue_digest",
+                    "payment.received",
+                    "payment.reversed",
+                    "recurring.receivables_generated",
+                    "auto_collect.failed",
+                    "payable.due_soon",
+                    "payable.overdue",
+                    "payable.overdue_digest",
+                    "disbursement.pending_approval",
+                    "disbursement.approved",
+                    "disbursement.rejected",
+                    "recurring.expenses_generated",
+                    "auto_charge.failed",
+                    "account.low_balance",
+                    "team.receivable_registered",
+                    "team.expense_registered",
+                    "team.disbursement_registered",
+                    "member.joined",
+                    "member.role_changed"
+                  ]
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "channels": {
+                  "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "INAPP",
+                      "PUSH",
+                      "EMAIL",
+                      "WHATSAPP"
+                    ]
+                  }
+                },
+                "leadDays": {
+                  "anyOf": [
+                    {
+                      "maxItems": 10,
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 60
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "type"
+              ]
+            }
+          }
+        },
+        "required": [
+          "preferences"
+        ]
+      },
+      "UpdateMemberNotificationSettingsInput": {
+        "type": "object",
+        "properties": {
+          "pushPreview": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "DISCREET"
+            ]
+          }
+        },
+        "required": [
+          "pushPreview"
+        ]
+      },
+      "UpdateNotificationSettingsInput": {
+        "type": "object",
+        "properties": {
+          "reminderLocalTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "lowBalanceThreshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "teamActivityThreshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "RegisterPushSubscriptionInput": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 1000,
+            "format": "uri"
+          },
+          "keys": {
+            "type": "object",
+            "properties": {
+              "p256dh": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "auth": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "p256dh",
+              "auth"
+            ]
+          },
+          "deviceLabel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ]
+      },
       "HealthResponse": {
         "type": "object",
         "properties": {
@@ -12687,6 +14303,8 @@
                 "knowledge.read",
                 "subscription.read",
                 "assistant.use",
+                "notifications.read",
+                "notifications.manage",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -12716,6 +14334,8 @@
                 "financial_accounts.manage",
                 "assistant.settings.read",
                 "assistant.settings.manage",
+                "notifications.settings.manage",
+                "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
                 "subscription.manage"
@@ -12868,6 +14488,8 @@
                 "knowledge.read",
                 "subscription.read",
                 "assistant.use",
+                "notifications.read",
+                "notifications.manage",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -12897,6 +14519,8 @@
                 "financial_accounts.manage",
                 "assistant.settings.read",
                 "assistant.settings.manage",
+                "notifications.settings.manage",
+                "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
                 "subscription.manage"
@@ -12957,6 +14581,12 @@
           },
           "api_access": {
             "type": "boolean"
+          },
+          "notifications_email": {
+            "type": "boolean"
+          },
+          "notifications_whatsapp": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -12965,7 +14595,9 @@
           "accounting",
           "bank_reconciliation",
           "approvals",
-          "api_access"
+          "api_access",
+          "notifications_email",
+          "notifications_whatsapp"
         ],
         "additionalProperties": false
       },
@@ -13346,7 +14978,9 @@
                 "accounting",
                 "bank_reconciliation",
                 "approvals",
-                "api_access"
+                "api_access",
+                "notifications_email",
+                "notifications_whatsapp"
               ]
             },
             "additionalProperties": {
@@ -13358,7 +14992,9 @@
               "accounting",
               "bank_reconciliation",
               "approvals",
-              "api_access"
+              "api_access",
+              "notifications_email",
+              "notifications_whatsapp"
             ]
           },
           "limits": {
@@ -13454,7 +15090,9 @@
                 "accounting",
                 "bank_reconciliation",
                 "approvals",
-                "api_access"
+                "api_access",
+                "notifications_email",
+                "notifications_whatsapp"
               ]
             },
             "additionalProperties": {
@@ -13466,7 +15104,9 @@
               "accounting",
               "bank_reconciliation",
               "approvals",
-              "api_access"
+              "api_access",
+              "notifications_email",
+              "notifications_whatsapp"
             ]
           },
           "limits": {
@@ -13851,6 +15491,137 @@
               }
             ]
           },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tag",
+                  "folder",
+                  "star",
+                  "bookmark",
+                  "package",
+                  "grid",
+                  "calendar",
+                  "repeat",
+                  "wallet",
+                  "banknote",
+                  "coins",
+                  "credit-card",
+                  "piggy-bank",
+                  "receipt",
+                  "landmark",
+                  "percent",
+                  "trending-up",
+                  "trending-down",
+                  "file-text",
+                  "calculator",
+                  "home",
+                  "key",
+                  "lightbulb",
+                  "droplet",
+                  "flame",
+                  "wifi",
+                  "phone",
+                  "trash-2",
+                  "sofa",
+                  "car",
+                  "bus",
+                  "fuel",
+                  "plane",
+                  "bike",
+                  "truck",
+                  "ship",
+                  "train-front",
+                  "utensils",
+                  "coffee",
+                  "shopping-cart",
+                  "shopping-bag",
+                  "apple",
+                  "beer",
+                  "cake",
+                  "store",
+                  "popcorn",
+                  "music",
+                  "gamepad-2",
+                  "tv",
+                  "ticket",
+                  "palette",
+                  "dumbbell",
+                  "luggage",
+                  "heart-pulse",
+                  "pill",
+                  "stethoscope",
+                  "hospital",
+                  "graduation-cap",
+                  "book-open",
+                  "backpack",
+                  "pencil",
+                  "briefcase",
+                  "building-2",
+                  "users",
+                  "user-round",
+                  "handshake",
+                  "megaphone",
+                  "wrench",
+                  "hammer",
+                  "factory",
+                  "shield",
+                  "laptop",
+                  "smartphone",
+                  "server",
+                  "cloud",
+                  "monitor",
+                  "dog",
+                  "cat",
+                  "baby",
+                  "gift",
+                  "shirt",
+                  "scissors",
+                  "leaf",
+                  "sun"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slate",
+                  "gray",
+                  "red",
+                  "orange",
+                  "amber",
+                  "yellow",
+                  "lime",
+                  "green",
+                  "emerald",
+                  "teal",
+                  "cyan",
+                  "blue",
+                  "indigo",
+                  "violet",
+                  "purple",
+                  "fuchsia",
+                  "pink",
+                  "rose"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "isActive": {
             "type": "boolean"
           },
@@ -13871,6 +15642,9 @@
           "name",
           "description",
           "defaultAmount",
+          "icon",
+          "color",
+          "position",
           "isActive",
           "createdAt",
           "updatedAt"
@@ -14063,6 +15837,9 @@
               "CANCELLED"
             ]
           },
+          "autoCharge": {
+            "$ref": "#/components/schemas/AutoCharge"
+          },
           "notes": {
             "anyOf": [
               {
@@ -14100,9 +15877,76 @@
           "dueDay",
           "generateDaysBefore",
           "status",
+          "autoCharge",
           "notes",
           "createdAt",
           "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AutoCharge": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "OFF",
+              "AUTO_RECORD"
+            ]
+          },
+          "financialAccountId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paymentMethodId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enabledBy": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mode",
+          "financialAccountId",
+          "paymentMethodId",
+          "startDate",
+          "enabledBy"
         ],
         "additionalProperties": false
       },
@@ -14899,10 +16743,146 @@
               "PERSONAL"
             ]
           },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tag",
+                  "folder",
+                  "star",
+                  "bookmark",
+                  "package",
+                  "grid",
+                  "calendar",
+                  "repeat",
+                  "wallet",
+                  "banknote",
+                  "coins",
+                  "credit-card",
+                  "piggy-bank",
+                  "receipt",
+                  "landmark",
+                  "percent",
+                  "trending-up",
+                  "trending-down",
+                  "file-text",
+                  "calculator",
+                  "home",
+                  "key",
+                  "lightbulb",
+                  "droplet",
+                  "flame",
+                  "wifi",
+                  "phone",
+                  "trash-2",
+                  "sofa",
+                  "car",
+                  "bus",
+                  "fuel",
+                  "plane",
+                  "bike",
+                  "truck",
+                  "ship",
+                  "train-front",
+                  "utensils",
+                  "coffee",
+                  "shopping-cart",
+                  "shopping-bag",
+                  "apple",
+                  "beer",
+                  "cake",
+                  "store",
+                  "popcorn",
+                  "music",
+                  "gamepad-2",
+                  "tv",
+                  "ticket",
+                  "palette",
+                  "dumbbell",
+                  "luggage",
+                  "heart-pulse",
+                  "pill",
+                  "stethoscope",
+                  "hospital",
+                  "graduation-cap",
+                  "book-open",
+                  "backpack",
+                  "pencil",
+                  "briefcase",
+                  "building-2",
+                  "users",
+                  "user-round",
+                  "handshake",
+                  "megaphone",
+                  "wrench",
+                  "hammer",
+                  "factory",
+                  "shield",
+                  "laptop",
+                  "smartphone",
+                  "server",
+                  "cloud",
+                  "monitor",
+                  "dog",
+                  "cat",
+                  "baby",
+                  "gift",
+                  "shirt",
+                  "scissors",
+                  "leaf",
+                  "sun"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slate",
+                  "gray",
+                  "red",
+                  "orange",
+                  "amber",
+                  "yellow",
+                  "lime",
+                  "green",
+                  "emerald",
+                  "teal",
+                  "cyan",
+                  "blue",
+                  "indigo",
+                  "violet",
+                  "purple",
+                  "fuchsia",
+                  "pink",
+                  "rose"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "isActive": {
             "type": "boolean"
           },
           "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
@@ -14914,8 +16894,12 @@
           "name",
           "description",
           "scope",
+          "icon",
+          "color",
+          "position",
           "isActive",
-          "createdAt"
+          "createdAt",
+          "updatedAt"
         ],
         "additionalProperties": false
       },
@@ -15001,6 +16985,9 @@
               "CANCELLED"
             ]
           },
+          "autoCharge": {
+            "$ref": "#/components/schemas/AutoCharge"
+          },
           "notes": {
             "anyOf": [
               {
@@ -15036,6 +17023,7 @@
           "dueDay",
           "generateDaysBefore",
           "status",
+          "autoCharge",
           "notes",
           "createdAt",
           "updatedAt"
@@ -16966,6 +18954,391 @@
           "heading",
           "content",
           "score"
+        ],
+        "additionalProperties": false
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receivable.due_soon",
+              "receivable.overdue",
+              "receivable.overdue_digest",
+              "payment.received",
+              "payment.reversed",
+              "recurring.receivables_generated",
+              "auto_collect.failed",
+              "payable.due_soon",
+              "payable.overdue",
+              "payable.overdue_digest",
+              "disbursement.pending_approval",
+              "disbursement.approved",
+              "disbursement.rejected",
+              "recurring.expenses_generated",
+              "auto_charge.failed",
+              "account.low_balance",
+              "team.receivable_registered",
+              "team.expense_registered",
+              "team.disbursement_registered",
+              "member.joined",
+              "member.role_changed"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "RECEIVABLES",
+              "PAYABLES",
+              "TREASURY",
+              "TEAM"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "deepLink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "groupKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "category",
+          "priority",
+          "title",
+          "body",
+          "icon",
+          "deepLink",
+          "data",
+          "groupKey",
+          "readAt",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "NotificationUnreadCount": {
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "unread"
+        ],
+        "additionalProperties": false
+      },
+      "NotificationPreferences": {
+        "type": "object",
+        "properties": {
+          "availableChannels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "INAPP",
+                "PUSH",
+                "EMAIL",
+                "WHATSAPP"
+              ]
+            }
+          },
+          "preferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationPreference"
+            }
+          },
+          "pushPreview": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "DISCREET"
+            ]
+          }
+        },
+        "required": [
+          "availableChannels",
+          "preferences",
+          "pushPreview"
+        ],
+        "additionalProperties": false
+      },
+      "NotificationPreference": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "receivable.due_soon",
+              "receivable.overdue",
+              "receivable.overdue_digest",
+              "payment.received",
+              "payment.reversed",
+              "recurring.receivables_generated",
+              "auto_collect.failed",
+              "payable.due_soon",
+              "payable.overdue",
+              "payable.overdue_digest",
+              "disbursement.pending_approval",
+              "disbursement.approved",
+              "disbursement.rejected",
+              "recurring.expenses_generated",
+              "auto_charge.failed",
+              "account.low_balance",
+              "team.receivable_registered",
+              "team.expense_registered",
+              "team.disbursement_registered",
+              "member.joined",
+              "member.role_changed"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "RECEIVABLES",
+              "PAYABLES",
+              "TREASURY",
+              "TEAM"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "INAPP",
+                "PUSH",
+                "EMAIL",
+                "WHATSAPP"
+              ]
+            }
+          },
+          "supportedChannels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "INAPP",
+                "PUSH",
+                "EMAIL",
+                "WHATSAPP"
+              ]
+            }
+          },
+          "leadDays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "supportsLeadDays": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "category",
+          "priority",
+          "enabled",
+          "channels",
+          "supportedChannels",
+          "leadDays",
+          "supportsLeadDays"
+        ],
+        "additionalProperties": false
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "reminderLocalTime": {
+            "type": "string"
+          },
+          "lowBalanceThreshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lowBalanceCurrency": {
+            "type": "string"
+          },
+          "teamActivityThreshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "organizationId",
+          "reminderLocalTime",
+          "lowBalanceThreshold",
+          "lowBalanceCurrency",
+          "teamActivityThreshold",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "VapidPublicKey": {
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "publicKey"
+        ],
+        "additionalProperties": false
+      },
+      "PushSubscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "deviceLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "deviceLabel",
+          "lastUsedAt",
+          "createdAt"
         ],
         "additionalProperties": false
       },

@@ -10,6 +10,7 @@ export type GetApiV1OrganizationsOrgIdExpenseCategoriesSort = typeof GetApiV1Org
 
 
 export const GetApiV1OrganizationsOrgIdExpenseCategoriesSort = {
+  position: 'position',
   name: 'name',
   createdAt: 'createdAt',
 } as const;
