@@ -5630,9 +5630,10 @@ crudo acabe en su ficha, y que ningún propósito se quede sin icono en las dos 
 Lo que **no** se pudo hacer aquí: más iconos. El enum del contrato tiene 84 y una clave inventada
 es un 422 — la petición, con 77 claves ya verificadas contra `lucide-react`, queda en §95.21.
 
-**Verificación:** typecheck limpio, 0 warnings de lint, 565 tests en verde (8 nuevos: los temas
-cubren todas las claves sin repetirlas, cada icono y cada color tienen nombre, la búsqueda por
-nombre, por palabra del negocio y por tema, y el recorrido de elegir en el selector), build OK.
+**Verificación:** typecheck limpio, 0 warnings de lint, 572 tests en verde tras juntar con `main`
+(8 nuevos aquí: los temas cubren todas las claves sin repetirlas, cada icono y cada color tienen
+nombre, la búsqueda por nombre, por palabra del negocio y por tema, y el recorrido de elegir en el
+selector), build OK.
 
 ---
 
