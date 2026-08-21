@@ -5,6 +5,7 @@ import { useResolvedDark } from '@/stores/use-resolved-dark'
 import { Footer } from './footer'
 import { Hero } from './hero'
 import { AutomationSection } from './automation-section'
+import { ConsentBanner } from './consent-banner'
 import { DisorderSection } from './disorder-section'
 import { FinalCta } from './final-cta'
 import { Nav } from './nav'
@@ -88,6 +89,7 @@ export function LandingPage() {
           <FinalCta cola={cola} />
         </main>
         <Footer />
+        <ConsentBanner />
       </div>
     </div>
   )

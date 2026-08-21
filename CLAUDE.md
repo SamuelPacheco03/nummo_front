@@ -107,8 +107,8 @@ commit**. El código y el documento nunca deben contar historias diferentes.
 
 ```bash
 pnpm dev        # http://localhost:5173 (requiere nummo-api en :4010 para datos)
-pnpm build      # tsc -b && vite build
-pnpm preview    # única forma de probar el service worker
+pnpm build      # tsc -b && vite build && build:ssr && prerender de la portada
+pnpm preview    # única forma de probar el service worker (y la consola vive en /app)
 pnpm typecheck  # tsc -b --noEmit
 pnpm lint       # oxlint
 pnpm test       # vitest run
@@ -123,5 +123,8 @@ pnpm icons:gen  # regenera favicons e iconos PWA desde brand/logo_nummo.png
   (`contract/openapi.json`, v1.0.0, 147 paths / 182 operaciones).
 - Handoffs por área en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`; resumen en
   `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
+- **Dos entradas** (§97.11): `index.html` es la portada pública (`/`) y `app.html` la
+  consola, que vive bajo `/app`. Al desplegar, el hosting tiene que servir `app.html` para
+  `/app` y `/app/*`.
 - Demo local: `demo@nummo.app` / `Demo1234!` (con el backend corriendo y sembrado).
 - La UI y las rutas van en **español**; el código, en inglés.

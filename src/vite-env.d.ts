@@ -17,6 +17,12 @@ interface ImportMetaEnv {
   readonly VITE_DEMO_LOGIN?: string
   /** Solo DEV: 'true' registra el service worker en `pnpm dev` (por defecto está apagado). */
   readonly VITE_PWA_DEV?: string
+  /**
+   * Identificador de Microsoft Clarity para la portada. **Sin él no se carga nada de
+   * terceros y no se pregunta nada** (§97.13): un banner de cookies en una página que no
+   * pone cookies de terceros es teatro.
+   */
+  readonly VITE_CLARITY_ID?: string
 }
 
 interface ImportMeta {

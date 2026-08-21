@@ -6374,3 +6374,94 @@ modos por definición (§3.2). Y **`--success-strong` no vale ahí**: es el tono
 leerse sobre claro, y sobre el shell desaparece — encima de oscuro va el de relleno, que es
 el claro.
 
+
+## 97.11. Dos entradas, un repo
+
+`index.html` es **la portada** y `app.html` **la consola**, que vive bajo `/app` con
+`basename: '/app'` en su router.
+
+No pueden compartir router: el `basename` hace que ese router **solo atienda `/app/…`**. A
+cambio, las rutas de dentro se siguen escribiendo igual —`/cartera/cxc`, no
+`/app/cartera/cxc`—, así que los 55 enlaces internos no cambiaron ni uno.
+
+Lo que sí cambia son los enlaces que van **de la portada a la app**: esos no pasan por
+ningún router y son anclas de verdad. Viven en `marketing/links.ts`, en un solo sitio.
+Estuvieron repartidos en cinco archivos durante la Fase 2 y después de la mudanza apuntaban
+a ninguna parte — la próxima mudanza es una línea.
+
+`appType: 'mpa'` apaga el fallback de página única de Vite, que devolvía la portada para
+cualquier ruta desconocida de la app.
+
+> **Al desplegar:** el hosting tiene que servir `app.html` para `/app` y `/app/*`. En dev y
+> en `preview` lo hace un middleware de `vite.config.ts`; en producción es configuración del
+> servidor, y sin ella la consola da 404 en cualquier recarga.
+
+### El service worker es de la app, no del sitio
+
+`id`, `start_url` y `scope` van a **`/app/`**, y la portada queda **fuera del precache**
+(`globIgnores: ['index.html', 'assets/portada-*']`).
+
+Con `scope: '/'` la portada caía dentro, y una portada precacheada **sirve el precio viejo
+después de cambiarlo** — justo en la página que publica la tarifa.
+
+Un worker servido desde `/sw.js` puede **estrecharse** a `/app/` sin ninguna cabecera
+especial; lo que necesitaría `Service-Worker-Allowed` es lo contrario, ampliar.
+
+Se comprueba en `pnpm preview`, que es la única forma de probarlo de verdad: el worker
+registra en `/app/`, controla la app, y `navigator.serviceWorker.controller` es `null` en la
+portada.
+
+## 97.12. La portada se lee sin ejecutar JavaScript
+
+`pnpm build` renderiza la portada a texto y la incrusta en `dist/index.html`:
+
+```
+tsc -b && vite build && pnpm build:ssr && node scripts/prerender.mjs
+```
+
+Sin esto, ahí hay un `<div>` vacío. Google acaba ejecutando el JavaScript, pero **WhatsApp,
+Slack, Twitter y cualquier previsualización de enlace no lo ejecutan**: verían una página en
+blanco donde debería estar el titular.
+
+Con `renderToString` y **no** con un navegador sin cabeza. Un navegador daría lo mismo, pero
+ataría `pnpm build` a tener Chromium instalado, y un build que necesita un navegador se
+rompe en el primer contenedor que no lo trae.
+
+**No se hidrata, a propósito.** Hidratar obligaría a que el primer render del cliente
+coincidiera con el del servidor byte a byte, y el cliente sabe cosas que Node no —si el
+sistema pide oscuro, sobre todo—. Sería una discrepancia garantizada a cambio de nada: este
+HTML está para quien lee sin ejecutar.
+
+### Esconder es la mejora, no el punto de partida
+
+El prerender destapó un fallo que llevaba desde la Fase 2: `[data-revelar]` arranca en
+opacidad 0 y quien pone `data-revelado` es JavaScript. Sin él —quien navega sin JavaScript,
+y el HTML que leen las previsualizaciones— la portada salía **con el medio invisible**.
+
+Ahora esconder depende de que **haya** JavaScript: un script en línea en el `<head>` pone
+`.con-js` antes de pintar, y la regla que esconde cuelga de esa clase. En línea y no en el
+módulo, porque un `<script type="module">` es diferido y para entonces ya se pintó.
+
+> Se comprueba con el navegador y **JavaScript desactivado**: las diez secciones visibles,
+> el titular en su `h1` y el CTA apuntando a `/app/register`. Los precios salen en esqueleto,
+> que es lo correcto — esa lectura vive en un efecto.
+
+## 97.13. Consentimiento antes que Clarity
+
+**Por defecto no se carga nada.** Clarity entra **solo** con un sí explícito, y hasta
+entonces no existe en la página — comprobado contando peticiones a otros dominios: cero
+antes de aceptar.
+
+**Lo que no depende del sí**, y es la mitad importante: la medición propia. Las señales de
+`/public/signals` son de primera parte, no identifican a nadie y no salen del dominio; y la
+atribución que de verdad decide —qué campaña trajo un registro— la escribe el servidor en
+una cookie `HttpOnly` que el front ni lee. Decir «no» no nos deja ciegos en lo que importa,
+y por eso el aviso puede permitirse ser honesto en vez de insistente: **las dos opciones
+pesan lo mismo**.
+
+**Sin `VITE_CLARITY_ID` configurado no se pregunta nada.** Un banner de cookies en una
+página que no pone cookies de terceros es teatro: molesta, entrena a la gente a aceptar sin
+leer y no protege nada.
+
+El aviso decide **después de montar**, no durante el render: si no, acabaría incrustado en
+el HTML prerenderizado, y esa decisión es de cada visitante.
