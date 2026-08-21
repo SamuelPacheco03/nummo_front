@@ -6,6 +6,7 @@ import {
   FileText,
   Landmark,
   LayoutDashboard,
+  MessageSquareText,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -26,6 +27,7 @@ export const SECTIONS: NavSection[] = [
       { to: '/cartera/cxc', label: 'Cuentas por cobrar', Icon: Coins },
       { to: '/cartera/pagos', label: 'Pagos', Icon: Banknote },
       { to: '/cartera/acuerdos', label: 'Acuerdos', Icon: FileText },
+      { to: '/cartera/cobranza', label: 'Cobranza', Icon: MessageSquareText },
     ],
   },
   {

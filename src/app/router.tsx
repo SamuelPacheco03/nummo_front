@@ -291,6 +291,12 @@ export const router = createBrowserRouter([
               },
             ],
           },
+          {
+            path: 'cartera/cobranza',
+            lazy: async () => ({
+              Component: (await import('@/features/messaging/collection-page')).CollectionPage,
+            }),
+          },
           // Gastos
           {
             path: 'gastos/cxp',
@@ -449,6 +455,20 @@ export const router = createBrowserRouter([
               {
                 path: 'config/plan',
                 lazy: async () => ({ Component: (await import('@/features/platform/plan-page')).PlanPage }),
+              },
+              {
+                path: 'config/cobranza',
+                lazy: async () => ({
+                  Component: (await import('@/features/messaging/collection-policy-page'))
+                    .CollectionPolicyPage,
+                }),
+              },
+              {
+                path: 'config/plantillas',
+                lazy: async () => ({
+                  Component: (await import('@/features/messaging/templates-page'))
+                    .WhatsAppTemplatesPage,
+                }),
               },
               {
                 path: 'config/apariencia',
