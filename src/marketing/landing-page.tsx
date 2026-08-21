@@ -5,6 +5,8 @@ import { useResolvedDark } from '@/stores/use-resolved-dark'
 import { Footer } from './footer'
 import { Hero } from './hero'
 import { Nav } from './nav'
+import { NumiSection } from './numi-section'
+import { PricingSection } from './pricing-section'
 import { iniciarSenales, utmDesde, type Cola } from './signals'
 import { useSectionViewed } from './use-section-viewed'
 
@@ -71,6 +73,8 @@ export function LandingPage() {
           <section ref={heroRef}>
             <Hero />
           </section>
+          <NumiSection cola={cola} />
+          <PricingSection cola={cola} />
         </main>
         <Footer />
       </div>
