@@ -3,6 +3,7 @@ import { SERIF_STACK } from './type'
 import type { Cola } from './signals'
 import { useReveal } from './use-reveal'
 import { useSectionViewed } from './use-section-viewed'
+import { rutasApp } from './links'
 
 /**
  * El cierre: el titular grande con la elipse detrás y la última llamada a la acción.
@@ -71,7 +72,7 @@ export function FinalCta({ cola }: { cola: Cola | null }) {
           </p>
 
           <a
-            href="/register"
+            href={rutasApp.registro}
             onClick={() =>
               cola?.encolar({ name: 'cta_clicked', section: 'final_cta', action: 'signup' })
             }

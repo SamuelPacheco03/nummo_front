@@ -19,7 +19,8 @@ const OVERLAY = { overlay: true } as const
  *
  * Va **fuera de `ProtectedRoute` y fuera de `AppShell`** —como `/login` y `/register`—
  * porque una portada no tiene shell y la muestra tiene que reproducir esas condiciones,
- * no las de la consola.
+ * no las de la consola. Con las dos entradas separadas cuelga de `/app` como el resto de
+ * este router: es una herramienta de quien desarrolla, no una página pública.
  *
  * Y va **solo en desarrollo**: en un build de producción el array queda vacío, así que
  * ni la ruta ni el trozo con las tres familias tipográficas llegan a nadie.
@@ -35,64 +36,64 @@ const LABORATORIO = import.meta.env.DEV
     ]
   : []
 
+/**
+ * La consola vive bajo **`/app`**, no en la raíz: la raíz es la portada, que es otra
+ * entrada (§97.11).
+ *
+ * Con `basename`, este router **solo atiende `/app/…`** y las rutas de dentro se escriben
+ * igual que antes —`/cartera/cxc`, no `/app/cartera/cxc`—, así que los 55 enlaces internos
+ * no cambian. Lo que sí cambia son los enlaces que van de la portada a la app, que no
+ * pueden pasar por aquí: viven en `marketing/links.ts`.
+ */
+const BASENAME = '/app'
+
 // Rutas pesadas cargadas bajo demanda (code-splitting).
-export const router = createBrowserRouter([
-  ...LABORATORIO,
-  /*
-    La portada pública. Va fuera de `ProtectedRoute` y fuera de `AppShell` —como `/login`—
-    porque no tiene shell y se pinta con su propia paleta (§97).
+export const router = createBrowserRouter(
+  [
+    ...LABORATORIO,
+    {
+      path: '/login',
+      lazy: async () => ({ Component: (await import('@/features/auth/login-page')).LoginPage }),
+    },
+    {
+      path: '/register',
+      lazy: async () => ({ Component: (await import('@/features/auth/register-page')).RegisterPage }),
+    },
+    {
+      element: <ProtectedRoute />,
+      children: [
+        /*
+          La consola **fuera de `AppShell`**: ese shell empieza por «¿a qué
+          organización perteneces?» y enseña el onboarding a quien no pertenece a
+          ninguna, y un superadmin no tiene por qué tener una — administra todas.
+          Con la consola dentro, `/plataforma` acababa en «Crea tu organización».
 
-    Vive en `/portada` y no en `/` porque `/` es hoy el panel de la consola. La Fase 3
-    separa las entradas (`index.html` → portada, `app.html` → app con `basename: '/app'`)
-    y entonces esto pasa a ser la raíz de la suya.
-  */
-  {
-    path: '/portada',
-    lazy: async () => ({ Component: (await import('@/marketing/landing-page')).LandingPage }),
-  },
-  {
-    path: '/login',
-    lazy: async () => ({ Component: (await import('@/features/auth/login-page')).LoginPage }),
-  },
-  {
-    path: '/register',
-    lazy: async () => ({ Component: (await import('@/features/auth/register-page')).RegisterPage }),
-  },
-  {
-    element: <ProtectedRoute />,
-    children: [
-      /*
-        La consola **fuera de `AppShell`**: ese shell empieza por «¿a qué
-        organización perteneces?» y enseña el onboarding a quien no pertenece a
-        ninguna, y un superadmin no tiene por qué tener una — administra todas.
-        Con la consola dentro, `/plataforma` acababa en «Crea tu organización».
-
-        Es lo mismo que hace el backend: `requirePlatformAdmin` corre fuera de
-        `requireTenant`.
-      */
-      {
-        path: 'plataforma',
-        lazy: async () => ({
-          Component: (await import('@/features/admin/platform-shell')).PlatformShell,
-        }),
-        children: [
-          { index: true, element: <Navigate to="/plataforma/organizaciones" replace /> },
-          {
-            path: 'organizaciones',
-            lazy: async () => ({
-              Component: (await import('@/features/admin/organizations-page'))
-                .AdminOrganizationsPage,
-            }),
-            // La ficha es hija: la lista sigue montada detrás del cajón.
-            children: [
-              {
-                path: ':orgId',
-                handle: OVERLAY,
-                lazy: async () => ({
-                  Component: (await import('@/features/admin/organization-detail-page'))
-                    .AdminOrganizationDetailPage,
-                }),
-              },
+          Es lo mismo que hace el backend: `requirePlatformAdmin` corre fuera de
+          `requireTenant`.
+        */
+        {
+          path: 'plataforma',
+          lazy: async () => ({
+            Component: (await import('@/features/admin/platform-shell')).PlatformShell,
+          }),
+          children: [
+            { index: true, element: <Navigate to="/plataforma/organizaciones" replace /> },
+            {
+              path: 'organizaciones',
+              lazy: async () => ({
+                Component: (await import('@/features/admin/organizations-page'))
+                  .AdminOrganizationsPage,
+              }),
+              // La ficha es hija: la lista sigue montada detrás del cajón.
+              children: [
+                {
+                  path: ':orgId',
+                  handle: OVERLAY,
+                  lazy: async () => ({
+                    Component: (await import('@/features/admin/organization-detail-page'))
+                      .AdminOrganizationDetailPage,
+                  }),
+                },
             ],
           },
           {
@@ -577,4 +578,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
+  ],
+  { basename: BASENAME },
+)

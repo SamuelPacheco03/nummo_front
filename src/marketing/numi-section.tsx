@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { SectionHeading } from './section-heading'
 import { sessionId, type Cola } from './signals'
 import { useSectionViewed } from './use-section-viewed'
+import { rutasApp } from './links'
 
 /**
  * Numi de preventa.
@@ -135,7 +136,7 @@ export function NumiSection({ cola }: { cola: Cola | null }) {
           */}
           {agotado ? (
             <a
-              href="/register"
+              href={rutasApp.registro}
               onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'numi', action: 'signup' })}
               className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >

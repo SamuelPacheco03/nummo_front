@@ -5,6 +5,51 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import type { Plugin } from 'vite'
+
+/**
+ * En desarrollo, `/app/...` tiene que servir `app.html`.
+ *
+ * Con dos entradas, Vite sirve `index.html` en `/` y `app.html` en `/app.html`, pero no
+ * sabe que el router de la consola usa `basename: '/app'`: entrar a `/app/cartera` daba un
+ * 404. Esto es el equivalente en dev de lo que el hosting tiene que hacer en producción
+ * (§97.11), y por eso el comentario está aquí y no solo en el despliegue.
+ *
+ * Solo reescribe **navegaciones**: una petición a `/app/algo.js` es un asset y tiene que
+ * seguir su camino, o el navegador recibiría HTML donde espera JavaScript.
+ */
+function servirAppEnDev(): Plugin {
+  /*
+    Solo reescribe **navegaciones**: una petición a `/app/algo.js` es un asset y tiene que
+    seguir su camino, o el navegador recibiría HTML donde espera JavaScript.
+  */
+  const reenviar = (req: { url?: string; headers: { accept?: string } }) => {
+    const url = req.url ?? ''
+    if (!req.headers.accept?.includes('text/html')) return
+    if (url === '/app' || url.startsWith('/app/')) req.url = '/app.html'
+  }
+
+  return {
+    name: 'nummo-app-html-en-dev',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        reenviar(req)
+        next()
+      })
+    },
+    /*
+      `preview` también, y no es un detalle: es la ÚNICA forma de probar el service worker
+      de verdad, y sin esto entrar a `/app/` en preview daba un 404 — o sea que el worker
+      no se registraba y la prueba no probaba nada.
+    */
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        reenviar(req)
+        next()
+      })
+    },
+  }
+}
 
 /**
  * Identidad del build, para «Aplicación» en Configuración y para soporte.
@@ -39,25 +84,42 @@ export default defineConfig(({ mode }) => {
   const API_PATHS = [/^\/api\//, /^\/health$/, /^\/openapi\.json$/, /^\/docs/]
 
   return {
+    /*
+      Dos entradas, un repo (§97.11): `index.html` es la portada y `app.html` la consola.
+      `appType: 'mpa'` apaga el fallback de página única de Vite, que devolvía `index.html`
+      —la portada— para cualquier ruta desconocida, incluidas las de la app.
+    */
+    appType: 'mpa',
     plugins: [
+      servirAppEnDev(),
       react(),
       tailwindcss(),
       VitePWA({
+        /*
+          **El service worker es de la app, no del sitio.** Con `scope: '/'` —lo de antes—
+          la portada caía dentro de él, y una portada precacheada sirve el precio viejo
+          después de cambiarlo: exactamente lo que no puede pasar en la página que publica
+          la tarifa.
+
+          Un worker servido desde `/sw.js` puede ESTRECHARSE a `/app/` sin ninguna cabecera
+          especial; lo que necesitaría `Service-Worker-Allowed` es lo contrario, ampliar.
+        */
+        scope: '/app/',
         // 'prompt': el usuario decide cuándo recargar. En una consola financiera
         // no queremos recargar bajo los pies de alguien a medio formulario.
         registerType: 'prompt',
         injectRegister: null, // el registro lo hace src/pwa/register.ts
         includeAssets: ['favicon.ico', 'favicon-32.png', 'favicon-96.png', 'apple-touch-icon.png'],
         manifest: {
-          id: '/',
+          id: '/app/',
           name: 'Nummo · Administración financiera',
           short_name: 'Nummo',
           description:
             'Administración financiera y de cartera, multiempresa y multisede. Contactos, cobros, gastos y cuentas con control por roles.',
           lang: 'es',
           dir: 'ltr',
-          start_url: '/',
-          scope: '/',
+          start_url: '/app/',
+          scope: '/app/',
           display: 'standalone',
           display_override: ['standalone', 'minimal-ui'],
           orientation: 'any',
@@ -83,17 +145,17 @@ export default defineConfig(({ mode }) => {
           shortcuts: [
             {
               name: 'Cuentas por cobrar',
-              url: '/cartera/cxc',
+              url: '/app/cartera/cxc',
               icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
             },
             {
               name: 'Cuentas por pagar',
-              url: '/gastos/cxp',
+              url: '/app/gastos/cxp',
               icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
             },
             {
               name: 'Resultados',
-              url: '/informes/resultados',
+              url: '/app/informes/resultados',
               icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
             },
           ],
@@ -109,10 +171,18 @@ export default defineConfig(({ mode }) => {
           importScripts: ['/push-sw.js'],
           // Shell de la app precacheado (app-shell + assets con hash).
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+          /*
+            La portada queda **fuera del precache**. Sus trozos salen con el nombre de su
+            entrada (`portada-*`), y su HTML es `index.html`. Los trozos que comparte con la
+            app —iconos, utilidades— siguen dentro, y está bien: los descarga la app de
+            todas formas.
+          */
+          globIgnores: ['index.html', 'assets/portada-*'],
           // El chunk principal supera los 2 MiB por defecto solo en algunos builds;
           // 4 MiB deja margen sin volverse un cajón de sastre.
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-          navigateFallback: '/index.html',
+          // Dentro de `/app/`, cualquier ruta la resuelve el shell de la consola.
+          navigateFallback: '/app.html',
           navigateFallbackDenylist: API_PATHS,
           // Datos financieros y sesión: siempre red, nunca caché.
           runtimeCaching: [
@@ -141,14 +211,22 @@ export default defineConfig(({ mode }) => {
         devOptions: {
           enabled: env.VITE_PWA_DEV === 'true',
           type: 'module',
-          navigateFallback: '/index.html',
+          navigateFallback: '/app.html',
         },
       }),
     ],
     define: { __BUILD_ID__: JSON.stringify(buildId()) },
     // El chunk principal (~166KB gzip) es el core de la app (router+query+radix+shell);
     // las páginas van en chunks lazy aparte. Subimos el umbral del aviso informativo.
-    build: { chunkSizeWarningLimit: 700 },
+    build: {
+      chunkSizeWarningLimit: 700,
+      rollupOptions: {
+        input: {
+          portada: fileURLToPath(new URL('./index.html', import.meta.url)),
+          app: fileURLToPath(new URL('./app.html', import.meta.url)),
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

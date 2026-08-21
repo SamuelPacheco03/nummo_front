@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { Hero } from './hero'
+import { rutasApp } from './links'
 
 afterEach(cleanup)
 
@@ -20,7 +21,7 @@ test('el titular es un h1 y lleva el destacado en serif', () => {
 
 test('las dos llamadas a la acción son enlaces', () => {
   render(<Hero />)
-  expect(screen.getByRole('link', { name: /empezar ahora/i })).toHaveAttribute('href', '/register')
+  expect(screen.getByRole('link', { name: /empezar ahora/i })).toHaveAttribute('href', rutasApp.registro)
   expect(screen.getByRole('link', { name: /ver cómo funciona/i })).toBeInTheDocument()
 })
 

@@ -8,6 +8,7 @@ vi.mock('@/api/generated/endpoints/public/public', () => ({
 }))
 
 const { NumiSection } = await import('./numi-section')
+const { rutasApp } = await import('./links')
 
 /* Con llaves: un hook que DEVUELVE algo, Vitest lo espera — y un mock no es una promesa. */
 beforeEach(() => {
@@ -48,7 +49,7 @@ test('sin cuota, la caja de texto la sustituye el registro', async () => {
 
   expect(await screen.findByRole('link', { name: /crear cuenta y seguir/i })).toHaveAttribute(
     'href',
-    '/register',
+    rutasApp.registro,
   )
   expect(screen.queryByLabelText(/preguntale algo a numi/i)).not.toBeInTheDocument()
   // Y en ningún sitio se habla de error ni de límite excedido.

@@ -4,44 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <title>Nummo · Administración financiera</title>
+    <title>Nummo · Tus finanzas, por fin en orden</title>
     <meta
       name="description"
-      content="Nummo: administración financiera y de cartera multiempresa. Contactos, cobros, gastos y cuentas con control por roles."
+      content="Nummo conecta cobros, pagos y movimientos en una sola experiencia. Menos dispersión, más control para decidir mejor."
     />
+    <link rel="canonical" href="https://nummo.app/" />
 
-    <!-- Favicons e icono de inicio (iOS ignora el manifest para esto).
-         El .ico va primero y lleva 16/32/48 dentro: es lo que pide el navegador
-         por su cuenta cuando el <link> falla o tiene cacheado un icono anterior. -->
     <link rel="icon" sizes="48x48" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- PWA. El manifest lo inyecta vite-plugin-pwa en build.
-         `theme-color` se re-sincroniza en runtime con el tema elegido (ThemeProvider). -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
+    <!--
+      La portada NO lleva manifest ni service worker: son de la app, que vive en /app.
+      El `theme-color` sale de la paleta de la portada (crema y verde), no de la consola.
+    -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f1e9" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e1712" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="application-name" content="Nummo" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Nummo" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
     <!-- Previsualización al compartir el enlace -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Nummo" />
-    <meta property="og:title" content="Nummo · Administración financiera" />
+    <meta property="og:title" content="Nummo · Tus finanzas, por fin en orden" />
     <meta
       property="og:description"
-      content="Administración financiera y de cartera, multiempresa y multisede."
+      content="Nummo conecta cobros, pagos y movimientos en una sola experiencia. Menos dispersión, más control para decidir mejor."
     />
     <meta property="og:image" content="/icons/icon-512.png" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:url" content="https://nummo.app/" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="portada"></div>
+    <script type="module" src="/src/marketing/main.tsx"></script>
   </body>
 </html>

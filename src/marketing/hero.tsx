@@ -3,6 +3,7 @@ import { RowIconBadge, type RowIconTone } from '@/components/ui/row-icon'
 import { cn } from '@/lib/utils'
 import { formatMoney } from '@/lib/format'
 import { SERIF_STACK } from './type'
+import { rutasApp } from './links'
 
 /**
  * El hero de la portada, maquetado contra los mockups.
@@ -90,7 +91,7 @@ export function Hero({ className }: { className?: string }) {
             style={paso(230)}
           >
             <a
-              href="/register"
+              href={rutasApp.registro}
               className="inline-flex h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               Empezar ahora

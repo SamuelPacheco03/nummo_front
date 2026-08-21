@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Wordmark } from './brand'
 import type { Cola } from './signals'
+import { rutasApp } from './links'
 
 /**
  * La navegación flotante de la portada.
@@ -59,7 +60,7 @@ export function Nav({ cola }: { cola?: Cola | null }) {
 
         <div className="ml-auto flex items-center gap-4 md:ml-0">
           <a
-            href="/login"
+            href={rutasApp.ingreso}
             onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'login' })}
             className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
           >
@@ -71,7 +72,7 @@ export function Nav({ cola }: { cola?: Cola | null }) {
             anulan. Aquí la jerarquía la da el contraste, no el color.
           */}
           <a
-            href="/register"
+            href={rutasApp.registro}
             onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'signup' })}
             className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-sidebar px-5 text-sm font-semibold text-sidebar-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >

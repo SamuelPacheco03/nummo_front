@@ -14,6 +14,7 @@ import { RhythmSection } from './rhythm-section'
 import { Ticker } from './ticker'
 import { UseCasesSection } from './use-cases-section'
 import { iniciarSenales, utmDesde, type Cola } from './signals'
+import { PALETA_PORTADA } from './theme'
 import { useSectionViewed } from './use-section-viewed'
 
 /*
@@ -37,8 +38,6 @@ import '@fontsource-variable/archivo'
  * entonces esto pasa a ser la raíz.
  */
 
-/** La candidata con la que se pinta la portada. Cambiarla es cambiar esta línea. */
-const PALETA = 'bosque'
 
 export function LandingPage() {
   const dark = useResolvedDark()
@@ -71,7 +70,7 @@ export function LandingPage() {
     */
     <div
       className={dark ? 'dark' : undefined}
-      style={paletteStyle(paletteById(PALETA), dark ? 'dark' : 'light')}
+      style={paletteStyle(paletteById(PALETA_PORTADA), dark ? 'dark' : 'light')}
     >
       <div className="min-h-dvh bg-background font-sans text-foreground">
         <Nav cola={cola} />

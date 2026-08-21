@@ -14,6 +14,7 @@ import {
 import type { Cola } from './signals'
 import { useRecursoPublico } from './use-public-data'
 import { useSectionViewed } from './use-section-viewed'
+import { rutasApp } from './links'
 
 /**
  * Los precios.
@@ -112,7 +113,7 @@ function TarjetaPlan({
       )}
 
       <a
-        href="/register"
+        href={rutasApp.registro}
         onClick={onElegir}
         className={cn(
           'mt-6 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
