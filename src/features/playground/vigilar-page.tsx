@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/page-header'
+import { PlatformPage } from '@/features/admin/platform-page'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -56,8 +57,7 @@ export function PlaygroundVigilarPage() {
   const feedback = values.voto === 'up' ? 'up' : 'down'
 
   return (
-    <div className="scrollbar-slim h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto w-full max-w-6xl space-y-4 px-1 py-1">
+    <PlatformPage>
         <PageHeader
           title="Vigilar"
           description="Lo que pasó con clientes de verdad: cuánto se usa Numi, qué contestó turno por turno y qué le pareció a quien lo leyó."
@@ -171,7 +171,6 @@ export function PlaygroundVigilarPage() {
           )}
           {tab === 'puntuaciones' && <FeedbackTab feedback={feedback} />}
         </div>
-      </div>
-    </div>
+    </PlatformPage>
   )
 }

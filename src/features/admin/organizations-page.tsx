@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router'
 import { Building2 } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
+import { PlatformPage } from './platform-page'
 import { Pagination } from '@/components/pagination'
 import { DataList, RowChevron } from '@/components/ui/data-list'
 import { EmptyState, NoResults } from '@/components/ui/empty-state'
@@ -146,7 +147,7 @@ export function AdminOrganizationsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <PlatformPage>
       <PageHeader
         title="Organizaciones"
         description="Todas las de la plataforma, con su plan, su estado y lo que llevan consumido."
@@ -226,6 +227,6 @@ export function AdminOrganizationsPage() {
 
       {/* La ficha, como ruta hija: la lista sigue montada detrás del cajón. */}
       <Outlet />
-    </div>
+    </PlatformPage>
   )
 }

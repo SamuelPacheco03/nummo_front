@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import type { FeaturePatch, LimitPatch, PlanDto, SavePlanResult } from '@/api/generated/model'
 import { PageHeader } from '@/components/page-header'
+import { PlatformPage } from './platform-page'
 import { Panel } from '@/components/panel'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/error-state'
@@ -262,7 +263,7 @@ export function AdminPlansPage() {
   const [editing, setEditing] = useState<PlanDto | null>(null)
 
   return (
-    <div className="space-y-4">
+    <PlatformPage>
       <PageHeader
         title="Planes"
         description="Lo que incluye cada plan y a cuánto se vende. Editarlo no cambia nada para nadie hasta que se recalcula."
@@ -323,6 +324,6 @@ export function AdminPlansPage() {
       {editing && (
         <PlanDialog plan={editing} open onOpenChange={(open) => !open && setEditing(null)} />
       )}
-    </div>
+    </PlatformPage>
   )
 }

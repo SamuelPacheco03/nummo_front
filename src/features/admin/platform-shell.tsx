@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router'
+import { Link, Outlet } from 'react-router'
 import { ArrowLeft, ShieldAlert } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -9,8 +9,7 @@ import { SectionedLayout } from '@/components/ui/sectioned-layout'
 import { UserMenu } from '@/features/auth/user-menu'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { usePlatformAccess } from '@/features/platform/hooks'
-import { cn } from '@/lib/utils'
-import { GROUPS, isPlaygroundPath } from './platform-nav'
+import { GROUPS } from './platform-nav'
 
 /**
  * **El shell de la consola de plataforma**, y vive fuera de `AppShell` por una
@@ -32,15 +31,19 @@ import { GROUPS, isPlaygroundPath } from './platform-nav'
  * selector de organización estaría vacío.
  */
 export function PlatformShell() {
-  const { pathname } = useLocation()
-  const isConsole = isPlaygroundPath(pathname)
+  /*
+    **Toda la consola de plataforma se opera igual.** Empezó siendo solo el playground,
+    pero organizaciones y planes son la misma clase de pantalla —tablas densas de
+    administración— y quedaban en la columna de 48rem de Ajustes, que es la que hace
+    legible un texto y deja una tabla de seis columnas apretada con medio monitor al lado.
+  */
   const { isPlatformAdmin, isLoading, isError, error } = usePlatformAccess()
   // Solo para saber si hay algo a lo que volver: un superadmin puede tener su
   // propia organización, o ninguna.
   const { organizations } = useCurrentOrg()
 
   return (
-    <div className={cn('bg-background flex flex-col', isConsole ? 'h-dvh' : 'min-h-dvh')}>
+    <div className="bg-background flex h-dvh flex-col">
       <header className="bg-background/85 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur lg:px-8">
         <Link to="/plataforma" className="flex items-center" aria-label="Consola de plataforma">
           <BrandLockup />
@@ -73,19 +76,13 @@ export function PlatformShell() {
         cuánto alto hay, y hacer que cada página lo negociara por su cuenta es como
         se acaba con tres pantallas midiendo la ventana de tres maneras.
       */}
-      <main
-        className={cn(
-          'flex-1',
-          isConsole ? 'min-h-0 overflow-hidden px-4 py-4 lg:px-8 lg:py-6' : 'px-4 py-6 lg:px-8 lg:py-8',
-        )}
-      >
-        <div className={cn('mx-auto w-full', isConsole ? 'h-full min-h-0 max-w-[110rem]' : 'max-w-6xl')}>
+      <main className="min-h-0 flex-1 overflow-hidden px-4 py-4 lg:px-8 lg:py-6">
+        <div className="mx-auto h-full min-h-0 w-full max-w-[110rem]">
           <PlatformBody
             isPlatformAdmin={isPlatformAdmin}
             isLoading={isLoading}
             isError={isError}
             error={error}
-            isConsole={isConsole}
           />
         </div>
       </main>
@@ -98,13 +95,11 @@ function PlatformBody({
   isLoading,
   isError,
   error,
-  isConsole,
 }: {
   isPlatformAdmin: boolean
   isLoading: boolean
   isError: boolean
   error: unknown
-  isConsole: boolean
 }) {
   if (isLoading) return <PageLoader />
 
@@ -142,7 +137,7 @@ function PlatformBody({
   }
 
   return (
-    <SectionedLayout label="Plataforma" groups={GROUPS} console={isConsole}>
+    <SectionedLayout label="Plataforma" groups={GROUPS} console>
       <Outlet />
     </SectionedLayout>
   )

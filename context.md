@@ -3453,6 +3453,14 @@ misma sesión, y montar una segunda aplicación para siete endpoints habría dup
 HTTP y el sistema visual entero. Su ficha cuelga de la lista como cualquier otra (§87.5) y su
 navegación es `SectionedLayout`, la misma de Configuración y Ayuda (§11.1.3).
 
+**Pero el cuerpo no es el de Configuración.** La consola entera va con `SectionedLayout console`:
+alto de ventana, scroll de la pantalla y no de la página, y contenido centrado en 72rem
+(`PlatformPage`). La columna de 48rem que comparten Ajustes y Ayuda es la que hace legible un
+texto; aquí lo que hay son **tablas densas de administración**, y esa columna las dejaba apretadas
+con medio monitor en blanco al lado. Las dos que no la usan son las que no se leen sino que se
+operan —la consola de Numi y la comparación—, que traen su propio marco con la barra de contexto
+pegada arriba.
+
 **Pero cuelga fuera de `AppShell`, y esto costó una captura de pantalla descubrirlo.** El shell de
 la aplicación empieza por «¿a qué organización perteneces?» y enseña el onboarding de «Crea tu
 organización» a quien no pertenece a ninguna. Un superadmin **no tiene por qué tener

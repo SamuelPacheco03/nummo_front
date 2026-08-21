@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/page-header'
+import { PlatformPage } from '@/features/admin/platform-page'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useListFilters } from '@/lib/use-list-filters'
 import { KnowledgeTab } from './knowledge-tab'
@@ -32,8 +33,7 @@ export function PlaygroundControlarPage() {
   const tab = (TABS.find((t) => t.value === values.vista)?.value ?? 'herramientas') as Tab
 
   return (
-    <div className="scrollbar-slim h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto w-full max-w-6xl space-y-4 px-1 py-1">
+    <PlatformPage>
         <PageHeader
           title="Controlar"
           description="Qué herramientas ve Numi con este rol y este modo, qué dejó escrito una conversación, y qué conocimiento respalda sus respuestas."
@@ -51,7 +51,6 @@ export function PlaygroundControlarPage() {
           {tab === 'escrituras' && <WritesTab />}
           {tab === 'conocimiento' && <KnowledgeTab />}
         </div>
-      </div>
-    </div>
+    </PlatformPage>
   )
 }

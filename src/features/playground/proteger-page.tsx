@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { Play, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
+import { PlatformPage } from '@/features/admin/platform-page'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Field } from '@/components/ui/field'
@@ -136,8 +137,7 @@ export function PlaygroundProtegerPage() {
   const lastSuite = suites.suites[0]
 
   return (
-    <div className="scrollbar-slim h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto w-full max-w-6xl space-y-4 px-1 py-1">
+    <PlatformPage>
         <PageHeader
           title="Proteger"
           description="Casos guardados con lo que se espera de ellos. Correrlos con el prompt nuevo es la forma de saber si algo se rompió."
@@ -273,8 +273,7 @@ export function PlaygroundProtegerPage() {
             )
           }}
         />
-      </div>
-    </div>
+    </PlatformPage>
   )
 }
 
