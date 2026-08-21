@@ -3,7 +3,6 @@ import { Columns3, Plus, X } from 'lucide-react'
 import { Panel } from '@/components/panel'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -21,7 +20,9 @@ import { usePlaygroundContext, useCompareVariants } from './hooks'
 import { providerLabel } from './labels'
 import { RunSettingsFields } from './run-settings-fields'
 import { useRunSettings } from './run-settings'
-import { TraceHighlights, TraceMissing, TraceView } from './trace-view'
+import { QuietButton } from './quiet-button'
+import { TracePanel } from './trace-drawer'
+import { TraceHighlights } from './trace-view'
 
 /** El contrato acepta de dos a cuatro. Menos no compara nada; más no cabe leyéndolo. */
 const MIN_VARIANTS = 2
@@ -201,15 +202,11 @@ export function PlaygroundComparePage() {
                   {variant.trace && (
                     <>
                       <TraceHighlights trace={variant.trace} />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setOpenTrace({ label: variant.label, trace: variant.trace })
-                        }
-                        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
+                      <QuietButton
+                        onClick={() => setOpenTrace({ label: variant.label, trace: variant.trace })}
                       >
                         Ver la traza
-                      </button>
+                      </QuietButton>
                     </>
                   )}
                 </article>
@@ -227,13 +224,13 @@ export function PlaygroundComparePage() {
         )
       )}
 
-      <Drawer
-        open={!!openTrace}
-        onOpenChange={(open) => !open && setOpenTrace(null)}
-        title={openTrace ? `Traza · ${openTrace.label}` : 'Traza'}
-      >
-        {openTrace?.trace ? <TraceView trace={openTrace.trace} /> : <TraceMissing />}
-      </Drawer>
+      {openTrace && (
+        <TracePanel
+          trace={openTrace.trace}
+          label={openTrace.label}
+          onClose={() => setOpenTrace(null)}
+        />
+      )}
     </div>
   )
 }

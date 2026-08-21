@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
-import { ListChecks, MessageSquare, PenLine, RotateCcw, Wrench } from 'lucide-react'
+import { useSearchParams } from 'react-router'
+import { MessageSquare, RotateCcw, Wrench } from 'lucide-react'
 import { Panel } from '@/components/panel'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,8 @@ import { RunSettingsFields } from './run-settings-fields'
 import { modelOverride, useRunSettings } from './run-settings'
 import { runTurn } from './stream-run'
 import { ToolCatalog } from './tool-catalog'
-import { TraceMissing, TraceView } from './trace-view'
+import { QuietButton } from './quiet-button'
+import { TracePanel } from './trace-drawer'
 
 /**
  * **La consola del playground.** Se elige una organización, se suplanta un rol, se elige
@@ -50,7 +51,6 @@ const nextId = () => `t${++turnSeq}`
 export function PlaygroundConsolePage() {
   const { settings, set, selectOrganization } = useRunSettings()
   const [params, setParams] = useSearchParams()
-  const navigate = useNavigate()
 
   const { context, isPending: contextPending, isError, error } = usePlaygroundContext(
     settings.orgId,
@@ -198,13 +198,9 @@ export function PlaygroundConsolePage() {
               <div className="flex items-center gap-3">
                 <CopyButton text={context.systemPrompt} label="Copiar el vigente" />
                 {system !== context.systemPrompt && (
-                  <button
-                    type="button"
-                    onClick={() => setSystem(context.systemPrompt)}
-                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-                  >
+                  <QuietButton onClick={() => setSystem(context.systemPrompt)}>
                     Volver al vigente
-                  </button>
+                  </QuietButton>
                 )}
               </div>
             </div>
@@ -280,50 +276,9 @@ export function PlaygroundConsolePage() {
         </Panel>
       )}
 
-      <Drawer
-        open={!!openTrace}
-        onOpenChange={(open) => !open && setOpenTrace(null)}
-        title="Traza del turno"
-        meta={openTrace?.trace ? `${openTrace.trace.model}` : undefined}
-      >
-        <div className="space-y-5">
-          {openTrace?.trace ? <TraceView trace={openTrace.trace} /> : <TraceMissing />}
-
-          {/*
-            «Esto salió mal, que no vuelva a pasar» es el camino por el que de verdad crece
-            un conjunto de regresión, y por eso el botón vive en la traza y no en la lista
-            de casos: cuando se piensa el caso, se está mirando esto.
-          */}
-          {openTrace?.trace && (
-            <div className="flex flex-wrap gap-2 border-t pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  navigate(`/plataforma/playground/regresion?traza=${openTrace.trace?.id ?? ''}`)
-                }
-              >
-                <ListChecks aria-hidden />
-                Guardar como caso
-              </Button>
-              {openTrace.trace.conversationId && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    navigate(
-                      `/plataforma/playground/escrituras?conversacion=${openTrace.trace?.conversationId ?? ''}`,
-                    )
-                  }
-                >
-                  <PenLine aria-hidden />
-                  Ver qué escribió
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </Drawer>
+      {openTrace && (
+        <TracePanel trace={openTrace.trace ?? null} onClose={() => setOpenTrace(null)} />
+      )}
 
       <Drawer open={toolsOpen} onOpenChange={setToolsOpen} title="Herramientas de la corrida">
         <ToolCatalog
@@ -366,13 +321,7 @@ function TurnRow({ turn, onTrace }: { turn: Turn; onTrace: () => void }) {
         <ChatBubble role="assistant">
           <RichText text={turn.text} />
         </ChatBubble>
-        <button
-          type="button"
-          onClick={onTrace}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-        >
-          Ver la traza
-        </button>
+        <QuietButton onClick={onTrace}>Ver la traza</QuietButton>
       </div>
     </div>
   )

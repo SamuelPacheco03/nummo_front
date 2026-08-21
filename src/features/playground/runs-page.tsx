@@ -8,7 +8,6 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { Field } from '@/components/ui/field'
 import { NativeSelect } from '@/components/ui/native-select'
-import { SegmentedControl } from '@/components/ui/segmented-control'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { listColumns } from '@/components/ui/list-columns'
 import { formatConversationStamp } from '@/features/assistant/utils'
@@ -17,10 +16,10 @@ import type {
   GetApiV1AdminPlaygroundRunsParams,
   PlaygroundTraceSummary,
 } from '@/api/generated/model'
-import { usePlaygroundOrganizations, usePlaygroundRuns } from './hooks'
-import { kindLabel, originLabel, runStatus } from './labels'
+import { usePlaygroundRuns } from './hooks'
+import { kindLabel, originLabel, readOrigin, runStatus } from './labels'
 import { formatCost, formatMs, formatTokens, totalTokens, SIN_DATO } from './metrics'
-import { OrganizationPicker } from './organization-picker'
+import { OrganizationFilter, OriginFilter } from './panel-filters'
 import { useRunSettings } from './run-settings'
 import { TraceDrawer } from './trace-drawer'
 
@@ -138,14 +137,10 @@ export function PlaygroundRunsPage() {
     page,
     pageSize: PAGE_SIZE,
     organizationId: settings.orgId || undefined,
-    origin: values.origen === 'todo' ? undefined : ((values.origen || 'user') as 'user' | 'playground'),
+    origin: readOrigin(values.origen),
     kind: (values.clase || undefined) as GetApiV1AdminPlaygroundRunsParams['kind'],
   }
   const { runs, total, totalPages, isPending, isError, error } = usePlaygroundRuns(params)
-
-  // La elegida se describe con la lista, que es lo que ya se consulta en el selector.
-  const { organizations } = usePlaygroundOrganizations({ page: 1, pageSize: 50 })
-  const organization = organizations.find((org) => org.id === settings.orgId)
 
   return (
     <div className="space-y-5">
@@ -156,18 +151,7 @@ export function PlaygroundRunsPage() {
 
       <Panel title="Qué se mira">
         <div className="space-y-4">
-          <Field label="Origen" hint="Las pruebas de esta consola no son uso de clientes.">
-            <SegmentedControl
-              aria-label="Origen de los turnos"
-              options={[
-                { value: 'user', label: 'Clientes' },
-                { value: 'playground', label: 'Pruebas' },
-                { value: 'todo', label: 'Todo' },
-              ]}
-              value={values.origen || 'user'}
-              onChange={(origen) => set({ origen, pagina: '' })}
-            />
-          </Field>
+          <OriginFilter value={values.origen} onChange={(origen) => set({ origen, pagina: '' })} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Clase de llamada" htmlFor="pg-clase">
@@ -184,29 +168,17 @@ export function PlaygroundRunsPage() {
               </NativeSelect>
             </Field>
 
-            <Field label="Organización" hint="Vacío son todas.">
-              <div className="space-y-2">
-                <OrganizationPicker
-                  organization={organization}
-                  onSelect={(org) => {
-                    selectOrganization(org)
-                    set({ pagina: '' })
-                  }}
-                />
-                {settings.orgId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRun({ org: '' })
-                      set({ pagina: '' })
-                    }}
-                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-                  >
-                    Ver todas las organizaciones
-                  </button>
-                )}
-              </div>
-            </Field>
+            <OrganizationFilter
+              organizationId={settings.orgId}
+              onSelect={(org) => {
+                selectOrganization(org)
+                set({ pagina: '' })
+              }}
+              onClear={() => {
+                setRun({ org: '' })
+                set({ pagina: '' })
+              }}
+            />
           </div>
         </div>
       </Panel>

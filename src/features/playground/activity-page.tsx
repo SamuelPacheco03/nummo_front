@@ -8,15 +8,15 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Skeleton } from '@/components/ui/skeleton'
 import { listColumns } from '@/components/ui/list-columns'
 import { todayISODate } from '@/lib/format'
 import { useListFilters } from '@/lib/use-list-filters'
 import type { GetApiV1AdminPlaygroundStatsParams, PlaygroundStatsToolsItem } from '@/api/generated/model'
-import { usePlaygroundOrganizations, usePlaygroundStats } from './hooks'
+import { usePlaygroundStats } from './hooks'
 import { formatMs, formatTokens } from './metrics'
-import { OrganizationPicker } from './organization-picker'
+import { readOrigin } from './labels'
+import { OrganizationFilter, OriginFilter } from './panel-filters'
 import { useRunSettings } from './run-settings'
 
 const FILTER_KEYS = ['desde', 'hasta', 'origen'] as const
@@ -28,12 +28,6 @@ function defaultRange(): { from: string; to: string } {
   const from = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10)
   return { from, to }
 }
-
-const ORIGINS = [
-  { value: 'user', label: 'Clientes' },
-  { value: 'playground', label: 'Pruebas' },
-  { value: '', label: 'Todo' },
-] as const
 
 const column = listColumns<PlaygroundStatsToolsItem>()
 
@@ -81,9 +75,7 @@ export function PlaygroundActivityPage() {
   const range = defaultRange()
   const from = values.desde || range.from
   const to = values.hasta || range.to
-  // `origen` vacío en la URL significa «no puesto», así que el valor por defecto se
-  // escribe aquí y «Todo» viaja como una marca propia.
-  const origin = values.origen === 'todo' ? undefined : ((values.origen || 'user') as 'user' | 'playground')
+  const origin = readOrigin(values.origen)
 
   const params: GetApiV1AdminPlaygroundStatsParams = {
     from,
@@ -92,10 +84,6 @@ export function PlaygroundActivityPage() {
     origin,
   }
   const { stats, isPending, isError, error, refetch } = usePlaygroundStats(params)
-
-  // La organización elegida se describe con la lista, que es lo que ya se consulta aquí.
-  const { organizations } = usePlaygroundOrganizations({ page: 1, pageSize: 50 })
-  const organization = organizations.find((org) => org.id === settings.orgId)
 
   const days = stats?.days ?? []
 
@@ -129,29 +117,13 @@ export function PlaygroundActivityPage() {
             </Field>
           </div>
 
-          <Field label="Origen" hint="Las pruebas de esta consola no son uso de clientes.">
-            <SegmentedControl
-              aria-label="Origen de los turnos"
-              options={ORIGINS.map((o) => ({ value: o.value || 'todo', label: o.label }))}
-              value={values.origen || 'user'}
-              onChange={(origen) => set({ origen })}
-            />
-          </Field>
+          <OriginFilter value={values.origen} onChange={(origen) => set({ origen })} />
 
-          <Field label="Organización" hint="Vacío son todas.">
-            <div className="space-y-2">
-              <OrganizationPicker organization={organization} onSelect={selectOrganization} />
-              {settings.orgId && (
-                <button
-                  type="button"
-                  onClick={() => setRun({ org: '' })}
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-                >
-                  Ver todas las organizaciones
-                </button>
-              )}
-            </div>
-          </Field>
+          <OrganizationFilter
+            organizationId={settings.orgId}
+            onSelect={selectOrganization}
+            onClear={() => setRun({ org: '' })}
+          />
         </div>
       </Panel>
 

@@ -78,6 +78,23 @@ export function originLabel(origin: string): string {
   return origin
 }
 
+export type Origin = 'user' | 'playground'
+
+/** El valor con el que «todo» viaja por la URL: vacío significaría «no puesto». */
+export const TODO_ORIGIN = 'todo'
+
+/**
+ * De lo que dice la URL al parámetro del contrato.
+ *
+ * **Por defecto, `user`.** El backend mezcla los turnos de clientes con las pruebas de
+ * esta consola, y casi siempre se quiere lo primero: contar las pruebas como uso real
+ * infla justo la cifra por la que alguien mira el panel.
+ */
+export function readOrigin(value: string): Origin | undefined {
+  if (value === TODO_ORIGIN) return undefined
+  return value === 'playground' ? 'playground' : 'user'
+}
+
 /**
  * Cómo salió una corrida, en una sola insignia.
  *

@@ -38,6 +38,7 @@ import {
 import { formatMs, formatTokens } from './metrics'
 import { RunSettingsFields } from './run-settings-fields'
 import { modelOverride, useRunSettings } from './run-settings'
+import { QuietButton } from './quiet-button'
 import { TraceDrawer } from './trace-drawer'
 
 const column = listColumns<PlaygroundCase>()
@@ -181,13 +182,9 @@ export function PlaygroundCasesPage() {
             showMode={false}
           />
           {settings.orgId && (
-            <button
-              type="button"
-              onClick={() => set({ org: '' })}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-            >
+            <QuietButton onClick={() => set({ org: '' })}>
               Ver los casos de todas las organizaciones
-            </button>
+            </QuietButton>
           )}
         </div>
       </Panel>
@@ -398,13 +395,7 @@ function CaseRunRow({
       )}
 
       {run.traceId && (
-        <button
-          type="button"
-          onClick={onTrace}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-        >
-          Ver la traza
-        </button>
+        <QuietButton onClick={onTrace}>Ver la traza</QuietButton>
       )}
     </li>
   )

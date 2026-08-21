@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateHuman } from '@/lib/format'
 import { JsonBlock } from './code-block'
 import { usePlaygroundWrites } from './hooks'
+import { QuietButton } from './quiet-button'
 import { TraceDrawer } from './trace-drawer'
 
 /**
@@ -112,13 +113,9 @@ export function PlaygroundWritesPage() {
                   <span className="text-muted-foreground text-xs">{formatDateHuman(write.at)}</span>
                 </header>
                 <JsonBlock value={write.result} />
-                <button
-                  type="button"
-                  onClick={() => setOpenTrace(write.traceId)}
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-xs underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
-                >
+                <QuietButton onClick={() => setOpenTrace(write.traceId)}>
                   Ver la traza del turno
-                </button>
+                </QuietButton>
               </article>
             ))}
           </div>

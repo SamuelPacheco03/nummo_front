@@ -4915,6 +4915,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `readSchemaFields` | `features/playground/schema-fields.ts` | El esquema de una herramienta como formulario — o `null`, y entonces es JSON |
 | `formatTokens` · `formatCost` · `phaseSlices` | `features/playground/metrics.ts` | Las cifras de un turno sin mentir: `null` es «—», los micro-dólares se dividen |
 | `CodeBlock` · `JsonBlock` · `Disclosure` · `CopyButton` | `features/playground/code-block.tsx` | Texto literal y bloques que se abren, para prompts y argumentos |
+| `QuietButton` | `features/playground/quiet-button.tsx` | La acción secundaria de un panel: gris, pequeña, subrayada al pasar |
+| `TracePanel` · `TraceDrawer` | `features/playground/trace-drawer.tsx` | **Cómo se abre una traza**, con la traza en la mano o solo con su id |
+| `OriginFilter` · `OrganizationFilter` | `features/playground/panel-filters.tsx` | Los dos filtros que comparten actividad e historial |
 
 ---
 
