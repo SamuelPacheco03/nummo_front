@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { MessageSquare, RotateCcw } from 'lucide-react'
 import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -59,6 +59,7 @@ const nextId = () => `t${++turnSeq}`
 export function PlaygroundConsolePage() {
   const { settings, set, selectOrganization } = useRunSettings()
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
 
   const { context, isPending: contextPending, isError, error } = usePlaygroundContext(settings.orgId)
   const tools = usePlaygroundTools(settings.orgId, {
@@ -205,8 +206,24 @@ export function PlaygroundConsolePage() {
                     </p>
                   )}
 
-                  {turns.map((turn) => (
-                    <TurnRow key={turn.id} turn={turn} onTrace={() => setOpenTrace(turn)} />
+                  {turns.map((turn, index) => (
+                    <TurnRow
+                      key={turn.id}
+                      turn={turn}
+                      onTrace={() => setOpenTrace(turn)}
+                      /*
+                        La pregunta que produjo esta respuesta. Es lo que viaja a la
+                        comparación: se llega ahí desde un turno que salió regular, y
+                        volver a teclearlo era trabajo que la pantalla puede ahorrar.
+                      */
+                      onCompare={() => {
+                        const asked = turns[index - 1]
+                        if (!asked) return
+                        navigate(
+                          `/plataforma/playground/comparar?mensaje=${encodeURIComponent(asked.text)}`,
+                        )
+                      }}
+                    />
                   ))}
 
                   {busy && (
@@ -280,7 +297,15 @@ export function PlaygroundConsolePage() {
   )
 }
 
-function TurnRow({ turn, onTrace }: { turn: Turn; onTrace: () => void }) {
+function TurnRow({
+  turn,
+  onTrace,
+  onCompare,
+}: {
+  turn: Turn
+  onTrace: () => void
+  onCompare: () => void
+}) {
   if (turn.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -312,6 +337,7 @@ function TurnRow({ turn, onTrace }: { turn: Turn; onTrace: () => void }) {
             </>
           )}
           <QuietButton onClick={onTrace}>Ver la traza</QuietButton>
+          <QuietButton onClick={onCompare}>Comparar esta pregunta</QuietButton>
         </div>
       </div>
     </div>

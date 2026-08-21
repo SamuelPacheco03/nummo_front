@@ -4923,6 +4923,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `formatTokens` · `formatCost` · `phaseSlices` | `features/playground/metrics.ts` | Las cifras de un turno sin mentir: `null` es «—», los micro-dólares se dividen |
 | `CodeBlock` · `JsonBlock` · `Disclosure` · `CopyButton` | `features/playground/code-block.tsx` | Texto literal y bloques que se abren, para prompts y argumentos |
 | `QuietButton` | `features/playground/quiet-button.tsx` | La acción secundaria de un panel: gris, pequeña, subrayada al pasar |
+| `RunContextBar` | `features/playground/run-context-bar.tsx` | **Contra qué se prueba, en una línea** — y el interruptor de escritura |
+| `SystemPromptDialog` | `features/playground/system-prompt-dialog.tsx` | El prompt vigente a tamaño de leerse, con su huella y su contador |
+| `TraceRail` | `features/playground/trace-rail.tsx` | La traza al lado de la conversación, no detrás de un botón |
 | `TracePanel` · `TraceDrawer` | `features/playground/trace-drawer.tsx` | **Cómo se abre una traza**, con la traza en la mano o solo con su id |
 | `OriginFilter` · `OrganizationFilter` | `features/playground/panel-filters.tsx` | Los dos filtros que comparten actividad e historial |
 

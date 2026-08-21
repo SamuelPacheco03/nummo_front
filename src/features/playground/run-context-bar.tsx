@@ -33,6 +33,7 @@ export function RunContextBar({
   onOpenTools,
   onOpenPrompt,
   promptEdited,
+  allowWrite = true,
 }: {
   settings: RunSettings
   context: PlaygroundContext | undefined
@@ -44,11 +45,25 @@ export function RunContextBar({
   onOpenTools: () => void
   onOpenPrompt: () => void
   promptEdited: boolean
+  /**
+   * Si la pantalla admite escribir.
+   *
+   * La comparación no: dos variantes que escribieran registrarían la misma operación dos
+   * veces, así que ahí el modo no es una elección y el botón no existe. Se dice con
+   * palabras en la barra en vez de ofrecer algo que el backend va a rechazar (§88.5).
+   */
+  allowWrite?: boolean
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [confirmWrite, setConfirmWrite] = useState(false)
   const organization = context?.organization
-  const writing = settings.mode === 'read_write'
+  /*
+    El modo viaja en el contexto compartido, pero hay pantallas donde no manda: la
+    comparación corre siempre en solo lectura. Si la barra dijera «Lectura y escritura»
+    porque así quedó en la consola, estaría anunciando un permiso que esa corrida no tiene
+    — y esta consola existe justamente para no mentir sobre lo que va a pasar.
+  */
+  const writing = allowWrite && settings.mode === 'read_write'
 
   return (
     <>
@@ -119,7 +134,11 @@ export function RunContextBar({
             <Settings2 aria-hidden />
             <span className="hidden sm:inline">Cambiar contexto</span>
           </Button>
-          {organization?.writable ? (
+          {!allowWrite ? (
+            <span className="text-muted-foreground hidden text-xs sm:inline">
+              La comparación siempre corre en solo lectura
+            </span>
+          ) : organization?.writable ? (
             writing ? (
               <Button
                 size="sm"
