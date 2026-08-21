@@ -5,12 +5,11 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { UpdateNotificationPreferencesInputPreferencesItem } from './updateNotificationPreferencesInputPreferencesItem';
 
-export interface UpdateNotificationPreferencesInput {
+export interface TrackResult {
   /**
-     * @minItems 1
-     * @maxItems 23
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
      */
-  preferences: UpdateNotificationPreferencesInputPreferencesItem[];
+  accepted: number;
 }

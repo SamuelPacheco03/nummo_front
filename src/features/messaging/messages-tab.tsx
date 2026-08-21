@@ -243,13 +243,23 @@ function Outcome({ message }: { message: OutboundMessage }) {
         <p className="text-muted-foreground text-xs">
           {message.skipReason ? skipReasonLabel(message.skipReason) : 'No se envió.'}
         </p>
-        {/* El único motivo con arreglo desde aquí: es el mismo tope que cuenta
-            «Plan y consumo», así que se ofrece en vez de dejar el diagnóstico
-            suelto (§45.5). */}
+        {/*
+          El cupo es el único motivo con salida, y son dos: subir de plan o
+          conectar número propio, que deja de gastarlo. **No hay recargas** —
+          agotado es agotado hasta el próximo periodo—, así que el texto lo dice
+          en vez de dejar esperando un botón de recarga que no existe.
+        */}
         {skipReasonOffersPlan(message.skipReason) && (
-          <Link to="/config/plan" className="text-brand text-xs underline">
-            Ver planes
-          </Link>
+          <p className="text-muted-foreground text-xs">
+            No vuelve a salir hasta el próximo periodo.{' '}
+            <Link to="/config/plan" className="text-brand underline">
+              Ver planes
+            </Link>{' '}
+            ·{' '}
+            <Link to="/config/whatsapp" className="text-brand underline">
+              Usar tu número
+            </Link>
+          </p>
         )}
         {account && <AccountLink to={account} />}
       </div>

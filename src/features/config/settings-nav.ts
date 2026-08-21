@@ -12,6 +12,7 @@ import {
   MonitorSmartphone,
   Palette,
   Percent,
+  Phone,
   ReceiptText,
   ShieldCheck,
   RefreshCw,
@@ -67,6 +68,9 @@ export const GROUPS: SectionGroup[] = [
       // le escribió al deudor es trabajo diario y vive en el sidebar (§14).
       { to: '/config/cobranza', label: 'Cobranza por WhatsApp', Icon: MessageSquareText },
       { to: '/config/plantillas', label: 'Plantillas de WhatsApp', Icon: MessageSquareQuote },
+      // Desde qué número sale: es otra pregunta que «¿puedo cobrar por
+      // WhatsApp?», y por eso tiene pantalla propia (§11.1.16).
+      { to: '/config/whatsapp', label: 'Número de WhatsApp', Icon: Phone },
     ],
   },
   {

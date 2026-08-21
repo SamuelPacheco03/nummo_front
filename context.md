@@ -1410,7 +1410,8 @@ solo comparten la palabra «aviso».
 | --- | --- | --- |
 | `/config/cobranza` | La política: si se escribe, a qué horas y con qué plantilla | `messaging.read` · `messaging.settings.manage` |
 | `/config/plantillas` | Las plantillas y su estado en Meta | `whatsapp.templates.read` |
-| `/cartera/cobranza` | Lo enviado y a quién no se le escribe, en dos pestañas | `messaging.read` |
+| `/config/whatsapp` | Desde qué número sale: la cuenta de Meta del negocio | `whatsapp.settings.read` · `whatsapp.settings.manage` |
+| `/cartera/cobranza` | Lo enviado, a quién no se le escribe y el cupo, en dos pestañas | `messaging.read` |
 | Ficha de un acuerdo | El tri-estado de *ese* cobro | `agreements.manage` |
 
 **La política va en Configuración y el historial en el sidebar**, por lo mismo que separan
@@ -1481,6 +1482,74 @@ no. En la UI es un control de tres opciones, no un switch.
 escribe»). «Según la política» a secas obliga a irse a otra pantalla justo en la opción que
 tiene casi todo el mundo.
 
+### Desde qué número sale, que es otra pregunta
+
+**Cobrar por WhatsApp y el número emisor son dos cosas distintas**, y confundirlas es el
+error que `/config/whatsapp` existe para evitar:
+
+| | Número de Nummo | Número propio (`whatsapp_byo`) |
+| --- | --- | --- |
+| Configurar | Nada | Conectar la cuenta de Meta |
+| Quién paga | Consume `whatsapp_messages_monthly` del plan | El negocio, directo a Meta |
+| Crear plantillas propias | No | Sí |
+
+**No tener número propio no es un estado a medias ni un error**: es una de las dos formas
+legítimas de tener esto funcionando, así que la pantalla lo cuenta como tal y no como una
+carencia con un aviso rojo.
+
+**El token nunca vuelve del backend** — solo `accessTokenLast4`. Se enseña enmascarado y el
+formulario **no lo rellena ni al reemplazar**: un campo prerrellenado sería una mentira que
+además se guardaría tal cual. Lo mismo con el `appSecret`, del que solo llega `hasAppSecret`.
+
+**Desconectar no apaga la cobranza**: la devuelve al número de Nummo, y con ella vuelve a
+gastar cupo. Va en la confirmación, porque es justo lo que nadie adivina.
+
+Y **el número es único en todo Nummo** —es lo que identifica de quién es un webhook
+entrante—, así que conectar uno que ya reclamó otra organización responde `409` y se cuenta
+como lo que es, no como «algo salió mal».
+
+### Crear plantillas propias, y por qué cuelga del número
+
+`POST` y `DELETE` de plantillas **exigen cuenta propia de Meta**: en la compartida, una
+organización podría agotarle a las demás el cupo de creación o dejar un nombre bloqueado
+treinta días. Por eso los dos botones aparecen **solo con la cuenta conectada**, y sin ella
+la pantalla dice por qué en vez de esconderlos sin explicación.
+
+Del alta hay dos decisiones que conviene no deshacer:
+
+- **Los ejemplos se derivan del texto.** Meta pide un valor de muestra por cada `{{marcador}}`
+  para poder aprobar la plantilla, y `template-variables.ts` los saca del propio cuerpo: una
+  lista escrita aparte discrepa del texto en cuanto alguien edita una palabra, y aquí una
+  discrepancia es una plantilla rechazada o un envío al que le falta un parámetro. Borrar una
+  variable del texto retira su ejemplo, que es lo que Meta rechazaría.
+- **Sin botones.** `WhatsAppButtonSpec` está en el contrato y es opcional; un recordatorio de
+  cobro no los usa, y un repetidor anidado es una pantalla entera para algo que esta función
+  no necesita. Se añade el día que haga falta, no por completar el esquema.
+
+### El cupo, y cuándo significa algo
+
+`whatsapp_messages_monthly` sale de `me/capabilities` como los demás topes, y `QuotaStrip` lo
+pinta en la pantalla de cobranza. Tres cosas:
+
+1. **Un tope en `null` es «sin límite», nunca cero** (§45.6).
+2. **Con número propio conectado el consumo deja de subir.** Una barra que no se mueve y no
+   dice por qué parece un contador roto, así que ahí se sustituye por la frase.
+3. **`period` es el mes de la organización**, en su zona horaria, no la del navegador.
+
+Agotado **no se pinta en rojo** y no ofrece reintentar: **no hay recargas de cupo**, así que
+lo único cierto es que no vuelve a salir hasta el próximo periodo. Las dos salidas reales son
+subir de plan o conectar número propio, y las dice las dos.
+
+### Los dos avisos del cupo van en `ACCOUNT`
+
+`whatsapp_quota.warning` (al 80%) y `whatsapp_quota.exhausted` estrenan la categoría
+`ACCOUNT` («Cuenta y plan»), y **no es una manía de clasificación**: bajo `RECEIVABLES`, quien
+silenciara los avisos de cobranza se perdería justo el que dice que la cobranza va a parar.
+
+La pantalla de preferencias no hizo falta tocarla — se dibuja desde el contrato y agrupa
+sobre `NOTIFICATION_CATEGORIES` (§11.1.10), así que la sección apareció sola al añadir la
+clave. Su `deepLink` es `/configuracion/plan`, que traduce el puente de §95.16.
+
 ### Lo que no se construye, a propósito
 
 - **Nada de opt-out ni «responde STOP»**, ni en las plantillas ni en la UI. Es una decisión
@@ -1489,9 +1558,11 @@ tiene casi todo el mundo.
 - **Enviar un mensaje suelto a mano.** El permiso `messaging.send` existe en el catálogo y
   **ninguna ruta lo usa**: no hay endpoint. Se nombra en el editor de roles porque el
   backend lo publica, y nada más.
-- **Crear plantillas propias.** Exige cuenta propia de Meta —con la de plataforma una
-  organización podría agotar el cupo de 100 creaciones/hora de todas las demás—, y eso es
-  fase 5. La pantalla lee y lo dice, en vez de ofrecer un botón que va a fallar (§70).
+- **Una bandeja de respuestas.** El webhook recibe estados de entrega y bajas, no
+  conversación. De ahí el aviso del formulario de plantillas: un mensaje que invite a
+  contestar deja al cliente hablando solo.
+- **Recargas de cupo.** Necesitan pasarela de pago, que no existe. No se ofrece un botón de
+  comprar mensajes.
 
 ---
 
@@ -4596,7 +4667,7 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, **153 paths / 205 esquemas**) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, **160 paths / 226 esquemas**) y en vivo en
   `http://localhost:4010/openapi.json`.
 - Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`, más los
   temáticos (`HANDOFF-whatsapp-cobranza.md`, `HANDOFF-buscador.md`, …), y el resumen en
@@ -5101,6 +5172,10 @@ Todos son parte del sistema y deben reutilizarse:
 | `MessagesTab` · `ConsentsTab` | `features/messaging/` | El historial de «por qué no le llegó» y quién puede recibir |
 | `CollectionRemindersSection` | `features/messaging/collection-reminders-section.tsx` | El tri-estado de un acuerdo, diciendo de qué hereda (§11.1.16) |
 | `describeQuietWindow` · `isWithinQuietHours` | `features/messaging/quiet-hours.ts` | La ventana de silencio, **cruzando la medianoche** sin caso aparte |
+| `WhatsAppAccountPage` | `features/messaging/whatsapp-account-page.tsx` | La cuenta de Meta del negocio: conectar, reemplazar y desconectar (§11.1.16) |
+| `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
+| `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
+| `QuotaStrip` | `features/messaging/quota-strip.tsx` | El cupo mensual de cobranza, y cuándo deja de significar algo |
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
 
 ---
@@ -6005,6 +6080,39 @@ tri-estado), build OK. **Sin verificar contra el backend en el navegador**: no h
 
 ---
 
+## Fase 26 — Número propio, plantillas y cupo ✅ **completada**
+
+El backend cierra la fase 12 (`nummo_api/HANDOFF-fase-12.md`): el contrato pasa a **160 paths /
+226 esquemas** con `/whatsapp/account`, y la cobranza gana cuenta propia de Meta y avisos de
+cupo.
+
+1. **`/config/whatsapp`**: conectar, reemplazar y desconectar la cuenta de Meta del negocio.
+   No tenerla **no es un error** —se envía por el número de Nummo y se gasta cupo—, el token
+   nunca vuelve y desconectar no apaga la cobranza (§11.1.16).
+2. **Crear y borrar plantillas propias**, detrás de tener número propio. Los ejemplos que Meta
+   pide se derivan del texto (`template-variables.ts`, con pruebas) en vez de escribirse
+   aparte.
+3. **`QuotaStrip`** en la pantalla de cobranza: el cupo del mes, con `null` como «sin límite» y
+   la frase que sustituye a la barra cuando hay número propio y el consumo deja de subir.
+4. **La categoría `ACCOUNT`** y sus dos avisos de cuota. La pantalla de preferencias no se
+   tocó: agrupa desde el contrato, así que la sección apareció sola al añadir la clave — que
+   es exactamente lo que §11.1.10 prometía.
+5. `notificationRoute` traduce `/configuracion/plan`, el destino de los dos avisos (§95.16).
+
+**El aviso de tipos volvió a hacer su trabajo**: al regenerar, `tsc` señaló los dos únicos
+huecos —la categoría sin rótulo y los dos tipos sin titular— y nada más, lo que de paso
+confirmó que el resto de la fase 25 seguía encajando con el contrato nuevo.
+
+**Una errata del backend, anotada y no arreglada desde aquí:** `/whatsapp/account` va etiquetada
+con el tag `Assistant`, así que Orval reparte esos tres hooks al archivo del asistente. Se
+importan de donde están —el código generado no se edita (§88.2)— y queda pedido al contrato.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 680 tests en verde (23 nuevos: 10 de
+las variables de plantilla, 9 de la pantalla de cuenta y 4 del cupo), build OK. **Sin
+verificar contra el backend en el navegador**: no hay `nummo-api` corriendo en este entorno.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -6034,6 +6142,7 @@ tri-estado), build OK. **Sin verificar contra el backend en el navegador**: no h
 | ✅ 23 | El catálogo de presentación, completo | bajo | 22 (contrato) |
 | ✅ 24 | Playground de Numi | medio | 7, 10 |
 | ✅ 25 | Cobranza por WhatsApp | medio | 7, 9 (contrato) |
+| ✅ 26 | Número propio, plantillas y cupo | medio | 25 (contrato) |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

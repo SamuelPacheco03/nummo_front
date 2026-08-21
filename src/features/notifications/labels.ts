@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CircleCheck,
   CircleX,
+  Gauge,
   Landmark,
   RefreshCw,
   Stamp,
@@ -36,6 +37,10 @@ const CATEGORIES: Record<NotificationCategory, string> = {
   PAYABLES: 'Gastos',
   TREASURY: 'Caja',
   TEAM: 'Equipo',
+  // Ni cartera ni gastos: es de la cuenta. Va aparte a propósito, y conviene
+  // respetarlo — bajo `RECEIVABLES`, quien silenciara los avisos de cobranza se
+  // perdería justo el que dice que la cobranza va a parar.
+  ACCOUNT: 'Cuenta y plan',
 }
 
 /** El orden en que se ofrecen para filtrar: el del sidebar. */
@@ -44,6 +49,9 @@ export const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
   'PAYABLES',
   'TREASURY',
   'TEAM',
+  // La última, como Configuración va al pie del sidebar: no es una sección de
+  // trabajo.
+  'ACCOUNT',
 ]
 
 export function notificationCategory(category: string): string {
@@ -88,6 +96,9 @@ const ICONS: Record<string, { Icon: LucideIcon; tone: StatusTone }> = {
   recurring: { Icon: RefreshCw, tone: 'muted' },
   'team-activity': { Icon: Users, tone: 'muted' },
   member: { Icon: UserPlus, tone: 'muted' },
+  // El cupo de WhatsApp. Ámbar y no rojo aunque el aviso sea el de agotado: no
+  // es un fallo, es un tope que se renueva solo el mes que viene (§45.6).
+  quota: { Icon: Gauge, tone: 'warning' },
 }
 
 /**
@@ -158,6 +169,20 @@ const TYPE_COPY: Record<NotificationType, { label: string; hint?: string }> = {
   },
   'member.joined': { label: 'Alguien nuevo entró al equipo' },
   'member.role_changed': { label: 'Cambió tu rol' },
+  /*
+    Los dos del cupo de cobranza. Solo le llegan a quien tiene
+    `messaging.settings.manage`, que es quien puede hacer algo —subir de plan o
+    conectar cuenta propia—; el `hint` dice justo eso, porque el aviso sin salida
+    es el que se aprende a ignorar.
+  */
+  'whatsapp_quota.warning': {
+    label: 'Se está acabando el cupo de WhatsApp',
+    hint: 'Al 80% del cupo del mes, mientras todavía da tiempo a decidir.',
+  },
+  'whatsapp_quota.exhausted': {
+    label: 'Se acabó el cupo de WhatsApp',
+    hint: 'Los recordatorios no vuelven a salir hasta el próximo periodo.',
+  },
 }
 
 export function notificationTypeCopy(type: string): { label: string; hint?: string } {

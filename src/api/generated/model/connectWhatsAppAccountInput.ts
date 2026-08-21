@@ -5,12 +5,19 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { UpdateNotificationPreferencesInputPreferencesItem } from './updateNotificationPreferencesInputPreferencesItem';
 
-export interface UpdateNotificationPreferencesInput {
+export interface ConnectWhatsAppAccountInput {
   /**
-     * @minItems 1
-     * @maxItems 23
+     * @minLength 1
+     * @maxLength 60
      */
-  preferences: UpdateNotificationPreferencesInputPreferencesItem[];
+  phoneNumberId: string;
+  phoneNumberLabel?: string | null;
+  /**
+     * @minLength 20
+     * @maxLength 500
+     */
+  accessToken: string;
+  wabaId?: string | null;
+  appSecret?: string | null;
 }
