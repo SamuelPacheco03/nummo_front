@@ -19,6 +19,11 @@ export interface SseChannel {
    * botón de detener puesto sobre una respuesta ya terminada.
    */
   doneWithoutClosing(sessionId: string, reply: string): void
+  /**
+   * La traza del turno (playground). Va entre el último trozo y `done`, y su cuerpo
+   * puede ser la traza entera o `null` — el turno contestó pero no dejó medida.
+   */
+  trace(value: unknown): void
   /** Un fallo a mitad del flujo, con el cuerpo de error de siempre. */
   fail(code: string, message: string, details?: unknown): void
   /** Cierra sin `done`: la conexión se cayó. */
@@ -49,6 +54,7 @@ export function sseChannel(): SseChannel {
     }),
     start: (sessionId) => push('start', { sessionId }),
     chunk: (text) => push('chunk', { text }),
+    trace: (value) => push('trace', value),
     done: (sessionId, reply, stopped = false) => {
       push('done', { sessionId, reply, stopped })
       controller.close()

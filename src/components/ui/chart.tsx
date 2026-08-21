@@ -66,15 +66,38 @@ type Row = Record<string, string | number | null | undefined>
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/**
+ * Qué clase de cifra dibuja la gráfica.
+ *
+ * `money` es el caso de siempre —ingresos, egresos, saldos— y sigue siendo el valor por
+ * defecto. `count` existe porque no todo lo que se grafica es dinero: los turnos de Numi
+ * por día o los tokens de un modelo con un `$` delante no serían un formato pobre, serían
+ * una cifra falsa.
+ */
+export type ChartUnit = 'money' | 'count'
+
+const COUNTS = new Intl.NumberFormat('es-CO')
+const COMPACT = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 })
+
+function axisFormat(unit: ChartUnit, currency: string | undefined) {
+  return (value: number) => (unit === 'money' ? formatCompactAmount(value, currency) : COMPACT.format(value))
+}
+
+function exactFormat(unit: ChartUnit, currency: string | undefined) {
+  return (value: number) => (unit === 'money' ? formatMoney(value, currency) : COUNTS.format(value))
+}
+
 /** Tooltip único: cifras exactas y alineadas, como pide §58. */
 function ChartTooltip({
   active,
   payload,
   label,
   currency,
+  unit,
   labelOf,
 }: TooltipContentProps & {
   currency?: string
+  unit: ChartUnit
   labelOf: (key: string) => string
 }) {
   if (!active || !payload?.length) return null
@@ -92,7 +115,9 @@ function ChartTooltip({
               />
               {labelOf(String(item.dataKey))}
             </dt>
-            <dd className="nums font-medium">{formatMoney(Number(item.value) || 0, currency)}</dd>
+            <dd className="nums font-medium">
+              {exactFormat(unit, currency)(Number(item.value) || 0)}
+            </dd>
           </div>
         ))}
       </dl>
@@ -113,6 +138,7 @@ export function Chart({
   x,
   series,
   currency,
+  unit = 'money',
   height = 260,
   empty = 'Sin datos en el período.',
   className,
@@ -122,6 +148,8 @@ export function Chart({
   x: string
   series: ChartSeries[]
   currency?: string
+  /** Qué se está contando. Dinero por defecto, que es casi todo lo que grafica la app. */
+  unit?: ChartUnit
   height?: number
   empty?: ReactNode
   className?: string
@@ -156,13 +184,13 @@ export function Chart({
           <XAxis dataKey={x} {...AXIS} />
           <YAxis
             {...AXIS}
-            width={64}
-            tickFormatter={(value: number) => formatCompactAmount(value, currency)}
+            width={unit === 'money' ? 64 : 44}
+            tickFormatter={axisFormat(unit, currency)}
           />
           <Tooltip
             cursor={{ fill: 'var(--secondary)', opacity: 0.5 }}
             content={(props) => (
-              <ChartTooltip {...props} currency={currency} labelOf={labelOf} />
+              <ChartTooltip {...props} currency={currency} unit={unit} labelOf={labelOf} />
             )}
           />
           {series.map((s) =>

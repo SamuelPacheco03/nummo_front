@@ -34,8 +34,11 @@ import type {
   PlanDto,
   SavePlanInput,
   SavePlanResult,
+  SendTestMessageInput,
   SetOrganizationStatusInput,
-  SetOverridesInput
+  SetOverridesInput,
+  WhatsAppSendOutput,
+  WhatsAppStatusOutput
 } from '../../model';
 
 import { customFetch } from '../../../http-client';
@@ -787,4 +790,214 @@ export const usePutApiV1AdminPlansCode = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getPutApiV1AdminPlansCodeMutationOptions(options), queryClient);
+    }
+    export type getApiV1AdminWhatsappStatusResponse200 = {
+  data: WhatsAppStatusOutput
+  status: 200
+}
+
+export type getApiV1AdminWhatsappStatusResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminWhatsappStatusResponseSuccess = (getApiV1AdminWhatsappStatusResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminWhatsappStatusResponseError = (getApiV1AdminWhatsappStatusResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminWhatsappStatusResponse = (getApiV1AdminWhatsappStatusResponseSuccess | getApiV1AdminWhatsappStatusResponseError)
+
+export const getGetApiV1AdminWhatsappStatusUrl = () => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/status`
+}
+
+/**
+ * Diagnóstico del cableado: si hay gateway, si hay cuenta de plataforma y si el webhook puede verificar firmas. Nunca devuelve tokens ni secretos, solo si están puestos.
+ * @summary Qué piezas del canal de WhatsApp están configuradas en este despliegue
+ */
+export const getApiV1AdminWhatsappStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminWhatsappStatusResponse> => {
+
+  return customFetch<getApiV1AdminWhatsappStatusResponse>(getGetApiV1AdminWhatsappStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminWhatsappStatusQueryKey = () => {
+    return [
+    `/api/v1/admin/whatsapp/status`
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminWhatsappStatusQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminWhatsappStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>> = ({ signal }) => getApiV1AdminWhatsappStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminWhatsappStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>>
+export type GetApiV1AdminWhatsappStatusQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminWhatsappStatus<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappStatus<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappStatus<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Qué piezas del canal de WhatsApp están configuradas en este despliegue
+ */
+
+export function useGetApiV1AdminWhatsappStatus<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminWhatsappStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type postApiV1AdminWhatsappTestMessageResponse202 = {
+  data: WhatsAppSendOutput
+  status: 202
+}
+
+export type postApiV1AdminWhatsappTestMessageResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 202>
+}
+
+export type postApiV1AdminWhatsappTestMessageResponseSuccess = (postApiV1AdminWhatsappTestMessageResponse202) & {
+  headers: Headers;
+};
+export type postApiV1AdminWhatsappTestMessageResponseError = (postApiV1AdminWhatsappTestMessageResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1AdminWhatsappTestMessageResponse = (postApiV1AdminWhatsappTestMessageResponseSuccess | postApiV1AdminWhatsappTestMessageResponseError)
+
+export const getPostApiV1AdminWhatsappTestMessageUrl = () => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/test-message`
+}
+
+/**
+ * Comprueba de extremo a extremo que Nummo llega al gateway, el gateway llega a Meta y el número está dado de alta. Devuelve 202 porque Meta acepta el envío pero no garantiza la entrega: un `messageStatus` de `paused` significa aceptado y **no** entregable.
+ * @summary Envía un mensaje de prueba con la cuenta de plataforma
+ */
+export const postApiV1AdminWhatsappTestMessage = async (sendTestMessageInput: SendTestMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1AdminWhatsappTestMessageResponse> => {
+
+  return customFetch<postApiV1AdminWhatsappTestMessageResponse>(getPostApiV1AdminWhatsappTestMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sendTestMessageInput)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1AdminWhatsappTestMessageMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappTestMessage>>, TError,{data: SendTestMessageInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappTestMessage>>, TError,{data: SendTestMessageInput}, TContext> => {
+
+const mutationKey = ['postApiV1AdminWhatsappTestMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1AdminWhatsappTestMessage>>, {data: SendTestMessageInput}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postApiV1AdminWhatsappTestMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1AdminWhatsappTestMessageMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1AdminWhatsappTestMessage>>>
+    export type PostApiV1AdminWhatsappTestMessageMutationBody = SendTestMessageInput
+    export type PostApiV1AdminWhatsappTestMessageMutationError = ErrorResponse
+
+    /**
+ * @summary Envía un mensaje de prueba con la cuenta de plataforma
+ */
+export const usePostApiV1AdminWhatsappTestMessage = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappTestMessage>>, TError,{data: SendTestMessageInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1AdminWhatsappTestMessage>>,
+        TError,
+        {data: SendTestMessageInput},
+        TContext
+      > => {
+      return useMutation(getPostApiV1AdminWhatsappTestMessageMutationOptions(options), queryClient);
     }

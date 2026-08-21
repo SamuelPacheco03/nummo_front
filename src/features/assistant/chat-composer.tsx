@@ -85,6 +85,8 @@ export function ChatComposer({
   quoted = null,
   onClearQuote,
   autoFocus = false,
+  textOnly = false,
+  initialValue = '',
 }: {
   onSend: (text: string) => void
   onSendAudio?: (blob: Blob) => void
@@ -108,8 +110,23 @@ export function ChatComposer({
   quoted?: { author: QuoteAuthor; quote: string } | null
   onClearQuote?: () => void
   autoFocus?: boolean
+  /**
+   * Solo texto: sin adjuntar y sin nota de voz.
+   *
+   * Es lo que necesita el playground del superadmin, que escribe a Numi con las mismas
+   * teclas —Enter envía, Shift+Enter salta— pero no graba nada: un clip «próximamente» y
+   * un micrófono muerto en una consola de diagnóstico son dos controles que no llevan a
+   * ninguna parte.
+   */
+  textOnly?: boolean
+  /**
+   * Lo que la caja trae ya escrito. Se lee **al montar**, así que quien la precargue
+   * después tiene que remontarla (`key`): una caja que se rellena sola a media frase es
+   * la peor forma de perder lo que alguien estaba escribiendo.
+   */
+  initialValue?: string
 }) {
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState(initialValue)
   const ref = useRef<HTMLTextAreaElement>(null)
   const recorder = useAudioRecorder()
   const touch = useTouchInput()
@@ -465,7 +482,9 @@ export function ChatComposer({
           'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
         )}
       >
-        <ComposerAction label="Adjuntar archivo (próximamente)" Icon={Paperclip} disabled />
+        {!textOnly && (
+          <ComposerAction label="Adjuntar archivo (próximamente)" Icon={Paperclip} disabled />
+        )}
 
         <div className="relative min-w-0 flex-1 self-center">
           {!value && (
@@ -493,6 +512,12 @@ export function ChatComposer({
           />
         </div>
 
+        {/*
+          El orden decide qué botón manda: con algo escrito, enviar —lo que se escriba
+          mientras Numi contesta entra en la cola—; con la caja vacía y Numi escribiendo,
+          detener; y si no hay nota de voz que ofrecer (`textOnly`), enviar apagado, que
+          es lo único que esa caja sabe hacer.
+        */}
         {hasText ? (
           <button
             type="submit"
@@ -531,6 +556,15 @@ export function ChatComposer({
             )}
           >
             <Square aria-hidden className="size-3 fill-current" />
+          </button>
+        ) : textOnly ? (
+          <button
+            type="submit"
+            disabled
+            aria-label="Enviar mensaje"
+            className="bg-secondary text-muted-foreground/70 grid size-8 shrink-0 cursor-not-allowed place-items-center rounded-full"
+          >
+            <ArrowUp className="size-4" />
           </button>
         ) : (
           <ComposerAction

@@ -635,8 +635,35 @@ El alta de cuentas es **registro público** (decidido). **Implementado en el fro
 - ✅ Enlace **"¿No tienes cuenta? Regístrate"** en el login y pista de registro en el modal "Agregar miembro".
 - ✅ **Rate-limit** (429) manejado con mensaje amable (vía `getErrorMessage`).
 
+## ✅ Sincronizado: fase 11 (playground de Numi) — 2026-08-20
+Se copió el `openapi.json` del backend y se corrió `pnpm api:gen`. Entraron las **18 rutas** de
+`/api/v1/admin/playground/*` y la docena de esquemas `Playground*` (ver `HANDOFF-fase-11.md`), y de
+paso **todo lo demás que el backend había añadido desde la última copia** — el sync es del contrato
+entero, no de un área:
+
+- **Avisos y push** (`/organizations/{orgId}/notifications/*`, `/me/push-subscriptions/*`) y sus
+  features nuevas `notifications_email` / `notifications_whatsapp`. **El front todavía no tiene
+  pantalla para esto**: lo único que se integró fue lo que rompía el tipado —los nombres de las dos
+  features (§94, `features/platform/labels.ts`) y los cuatro permisos `notifications.*` en las
+  tablas de §47.3—. Queda pendiente como sección.
+- **WhatsApp de plataforma** (`GET /admin/whatsapp/status`, `POST /admin/whatsapp/test-message`) —
+  sin pantalla todavía.
+- **Cobro automático** (`PUT …/billing-agreements/{id}/auto-charge`, `PUT
+  …/expense-schedules/{id}/auto-charge`) — sin pantalla todavía.
+- `/organizations/{orgId}/assistant/events` **desapareció** en favor de `/organizations/{orgId}/events`,
+  que es lo que el front ya usaba (`lib/realtime-stream.ts`).
+
+### Petición de contrato (playground)
+`GET /admin/playground/writes` devuelve `{ traceId, at, tool, result }`. **El panel no puede
+enlazar a la entidad escrita**: el `result` no publica de qué entidad se trata ni su id de forma
+estable, y aunque lo hiciera, las rutas del inquilino se resuelven contra la organización activa
+del usuario —un superadmin que no es miembro de esa organización no puede abrirlas—. Hoy la
+pantalla enseña la herramienta, la hora, el resultado crudo y la traza, y dice que la reversa se
+hace desde la organización. Si el backend publicara `{ entity, entityId }`, el enlace sería posible
+el día que exista una forma de mirar la ficha de otra organización.
+
 ## Aviso
-El contrato `openapi.json` sigue en **v1.0.0** y hoy trae **111 paths / 141 operaciones**. Regenera tu cliente:
+El contrato `openapi.json` sigue en **v1.0.0** y hoy trae **147 paths / 182 operaciones**. Regenera tu cliente:
 
 ```bash
 pnpm api:gen
@@ -649,7 +676,7 @@ pnpm api:gen
 - **Docs interactivos:** `http://localhost:4010/docs` (Scalar).
 
 ## Handoffs disponibles (léelos por área)
-`HANDOFF-fase-0..10.md` en esta carpeta. Resumen de lo que ya puedes construir:
+`HANDOFF-fase-0..11.md` en esta carpeta (la 11 es el playground de Numi). Resumen de lo que ya puedes construir:
 
 | Área | Endpoints base | Handoff |
 |---|---|---|

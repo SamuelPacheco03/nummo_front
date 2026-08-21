@@ -66,6 +66,76 @@ export const router = createBrowserRouter([
               Component: (await import('@/features/admin/plans-page')).AdminPlansPage,
             }),
           },
+          /*
+            El playground de Numi (§47.5). Cuelga de la consola de plataforma porque es la
+            misma persona con la misma sesión, y su guard es el mismo: `requirePlatformAdmin`
+            corre fuera de `requireTenant`, así que no hace falta organización para entrar.
+          */
+          {
+            path: 'playground',
+            children: [
+              {
+                index: true,
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/console-page'))
+                    .PlaygroundConsolePage,
+                }),
+              },
+              {
+                path: 'herramientas',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/tools-page')).PlaygroundToolsPage,
+                }),
+              },
+              {
+                path: 'comparar',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/compare-page'))
+                    .PlaygroundComparePage,
+                }),
+              },
+              {
+                path: 'regresion',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/cases-page')).PlaygroundCasesPage,
+                }),
+              },
+              {
+                path: 'actividad',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/activity-page'))
+                    .PlaygroundActivityPage,
+                }),
+              },
+              {
+                path: 'historial',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/runs-page')).PlaygroundRunsPage,
+                }),
+              },
+              {
+                path: 'votos',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/feedback-page'))
+                    .PlaygroundFeedbackPage,
+                }),
+              },
+              {
+                path: 'escrituras',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/writes-page'))
+                    .PlaygroundWritesPage,
+                }),
+              },
+              {
+                path: 'conocimiento',
+                lazy: async () => ({
+                  Component: (await import('@/features/playground/knowledge-page'))
+                    .PlaygroundKnowledgePage,
+                }),
+              },
+            ],
+          },
         ],
       },
       {
