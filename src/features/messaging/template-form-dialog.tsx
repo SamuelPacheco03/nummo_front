@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { Field } from '@/components/ui/field'
 import { FormDialog } from '@/components/ui/form-dialog'
 import { Input } from '@/components/ui/input'
@@ -23,7 +26,26 @@ import { buildExamples, parseVariables } from './template-variables'
  * recordatorio de cobro no los usa, y un repetidor anidado de botones con su
  * tipo, su enlace y su número es una pantalla entera para algo que esta función
  * no necesita. Se añade el día que haga falta, no por completar el esquema.
+ *
+ * Valida con Zod: `FormDialog` monta su `<form>` con `noValidate`, así que un
+ * `required` nativo no para nada y el 422 llegaría desde el API (§86.3).
  */
+const schema = z.object({
+  templateKey: z
+    .string()
+    .trim()
+    .min(1, 'Hace falta una clave para nombrarla desde la política.')
+    .max(80)
+    .regex(/^[a-z0-9_]+$/, 'Solo minúsculas, números y guion bajo.'),
+  name: z.string().trim().min(1, 'Meta necesita un nombre.').max(200),
+  language: z.string().trim().min(1, 'Di en qué idioma está.').max(15),
+  category: z.enum(['UTILITY', 'MARKETING', 'AUTHENTICATION']),
+  header: z.string().trim().max(60).optional(),
+  body: z.string().trim().min(1, 'Sin mensaje no hay plantilla.').max(1024),
+  footer: z.string().trim().max(60).optional(),
+})
+
+type Values = z.infer<typeof schema>
 export function TemplateFormDialog({
   open,
   onOpenChange,
@@ -35,21 +57,39 @@ export function TemplateFormDialog({
   loading: boolean
   onSubmit: (data: CreateWhatsAppTemplateInput) => Promise<void>
 }) {
-  const [templateKey, setTemplateKey] = useState('')
-  const [name, setName] = useState('')
-  const [language, setLanguage] = useState('es')
-  const [category, setCategory] =
-    useState<CreateWhatsAppTemplateInput['category']>('UTILITY')
-  const [header, setHeader] = useState('')
-  const [body, setBody] = useState('')
-  const [footer, setFooter] = useState('')
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: { language: 'es', category: 'UTILITY' },
+  })
   const [examples, setExamples] = useState<Record<string, string>>({})
 
+  // Las variables salen del texto que se está escribiendo, así que hay que
+  // mirarlo en vivo: `watch` es lo que hace que los campos de ejemplo aparezcan
+  // y desaparezcan con los marcadores.
+  const header = watch('header')
+  const body = watch('body')
   const variables = useMemo(() => parseVariables(header, body), [header, body])
 
-  // Se monta solo mientras está abierto: el estado de partida lo ponen los
-  // inicializadores y no hace falta efecto (§45.7).
-  if (!open) return null
+  const submit = handleSubmit((values) =>
+    onSubmit({
+      templateKey: values.templateKey,
+      name: values.name,
+      language: values.language,
+      category: values.category,
+      spec: {
+        body: values.body,
+        bodyExamples: buildExamples(values.body, examples),
+        header: values.header || undefined,
+        headerExamples: buildExamples(values.header, examples),
+        footer: values.footer || undefined,
+      },
+    }),
+  )
 
   return (
     <FormDialog
@@ -59,71 +99,34 @@ export function TemplateFormDialog({
       description="Meta tiene que aprobarla antes de que se pueda usar. Suele tardar unos minutos."
       submitLabel="Crear y enviar a revisión"
       loading={loading}
-      onSubmit={(event) => {
-        event.preventDefault()
-        void onSubmit({
-          templateKey: templateKey.trim(),
-          name: name.trim(),
-          language: language.trim(),
-          category,
-          spec: {
-            body: body.trim(),
-            bodyExamples: buildExamples(body, examples),
-            header: header.trim() || undefined,
-            headerExamples: buildExamples(header, examples),
-            footer: footer.trim() || undefined,
-          },
-        })
-      }}
+      onSubmit={submit}
     >
       <Field
         label="Clave"
         htmlFor="tpl-key"
         required
-        hint="Con la que la nombra la política de cobranza. Sin espacios: cobro_recordatorio."
+        error={errors.templateKey?.message}
+        hint="Con la que la nombra la política de cobranza: cobro_recordatorio."
       >
-        <Input
-          id="tpl-key"
-          value={templateKey}
-          required
-          maxLength={80}
-          onChange={(e) => setTemplateKey(e.target.value)}
-        />
+        <Input id="tpl-key" maxLength={80} {...register('templateKey')} />
       </Field>
 
-      <Field label="Nombre en Meta" htmlFor="tpl-name" required>
-        <Input
-          id="tpl-name"
-          value={name}
-          required
-          maxLength={200}
-          onChange={(e) => setName(e.target.value)}
-        />
+      <Field label="Nombre en Meta" htmlFor="tpl-name" required error={errors.name?.message}>
+        <Input id="tpl-name" maxLength={200} {...register('name')} />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Idioma" htmlFor="tpl-lang" required>
-          <Input
-            id="tpl-lang"
-            value={language}
-            required
-            maxLength={15}
-            onChange={(e) => setLanguage(e.target.value)}
-          />
+        <Field label="Idioma" htmlFor="tpl-lang" required error={errors.language?.message}>
+          <Input id="tpl-lang" maxLength={15} {...register('language')} />
         </Field>
 
         <Field
           label="Categoría"
           htmlFor="tpl-category"
+          error={errors.category?.message}
           hint="La cobranza es de servicio, no publicidad."
         >
-          <NativeSelect
-            id="tpl-category"
-            value={category}
-            onChange={(e) =>
-              setCategory(e.target.value as CreateWhatsAppTemplateInput['category'])
-            }
-          >
+          <NativeSelect id="tpl-category" {...register('category')}>
             <option value="UTILITY">Servicio (recordatorios, avisos)</option>
             <option value="MARKETING">Publicidad</option>
             <option value="AUTHENTICATION">Autenticación</option>
@@ -131,38 +134,27 @@ export function TemplateFormDialog({
         </Field>
       </div>
 
-      <Field label="Encabezado" htmlFor="tpl-header" hint="Opcional, una línea corta.">
-        <Input
-          id="tpl-header"
-          value={header}
-          maxLength={60}
-          onChange={(e) => setHeader(e.target.value)}
-        />
+      <Field
+        label="Encabezado"
+        htmlFor="tpl-header"
+        error={errors.header?.message}
+        hint="Opcional, una línea corta."
+      >
+        <Input id="tpl-header" maxLength={60} {...register('header')} />
       </Field>
 
       <Field
         label="Mensaje"
         htmlFor="tpl-body"
         required
+        error={errors.body?.message}
         hint="Usa {{nombre}} para los datos que cambian en cada envío."
       >
-        <Textarea
-          id="tpl-body"
-          value={body}
-          required
-          rows={5}
-          maxLength={1024}
-          onChange={(e) => setBody(e.target.value)}
-        />
+        <Textarea id="tpl-body" rows={5} maxLength={1024} {...register('body')} />
       </Field>
 
-      <Field label="Pie" htmlFor="tpl-footer" hint="Opcional.">
-        <Input
-          id="tpl-footer"
-          value={footer}
-          maxLength={60}
-          onChange={(e) => setFooter(e.target.value)}
-        />
+      <Field label="Pie" htmlFor="tpl-footer" error={errors.footer?.message} hint="Opcional.">
+        <Input id="tpl-footer" maxLength={60} {...register('footer')} />
       </Field>
 
       {variables.length > 0 && (

@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { Link } from 'react-router'
 import { Lock, Phone, Unplug } from 'lucide-react'
 import { toast } from 'sonner'
@@ -121,14 +124,14 @@ export function WhatsAppAccountPage() {
           fallback="No se pudo cargar la cuenta de WhatsApp."
           onRetry={refetch}
         />
-      ) : connected && account ? (
+      ) : connected ? (
         <div className="space-y-4">
           <Card>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">
-                    {account.phoneNumberLabel ?? 'Tu número de WhatsApp'}
+                    {account?.phoneNumberLabel ?? 'Tu número de WhatsApp'}
                   </p>
                   <StatusBadge tone="success" label="Conectado" />
                 </div>
@@ -145,9 +148,12 @@ export function WhatsAppAccountPage() {
                 )}
               </div>
 
+              {/* `connected` y `account` son dos campos, y el contrato permite
+                  la combinación rara. Se manda `connected`, que es lo que decide
+                  por dónde sale; del detalle se enseña lo que haya. */}
               <DetailRows>
                 <DetailRow label="ID del número">
-                  <span className="nums">{account.phoneNumberId}</span>
+                  <span className="nums">{account?.phoneNumberId ?? '—'}</span>
                 </DetailRow>
                 {/*
                   El token **nunca vuelve del backend**: solo sus últimos cuatro
@@ -156,15 +162,17 @@ export function WhatsAppAccountPage() {
                   formulario no lo rellena: cambiarlo es volver a pedirlo entero.
                 */}
                 <DetailRow label="Token de acceso">
-                  <span className="nums">••••••••{account.accessTokenLast4}</span>
+                  <span className="nums">
+                    {account ? `••••••••${account.accessTokenLast4}` : '—'}
+                  </span>
                 </DetailRow>
-                <DetailRow label="Cuenta de negocio (WABA)">
-                  {account.wabaId ?? '—'}
-                </DetailRow>
+                <DetailRow label="Cuenta de negocio (WABA)">{account?.wabaId ?? '—'}</DetailRow>
                 <DetailRow label="Clave de la app">
-                  {account.hasAppSecret ? 'Configurada' : 'Sin configurar'}
+                  {account?.hasAppSecret ? 'Configurada' : 'Sin configurar'}
                 </DetailRow>
-                <DetailRow label="Actualizado">{formatDateHuman(account.updatedAt)}</DetailRow>
+                <DetailRow label="Actualizado">
+                  {account ? formatDateHuman(account.updatedAt) : '—'}
+                </DetailRow>
               </DetailRows>
             </CardContent>
           </Card>
@@ -189,8 +197,15 @@ export function WhatsAppAccountPage() {
         </div>
       )}
 
+      {/*
+        Montado **solo mientras está abierto** (§45.7). Con el diálogo siempre en
+        el árbol, devolver `null` no lo desmonta: React conserva su estado, así
+        que un token escrito y abandonado reaparecía al volver a abrir. Aquí eso
+        no es una molestia de formulario, es un secreto que sigue en pantalla.
+      */}
+      {formOpen && (
       <ConnectDialog
-        open={formOpen}
+        open
         onOpenChange={setFormOpen}
         replacing={connected}
         loading={connect.isPending}
@@ -214,6 +229,7 @@ export function WhatsAppAccountPage() {
           }
         }}
       />
+      )}
 
       <ConfirmDialog
         open={confirmOpen}
@@ -256,10 +272,27 @@ interface ConnectFields {
   appSecret: string | null
 }
 
+const connectSchema = z.object({
+  phoneNumberId: z.string().trim().min(1, 'Sin el ID del número no se puede enviar nada.'),
+  phoneNumberLabel: z.string().trim().max(120).optional(),
+  accessToken: z.string().trim().min(1, 'Hace falta el token que da Meta.'),
+  wabaId: z.string().trim().optional(),
+  appSecret: z.string().trim().optional(),
+})
+
+type ConnectValues = z.infer<typeof connectSchema>
+
 /**
- * Conectar o reemplazar. **Nunca rellena el token**, ni siquiera al reemplazar:
- * el backend no lo devuelve, así que un campo prerrellenado sería una mentira
- * que además se guardaría tal cual.
+ * Conectar o reemplazar.
+ *
+ * **Nunca rellena el token**, ni siquiera al reemplazar: el backend no lo
+ * devuelve, así que un campo prerrellenado sería una mentira que además se
+ * guardaría tal cual.
+ *
+ * Valida con Zod y no con el `required` del navegador: `FormDialog` monta su
+ * `<form>` con `noValidate`, así que los atributos nativos no paran nada — se
+ * enviaba el formulario vacío y el 422 llegaba desde el API. Es el mismo patrón
+ * que el resto de formularios de Configuración (§86.3).
  */
 function ConnectDialog({
   open,
@@ -274,15 +307,22 @@ function ConnectDialog({
   loading: boolean
   onSubmit: (data: ConnectFields) => Promise<void>
 }) {
-  const [phoneNumberId, setPhoneNumberId] = useState('')
-  const [phoneNumberLabel, setPhoneNumberLabel] = useState('')
-  const [accessToken, setAccessToken] = useState('')
-  const [wabaId, setWabaId] = useState('')
-  const [appSecret, setAppSecret] = useState('')
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ConnectValues>({ resolver: zodResolver(connectSchema) })
 
-  // Se monta solo mientras está abierto, así que el estado de partida lo ponen
-  // los inicializadores y no hace falta efecto (§45.7).
-  if (!open) return null
+  const submit = handleSubmit((values) =>
+    onSubmit({
+      phoneNumberId: values.phoneNumberId,
+      // Vacío es «no lo pongo», que en el contrato es `null` y no una cadena.
+      phoneNumberLabel: values.phoneNumberLabel || null,
+      accessToken: values.accessToken,
+      wabaId: values.wabaId || null,
+      appSecret: values.appSecret || null,
+    }),
+  )
 
   return (
     <FormDialog
@@ -292,74 +332,57 @@ function ConnectDialog({
       description="Los datos salen del panel de WhatsApp Business de Meta."
       submitLabel={replacing ? 'Reemplazar' : 'Conectar'}
       loading={loading}
-      onSubmit={(event) => {
-        event.preventDefault()
-        void onSubmit({
-          phoneNumberId: phoneNumberId.trim(),
-          phoneNumberLabel: phoneNumberLabel.trim() || null,
-          accessToken: accessToken.trim(),
-          wabaId: wabaId.trim() || null,
-          appSecret: appSecret.trim() || null,
-        })
-      }}
+      onSubmit={submit}
     >
-      <Field label="ID del número de teléfono" htmlFor="phone-number-id" required>
-        <Input
-          id="phone-number-id"
-          value={phoneNumberId}
-          required
-          onChange={(e) => setPhoneNumberId(e.target.value)}
-        />
+      <Field
+        label="ID del número de teléfono"
+        htmlFor="phone-number-id"
+        required
+        error={errors.phoneNumberId?.message}
+        hint="En Meta: WhatsApp → Configuración de la API → «Phone number ID»."
+      >
+        <Input id="phone-number-id" {...register('phoneNumberId')} />
       </Field>
 
       <Field
         label="Nombre para reconocerlo"
         htmlFor="phone-label"
+        error={errors.phoneNumberLabel?.message}
         hint="Solo para ti: «Cobranza», «Sede norte»."
       >
-        <Input
-          id="phone-label"
-          value={phoneNumberLabel}
-          onChange={(e) => setPhoneNumberLabel(e.target.value)}
-        />
+        <Input id="phone-label" {...register('phoneNumberLabel')} />
       </Field>
 
       <Field
         label="Token de acceso"
         htmlFor="access-token"
         required
+        error={errors.accessToken?.message}
         hint={
           replacing
             ? 'Escríbelo entero: no lo guardamos de forma que se pueda volver a leer, así que no podemos traerte el que hay puesto.'
             : 'Se guarda cifrado. A partir de ahí solo verás sus últimos cuatro caracteres.'
         }
       >
-        <Input
-          id="access-token"
-          type="password"
-          autoComplete="off"
-          value={accessToken}
-          required
-          onChange={(e) => setAccessToken(e.target.value)}
-        />
+        <Input id="access-token" type="password" autoComplete="off" {...register('accessToken')} />
       </Field>
 
-      <Field label="ID de la cuenta de negocio (WABA)" htmlFor="waba-id">
-        <Input id="waba-id" value={wabaId} onChange={(e) => setWabaId(e.target.value)} />
+      <Field
+        label="ID de la cuenta de negocio (WABA)"
+        htmlFor="waba-id"
+        error={errors.wabaId?.message}
+        hint="Opcional. En Meta: WhatsApp → Configuración de la API → «WhatsApp Business Account ID»."
+      >
+        <Input id="waba-id" {...register('wabaId')} />
       </Field>
 
       <Field
         label="Clave de la app"
         htmlFor="app-secret"
+        error={errors.appSecret?.message}
         hint="Opcional. Sirve para verificar que los avisos de entrega vienen de Meta."
       >
-        <Input
-          id="app-secret"
-          type="password"
-          autoComplete="off"
-          value={appSecret}
-          onChange={(e) => setAppSecret(e.target.value)}
-        />
+        <Input id="app-secret" type="password" autoComplete="off" {...register('appSecret')} />
       </Field>
     </FormDialog>
   )

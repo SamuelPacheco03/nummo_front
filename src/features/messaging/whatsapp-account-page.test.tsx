@@ -154,6 +154,40 @@ test('los campos opcionales vacíos viajan como null, no como cadena vacía', as
   })
 })
 
+test('el formulario vacío no llega al API: el `required` nativo no vale aquí', async () => {
+  // `FormDialog` monta su <form> con `noValidate`, así que quien valida es Zod.
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Conectar mi número/ }))
+  await userEvent.click(screen.getByRole('button', { name: 'Conectar' }))
+
+  expect(m.conectar).not.toHaveBeenCalled()
+  expect(await screen.findByText(/Sin el ID del número/)).toBeInTheDocument()
+  expect(screen.getByText(/Hace falta el token que da Meta/)).toBeInTheDocument()
+})
+
+test('un token escrito y abandonado no reaparece al volver a abrir', async () => {
+  // El diálogo se monta solo mientras está abierto: con `open={false}` React no
+  // lo desmonta y su estado sobrevive — y aquí ese estado es un secreto.
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Conectar mi número/ }))
+  await userEvent.type(screen.getByLabelText(/Token de acceso/), 'SECRETO-123')
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+  await userEvent.click(screen.getByRole('button', { name: /Conectar mi número/ }))
+
+  expect(screen.getByLabelText(/Token de acceso/)).toHaveValue('')
+})
+
+test('conectado sin detalle de cuenta no se cuenta como desconectado', () => {
+  // El contrato permite `connected: true` con `account: null`; caer en la
+  // tarjeta de «sale por el número de Nummo» diría lo contrario de la verdad.
+  m.connected = true
+  m.account = null
+  pintar()
+
+  expect(screen.getByText('Conectado')).toBeInTheDocument()
+  expect(screen.queryByText('Sale por el número de Nummo')).not.toBeInTheDocument()
+})
+
 test('sin la feature no se ofrece conectar, pero se dice que se envía igual', () => {
   m.byo = false
   pintar()

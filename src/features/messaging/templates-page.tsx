@@ -175,8 +175,11 @@ export function WhatsAppTemplatesPage() {
         </Note>
       )}
 
+      {/* Montado solo mientras está abierto: si no, `open={false}` no lo
+          desmonta y el borrador sobrevive a cerrar y volver a abrir (§45.7). */}
+      {formOpen && (
       <TemplateFormDialog
-        open={formOpen}
+        open
         onOpenChange={setFormOpen}
         loading={create.isPending}
         onSubmit={async (data) => {
@@ -192,6 +195,7 @@ export function WhatsAppTemplatesPage() {
           }
         }}
       />
+      )}
 
       <ConfirmDialog
         open={deleting != null}
