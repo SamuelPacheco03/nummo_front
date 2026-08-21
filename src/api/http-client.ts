@@ -10,12 +10,24 @@ import { ensureCsrfToken } from '@/lib/csrf'
  *
  * Reglas del contrato (ver HANDOFF fases 0/1):
  *  - `credentials: 'include'` para que fluyan las cookies HttpOnly (sesión + CSRF).
- *  - En mutaciones (POST/PUT/PATCH/DELETE) manda `x-csrf-token`.
+ *  - En mutaciones (POST/PUT/PATCH/DELETE) manda `x-csrf-token`, salvo en `/public/*`,
+ *    que no lo pide y donde pedirlo costaría una llamada a auth desde la portada.
  *  - Las rutas se anteponen con `API_BASE_URL` (env `VITE_API_BASE_URL`): vacío =
  *    mismo origen (el proxy de Vite reenvía al backend en dev); con valor = otro dominio.
  *  - Errores con forma `{ error: { code, message, details?, requestId } }` → lanza ApiError.
  */
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+/**
+ * Las rutas públicas de la portada (`/public/*`) **no llevan CSRF**: no autorizan nada
+ * —anotan una señal, contestan una pregunta de preventa— y el contrato no lo pide.
+ *
+ * Importa porque `ensureCsrfToken()` no lee una cookie: hace una petición a
+ * `/api/v1/auth/csrf`. Sin este guard, la primera señal de cada visitante dispararía una
+ * llamada a un endpoint de **auth** desde una página sin sesión: un viaje de más en la
+ * pantalla donde más se nota, y ruido en los registros de autenticación.
+ */
+const PUBLIC_PREFIX = '/api/v1/public/'
 
 interface ApiErrorPayload {
   code: string
@@ -60,7 +72,7 @@ export const customFetch = async <T>(url: string, options: RequestInit = {}): Pr
   const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
 
-  if (MUTATION_METHODS.has(method)) {
+  if (MUTATION_METHODS.has(method) && !url.startsWith(PUBLIC_PREFIX)) {
     const token = await ensureCsrfToken()
     if (token) headers.set('x-csrf-token', token)
   }

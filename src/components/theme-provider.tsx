@@ -1,10 +1,7 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { useThemeStore, type ThemeMode } from '@/stores/theme'
-
-function isDark(mode: ThemeMode, systemDark: boolean): boolean {
-  return mode === 'system' ? systemDark : mode === 'dark'
-}
+import { useThemeStore } from '@/stores/theme'
+import { isDark } from '@/stores/use-resolved-dark'
 
 /** Color de la barra de estado / título en la app instalada (= --background). */
 const THEME_COLOR = { light: '#f8fafc', dark: '#0b1220' } as const

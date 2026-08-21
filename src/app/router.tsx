@@ -38,6 +38,18 @@ const LABORATORIO = import.meta.env.DEV
 // Rutas pesadas cargadas bajo demanda (code-splitting).
 export const router = createBrowserRouter([
   ...LABORATORIO,
+  /*
+    La portada pública. Va fuera de `ProtectedRoute` y fuera de `AppShell` —como `/login`—
+    porque no tiene shell y se pinta con su propia paleta (§97).
+
+    Vive en `/portada` y no en `/` porque `/` es hoy el panel de la consola. La Fase 3
+    separa las entradas (`index.html` → portada, `app.html` → app con `basename: '/app'`)
+    y entonces esto pasa a ser la raíz de la suya.
+  */
+  {
+    path: '/portada',
+    lazy: async () => ({ Component: (await import('@/marketing/landing-page')).LandingPage }),
+  },
   {
     path: '/login',
     lazy: async () => ({ Component: (await import('@/features/auth/login-page')).LoginPage }),
