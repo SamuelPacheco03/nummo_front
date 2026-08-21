@@ -2629,6 +2629,154 @@
         "x-required-permission": "whatsapp.templates.manage"
       }
     },
+    "/api/v1/organizations/{orgId}/whatsapp/account": {
+      "get": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "La cuenta de WhatsApp propia, si la hay (requiere whatsapp.settings.read)",
+        "description": "`connected: false` significa que la organización envía por la cuenta de la plataforma y consume cuota del plan. El token nunca vuelve: solo sus últimos cuatro caracteres.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de la cuenta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppAccountState"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.settings.read",
+        "x-required-feature": "whatsapp_byo"
+      },
+      "put": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Conectar o reemplazar la cuenta propia (requiere whatsapp.settings.manage)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectWhatsAppAccountInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cuenta conectada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppAccountState"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.settings.manage",
+        "x-required-feature": "whatsapp_byo"
+      },
+      "delete": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Desconectarla y volver a la de la plataforma (requiere whatsapp.settings.manage)",
+        "description": "No apaga la cobranza: los mensajes vuelven a salir por la cuenta de la plataforma, y con ella vuelven a consumir cuota del plan.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Desconectada."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.settings.manage",
+        "x-required-feature": "whatsapp_byo"
+      }
+    },
     "/api/v1/organizations/{orgId}/messaging/messages": {
       "get": {
         "tags": [
@@ -11921,7 +12069,8 @@
                 "RECEIVABLES",
                 "PAYABLES",
                 "TREASURY",
-                "TEAM"
+                "TEAM",
+                "ACCOUNT"
               ]
             }
           },
@@ -11951,7 +12100,9 @@
                 "team.expense_registered",
                 "team.disbursement_registered",
                 "member.joined",
-                "member.role_changed"
+                "member.role_changed",
+                "whatsapp_quota.warning",
+                "whatsapp_quota.exhausted"
               ]
             }
           }
@@ -13811,6 +13962,58 @@
         "required": [
           "type",
           "text"
+        ]
+      },
+      "ConnectWhatsAppAccountInput": {
+        "type": "object",
+        "properties": {
+          "phoneNumberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "phoneNumberLabel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "accessToken": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 500
+          },
+          "wabaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "appSecret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "phoneNumberId",
+          "accessToken"
         ]
       },
       "SetMessageConsentInput": {
@@ -17003,7 +17206,7 @@
         "properties": {
           "preferences": {
             "minItems": 1,
-            "maxItems": 21,
+            "maxItems": 23,
             "type": "array",
             "items": {
               "type": "object",
@@ -17031,7 +17234,9 @@
                     "team.expense_registered",
                     "team.disbursement_registered",
                     "member.joined",
-                    "member.role_changed"
+                    "member.role_changed",
+                    "whatsapp_quota.warning",
+                    "whatsapp_quota.exhausted"
                   ]
                 },
                 "enabled": {
@@ -19318,6 +19523,77 @@
         "required": [
           "reviewed",
           "updated"
+        ],
+        "additionalProperties": false
+      },
+      "WhatsAppAccountState": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WhatsAppAccount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "connected",
+          "account"
+        ],
+        "additionalProperties": false
+      },
+      "WhatsAppAccount": {
+        "type": "object",
+        "properties": {
+          "phoneNumberId": {
+            "type": "string"
+          },
+          "phoneNumberLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "accessTokenLast4": {
+            "type": "string"
+          },
+          "wabaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hasAppSecret": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "phoneNumberId",
+          "phoneNumberLabel",
+          "accessTokenLast4",
+          "wabaId",
+          "hasAppSecret",
+          "updatedAt"
         ],
         "additionalProperties": false
       },
@@ -25352,7 +25628,9 @@
               "team.expense_registered",
               "team.disbursement_registered",
               "member.joined",
-              "member.role_changed"
+              "member.role_changed",
+              "whatsapp_quota.warning",
+              "whatsapp_quota.exhausted"
             ]
           },
           "category": {
@@ -25361,7 +25639,8 @@
               "RECEIVABLES",
               "PAYABLES",
               "TREASURY",
-              "TEAM"
+              "TEAM",
+              "ACCOUNT"
             ]
           },
           "priority": {
@@ -25519,7 +25798,9 @@
               "team.expense_registered",
               "team.disbursement_registered",
               "member.joined",
-              "member.role_changed"
+              "member.role_changed",
+              "whatsapp_quota.warning",
+              "whatsapp_quota.exhausted"
             ]
           },
           "category": {
@@ -25528,7 +25809,8 @@
               "RECEIVABLES",
               "PAYABLES",
               "TREASURY",
-              "TEAM"
+              "TEAM",
+              "ACCOUNT"
             ]
           },
           "priority": {

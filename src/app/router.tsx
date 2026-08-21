@@ -506,6 +506,13 @@ export const router = createBrowserRouter([
                 }),
               },
               {
+                path: 'config/whatsapp',
+                lazy: async () => ({
+                  Component: (await import('@/features/messaging/whatsapp-account-page'))
+                    .WhatsAppAccountPage,
+                }),
+              },
+              {
                 path: 'config/plantillas',
                 lazy: async () => ({
                   Component: (await import('@/features/messaging/templates-page'))

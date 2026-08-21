@@ -1,4 +1,6 @@
-import { Lock, MessageSquareText, RefreshCw } from 'lucide-react'
+import { Link } from 'react-router'
+import { useState } from 'react'
+import { Lock, MessageSquareText, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Panel } from '@/components/panel'
@@ -11,21 +13,31 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { toastApiError } from '@/features/platform/errors'
-import { useCan } from '@/features/platform/permissions'
+import { useCan, useFeature } from '@/features/platform/permissions'
 import { formatDateHuman } from '@/lib/format'
 import type { SyncWhatsAppTemplatesResult, WhatsAppTemplate } from '@/api/generated/model'
-import { useSyncWhatsAppTemplates, useWhatsAppTemplates } from './hooks'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import {
+  useCreateWhatsAppTemplate,
+  useDeleteWhatsAppTemplate,
+  useSyncWhatsAppTemplates,
+  useWhatsAppAccount,
+  useWhatsAppTemplates,
+} from './hooks'
 import { isPlatformTemplate, templateStatus } from './labels'
+import { TemplateFormDialog } from './template-form-dialog'
 
 /**
  * **Las plantillas con las que se cobra.**
  *
- * De solo lectura, y a propósito. Crear una propia exige que la organización
- * tenga **cuenta propia de Meta** —con la de plataforma, una organización podría
- * agotar el cupo de 100 creaciones/hora de todas las demás—, y eso llega en la
- * fase 5. Hasta entonces el alta no tendría a quién servirle, así que aquí está
- * la lectura y el botón de crear no existe (§70: no se ofrece lo que va a
- * fallar).
+ * **Crear y borrar exigen cuenta propia de Meta**, y no es una regla nuestra: en
+ * la cuenta compartida de Nummo una organización podría agotarle a las demás el
+ * cupo de creación, o dejar un nombre bloqueado treinta días. Así que los dos
+ * botones aparecen **solo con la cuenta conectada** — ofrecerlos sin ella sería
+ * ofrecer algo que va a responder 403 (§70).
+ *
+ * Las de la plataforma no se borran desde aquí ni con cuenta propia: no son de
+ * esta organización.
  *
  * Lo que sí hace falta ya es **entender por qué un mensaje no salió**: la
  * política puede nombrar una plantilla que Meta pausó o todavía no aprobó, y
@@ -41,6 +53,16 @@ export function WhatsAppTemplatesPage() {
     canRead ? orgId : undefined,
   )
   const sync = useSyncWhatsAppTemplates(orgId ?? '')
+  const create = useCreateWhatsAppTemplate(orgId ?? '')
+  const remove = useDeleteWhatsAppTemplate(orgId ?? '')
+  // Crear y borrar cuelgan de tener número propio, así que hay que saberlo aquí.
+  const hasByo = useFeature('whatsapp_byo')
+  const { connected } = useWhatsAppAccount(
+    canRead && can('whatsapp.settings.read') ? orgId : undefined,
+    hasByo,
+  )
+  const [formOpen, setFormOpen] = useState(false)
+  const [deleting, setDeleting] = useState<WhatsAppTemplate | null>(null)
 
   if (!canRead) {
     return (
@@ -85,6 +107,12 @@ export function WhatsAppTemplatesPage() {
             <span className="hidden sm:inline">Actualizar estado</span>
           </Button>
         )}
+        {canManage && connected && (
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus aria-hidden className="size-4" />
+            <span className="hidden sm:inline">Nueva plantilla</span>
+          </Button>
+        )}
       </PageHeader>
 
       {isPending ? (
@@ -120,7 +148,13 @@ export function WhatsAppTemplatesPage() {
             <Panel title="De tu organización">
               <ul className="divide-y">
                 {own.map((template) => (
-                  <TemplateRow key={template.id} template={template} />
+                  <TemplateRow
+                    key={template.id}
+                    template={template}
+                    onDelete={
+                      canManage && connected ? () => setDeleting(template) : undefined
+                    }
+                  />
                 ))}
               </ul>
             </Panel>
@@ -128,16 +162,76 @@ export function WhatsAppTemplatesPage() {
         </div>
       )}
 
-      {/* Se dice aquí y no cuando alguien busque el botón que no está. */}
-      <Note tone="info" title="Crear plantillas propias todavía no está disponible">
-        Hace falta que la organización conecte su propia cuenta de Meta. Mientras tanto se usan las
-        de Nummo, que ya están aprobadas.
-      </Note>
+      {/* Se dice aquí y no cuando alguien busque el botón que no está. La regla
+          es del backend: en la cuenta compartida, una organización podría
+          agotarle a las demás el cupo de creación. */}
+      {!connected && (
+        <Note tone="info" title="Para crear plantillas propias hace falta tu número">
+          Con el número de Nummo se usan estas, que ya están aprobadas. Conectando el tuyo puedes
+          escribir las tuyas.{' '}
+          <Link to="/config/whatsapp" className="text-brand underline">
+            Número de WhatsApp
+          </Link>
+        </Note>
+      )}
+
+      {/* Montado solo mientras está abierto: si no, `open={false}` no lo
+          desmonta y el borrador sobrevive a cerrar y volver a abrir (§45.7). */}
+      {formOpen && (
+      <TemplateFormDialog
+        open
+        onOpenChange={setFormOpen}
+        loading={create.isPending}
+        onSubmit={async (data) => {
+          if (!orgId) return
+          try {
+            await create.mutateAsync({ orgId, data })
+            toast.success('Plantilla enviada a revisión', {
+              description: 'Meta tiene que aprobarla antes de que se pueda usar.',
+            })
+            setFormOpen(false)
+          } catch (err) {
+            toastApiError(err, 'No se pudo crear la plantilla')
+          }
+        }}
+      />
+      )}
+
+      <ConfirmDialog
+        open={deleting != null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Borrar la plantilla"
+        description={
+          deleting
+            ? `«${deleting.name}» se borra también en Meta. Si la política de cobranza la estaba usando, ese aviso se queda sin plantilla y deja de salir.`
+            : undefined
+        }
+        confirmLabel="Borrar"
+        destructive
+        loading={remove.isPending}
+        onConfirm={async () => {
+          if (!orgId || !deleting) return
+          try {
+            await remove.mutateAsync({ orgId, templateKey: deleting.templateKey })
+            toast.success('Plantilla borrada')
+            setDeleting(null)
+          } catch (err) {
+            toastApiError(err, 'No se pudo borrar la plantilla')
+          }
+        }}
+      />
     </div>
   )
 }
 
-function TemplateRow({ template }: { template: WhatsAppTemplate }) {
+function TemplateRow({
+  template,
+  onDelete,
+}: {
+  template: WhatsAppTemplate
+  /** Solo las propias y solo con cuenta conectada; si no, no llega. */
+  onDelete?: () => void
+}) {
   const status = templateStatus(template)
 
   return (
@@ -158,12 +252,19 @@ function TemplateRow({ template }: { template: WhatsAppTemplate }) {
         )}
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <StatusBadge {...status} />
-        {template.lastSyncedAt && (
-          <span className="text-muted-foreground text-xs">
-            Contrastado el {formatDateHuman(template.lastSyncedAt)}
-          </span>
+      <div className="flex shrink-0 items-start gap-3">
+        <div className="flex flex-col items-end gap-1">
+          <StatusBadge {...status} />
+          {template.lastSyncedAt && (
+            <span className="text-muted-foreground text-xs">
+              Contrastado el {formatDateHuman(template.lastSyncedAt)}
+            </span>
+          )}
+        </div>
+        {onDelete && (
+          <Button variant="ghost" size="sm" onClick={onDelete} aria-label={`Borrar ${template.name}`}>
+            <Trash2 aria-hidden className="size-4" />
+          </Button>
         )}
       </div>
     </li>

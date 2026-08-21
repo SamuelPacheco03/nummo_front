@@ -11,6 +11,8 @@ const m = vi.hoisted(() => ({
   guardarConsentimiento: vi.fn(),
   avisos: [] as string[],
   permisos: new Set<string>(),
+  numeroPropio: false,
+  cupo: { max: 200 as number | null, used: 10 },
 }))
 
 vi.mock('sonner', () => ({
@@ -22,6 +24,14 @@ vi.mock('@/features/organizations/hooks', () => ({
 vi.mock('@/features/platform/permissions', () => ({
   useCan: () => (permiso: string) => m.permisos.has(permiso),
   useFeature: () => true,
+}))
+vi.mock('@/features/platform/hooks', () => ({
+  useCapabilities: () => ({
+    capabilities: {
+      limits: { whatsapp_messages_monthly: m.cupo.max },
+      usage: { whatsapp_messages_monthly: m.cupo.used },
+    },
+  }),
 }))
 // El selector de contacto llama al API por su cuenta; aquí solo estorba.
 vi.mock('@/components/contact-picker', () => ({
@@ -50,6 +60,14 @@ vi.mock('./hooks', () => ({
     isFetching: false,
   }),
   useSetMessageConsent: () => ({ mutateAsync: m.guardarConsentimiento, isPending: false }),
+  useWhatsAppAccount: () => ({
+    connected: m.numeroPropio,
+    account: null,
+    isPending: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
 }))
 
 const { CollectionPage } = await import('./collection-page')
@@ -101,6 +119,8 @@ beforeEach(() => {
   m.guardarConsentimiento = vi.fn().mockResolvedValue({})
   m.avisos = []
   m.permisos = new Set(['messaging.read', 'messaging.settings.manage'])
+  m.numeroPropio = false
+  m.cupo = { max: 200, used: 10 }
 })
 afterEach(cleanup)
 
@@ -239,4 +259,40 @@ test('sin permiso de lectura sale el candado', () => {
   m.permisos = new Set()
   pintar()
   expect(screen.getByText('No puedes ver esto')).toBeInTheDocument()
+})
+
+/* ---------- El cupo ---------- */
+
+test('el cupo se lee en cifras, no solo en barra', () => {
+  m.cupo = { max: 200, used: 42 }
+  pintar()
+  expect(screen.getByText('42 de 200')).toBeInTheDocument()
+})
+
+test('agotado no es un fallo: dice cuándo vuelve y las dos salidas', () => {
+  // No hay recargas de cupo: agotado es agotado hasta el próximo periodo.
+  m.cupo = { max: 200, used: 200 }
+  pintar()
+
+  expect(screen.getByText(/no vuelven a salir hasta el próximo periodo/i)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute('href', '/config/plan')
+  expect(screen.getByRole('link', { name: 'conectar tu número' })).toHaveAttribute(
+    'href',
+    '/config/whatsapp',
+  )
+})
+
+test('con número propio el cupo deja de significar algo, y se dice', () => {
+  m.numeroPropio = true
+  m.cupo = { max: 200, used: 199 }
+  pintar()
+
+  expect(screen.getByText(/no gastan cupo del plan/i)).toBeInTheDocument()
+  expect(screen.queryByText('199 de 200')).not.toBeInTheDocument()
+})
+
+test('un tope en null es «sin límite», nunca cero', () => {
+  m.cupo = { max: null, used: 4321 }
+  pintar()
+  expect(screen.getByText(/Sin tope de mensajes este mes/)).toBeInTheDocument()
 })

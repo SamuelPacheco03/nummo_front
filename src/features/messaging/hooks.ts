@@ -8,9 +8,24 @@ import {
   usePutApiV1OrganizationsOrgIdMessagingCollectionPolicy,
   usePutApiV1OrganizationsOrgIdMessagingConsents,
 } from '@/api/generated/endpoints/mensajería/mensajería'
+/*
+  `/whatsapp/account` sale del archivo de Assistant y no del de WhatsApp: el
+  contrato las etiqueta con el tag `Assistant`, y Orval reparte por tag. Es una
+  errata del backend anotada en SYNC-STATUS; se importa de donde están, que es lo
+  único que no se puede arreglar desde aquí sin editar código generado (§88.2).
+*/
+import {
+  useDeleteApiV1OrganizationsOrgIdWhatsappAccount,
+  useGetApiV1OrganizationsOrgIdWhatsappAccount,
+  usePutApiV1OrganizationsOrgIdWhatsappAccount,
+  getGetApiV1OrganizationsOrgIdWhatsappAccountQueryKey,
+} from '@/api/generated/endpoints/assistant/assistant'
+import { getGetApiV1OrganizationsOrgIdMeCapabilitiesQueryKey } from '@/api/generated/endpoints/platform/platform'
 import {
   getGetApiV1OrganizationsOrgIdWhatsappTemplatesQueryKey,
+  useDeleteApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKey,
   useGetApiV1OrganizationsOrgIdWhatsappTemplates,
+  usePostApiV1OrganizationsOrgIdWhatsappTemplates,
   usePostApiV1OrganizationsOrgIdWhatsappTemplatesSync,
 } from '@/api/generated/endpoints/whats-app/whats-app'
 import type {
@@ -19,6 +34,8 @@ import type {
   GetApiV1OrganizationsOrgIdMessagingMessagesParams,
   MessageConsent,
   OutboundMessage,
+  WhatsAppAccount,
+  WhatsAppAccountState,
   WhatsAppTemplate,
   WhatsAppTemplateList,
 } from '@/api/generated/model'
@@ -203,5 +220,105 @@ export function useSyncWhatsAppTemplates(orgId: string) {
         })
       },
     },
+  })
+}
+
+/* ---------- Cuenta propia de Meta (BYO) ---------- */
+
+/**
+ * **Desde qué número sale la cobranza.**
+ *
+ * Es una pregunta distinta de «¿puedo enviar?», y confundirlas lleva a una
+ * pantalla que miente: `whatsapp_outbound` enciende el ciclo de cobranza, y esto
+ * decide **por dónde**. Sin cuenta propia se envía por la de Nummo y cada
+ * mensaje **consume cuota del plan**; con la propia los paga el negocio
+ * directamente a Meta y no consume nada.
+ *
+ * Las tres rutas van detrás de la feature `whatsapp_byo`, así que la consulta se
+ * ata a ella: pedirla sin el plan sería provocar el `403 FEATURE_NOT_AVAILABLE`
+ * que la pantalla existe para no tener que enseñar (§88.5).
+ */
+export function useWhatsAppAccount(orgId: string | undefined, enabled = true) {
+  const query = useGetApiV1OrganizationsOrgIdWhatsappAccount(orgId ?? '', {
+    query: { enabled: enabled && !!orgId },
+  })
+  const state = body<WhatsAppAccountState>(query.data)
+  return {
+    connected: state?.connected ?? false,
+    account: (state?.account ?? null) as WhatsAppAccount | null,
+    isPending: query.isPending,
+    isError: query.isError,
+    error: query.error,
+    refetch: () => void query.refetch(),
+  }
+}
+
+/**
+ * Conectar o reemplazar la cuenta.
+ *
+ * Invalida además **las capacidades y las plantillas**, y no por costumbre: al
+ * conectar, el consumo del plan deja de subir —así que la barra de cupo cambia
+ * de significado— y crear plantillas propias pasa a estar permitido.
+ */
+export function useConnectWhatsAppAccount(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdWhatsappAccount({
+    mutation: { onSuccess: () => invalidateAccount(qc, orgId) },
+  })
+}
+
+/**
+ * Desconectar. **No apaga la cobranza**: la devuelve a la cuenta de Nummo, y con
+ * ella vuelve a consumir cuota. Quien lo pulsa tiene que saberlo antes.
+ */
+export function useDisconnectWhatsAppAccount(orgId: string) {
+  const qc = useQueryClient()
+  return useDeleteApiV1OrganizationsOrgIdWhatsappAccount({
+    mutation: { onSuccess: () => invalidateAccount(qc, orgId) },
+  })
+}
+
+function invalidateAccount(qc: QueryClient, orgId: string): void {
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdWhatsappAccountQueryKey(orgId),
+  })
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdMeCapabilitiesQueryKey(orgId),
+  })
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdWhatsappTemplatesQueryKey(orgId),
+  })
+}
+
+/**
+ * Crear una plantilla propia y borrarla.
+ *
+ * Las dos **exigen cuenta propia de Meta**, y no es una regla nuestra: en la
+ * cuenta compartida una organización podría agotarle a las demás el cupo de
+ * creación, o dejar un nombre bloqueado treinta días. Por eso la pantalla las
+ * ofrece solo con la cuenta conectada (§11.1.16).
+ */
+export function useCreateWhatsAppTemplate(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdWhatsappTemplates({
+    mutation: { onSuccess: () => invalidateTemplates(qc, orgId) },
+  })
+}
+
+export function useDeleteWhatsAppTemplate(orgId: string) {
+  const qc = useQueryClient()
+  return useDeleteApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKey({
+    mutation: { onSuccess: () => invalidateTemplates(qc, orgId) },
+  })
+}
+
+function invalidateTemplates(qc: QueryClient, orgId: string): void {
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdWhatsappTemplatesQueryKey(orgId),
+  })
+  // La política nombra plantillas por su clave: borrar una que estuviera elegida
+  // deja ese aviso sin plantilla, y esa pantalla tiene que enterarse.
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdMessagingCollectionPolicyQueryKey(orgId),
   })
 }

@@ -118,7 +118,7 @@ export function ConsentsTab({
         column.display({
           id: 'action',
           header: '',
-          meta: { hideOnStack: false, label: '' },
+          meta: { label: '' },
           cell: ({ row }) =>
             canManage ? (
               row.original.status === 'REVOKED' ? (
