@@ -80,6 +80,10 @@
   --success-strong: #0f766e;
   --warning: #f59e0b;
   --warning-foreground: #0f172a;
+  /* Mismo caso que `success`: el ámbar de relleno da 2.1:1 como TEXTO sobre fondo
+     claro. Lo que se escribe en ámbar —el modo de escritura del playground, un
+     tope al límite— usa este, que da 4.9:1 (AA). */
+  --warning-strong: #b45309;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
@@ -148,6 +152,7 @@
   --success-strong: #2dd4bf;
   --warning: #f59e0b;
   --warning-foreground: #0f172a;
+  --warning-strong: #fbbf24;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
@@ -203,6 +208,7 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-destructive: var(--destructive);

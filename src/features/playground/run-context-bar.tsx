@@ -54,21 +54,26 @@ export function RunContextBar({
     <>
       <div
         className={cn(
-          'flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-4 py-2.5 transition-colors lg:px-6',
+          'flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-4 py-2 transition-colors sm:py-2.5 lg:px-6',
           writing ? 'border-warning/40 bg-warning/10' : 'bg-card',
         )}
       >
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
+        <div className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden text-sm sm:flex-wrap sm:gap-y-1.5">
           {isLoading ? (
             <Skeleton className="h-5 w-56" />
           ) : organization ? (
             <>
               <Building2 aria-hidden className="text-muted-foreground size-4 shrink-0" />
-              <span className="truncate font-medium">{organization.name}</span>
+              <span className="min-w-0 truncate font-medium">{organization.name}</span>
               <Dot />
-              <span className="text-muted-foreground">{roleLabel(settings.role)}</span>
+              <span className="text-muted-foreground shrink-0">{roleLabel(settings.role)}</span>
               <Dot />
-              <span className={cn(writing ? 'text-warning-strong font-semibold' : 'text-muted-foreground')}>
+              <span
+                className={cn(
+                  'shrink-0',
+                  writing ? 'text-warning-strong font-semibold' : 'text-muted-foreground',
+                )}
+              >
                 {writing ? 'Lectura y escritura' : 'Solo lectura'}
               </span>
             </>
@@ -77,7 +82,12 @@ export function RunContextBar({
           )}
 
           {context && (
-            <>
+            /*
+              Las fichas desde `sm`. En un teléfono, tres fichas más dos botones dejaban la
+              barra en cuatro renglones —149 px de 812— y el hilo empezaba a media pantalla.
+              Lo que dicen sigue a un toque: el cajón de contexto las lleva como filas.
+            */
+            <div className="hidden flex-wrap items-center gap-1.5 sm:flex">
               <ContextChip onClick={onOpenPrompt} title="Ver y editar el system prompt">
                 <PenLine aria-hidden className="size-3.5" />
                 <span className="nums">{context.promptHash.slice(0, 6)}</span>
@@ -95,14 +105,19 @@ export function RunContextBar({
                 </span>
                 <span>herramientas</span>
               </ContextChip>
-            </>
+            </div>
           )}
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Cambiar contexto"
+          >
             <Settings2 aria-hidden />
-            Cambiar contexto
+            <span className="hidden sm:inline">Cambiar contexto</span>
           </Button>
           {organization?.writable ? (
             writing ? (
@@ -135,14 +150,39 @@ export function RunContextBar({
       </div>
 
       <Drawer open={settingsOpen} onOpenChange={setSettingsOpen} title="Contra qué se prueba">
-        <RunSettingsFields
-          settings={settings}
-          context={context}
-          isLoading={isLoading}
-          onChange={onChange}
-          onSelectOrganization={onSelectOrganization}
-          showMode={false}
-        />
+        <div className="space-y-4">
+          <RunSettingsFields
+            settings={settings}
+            context={context}
+            isLoading={isLoading}
+            onChange={onChange}
+            onSelectOrganization={onSelectOrganization}
+            showMode={false}
+          />
+
+          {context && (
+            <div className="space-y-2 border-t pt-4 sm:hidden">
+              <DrawerRow
+                onClick={() => {
+                  setSettingsOpen(false)
+                  onOpenPrompt()
+                }}
+                icon={<PenLine aria-hidden className="size-4" />}
+                label="System prompt"
+                value={promptEdited ? 'Editado para esta conversación' : `Vigente · ${context.promptHash.slice(0, 6)}`}
+              />
+              <DrawerRow
+                onClick={() => {
+                  setSettingsOpen(false)
+                  onOpenTools()
+                }}
+                icon={<Wrench aria-hidden className="size-4" />}
+                label="Herramientas"
+                value={`${tools.offered} de ${tools.total} se le ofrecen`}
+              />
+            </div>
+          )}
+        </div>
       </Drawer>
 
       <ConfirmDialog
@@ -157,6 +197,36 @@ export function RunContextBar({
         }}
       />
     </>
+  )
+}
+
+/** Una entrada del cajón de contexto: lo que en escritorio es una ficha de la barra. */
+function DrawerRow({
+  onClick,
+  icon,
+  label,
+  value,
+}: {
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'hover:bg-accent flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors',
+        'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+      )}
+    >
+      <span className="text-muted-foreground shrink-0">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="text-muted-foreground block truncate text-xs">{value}</span>
+      </span>
+    </button>
   )
 }
 

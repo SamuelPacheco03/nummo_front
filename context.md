@@ -478,6 +478,13 @@ Ejemplos:
 - próximo a vencer;
 - requiere revisión.
 
+**Como relleno, `warning`; como texto, `warning-strong`.** Es la misma regla que ya tenía
+`success` y por el mismo motivo: el ámbar de las barras y las insignias da 2.1:1 leído como
+texto sobre fondo claro, y `warning-strong` da 4.9:1 (AA). Se estrenó al escribir «Lectura y
+escritura» en la barra del playground (§47.5) — y el token **no existía**, así que la clase no
+generaba nada y el aviso se quedaba del color del texto normal. Un token que se usa sin estar
+declarado no se ve como un error: se ve como si el diseño no tuviera color.
+
 ## Peligro
 
 Rojo.

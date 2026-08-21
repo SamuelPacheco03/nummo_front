@@ -94,7 +94,20 @@ export function SectionedLayout({
   const [open, setOpen] = useState(false)
 
   return (
-    <div className={cn('lg:flex lg:gap-8', console && 'h-full min-h-0')}>
+    <div
+      className={cn(
+        'lg:flex lg:gap-8',
+        /*
+          En consola el alto es de la ventana, y eso obliga a repartirlo en vez de
+          dejar que cada bloque crezca: por debajo de `lg` el botón «Secciones» va
+          antes que el contenido, así que si el contenido pide el 100 % del alto la
+          suma se pasa y lo de abajo —la caja de escribir— se sale por el recorte.
+          Columna con `min-h-0` y el botón como pieza fija: lo que sobra es del
+          contenido, en móvil y en escritorio.
+        */
+        console && 'flex h-full min-h-0 flex-col lg:flex-row',
+      )}
+    >
       {/*
         `top-24` y no `top-8`: la cabecera de escritorio es `sticky` y mide 64 px,
         así que una columna pegada a 32 px se metía por debajo al desplazar y
@@ -107,7 +120,7 @@ export function SectionedLayout({
         <Groups groups={groups} />
       </nav>
 
-      <div className="mb-6 lg:hidden">
+      <div className={cn('lg:hidden', console ? 'mb-2 flex-none' : 'mb-6')}>
         <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
           <List aria-hidden className="size-4" />
           Secciones
@@ -119,9 +132,7 @@ export function SectionedLayout({
         </Drawer>
       </div>
 
-      <div className={cn('min-w-0 flex-1', console ? 'h-full min-h-0' : 'max-w-3xl')}>
-        {children}
-      </div>
+      <div className={cn('min-w-0 flex-1', console ? 'min-h-0' : 'max-w-3xl')}>{children}</div>
     </div>
   )
 }
