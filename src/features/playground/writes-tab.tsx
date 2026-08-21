@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { PenLine } from 'lucide-react'
 import { Panel } from '@/components/panel'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
@@ -24,7 +23,7 @@ import { TraceDrawer } from './trace-drawer'
  * Esta pantalla dice **qué revisar**; deshacerlo se hace por la puerta de siempre, desde la
  * organización.
  */
-export function PlaygroundWritesPage() {
+export function WritesTab() {
   const [params, setParams] = useSearchParams()
   const fromUrl = params.get('conversacion') ?? ''
   const [draft, setDraft] = useState(fromUrl)
@@ -44,12 +43,7 @@ export function PlaygroundWritesPage() {
     )
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Escrituras de una corrida"
-        description="Lo que Numi registró de verdad en una conversación: pagos, egresos, contactos."
-      />
-
+    <div className="space-y-4">
       <Panel title="Qué conversación">
         <form
           className="flex flex-wrap items-end gap-3"

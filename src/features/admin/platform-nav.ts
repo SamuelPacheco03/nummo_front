@@ -1,12 +1,10 @@
 import {
   Activity,
-  BookOpen,
   Building2,
   Columns3,
   Layers,
   ListChecks,
   MessageSquareCode,
-  PenLine,
   Wrench,
 } from 'lucide-react'
 import type { SectionGroup } from '@/components/ui/sectioned-layout'
@@ -35,25 +33,20 @@ export const GROUPS: SectionGroup[] = [
       de una organización la ve nunca.
     */
     title: 'Playground de Numi',
+    /*
+      **Cinco destinos y por verbo**, no nueve por endpoint. Eran nueve —consola,
+      herramientas, comparar, regresión, actividad, historial, puntuaciones, escrituras y
+      conocimiento—: una entrada por ruta del contrato, que es el modelo de datos y no el
+      del trabajo (§14). Lo que la persona hace son cinco cosas, y lo demás pasó a ser
+      pestaña de la que le corresponde.
+    */
     items: [
       // `end`: es el padre de las otras cuatro rutas y sin esto quedaría activo en todas.
-      { to: '/plataforma/playground', label: 'Consola', Icon: MessageSquareCode, end: true },
-      { to: '/plataforma/playground/herramientas', label: 'Herramientas', Icon: Wrench },
+      { to: '/plataforma/playground', label: 'Probar', Icon: MessageSquareCode, end: true },
       { to: '/plataforma/playground/comparar', label: 'Comparar', Icon: Columns3 },
-      { to: '/plataforma/playground/regresion', label: 'Regresión', Icon: ListChecks },
-    ],
-  },
-  {
-    // Lo que ya pasó, con clientes de verdad: la otra mitad del panel.
-    title: 'Numi en producción',
-    items: [
-      /*
-        Actividad, Historial y Puntuaciones eran tres destinos y son la misma pregunta a
-        tres escalas: hoy son las tres pestañas de Vigilar (§47.5).
-      */
+      { to: '/plataforma/playground/regresion', label: 'Proteger', Icon: ListChecks },
       { to: '/plataforma/playground/vigilar', label: 'Vigilar', Icon: Activity },
-      { to: '/plataforma/playground/escrituras', label: 'Escrituras', Icon: PenLine },
-      { to: '/plataforma/playground/conocimiento', label: 'Conocimiento', Icon: BookOpen },
+      { to: '/plataforma/playground/controlar', label: 'Controlar', Icon: Wrench },
     ],
   },
 ]

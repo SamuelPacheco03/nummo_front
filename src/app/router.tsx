@@ -82,10 +82,18 @@ export const router = createBrowserRouter([
                 }),
               },
               {
-                path: 'herramientas',
+                path: 'controlar',
                 lazy: async () => ({
-                  Component: (await import('@/features/playground/tools-page')).PlaygroundToolsPage,
+                  Component: (await import('@/features/playground/controlar-page'))
+                    .PlaygroundControlarPage,
                 }),
+              },
+              /* Los tres destinos de antes entran por su pestaña: un enlace no muere. */
+              {
+                path: 'herramientas',
+                element: (
+                  <Navigate to="/plataforma/playground/controlar?vista=herramientas" replace />
+                ),
               },
               {
                 path: 'comparar',
@@ -97,7 +105,8 @@ export const router = createBrowserRouter([
               {
                 path: 'regresion',
                 lazy: async () => ({
-                  Component: (await import('@/features/playground/cases-page')).PlaygroundCasesPage,
+                  Component: (await import('@/features/playground/proteger-page'))
+                    .PlaygroundProtegerPage,
                 }),
               },
               {
@@ -128,17 +137,15 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'escrituras',
-                lazy: async () => ({
-                  Component: (await import('@/features/playground/writes-page'))
-                    .PlaygroundWritesPage,
-                }),
+                element: (
+                  <Navigate to="/plataforma/playground/controlar?vista=escrituras" replace />
+                ),
               },
               {
                 path: 'conocimiento',
-                lazy: async () => ({
-                  Component: (await import('@/features/playground/knowledge-page'))
-                    .PlaygroundKnowledgePage,
-                }),
+                element: (
+                  <Navigate to="/plataforma/playground/controlar?vista=conocimiento" replace />
+                ),
               },
             ],
           },

@@ -3457,15 +3457,19 @@ Corre el **mismo** caso de uso que atiende a un cliente —mismo system prompt, 
 mismo grounding—, así que lo que se ve aquí es lo que pasa en producción. Lo que cambia lo cambia
 **estrechando**, nunca ampliando: un rol suplantado no puede más que ese rol.
 
-| Ruta | Qué hace |
-| --- | --- |
-| `/plataforma/playground` | La consola: organización, rol, modo, modelo y prompt, y el chat |
-| `…/herramientas` | Correr una herramienta a mano, con argumentos, sin modelo |
-| `…/comparar` | El mismo mensaje contra 2–4 variantes de modelo o prompt |
-| `…/regresion` | Casos guardados con sus expectativas, y correrlos todos |
-| `…/vigilar` | **Lo que pasó con clientes**, en tres pestañas: Resumen, Turnos y Puntuaciones |
-| `…/escrituras` | Qué dejó escrito una corrida |
-| `…/conocimiento` | La sonda del RAG: qué trozos devuelve una consulta y con qué score |
+**Cinco destinos y por verbo, no nueve por endpoint.** Empezó con una entrada de menú por
+ruta del contrato —consola, herramientas, comparar, regresión, actividad, historial,
+puntuaciones, escrituras y conocimiento—, que es el modelo de datos y no el del trabajo (§14).
+Lo que la persona hace son cinco cosas; lo demás es una pestaña de la que le corresponde, y las
+rutas viejas redirigen a la suya para que ningún enlace guardado muera.
+
+| Ruta | Qué hace | Pestañas |
+| --- | --- | --- |
+| `/plataforma/playground` | **Probar**: hablar con Numi suplantando un rol | — |
+| `…/comparar` | El mismo mensaje contra 2–4 variantes de modelo o prompt | — |
+| `…/regresion` | **Proteger**: el conjunto de regresión | Casos · Corridas |
+| `…/vigilar` | Lo que pasó con clientes de verdad | Resumen · Turnos · Puntuaciones |
+| `…/controlar` | Qué puede hacer Numi y qué dejó hecho | Herramientas · Escrituras · Conocimiento |
 
 **Cinco cosas de aquí que se hacen mal solas**, y las cinco pintan un panel que miente:
 
@@ -3498,7 +3502,9 @@ Y dos cosas que **no** se construyen, por decisión de producto:
 
 **El catálogo de herramientas enseña el porqué de cada ausencia** (`offered` / `withheld`): «no
 aparece porque el rol no puede» y «no aparece porque estás en solo lectura» son dos bugs distintos,
-y sin distinguirlos los dos se investigan igual.
+y sin distinguirlos los dos se investigan igual. Va en **tabla y no en acordeón**: con veinticuatro
+filas plegadas, el motivo —que es la mitad del valor— había que ir a buscarlo abriéndolas una por
+una.
 
 **Los criterios de la corrida viven en la URL** (`useRunSettings`, §21.1), compartidos por las
 cuatro pantallas de prueba. Es lo que hace que «volver a correrla» desde un pulgar abajo abra la
@@ -4927,6 +4933,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `TracePanel` · `TraceDrawer` | `features/playground/trace-drawer.tsx` | **Cómo se abre una traza**, con la traza en la mano o solo con su id |
 | `OriginFilter` · `OrganizationFilter` | `features/playground/panel-filters.tsx` | Los dos filtros que comparten las pestañas de Vigilar |
 | `PlaygroundVigilarPage` | `features/playground/vigilar-page.tsx` | Resumen, Turnos y Puntuaciones: la misma pregunta a tres escalas |
+| `PlaygroundProtegerPage` | `features/playground/proteger-page.tsx` | Casos y corridas del conjunto de regresión |
+| `PlaygroundControlarPage` | `features/playground/controlar-page.tsx` | Herramientas, escrituras y conocimiento |
 | `previousRange` · `delta` | `features/playground/ranges.ts` | La ventana anterior y el cambio, **pedidos** al backend y no estimados |
 
 ---

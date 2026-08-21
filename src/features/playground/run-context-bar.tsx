@@ -34,6 +34,7 @@ export function RunContextBar({
   onOpenPrompt,
   promptEdited,
   allowWrite = true,
+  showChips = true,
 }: {
   settings: RunSettings
   context: PlaygroundContext | undefined
@@ -53,6 +54,13 @@ export function RunContextBar({
    * palabras en la barra en vez de ofrecer algo que el backend va a rechazar (§88.5).
    */
   allowWrite?: boolean
+  /**
+   * Las fichas de prompt, modelo y herramientas.
+   *
+   * Se apagan donde lo que dicen **es** la pantalla: en el catálogo, una ficha que anuncia
+   * «18 de 24 herramientas» encima de la tabla que las lista es decir dos veces lo mismo.
+   */
+  showChips?: boolean
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [confirmWrite, setConfirmWrite] = useState(false)
@@ -96,7 +104,7 @@ export function RunContextBar({
             <span className="text-muted-foreground">Sin organización elegida</span>
           )}
 
-          {context && (
+          {context && showChips && (
             /*
               Las fichas desde `sm`. En un teléfono, tres fichas más dos botones dejaban la
               barra en cuatro renglones —149 px de 812— y el hilo empezaba a media pantalla.

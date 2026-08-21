@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { BookOpen, Search } from 'lucide-react'
 import { Panel } from '@/components/panel'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Field } from '@/components/ui/field'
@@ -19,7 +18,7 @@ import { useKnowledgeProbe } from './hooks'
  * Es para ajustar la recuperación, que es la mitad silenciosa de una respuesta mala: si lo
  * que llega al modelo no habla del tema, ningún prompt lo arregla.
  */
-export function PlaygroundKnowledgePage() {
+export function KnowledgeTab() {
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<PlaygroundKnowledgeHit[] | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
@@ -46,12 +45,7 @@ export function PlaygroundKnowledgePage() {
   }
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Base de conocimiento"
-        description="Qué trozos devuelve una consulta y con qué score, para ajustar lo que llega al modelo."
-      />
-
+    <div className="space-y-4">
       <Panel title="La consulta">
         <form
           className="flex flex-wrap items-end gap-3"

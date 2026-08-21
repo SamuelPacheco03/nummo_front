@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { Play } from 'lucide-react'
-import { Panel } from '@/components/panel'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -18,7 +16,7 @@ import type { PlaygroundTool, PlaygroundToolRun } from '@/api/generated/model'
 import { JsonBlock } from './code-block'
 import { usePlaygroundContext, usePlaygroundTools, useRunTool } from './hooks'
 import { formatMs } from './metrics'
-import { RunSettingsFields } from './run-settings-fields'
+import { RunContextBar } from './run-context-bar'
 import { useRunSettings } from './run-settings'
 import {
   initialValues,
@@ -30,12 +28,12 @@ import {
 import { ToolCatalog } from './tool-catalog'
 
 /**
- * **Correr una herramienta a mano, sin modelo de por medio.**
+ * **Herramientas**: qué ve el modelo, y correr una a mano sin modelo de por medio.
  *
  * Separa en un clic «la herramienta está rota» de «el modelo la llamó mal», que es la
  * primera bifurcación de cualquier investigación y la más cara de resolver a ojo.
  */
-export function PlaygroundToolsPage() {
+export function ToolsTab() {
   const { settings, set, selectOrganization } = useRunSettings()
   const { context, isPending, isError, error } = usePlaygroundContext(settings.orgId)
   const tools = usePlaygroundTools(settings.orgId, {
@@ -46,29 +44,28 @@ export function PlaygroundToolsPage() {
   const [running, setRunning] = useState<PlaygroundTool | null>(null)
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Ejecutor de herramientas"
-        description="Corre una herramienta con los argumentos que quieras, sin pasar por el modelo."
+    <div className="space-y-4">
+      {/*
+        El contexto manda aquí igual que en la consola: el catálogo cambia con el rol y con
+        el modo, y correr una herramienta escribe con los permisos de quien se suplanta.
+      */}
+      <RunContextBar
+        settings={settings}
+        context={context}
+        isLoading={isPending && !!settings.orgId}
+        onChange={set}
+        onSelectOrganization={selectOrganization}
+        tools={{ offered: tools.tools.filter((t) => t.offered).length, total: tools.tools.length }}
+        onOpenTools={() => {}}
+        onOpenPrompt={() => {}}
+        promptEdited={false}
+        showChips={false}
       />
 
-      <Panel title="Contra qué se corre">
-        <RunSettingsFields
-          settings={settings}
-          context={context}
-          isLoading={isPending && !!settings.orgId}
-          onChange={set}
-          onSelectOrganization={selectOrganization}
-          showModel={false}
-        />
-      </Panel>
-
       {isError ? (
-        <Panel title="Catálogo">
-          <p className="text-destructive text-sm">
-            {getErrorMessage(error, 'No se pudo cargar la organización.')}
-          </p>
-        </Panel>
+        <p className="text-destructive text-sm">
+          {getErrorMessage(error, 'No se pudo cargar la organización.')}
+        </p>
       ) : !settings.orgId ? (
         <EmptyState
           Icon={Wrench}
@@ -76,21 +73,20 @@ export function PlaygroundToolsPage() {
           description="Las herramientas corren contra los datos de un cliente, así que primero hay que decir contra cuál."
         />
       ) : (
-        <Panel title="Catálogo">
-          <ToolCatalog
-            tools={tools.tools}
-            isPending={tools.isPending}
-            isError={tools.isError}
-            error={tools.error}
-            action={(tool) => (
-              <ToolAction
-                tool={tool}
-                readOnly={settings.mode === 'read_only'}
-                onRun={() => setRunning(tool)}
-              />
-            )}
-          />
-        </Panel>
+        <ToolCatalog
+          tools={tools.tools}
+          isPending={tools.isPending}
+          isError={tools.isError}
+          error={tools.error}
+          onSelect={(tool) => setRunning(tool)}
+          action={(tool) => (
+            <ToolAction
+              tool={tool}
+              readOnly={settings.mode === 'read_only'}
+              onRun={() => setRunning(tool)}
+            />
+          )}
+        />
       )}
 
       {running && (

@@ -26,3 +26,23 @@ export function parseList(text: string): string[] {
 export function joinList(items: string[] | undefined): string {
   return (items ?? []).join('\n')
 }
+
+/** Cuántas condiciones tiene que cumplir la respuesta para dar el caso por bueno. */
+export function countExpectations(item: {
+  expectations: {
+    expectedTools: string[]
+    forbiddenTools: string[]
+    mustMention: string[]
+    mustNotMention: string[]
+    mustBeGrounded: boolean
+  }
+}): number {
+  const e = item.expectations
+  return (
+    e.expectedTools.length +
+    e.forbiddenTools.length +
+    e.mustMention.length +
+    e.mustNotMention.length +
+    (e.mustBeGrounded ? 1 : 0)
+  )
+}

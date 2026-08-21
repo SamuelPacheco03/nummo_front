@@ -1,109 +1,131 @@
 import type { ReactNode } from 'react'
+import { Wrench } from 'lucide-react'
+import { DataList } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
-import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Wrench } from 'lucide-react'
+import { listColumns } from '@/components/ui/list-columns'
 import type { PlaygroundTool } from '@/api/generated/model'
-import { Disclosure, JsonBlock } from './code-block'
 import { toolOfferStatus } from './labels'
 
 /**
- * **El catálogo de herramientas de una corrida**: las que el modelo va a ver y las que
- * no, con el motivo de cada ausencia.
+ * **El catálogo de herramientas de una corrida**: las que el modelo va a ver y las que no,
+ * con el motivo de cada ausencia.
  *
- * Enseñar el porqué es la mitad del valor del panel: «no aparece porque el rol no puede»
- * y «no aparece porque estás en solo lectura» son dos bugs distintos, y sin distinguirlos
- * los dos se investigan igual.
+ * Es una **tabla y no un acordeón**, y el cambio importa: enseñar el porqué es la mitad
+ * del valor del panel —«no aparece porque el rol no puede» y «no aparece porque estás en
+ * solo lectura» son dos bugs distintos— y estaba escondido dentro de cada fila plegada. Un
+ * catálogo de veinticuatro líneas iguales obligaba a abrirlas una por una para encontrar
+ * las seis que faltan.
  *
- * Lo comparten la consola —que lo abre en un cajón para revisar antes de preguntar— y el
- * ejecutor, que además corre cada herramienta a mano.
+ * El esquema y el ejecutor viven en el cajón de cada fila: es lo que se mira **después**
+ * de haber encontrado la herramienta, no mientras se busca.
  */
 export function ToolCatalog({
   tools,
   isPending,
   isError,
   error,
+  onSelect,
   action,
 }: {
   tools: PlaygroundTool[]
   isPending: boolean
   isError: boolean
   error: unknown
-  /** Lo que cada herramienta ofrece hacer. El ejecutor pone aquí su botón. */
+  /** Abrir la ficha de una herramienta: su esquema y, si se puede, correrla. */
+  onSelect?: (tool: PlaygroundTool) => void
+  /** Lo que cada fila ofrece hacer, a la derecha del todo. */
   action?: (tool: PlaygroundTool) => ReactNode
 }) {
   if (isError) {
     return <ErrorState error={error} fallback="No se pudo cargar el catálogo de herramientas." />
   }
 
-  if (isPending) {
-    return (
-      <div className="space-y-2">
-        {Array.from({ length: 8 }, (_, i) => (
-          <Skeleton key={i} className="h-11 w-full" />
-        ))}
-      </div>
-    )
-  }
-
-  if (tools.length === 0) {
-    return (
-      <EmptyState
-        Icon={Wrench}
-        title="Sin herramientas"
-        description="Este rol no ve ninguna herramienta en este modo."
-      />
-    )
-  }
+  const column = listColumns<PlaygroundTool>()
+  const columns = column.columns([
+    column.display({
+      id: 'name',
+      header: 'Herramienta',
+      meta: { card: 'title' },
+      cell: ({ row }) => (
+        <span className="min-w-0">
+          <span className="block truncate font-mono text-xs font-medium">{row.original.name}</span>
+          <span className="text-muted-foreground line-clamp-1 text-xs">
+            {row.original.description}
+          </span>
+        </span>
+      ),
+    }),
+    column.display({
+      id: 'kind',
+      header: 'Tipo',
+      meta: { label: 'Tipo' },
+      cell: ({ row }) =>
+        row.original.kind === 'write' ? (
+          <StatusBadge tone="warning" label="Escribe" />
+        ) : (
+          <span className="text-muted-foreground">Lee</span>
+        ),
+    }),
+    column.display({
+      id: 'permission',
+      header: 'Permiso',
+      meta: { hideOnStack: true },
+      cell: ({ row }) => (
+        <span className="text-muted-foreground font-mono text-xs">
+          {row.original.permission ?? '—'}
+        </span>
+      ),
+    }),
+    column.display({
+      id: 'offered',
+      header: 'Estado',
+      meta: { card: 'status' },
+      cell: ({ row }) => (
+        <StatusBadge {...toolOfferStatus(row.original.offered, row.original.withheld)} />
+      ),
+    }),
+    ...(action
+      ? [
+          column.display({
+            id: 'action',
+            header: '',
+            meta: { align: 'right' as const },
+            cell: ({ row }) => action(row.original),
+          }),
+        ]
+      : []),
+  ])
 
   const offered = tools.filter((tool) => tool.offered).length
 
   return (
     <div className="space-y-3">
-      <p className="text-muted-foreground text-sm">
-        <span className="nums text-foreground font-medium">{offered}</span> de{' '}
-        <span className="nums">{tools.length}</span> se le ofrecen al modelo en esta corrida.
-      </p>
+      {!isPending && tools.length > 0 && (
+        <p className="text-muted-foreground text-sm">
+          <span className="nums text-foreground font-medium">{offered}</span> de{' '}
+          <span className="nums">{tools.length}</span> se le ofrecen al modelo en esta corrida.
+          {/* «El estado» y no «la columna Estado»: en móvil son tarjetas, no columnas. */}{' '}
+          El estado de cada una dice por qué no las demás.
+        </p>
+      )}
 
-      <div className="space-y-2">
-        {tools.map((tool) => (
-          <Disclosure
-            key={tool.name}
-            summary={
-              <span className="flex flex-wrap items-center gap-2">
-                <span className="truncate font-medium">{tool.name}</span>
-                <StatusBadge {...toolOfferStatus(tool.offered, tool.withheld)} />
-                {tool.kind === 'write' && <StatusBadge tone="warning" label="Escribe" />}
-              </span>
-            }
-          >
-            <p className="text-muted-foreground text-sm leading-relaxed">{tool.description}</p>
-            {tool.permission && (
-              <p className="text-muted-foreground text-xs">
-                Permiso: <span className="text-foreground">{tool.permission}</span>
-              </p>
-            )}
-
-            <div className="space-y-2">
-              <p className="text-muted-foreground text-xs font-medium">Argumentos que acepta</p>
-              {tool.schema == null ? (
-                /*
-                  Un esquema que no se pudo representar no es un error: la herramienta
-                  existe y se ofrece igual. Lo que no hay es formulario.
-                */
-                <p className="text-muted-foreground text-xs">
-                  Su esquema no se pudo representar. La herramienta funciona igual.
-                </p>
-              ) : (
-                <JsonBlock value={tool.schema} />
-              )}
-            </div>
-
-            {action?.(tool)}
-          </Disclosure>
-        ))}
-      </div>
+      <DataList
+        columns={columns}
+        rows={tools}
+        getRowId={(tool) => tool.name}
+        onRowClick={onSelect}
+        isLoading={isPending}
+        skeletonRows={8}
+        emptyText={
+          <EmptyState
+            Icon={Wrench}
+            title="Sin herramientas"
+            description="Este rol no ve ninguna herramienta en este modo."
+          />
+        }
+      />
     </div>
   )
 }
