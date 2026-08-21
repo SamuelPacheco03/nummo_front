@@ -46,6 +46,8 @@ const REWRITES: [RegExp, string][] = [
   [/^\/caja\/cuentas\/[^/?#]+$/, '/caja/cuentas'],
 
   [/^\/configuracion\/miembros$/, '/config/miembros'],
+  // El destino de los dos avisos del cupo de WhatsApp.
+  [/^\/configuracion\/plan$/, '/config/plan'],
 ]
 
 /**
