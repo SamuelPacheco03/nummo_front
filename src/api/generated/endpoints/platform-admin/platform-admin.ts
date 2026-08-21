@@ -30,7 +30,13 @@ import type {
   ChangePlanInput,
   EntitlementsDto,
   ErrorResponse,
+  GetApiV1AdminMarketingFunnelParams,
+  GetApiV1AdminMarketingOverviewParams,
+  GetApiV1AdminMarketingSourcesParams,
   GetApiV1AdminOrganizationsParams,
+  MarketingFunnel,
+  MarketingOverview,
+  MarketingSources,
   PlanDto,
   SavePlanInput,
   SavePlanResult,
@@ -791,7 +797,388 @@ export const usePutApiV1AdminPlansCode = <TError = ErrorResponse,
       > => {
       return useMutation(getPutApiV1AdminPlansCodeMutationOptions(options), queryClient);
     }
-    export type getApiV1AdminWhatsappStatusResponse200 = {
+    export type getApiV1AdminMarketingOverviewResponse200 = {
+  data: MarketingOverview
+  status: 200
+}
+
+export type getApiV1AdminMarketingOverviewResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminMarketingOverviewResponseSuccess = (getApiV1AdminMarketingOverviewResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminMarketingOverviewResponseError = (getApiV1AdminMarketingOverviewResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminMarketingOverviewResponse = (getApiV1AdminMarketingOverviewResponseSuccess | getApiV1AdminMarketingOverviewResponseError)
+
+export const getGetApiV1AdminMarketingOverviewUrl = (params?: GetApiV1AdminMarketingOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/marketing/overview?${stringifiedParams}` : `/api/v1/admin/marketing/overview`
+}
+
+/**
+ * Cohorte por llegada: de quienes entraron en la ventana, cuántos terminaron registrándose — que es lo que juzga a la campaña, y no contar registros por su propia fecha. Los totales salen de la tabla de visitantes, que es exacta y no se purga; la serie diaria sale del agregado. Sin fechas, los últimos treinta días.
+ * @summary Cuánta gente llegó a la página pública y cuánta abrió cuenta
+ */
+export const getApiV1AdminMarketingOverview = async (params?: GetApiV1AdminMarketingOverviewParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminMarketingOverviewResponse> => {
+
+  return customFetch<getApiV1AdminMarketingOverviewResponse>(getGetApiV1AdminMarketingOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminMarketingOverviewQueryKey = (params?: GetApiV1AdminMarketingOverviewParams,) => {
+    return [
+    `/api/v1/admin/marketing/overview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminMarketingOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError = ErrorResponse>(params?: GetApiV1AdminMarketingOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminMarketingOverviewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>> = ({ signal }) => getApiV1AdminMarketingOverview(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminMarketingOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>>
+export type GetApiV1AdminMarketingOverviewQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminMarketingOverview<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError = ErrorResponse>(
+ params: undefined |  GetApiV1AdminMarketingOverviewParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminMarketingOverview<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminMarketingOverview<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Cuánta gente llegó a la página pública y cuánta abrió cuenta
+ */
+
+export function useGetApiV1AdminMarketingOverview<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingOverview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminMarketingOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1AdminMarketingFunnelResponse200 = {
+  data: MarketingFunnel
+  status: 200
+}
+
+export type getApiV1AdminMarketingFunnelResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminMarketingFunnelResponseSuccess = (getApiV1AdminMarketingFunnelResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminMarketingFunnelResponseError = (getApiV1AdminMarketingFunnelResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminMarketingFunnelResponse = (getApiV1AdminMarketingFunnelResponseSuccess | getApiV1AdminMarketingFunnelResponseError)
+
+export const getGetApiV1AdminMarketingFunnelUrl = (params?: GetApiV1AdminMarketingFunnelParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/marketing/funnel?${stringifiedParams}` : `/api/v1/admin/marketing/funnel`
+}
+
+/**
+ * Alcance por sección, en el orden en que se recorren, con la primera como denominador: es una caída, no una lista de cifras. Sale del agregado diario, así que responde también para fechas anteriores a la purga del rastro individual; a cambio, alguien que volvió otro día cuenta en los dos, lo que afecta por igual a todas las secciones y deja la forma intacta.
+ * @summary Hasta dónde baja la gente antes de irse
+ */
+export const getApiV1AdminMarketingFunnel = async (params?: GetApiV1AdminMarketingFunnelParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminMarketingFunnelResponse> => {
+
+  return customFetch<getApiV1AdminMarketingFunnelResponse>(getGetApiV1AdminMarketingFunnelUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminMarketingFunnelQueryKey = (params?: GetApiV1AdminMarketingFunnelParams,) => {
+    return [
+    `/api/v1/admin/marketing/funnel`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminMarketingFunnelQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError = ErrorResponse>(params?: GetApiV1AdminMarketingFunnelParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminMarketingFunnelQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>> = ({ signal }) => getApiV1AdminMarketingFunnel(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminMarketingFunnelQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>>
+export type GetApiV1AdminMarketingFunnelQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminMarketingFunnel<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError = ErrorResponse>(
+ params: undefined |  GetApiV1AdminMarketingFunnelParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminMarketingFunnel<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingFunnelParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminMarketingFunnel<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingFunnelParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Hasta dónde baja la gente antes de irse
+ */
+
+export function useGetApiV1AdminMarketingFunnel<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingFunnelParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingFunnel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminMarketingFunnelQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1AdminMarketingSourcesResponse200 = {
+  data: MarketingSources
+  status: 200
+}
+
+export type getApiV1AdminMarketingSourcesResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminMarketingSourcesResponseSuccess = (getApiV1AdminMarketingSourcesResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminMarketingSourcesResponseError = (getApiV1AdminMarketingSourcesResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminMarketingSourcesResponse = (getApiV1AdminMarketingSourcesResponseSuccess | getApiV1AdminMarketingSourcesResponseError)
+
+export const getGetApiV1AdminMarketingSourcesUrl = (params?: GetApiV1AdminMarketingSourcesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/marketing/sources?${stringifiedParams}` : `/api/v1/admin/marketing/sources`
+}
+
+/**
+ * Por fuente y campaña: visitantes, registros, cuántos de esos crearon una organización y cuántos están en un plan de pago. Es la mitad del embudo que ningún analítico externo puede ver, porque vive en las tablas del producto. `campaign` vacío significa una visita sin `utm_campaign`.
+ * @summary Qué trae cada canal, hasta la organización que paga
+ */
+export const getApiV1AdminMarketingSources = async (params?: GetApiV1AdminMarketingSourcesParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminMarketingSourcesResponse> => {
+
+  return customFetch<getApiV1AdminMarketingSourcesResponse>(getGetApiV1AdminMarketingSourcesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminMarketingSourcesQueryKey = (params?: GetApiV1AdminMarketingSourcesParams,) => {
+    return [
+    `/api/v1/admin/marketing/sources`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminMarketingSourcesQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError = ErrorResponse>(params?: GetApiV1AdminMarketingSourcesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminMarketingSourcesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>> = ({ signal }) => getApiV1AdminMarketingSources(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminMarketingSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>>
+export type GetApiV1AdminMarketingSourcesQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminMarketingSources<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError = ErrorResponse>(
+ params: undefined |  GetApiV1AdminMarketingSourcesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminMarketingSources<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingSourcesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminMarketingSources<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingSourcesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Qué trae cada canal, hasta la organización que paga
+ */
+
+export function useGetApiV1AdminMarketingSources<TData = Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminMarketingSourcesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminMarketingSources>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminMarketingSourcesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1AdminWhatsappStatusResponse200 = {
   data: WhatsAppStatusOutput
   status: 200
 }
