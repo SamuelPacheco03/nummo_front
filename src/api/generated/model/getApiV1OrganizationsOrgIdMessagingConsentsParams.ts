@@ -6,15 +6,15 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface FeatureMap {
-  ai_byok: boolean;
-  custom_roles: boolean;
-  accounting: boolean;
-  bank_reconciliation: boolean;
-  approvals: boolean;
-  api_access: boolean;
-  notifications_email: boolean;
-  notifications_whatsapp: boolean;
-  whatsapp_outbound: boolean;
-  whatsapp_byo: boolean;
-}
+export type GetApiV1OrganizationsOrgIdMessagingConsentsParams = {
+/**
+ * @minimum 1
+ * @maximum 9007199254740991
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};

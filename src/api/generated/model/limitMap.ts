@@ -15,4 +15,5 @@ export interface LimitMap {
   max_branches: number | null;
   ai_messages_monthly: number | null;
   voice_minutes_monthly: number | null;
+  whatsapp_messages_monthly: number | null;
 }

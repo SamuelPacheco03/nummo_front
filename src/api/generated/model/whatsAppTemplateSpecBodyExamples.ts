@@ -6,15 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface FeatureMap {
-  ai_byok: boolean;
-  custom_roles: boolean;
-  accounting: boolean;
-  bank_reconciliation: boolean;
-  approvals: boolean;
-  api_access: boolean;
-  notifications_email: boolean;
-  notifications_whatsapp: boolean;
-  whatsapp_outbound: boolean;
-  whatsapp_byo: boolean;
-}
+export type WhatsAppTemplateSpecBodyExamples = {[key: string]: string} | string[];

@@ -6,15 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface FeatureMap {
-  ai_byok: boolean;
-  custom_roles: boolean;
-  accounting: boolean;
-  bank_reconciliation: boolean;
-  approvals: boolean;
-  api_access: boolean;
-  notifications_email: boolean;
-  notifications_whatsapp: boolean;
-  whatsapp_outbound: boolean;
-  whatsapp_byo: boolean;
-}
+export type OutboundMessageStatus = typeof OutboundMessageStatus[keyof typeof OutboundMessageStatus];
+
+
+export const OutboundMessageStatus = {
+  QUEUED: 'QUEUED',
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  READ: 'READ',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED',
+} as const;

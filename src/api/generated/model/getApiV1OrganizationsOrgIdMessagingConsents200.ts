@@ -5,21 +5,28 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { MessageConsent } from './messageConsent';
 
-export interface UsageMap {
+export type GetApiV1OrganizationsOrgIdMessagingConsents200 = {
+  data: MessageConsent[];
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  ai_messages_monthly: number;
+  page: number;
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  voice_minutes_monthly: number;
+  pageSize: number;
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  whatsapp_messages_monthly: number;
-}
+  total: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  totalPages: number;
+};
