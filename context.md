@@ -6230,3 +6230,38 @@ Y de Numi de preventa: **quedarse sin cuota no es un error.** Llega `200` con
 seis preguntas por visitante y no se renuevan: el tope *es* el empujón. Con el asistente
 apagado —como está en desarrollo por defecto— responde igual, así que ese es el primer
 estado que se ve y está diseñado.
+
+## 97.10. El movimiento: un gesto por sección, y sin librería
+
+Cada sección tiene **un** gesto y solo uno: la cinta se desplaza, las tarjetas del desorden
+flotan, la línea del área se dibuja, los pasos se encienden en secuencia, la elipse del
+cierre se traza. Nada de eso necesita `motion` (~34 kB gzip) en la página donde el peso se
+paga en tasa de rebote: es `IntersectionObserver` + CSS.
+
+El mecanismo es uno para todas. `useReveal` pone **`data-revelado`** en el elemento que
+observa, y el CSS revela lo que lleve `data-revelar`. **Las dos formas del selector hacen
+falta**, y por una razón que costó una tarde encontrar:
+
+```css
+[data-revelado][data-revelar],   /* observa y se revela el mismo elemento */
+[data-revelado] [data-revelar]   /* observa un contenedor, se revelan sus hijos */
+```
+
+Con solo la primera, seis secciones se quedaban en **opacidad 0**: presentes en el DOM,
+encontrables por los tests, y **invisibles** en pantalla. Un fallo que ningún test de
+componente ve, porque el elemento está ahí.
+
+Y su gemelo: `[data-revelar]` **arranca** en opacidad 0, así que en
+`prefers-reduced-motion` no basta con quitar la animación — eso dejaría la portada en
+blanco para quien pidió menos movimiento. Se muestra todo, quieto.
+
+**El gráfico va en SVG a mano, no en Recharts.** Son ~115 kB gzip (§63) y aquí no hace
+falta ninguna de las cosas que justifican ese peso: no hay datos de verdad, ni ejes que
+calcular, ni interacción. Es una ilustración de lo que la consola enseña.
+
+Dos avisos sobre las superficies oscuras de la portada (la cinta, «Del movimiento a la
+acción», el panel de Numi): sus tintas salen de `--sidebar-*`, que va oscuro en los dos
+modos por definición (§3.2). Y **`--success-strong` no vale ahí**: es el tono pensado para
+leerse sobre claro, y sobre el shell desaparece — encima de oscuro va el de relleno, que es
+el claro.
+

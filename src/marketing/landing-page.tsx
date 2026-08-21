@@ -4,9 +4,15 @@ import { paletteStyle } from '@/lib/palette/tokens'
 import { useResolvedDark } from '@/stores/use-resolved-dark'
 import { Footer } from './footer'
 import { Hero } from './hero'
+import { AutomationSection } from './automation-section'
+import { DisorderSection } from './disorder-section'
+import { FinalCta } from './final-cta'
 import { Nav } from './nav'
 import { NumiSection } from './numi-section'
 import { PricingSection } from './pricing-section'
+import { RhythmSection } from './rhythm-section'
+import { Ticker } from './ticker'
+import { UseCasesSection } from './use-cases-section'
 import { iniciarSenales, utmDesde, type Cola } from './signals'
 import { useSectionViewed } from './use-section-viewed'
 
@@ -73,8 +79,14 @@ export function LandingPage() {
           <section ref={heroRef}>
             <Hero />
           </section>
+          <Ticker />
+          <DisorderSection />
+          <RhythmSection cola={cola} />
           <NumiSection cola={cola} />
+          <AutomationSection cola={cola} />
+          <UseCasesSection cola={cola} />
           <PricingSection cola={cola} />
+          <FinalCta cola={cola} />
         </main>
         <Footer />
       </div>

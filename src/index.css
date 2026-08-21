@@ -540,3 +540,72 @@
     transform: translateY(0) rotate(0deg) scale(1);
   }
 }
+
+/*
+  El revelado de las secciones de la portada. Un solo gesto por sección (§97), y el
+  mecanismo es el mismo para todas: el observador pone `data-revelado` y el CSS hace el
+  resto — sin librería, que son ~34 kB gzip justo en la página donde el peso se paga.
+
+  Los hijos escalonan con `--paso`, que cada sección declara en línea donde le hace falta.
+*/
+[data-revelar] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--paso, 0ms),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--paso, 0ms);
+}
+/*
+  Las DOS formas, y hacen falta las dos: a veces el elemento que observa es el mismo que se
+  revela (el gráfico, el bloque del cierre) y a veces observa un contenedor y lo que se
+  revela son sus hijos escalonados (los pasos, las tarjetas). Con solo la primera, seis
+  secciones se quedaban en opacidad 0 — presentes, medibles y **invisibles**.
+*/
+[data-revelado][data-revelar],
+[data-revelado] [data-revelar] {
+  opacity: 1;
+  transform: none;
+}
+
+/* La línea del área se dibuja sola al entrar. */
+[data-dibujar] {
+  stroke-dasharray: var(--largo, 1200);
+  stroke-dashoffset: var(--largo, 1200);
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.33, 1, 0.68, 1) 0.15s;
+}
+[data-revelado] [data-dibujar] {
+  stroke-dashoffset: 0;
+}
+
+/* El ticker se desplaza en bucle. La cinta va duplicada, así que -50% cierra el ciclo. */
+.ticker-cinta {
+  animation: ticker-desplazar 26s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+    Sin movimiento NO basta con quitar la animación: `[data-revelar]` empieza en opacidad
+    0, así que la portada se quedaría en blanco. Se muestra todo, quieto.
+  */
+  [data-revelar] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  [data-dibujar] {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+  .ticker-cinta {
+    animation: none;
+  }
+}
+
+@keyframes ticker-desplazar {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
