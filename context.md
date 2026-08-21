@@ -250,6 +250,10 @@ Estos valores representan la identidad base de Nummo.
 
 No reemplazarlos arbitrariamente por violetas, rosas, negros puros u otros colores “de moda”.
 
+**Esto rige la consola.** La página pública lleva su propia paleta, elegida mirando pantallas en
+`/laboratorio` y no en un mockup (§97.2). Lo que no cambia en ninguna de las dos es el isotipo:
+`--logo-*` son la marca y no se re-tematizan.
+
 ---
 
 ## 3.2. Tokens semánticos
@@ -4406,6 +4410,8 @@ Sustituir o añadir una pieza base requiere solicitud expresa (ver sección 63).
 | **tw-animate-css** | 1.4 | Animaciones de entrada/salida de Radix. |
 | **lucide-react** | 1.31 | **Única** familia de iconos (sección 37). |
 | **@fontsource-variable/inter** · **sora** | 5.3 | Fuentes self-hosted: Inter (cuerpo), Sora (títulos, `font-display`). |
+| **@fontsource/instrument-serif** | 5.3 | Serif de los destacados del titular en la portada. Estática (regular + itálica), no variable: esa familia no tiene versión variable. |
+| **@fontsource-variable/archivo** · **bricolage-grotesque** | 5.3 | Candidatas a grotesca de titulares, **a decidir en `/laboratorio`** (§97.5). Las dos traen eje de ancho. Se importan dentro de la ruta del laboratorio, no en `index.css`: cuando se elija una, esa —y solo esa— sube a la entrada de la portada y las otras dos se desinstalan. |
 
 ## 86.3. Datos y estado
 
@@ -4475,7 +4481,9 @@ src/
     *-page.tsx           # pantallas
     *-dialog.tsx         # diálogos del dominio
   lib/                   # utilidades puras y sin estado (format, errors, csv, utils)
-  pages/                 # pantallas sueltas que no son un dominio (health)
+    palette/             # la capa de paletas de la portada: ranuras → tokens, contraste (§97.2)
+  marketing/             # la página pública: hero y, más adelante, el resto de secciones
+  pages/                 # pantallas sueltas que no son un dominio (health, laboratorio)
   pwa/                   # service worker y actualización, prompt de instalación, aviso sin conexión
   stores/                # Zustand — SOLO estado de UI
   test/setup.ts          # setup de Vitest
@@ -6038,3 +6046,106 @@ tri-estado), build OK. **Sin verificar contra el backend en el navegador**: no h
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.
+
+---
+
+# 97. La página pública
+
+La portada (`/`) es la primera superficie de Nummo que alguien ve **sin cuenta**: vende, mide de
+dónde viene cada visita y deja que Numi conteste preguntas de preventa. El contrato que la
+sostiene está en `contract/HANDOFF-landing.md`; esta sección es lo que la portada cambia **de
+este documento**.
+
+## 97.1. Por qué esta sección existe: una consola no es una portada
+
+Todo lo escrito hasta aquí describe la **consola** — una herramienta que alguien abre veinte
+veces al día para trabajar. Una portada es otro medio: se lee una vez, de arriba abajo, y quien
+la lee todavía no sabe qué es esto. Tres reglas del documento chocan de frente con eso, y la
+salida es **acotarlas, no derogarlas**: siguen valiendo enteras dentro de la consola.
+
+| Regla | Qué dice | Qué vale en la portada |
+| --- | --- | --- |
+| §3.1 Colores de marca | El azul `#2563EB` y el gradiente del isotipo, «no reemplazarlos arbitrariamente» | La portada lleva **su propia paleta**, elegida en el laboratorio (§97.2). El isotipo (`--logo-*`) no se re-tematiza en ninguna de las dos: es la marca |
+| §11.1 (3) Versalitas | Prohibidas las micro-etiquetas en mayúsculas con `letter-spacing` | Se permite **una por sección**, y solo como rótulo que orienta la lectura. Dos en una sección vuelve a ser el vicio que §11.1 describe |
+| §11.1 (2) Icono en pastilla | Prohibido el icono dentro del cuadradito tintado | Se permite en **pasos numerados**, donde la superficie es lo que sostiene la secuencia. No se extiende a tarjetas ni a features |
+
+Las dos de §11.1 salieron de criticar el Panel y **ahí siguen valiendo**: en una consola las
+versalitas gritan y la pastilla es relleno. En una portada la etiqueta orienta y el icono con
+superficie sostiene un paso.
+
+## 97.2. La paleta se decide mirando, no en un mockup
+
+Una paleta que enamora en un hero puede ser ilegible en una tabla de cifras, y **eso solo se ve
+mirándola ahí**. Por eso existe `/laboratorio`: cada candidata se pinta sobre el hero real *y*
+sobre superficies de consola de verdad —KPIs, tabla, badges, botones, campos, burbuja de Numi—,
+en claro y en oscuro **a la vez**, con la lectura de contraste al pie.
+
+Es una herramienta de desarrollo: la ruta solo se registra bajo `import.meta.env.DEV`, va fuera
+de `ProtectedRoute` y fuera de `AppShell` —como `/login`—, y no entra al bundle de producción.
+
+**La capa de paletas** (`src/lib/palette/`) es lo que lo hace posible. Una candidata son **19
+ranuras crudas por modo**, no las ~77 declaraciones de `index.css`: superficie (`surface`,
+`raised`, `sunken`, `line`), tinta (`ink`, `inkMuted`, `onFilled`), marca (`accent`,
+`accentDeep`, `accentLink`, `accentSoft`), estado (`positive`/`positiveText`,
+`caution`/`cautionText`, `danger`/`dangerText`) y shell (`shell`, `shellRaised`). De ahí sale el
+juego completo de tokens, así que **el test y lo que se pinta no pueden divergir**.
+
+Tres decisiones dentro de la capa que conviene no volver a discutir:
+
+1. **La tinta de un relleno se elige, no se fija** — y **no maximizando contraste**. Sobre el
+   azul del sidebar la tinta oscura contrasta más que la blanca y aun así va blanca: un botón
+   primario con letra negra no se lee como un botón primario. La regla es preferir la clara y
+   bajar a la oscura solo cuando el relleno no la sostiene (corte en 3:1), que es justo lo que
+   separa el azul y el rojo del teal y el ámbar.
+2. **`--logo-*` y `--chart-*` quedan fuera de las ranuras.** El isotipo porque es la marca; las
+   series porque su orden es una decisión razonada (el ámbar es la 4ª para separar egresos de
+   ingresos) y re-derivarla toca cuando haya paleta elegida.
+3. **Las candidatas se aplican con custom properties en línea.** Los estilos en línea ganan a
+   `.dark`, pero **solo en los tokens que se emitan**: uno que falte cae al valor de la app y la
+   muestra miente en silencio. `tokens.test.ts` compara la lista emitida contra la declarada en
+   `index.css` y exige que no falte ninguno.
+
+## 97.3. Un rojo no puede hacer dos trabajos
+
+Escribiendo el test de contraste salió una brecha que llevaba tiempo abierta y que **no es de la
+portada, es de la consola**.
+
+`--success-strong` y `--warning-strong` existen porque el teal y el ámbar de relleno no se leen
+como texto (§3.2). Al rojo nunca se le aplicó el mismo razonamiento, y en **modo oscuro** no hay
+un solo valor que sirva para las dos cosas:
+
+- para que el blanco encima pase AA hace falta luminancia **≤ 0.183**;
+- para leerse como texto sobre el fondo oscuro hace falta **≥ 0.209**.
+
+No hay solape. No es cuestión de afinar el tono. Por eso entra **`--destructive-strong`**, y por
+eso el botón «Eliminar» de la consola en oscuro se queda hoy en **3.76:1** — está anotado como
+deuda conocida en `palettes.test.ts`, con un test que obliga a borrar la excepción el día que se
+arregle. Los 51 `text-destructive` que hay en `src/` siguen apuntando a `--destructive`:
+migrarlos es trabajo aparte.
+
+## 97.4. El contraste es una compuerta, no una revisión
+
+`src/lib/palette/palettes.test.ts` recorre **cada candidata × cada modo** y falla si algún par
+baja de su mínimo: 4.5:1 para texto, 3:1 para el anillo de foco. Una candidata que no pasa **no
+se presenta a decisión**.
+
+**`--border` no está en la tabla, y es deliberado.** La 1.4.11 pide 3:1 para lo que identifica un
+*control*, no para el filo entre una tarjeta y su fondo: el borde de hoy da 1.18:1 y es un borde
+perfectamente normal. Exigirle 3:1 obligaría a una línea dura que ningún sistema usa para esto.
+Si un borde se vuelve invisible, eso se ve en el laboratorio.
+
+## 97.5. Tipografía
+
+La portada añade una **serif para los destacados** del titular —`@fontsource/instrument-serif`,
+estática, regular e itálica— y la grotesca de los titulares se decide en el laboratorio entre
+Sora (la de la consola, como control), Archivo y Bricolage Grotesque. Las dos últimas traen eje
+de ancho, así que **«apretada» se pide con `font-stretch`, no cambiando de familia**.
+
+Cuidado con un detalle que cuesta media hora descubrir: `index.css` declara las fuentes en un
+bloque **`@theme inline`**, y lo que hace `inline` es meter el valor *dentro* de la utilidad en
+vez de emitir `var(--font-display)`. Pisar `--font-display` en un ancestro **no cambia nada**;
+hay que aplicar `font-family` como declaración propia.
+
+Las tres familias se importan **dentro de la ruta del laboratorio**, no en `index.css`: así viven
+en su propio trozo y no las descarga quien entra a la consola. Cuando se elija una, esa —y solo
+esa— sube a la entrada de la portada.

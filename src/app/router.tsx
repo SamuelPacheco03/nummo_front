@@ -13,8 +13,31 @@ import { SettingsLayout } from '@/features/config/settings-layout'
  */
 const OVERLAY = { overlay: true } as const
 
+/**
+ * El laboratorio de la portada (§97): comparar paletas y tipografías sobre pantallas
+ * reales.
+ *
+ * Va **fuera de `ProtectedRoute` y fuera de `AppShell`** —como `/login` y `/register`—
+ * porque una portada no tiene shell y la muestra tiene que reproducir esas condiciones,
+ * no las de la consola.
+ *
+ * Y va **solo en desarrollo**: en un build de producción el array queda vacío, así que
+ * ni la ruta ni el trozo con las tres familias tipográficas llegan a nadie.
+ */
+const LABORATORIO = import.meta.env.DEV
+  ? [
+      {
+        path: '/laboratorio',
+        lazy: async () => ({
+          Component: (await import('@/pages/laboratorio')).LaboratorioPage,
+        }),
+      },
+    ]
+  : []
+
 // Rutas pesadas cargadas bajo demanda (code-splitting).
 export const router = createBrowserRouter([
+  ...LABORATORIO,
   {
     path: '/login',
     lazy: async () => ({ Component: (await import('@/features/auth/login-page')).LoginPage }),
