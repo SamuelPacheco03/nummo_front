@@ -16,11 +16,19 @@ export function isDark(mode: ThemeMode, systemDark: boolean): boolean {
  */
 export function useResolvedDark(): boolean {
   const mode = useThemeStore((s) => s.mode)
-  const [systemDark, setSystemDark] = useState(
-    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
+  /*
+    El guard de `window` no es defensivo por si acaso: la portada se **prerenderiza** en
+    Node (§97.12), y allí no hay `matchMedia`. En claro es lo correcto además de lo único
+    posible — un rastreador no tiene preferencia de tema.
+  */
+  const [systemDark, setSystemDark] = useState(() =>
+    typeof window === 'undefined'
+      ? false
+      : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false),
   )
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
     const mql = window.matchMedia('(prefers-color-scheme: dark)')
     const alCambiar = () => setSystemDark(mql.matches)
     alCambiar()

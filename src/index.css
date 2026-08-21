@@ -548,7 +548,16 @@
 
   Los hijos escalonan con `--paso`, que cada sección declara en línea donde le hace falta.
 */
-[data-revelar] {
+/*
+  **`.con-js` no sobra.** Sin él, `[data-revelar]` empieza en opacidad 0 y nadie pone nunca
+  `data-revelado`: quien navega sin JavaScript —y el HTML prerenderizado que leen las
+  previsualizaciones de enlace— se encuentra una página con el medio invisible. Se esconde
+  solo si hay JavaScript para volver a enseñarlo, que es el orden correcto.
+
+  La clase la pone un script en línea en el `<head>`, antes de pintar, para que no haya un
+  parpadeo de contenido visible → escondido → revelado.
+*/
+.con-js [data-revelar] {
   opacity: 0;
   transform: translateY(14px);
   transition:
@@ -561,8 +570,8 @@
   revela son sus hijos escalonados (los pasos, las tarjetas). Con solo la primera, seis
   secciones se quedaban en opacidad 0 — presentes, medibles y **invisibles**.
 */
-[data-revelado][data-revelar],
-[data-revelado] [data-revelar] {
+.con-js [data-revelado][data-revelar],
+.con-js [data-revelado] [data-revelar] {
   opacity: 1;
   transform: none;
 }
@@ -587,7 +596,7 @@
     Sin movimiento NO basta con quitar la animación: `[data-revelar]` empieza en opacidad
     0, así que la portada se quedaría en blanco. Se muestra todo, quieto.
   */
-  [data-revelar] {
+  .con-js [data-revelar] {
     opacity: 1;
     transform: none;
     transition: none;

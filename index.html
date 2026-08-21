@@ -37,6 +37,16 @@
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
+    <!--
+      Marca que hay JavaScript ANTES de pintar. Las secciones de la portada arrancan
+      escondidas para poder revelarse al entrar, y sin esta clase quien navega sin
+      JavaScript —o cualquier previsualización de enlace— vería la página con el medio en
+      blanco. Va en línea y no en el módulo: un `<script type="module">` es diferido, y
+      para entonces el primer pintado ya ocurrió.
+    -->
+    <script>
+      document.documentElement.classList.add('con-js')
+    </script>
     <div id="portada"></div>
     <script type="module" src="/src/marketing/main.tsx"></script>
   </body>

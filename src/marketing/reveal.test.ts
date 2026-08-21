@@ -20,6 +20,17 @@ test('lo revelado se ve tanto si observa el propio elemento como si observa su c
 })
 
 /*
+  Y el tercer modo de quedarse en blanco, que salió al prerenderizar: si esconder no
+  dependiera de que HAY JavaScript, quien navega sin él —y el HTML que leen las
+  previsualizaciones de enlace— vería la portada con el medio invisible. Esconder es la
+  mejora, no el punto de partida.
+*/
+test('esconder para revelar depende de que haya JavaScript', () => {
+  const regla = css.slice(css.indexOf('[data-revelar] {') - 200, css.indexOf('[data-revelar] {'))
+  expect(regla).toContain('.con-js')
+})
+
+/*
   Y la otra mitad del mismo peligro: `[data-revelar]` arranca en opacidad 0, así que
   «quitar la animación» sin más dejaría la portada en blanco para quien pide menos
   movimiento. Sin movimiento se muestra todo, quieto.
