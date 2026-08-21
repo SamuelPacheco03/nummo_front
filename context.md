@@ -4482,7 +4482,7 @@ src/
     *-dialog.tsx         # diálogos del dominio
   lib/                   # utilidades puras y sin estado (format, errors, csv, utils)
     palette/             # la capa de paletas de la portada: ranuras → tokens, contraste (§97.2)
-  marketing/             # la página pública: hero y, más adelante, el resto de secciones
+  marketing/             # la página pública: portada, secciones, señales y datos (§97)
   pages/                 # pantallas sueltas que no son un dominio (health, laboratorio)
   pwa/                   # service worker y actualización, prompt de instalación, aviso sin conexión
   stores/                # Zustand — SOLO estado de UI
@@ -6149,3 +6149,84 @@ hay que aplicar `font-family` como declaración propia.
 Las tres familias se importan **dentro de la ruta del laboratorio**, no en `index.css`: así viven
 en su propio trozo y no las descarga quien entra a la consola. Cuando se elija una, esa —y solo
 esa— sube a la entrada de la portada.
+
+## 97.6. El titular a dos tonos, y por qué tiene su propio token
+
+El gesto que la portada repite en cinco secciones: **primera línea en tinta, segunda en un
+tono apagado**, y a veces una palabra suelta en serif cursiva. Vive en `SectionHeading`, una
+vez y no cinco.
+
+La segunda línea usa **`--heading-muted`**, no `--muted-foreground`, y la diferencia no es
+cosmética: son dos umbrales distintos. `--muted-foreground` se lee como **cuerpo** y vive en
+4.5:1; `--heading-muted` es **siempre** texto grande —48 px para arriba— y vive en 3:1.
+Usarlo para un párrafo deja el párrafo por debajo de AA; usar el otro para el titular lo
+apaga de más.
+
+Al valor que traen los mockups (~`#8fa396`) la salvia da **2.4:1** sobre el crema y **2.1:1**
+sobre la banda salvia — por debajo incluso del 3:1 de texto grande. Oscurecida a `#63796c`
+queda en 4.15 y 3.68. Su par de contraste mide contra **las dos** superficies claras, porque
+el gesto aparece sobre las dos.
+
+## 97.7. Las señales
+
+Van **por lotes**, con intervalo y `navigator.sendBeacon` en `pagehide` — no evento a
+evento: un observador de scroll sobre diez secciones genera decenas en un solo
+desplazamiento.
+
+Tres reglas del contrato que quedan cumplidas **por construcción** y no por disciplina:
+
+1. **El catálogo es cerrado.** `LandingEventInput` llega de Orval como unión discriminada,
+   así que un nombre inventado **no compila**. Un nombre fuera del catálogo tumba el lote
+   entero con 422, y esto es la diferencia entre enterarse al escribir y en producción.
+2. **`accepted: 0` no es un error** y no se reintenta. Es lo que responde el servidor cuando
+   ya había visto el lote; la deduplicación es suya, por sesión.
+3. **Un lote se corta en 20.** El de más no es «uno de más»: es un 422 que se lleva por
+   delante los veinte buenos.
+
+Y una que no es del contrato: **la analítica nunca rompe la página.** Todo falla en
+silencio — incluida la cola, que atrapa ella misma en vez de confiar en el transporte
+(`void promesa` no atrapa un rechazo, y de ahí al informe de errores de la página).
+
+**`numi_asked` existe en el catálogo pero el cliente no puede emitirlo**: lo escribe el
+endpoint que contesta.
+
+> **Pendiente con el backend** (issue #2 de `nummo_api`): el catálogo se fijó antes de que
+> la página existiera y dos nombres no calzan. Sobra `integrations` —no hay sección de
+> integraciones ni está prevista— y falta el de «El desorden cuesta», que es la sección
+> justo después del hero. Hasta que se cambie, esa sección va sin señal: mejor un hueco que
+> un nombre que miente.
+
+## 97.8. Las rutas públicas no piden CSRF
+
+`customFetch` pide token en toda mutación, y `ensureCsrfToken()` **no lee una cookie: hace
+una petición** a `/api/v1/auth/csrf`. Sin guard, la primera señal de cada visitante
+disparaba una llamada a un endpoint de **auth** desde una página sin sesión.
+
+Las rutas `/api/v1/public/*` están exentas: no autorizan nada y el contrato no lo pide. La
+portada hace exactamente una petición al cargar.
+
+## 97.9. Los datos de la portada, sin TanStack Query
+
+La consola usa Query y hace bien: decenas de lecturas que se invalidan entre sí. La portada
+tiene **una** —los precios— y no invalida nada.
+
+Orval genera, al lado de cada hook, la **función plana** que el hook envuelve. La portada se
+apoya en esa función a través de `useRecursoPublico`: el tipo sigue saliendo del contrato y
+lo único que se pierde es la caché, que aquí sobra — el backend manda
+`Cache-Control: public, max-age=300` y el navegador la respeta mejor que nosotros.
+
+Las cuatro trampas de precios, que ninguna se ve sin backend y por eso están todas en tests:
+
+| Llega | Significa | NO significa |
+| --- | --- | --- |
+| `price: null` | «A consultar» | Gratis, ni cero |
+| `price: "0.00"` | Gratis | — |
+| `value: null` en un tope | Sin límite | — |
+| `value: 0` en un tope | Un tope real (WhatsApp en el gratis) | Sin límite |
+| Una clave ausente en un plan | «No se sabe» | «No lo tiene» |
+
+Y de Numi de preventa: **quedarse sin cuota no es un error.** Llega `200` con
+`exhausted: true`, y el sitio de la caja de texto **lo ocupa el registro**, no un aviso. Son
+seis preguntas por visitante y no se renuevan: el tope *es* el empujón. Con el asistente
+apagado —como está en desarrollo por defecto— responde igual, así que ese es el primer
+estado que se ve y está diseñado.
