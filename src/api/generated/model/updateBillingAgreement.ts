@@ -5,6 +5,7 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { UpdateBillingAgreementCollectionReminders } from './updateBillingAgreementCollectionReminders';
 
 export interface UpdateBillingAgreement {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
@@ -35,5 +36,6 @@ export interface UpdateBillingAgreement {
      * @maximum 60
      */
   generateDaysBefore?: number;
+  collectionReminders?: UpdateBillingAgreementCollectionReminders;
   notes?: string | null;
 }

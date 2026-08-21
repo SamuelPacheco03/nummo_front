@@ -17,4 +17,9 @@ export interface UsageMap {
      * @maximum 9007199254740991
      */
   voice_minutes_monthly: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  whatsapp_messages_monthly: number;
 }

@@ -1395,6 +1395,106 @@ Y **solo empresas**: con nombre se crea un contacto `COMPANY` de verdad, que gas
 documento y su teléfono; la pantalla lo dice en una línea en vez de dejar que se descubra al
 guardar.
 
+## 11.1.16. La cobranza por WhatsApp
+
+Nummo le escribe **al deudor** cuando su cuenta está por vencer o ya está en mora. Y ahí
+está la diferencia con todo lo anterior de esta sección: **el destinatario no tiene cuenta
+en Nummo.** Es un contacto con un teléfono.
+
+Eso explica casi todo el diseño. No hay preferencias de usuario ni centro de
+notificaciones; hay una dirección, un consentimiento y una cola. El centro de §11.1.8
+avisa a **un miembro del equipo**; esto le escribe **al que debe**, y son dos features que
+solo comparten la palabra «aviso».
+
+| Dónde | Qué | Permiso |
+| --- | --- | --- |
+| `/config/cobranza` | La política: si se escribe, a qué horas y con qué plantilla | `messaging.read` · `messaging.settings.manage` |
+| `/config/plantillas` | Las plantillas y su estado en Meta | `whatsapp.templates.read` |
+| `/cartera/cobranza` | Lo enviado y a quién no se le escribe, en dos pestañas | `messaging.read` |
+| Ficha de un acuerdo | El tri-estado de *ese* cobro | `agreements.manage` |
+
+**La política va en Configuración y el historial en el sidebar**, por lo mismo que separan
+§11.1.10 y §47.4: una política se toca una vez, y el historial es trabajo diario —es a
+donde se entra cuando alguien pregunta por qué no le llegó el mensaje—.
+
+### Las horas de silencio aplazan, no cancelan
+
+Un aviso que cae a las 23:00 **sale a la mañana siguiente**. No se pierde, así que la
+pantalla no puede decir «no se enviará».
+
+Y **la ventana normalmente cruza la medianoche**: `22:00 → 07:00` es el caso corriente, no
+el raro. Cualquier cálculo que asuma `inicio < fin` da negativo justo en la configuración
+que va a tener casi todo el mundo, así que la aritmética vive en `quiet-hours.ts` con sus
+pruebas —el módulo `(fin − inicio + 1440) % 1440` es lo que hace que cruzar el día deje de
+ser un caso aparte— y la pantalla enseña la franja en una frase: dos campos de hora
+sueltos no cuentan que el silencio pasa por la madrugada.
+
+**Sin plantilla no hay aviso**, y es una regla del backend y no un campo vacío: con
+`overdueTemplateKey` en `null` los vencidos no se avisan aunque la política esté encendida.
+Un `<select>` vacío se lee como «todavía no lo he elegido», así que el hueco se nombra con
+palabras debajo del control.
+
+### `SKIPPED` no es un error, y no va en rojo
+
+Los estados **no son una barra de progreso**. Son dos caminos:
+
+```
+QUEUED → SENT → DELIVERED → READ     (salió bien)
+QUEUED → SKIPPED                     (no se envió, a propósito)
+QUEUED → FAILED                      (se intentó y falló)
+```
+
+`SKIPPED` es «no se envió, a propósito» y su `skipReason` **es la respuesta** a por qué no
+llegó: se traduce a lenguaje humano en `labels.ts`. Pintarlo de rojo pondría a buscar una
+avería que no existe y gastaría el rojo de §7, que aquí solo le toca a `FAILED`. La tabla
+va sobre `string` y no sobre un enum porque el contrato lo tipa así: un motivo nuevo se
+enseña crudo, que es feo pero honesto.
+
+De los ocho motivos, **`quota_exceeded` es el único con arreglo desde la pantalla** —es el
+mismo tope que cuenta «Plan y consumo»—, así que esa fila ofrece el plan (§45.5).
+
+**Y quedarse en «Enviado» es un final normal.** `deliveredAt` y `readAt` solo se llenan si
+el webhook de Meta está dado de alta; sin él todo se queda en `SENT` y eso es correcto. Por
+eso se enseña **la última marca que ocurrió de verdad** —«Entregado el 14 ago»— y no las
+cuatro fechas en fila, que con dos huecos se leerían como media entrega.
+
+### `UNKNOWN` deja pasar la cobranza
+
+A un cliente al que se le factura **no se le pide permiso para cobrarle**: Meta solo exige
+consentimiento explícito para `MARKETING`, y estas plantillas son `UTILITY`. Así que
+`UNKNOWN` no es un estado pendiente que haya que resolver, y presentarlo como advertencia
+—ámbar, «sin confirmar», un botón de pedir permiso— sería mentir sobre lo que hace el
+sistema y mandar a perseguir permisos que nadie necesita.
+
+De ahí que la columna se llame **«Puede recibir»** y que `UNKNOWN` y `GRANTED` compartan
+tono: lo que se enseña es **el efecto**, que es lo que se viene a comprobar. `REVOKED` es
+el único que bloquea, y se comprueba **al encolar**, no al enviar.
+
+### El tri-estado de un acuerdo
+
+`collectionReminders` es `INHERIT | ON | OFF`, y es tri-estado por una razón concreta: con
+un booleano no habría forma de distinguir «este cliente pidió silencio» de «nadie lo ha
+decidido», y al cambiar la política de la empresa se arrastraría a quien había pedido que
+no. En la UI es un control de tres opciones, no un switch.
+
+**Y el default dice de qué está heredando** («Según la política de la organización: se le
+escribe»). «Según la política» a secas obliga a irse a otra pantalla justo en la opción que
+tiene casi todo el mundo.
+
+### Lo que no se construye, a propósito
+
+- **Nada de opt-out ni «responde STOP»**, ni en las plantillas ni en la UI. Es una decisión
+  de producto: Nummo es el cobrador, y darle al deudor un botón para silenciar el cobro
+  vaciaría la función. Meta solo lo exige en `MARKETING`.
+- **Enviar un mensaje suelto a mano.** El permiso `messaging.send` existe en el catálogo y
+  **ninguna ruta lo usa**: no hay endpoint. Se nombra en el editor de roles porque el
+  backend lo publica, y nada más.
+- **Crear plantillas propias.** Exige cuenta propia de Meta —con la de plataforma una
+  organización podría agotar el cupo de 100 creaciones/hora de todas las demás—, y eso es
+  fase 5. La pantalla lee y lo dice, en vez de ofrecer un botón que va a fallar (§70).
+
+---
+
 ## 21.1. Filtros que sobreviven a la navegación
 
 **La URL es la fuente de verdad de los filtros de un listado**, y `useListFilters` la implementa.
@@ -1488,6 +1588,12 @@ el backend —`cashflow` devuelve `previous`—, no se calcula aquí (§88.4).
 
 Esa fila la dibuja `ListToolbar`, no cada pantalla: dónde va cada filtro según el ancho es una
 decisión que debe tomarse **una vez**, no seis.
+
+**El buscador se omite donde el endpoint no acepta un `q`.** Es la misma regla que la
+cabecera que no ordena (§18.1, regla 3): una caja de búsqueda que no filtra nada es una
+promesa que el listado no puede cumplir. Los tres props del buscador viajan juntos y son
+opcionales; hoy los deja fuera el historial de cobranza, que se filtra por estado y por
+contacto y no por texto.
 
 **Por qué el estado cambia de forma con el breakpoint:** en móvil el dedo agradece un objetivo
 grande y siempre visible. Desde `lg` la lista **es** una tabla, con su propia fila de cabeceras, y
@@ -1667,6 +1773,11 @@ Cartera
   Cuentas por cobrar
   Cobros recurrentes
 ```
+
+`Cartera` lleva además **Cobranza** (`/cartera/cobranza`), que es lo que se le ha escrito al
+deudor por WhatsApp (§11.1.16). Va en la navegación del negocio y no en Configuración porque
+es una lista de trabajo: se entra a ella cuando alguien pregunta por qué no le llegó el
+mensaje. Su **política** sí es un ajuste y vive en Configuración.
 
 ---
 
@@ -1897,6 +2008,8 @@ Un fallo que no se ve no se arregla, así que la conexión entre columna y contr
 | Contactos | `name`, `createdAt` | Nombre |
 | Movimientos de caja | `occurredAt`, `amount` | Fecha, Monto |
 | Los cinco maestros (`MasterCrud`) | `name`, `createdAt` | Nombre (por `sortField` de la columna) |
+| Mensajes de cobranza (`MessagesTab`) | — | Ninguna: el endpoint no acepta `sort` |
+| Consentimientos (`ConsentsTab`) | — | Ninguna: el endpoint solo acepta `page` y `pageSize` |
 | Organizaciones (consola) | — | Ninguna: el endpoint no acepta `sort` |
 | Cuentas de caja (`/caja/cuentas`) | — | Ninguna: es un resumen de saldos, no un listado paginado |
 
@@ -4448,10 +4561,11 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, 147 paths / 182 operaciones) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, **153 paths / 205 esquemas**) y en vivo en
   `http://localhost:4010/openapi.json`.
-- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`, y el
-  resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
+- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`, más los
+  temáticos (`HANDOFF-whatsapp-cobranza.md`, `HANDOFF-buscador.md`, …), y el resumen en
+  `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
 - Cuando el backend publica un contrato nuevo: se copia el `openapi.json` a `contract/` y se
   corre `pnpm api:gen`.
 
@@ -4944,6 +5058,13 @@ Todos son parte del sistema y deben reutilizarse:
 | `PlaygroundProtegerPage` | `features/playground/proteger-page.tsx` | Casos y corridas del conjunto de regresión |
 | `PlaygroundControlarPage` | `features/playground/controlar-page.tsx` | Herramientas, escrituras y conocimiento |
 | `previousRange` · `delta` | `features/playground/ranges.ts` | La ventana anterior y el cambio, **pedidos** al backend y no estimados |
+| `CollectionPolicyPage` | `features/messaging/collection-policy-page.tsx` | La política de cobranza por WhatsApp (§11.1.16) |
+| `WhatsAppTemplatesPage` | `features/messaging/templates-page.tsx` | Las plantillas y su estado en Meta, de solo lectura |
+| `CollectionPage` | `features/messaging/collection-page.tsx` | **Cobranza**: mensajes y consentimiento, en dos pestañas |
+| `MessagesTab` · `ConsentsTab` | `features/messaging/` | El historial de «por qué no le llegó» y quién puede recibir |
+| `CollectionRemindersSection` | `features/messaging/collection-reminders-section.tsx` | El tri-estado de un acuerdo, diciendo de qué hereda (§11.1.16) |
+| `describeQuietWindow` · `isWithinQuietHours` | `features/messaging/quiet-hours.ts` | La ventana de silencio, **cruzando la medianoche** sin caso aparte |
+| `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
 
 ---
 
@@ -5815,6 +5936,38 @@ pantallas autenticadas no se pudieron abrir con datos reales.
 
 ---
 
+## Fase 25 — Cobranza por WhatsApp ✅ **completada**
+
+El backend cerró las fases 0–3 de cobranza y las verificó contra la API real de Meta; el
+contrato pasa a **153 rutas / 205 esquemas** (`contract/HANDOFF-whatsapp-cobranza.md`).
+
+1. `pnpm api:gen`, y **el aviso volvió a funcionar** (§95.21): `tsc` señaló las dos features
+   nuevas (`whatsapp_outbound`, `whatsapp_byo`) y el tope `whatsapp_messages_monthly` sin
+   nombre, en las tablas de `platform/labels.ts` y en los fixtures de sus pruebas. Ninguno se
+   quedó sin traducir en silencio.
+2. `features/messaging/`: la política, las plantillas, el historial con su consentimiento y el
+   tri-estado del acuerdo (§11.1.16).
+3. **Las horas de silencio en su propio módulo con pruebas.** `22:00 → 07:00` es el caso
+   normal y cualquier resta ingenua da negativo justo ahí; el módulo lo resuelve sin caso
+   aparte.
+4. Siete permisos nuevos entran en `permission-labels.ts` con un área propia, **Cobranza**: sin
+   eso el editor de roles los habría listado crudos bajo «Otros».
+5. `ListToolbar` gana un buscador opcional. El endpoint de mensajes no acepta `q`, y una caja
+   que no filtra es la misma promesa incumplida que una cabecera que no ordena (§18.1).
+
+**Lo que no se construyó, por decisión de producto o porque no hay endpoint:** opt-out y
+«responde STOP», enviar un mensaje suelto a mano (`messaging.send` no lo usa ninguna ruta),
+conectar la cuenta de Meta de la organización (fase 5) y WhatsApp como canal de las
+notificaciones internas (fase 4), que es otra cosa: aquel destinatario es un miembro con
+cuenta, éste es un deudor.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 657 tests en verde (32 nuevos: 13 de
+la ventana de silencio, 10 de la política, 13 del historial y el consentimiento y 9 del
+tri-estado), build OK. **Sin verificar contra el backend en el navegador**: no hay
+`nummo-api` corriendo en este entorno.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -5842,6 +5995,8 @@ pantallas autenticadas no se pudieron abrir con datos reales.
 | ✅ 21 | Que un aviso lleve a alguna parte | bajo | 13 |
 | ✅ 22 | Elegir un icono sin perder el botón de guardar | bajo | 17 |
 | ✅ 23 | El catálogo de presentación, completo | bajo | 22 (contrato) |
+| ✅ 24 | Playground de Numi | medio | 7, 10 |
+| ✅ 25 | Cobranza por WhatsApp | medio | 7, 9 (contrato) |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

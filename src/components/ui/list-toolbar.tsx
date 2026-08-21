@@ -26,9 +26,18 @@ export function ListToolbar({
   filterCount,
   onOpenFilters,
 }: {
-  search: string
-  onSearch: (value: string) => void
-  searchPlaceholder: string
+  /**
+   * El buscador, **solo donde el endpoint acepta un `q`**.
+   *
+   * Se omite entero —los tres van juntos— cuando no lo acepta: una caja de
+   * búsqueda que no filtra nada es la misma promesa incumplida que una cabecera
+   * que ordena por un campo que el contrato no conoce (§18.1, regla 3). Pasa hoy
+   * en el historial de mensajes de cobranza, que se filtra por estado y por
+   * contacto y no por texto.
+   */
+  search?: string
+  onSearch?: (value: string) => void
+  searchPlaceholder?: string
   /**
    * El filtro principal de la pantalla: estado, tipo, dirección… Se omite en las
    * listas que no tienen uno destacado.
@@ -68,9 +77,15 @@ export function ListToolbar({
       )}
 
       <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1 sm:max-w-72">
-          <SearchInput value={search} onChange={onSearch} placeholder={searchPlaceholder} />
-        </div>
+        {onSearch && (
+          <div className="min-w-0 flex-1 sm:max-w-72">
+            <SearchInput
+              value={search ?? ''}
+              onChange={onSearch}
+              placeholder={searchPlaceholder ?? 'Buscar…'}
+            />
+          </div>
+        )}
 
         {main && (
           /* Ocultar va en la envoltura: `className` llega al `select`, y el

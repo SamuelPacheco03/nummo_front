@@ -15,4 +15,6 @@ export interface FeatureMap {
   api_access: boolean;
   notifications_email: boolean;
   notifications_whatsapp: boolean;
+  whatsapp_outbound: boolean;
+  whatsapp_byo: boolean;
 }

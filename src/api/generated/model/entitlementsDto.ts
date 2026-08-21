@@ -11,6 +11,6 @@ export interface EntitlementsDto {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   organizationId: string;
   planCode: EntitlementsDtoPlanCode;
-  features: Partial<Record<'ai_byok' | 'custom_roles' | 'accounting' | 'bank_reconciliation' | 'approvals' | 'api_access' | 'notifications_email' | 'notifications_whatsapp', boolean>>;
-  limits: Partial<Record<'max_contacts' | 'max_users' | 'max_branches' | 'ai_messages_monthly' | 'voice_minutes_monthly', number | null>>;
+  features: Partial<Record<'ai_byok' | 'custom_roles' | 'accounting' | 'bank_reconciliation' | 'approvals' | 'api_access' | 'notifications_email' | 'notifications_whatsapp' | 'whatsapp_outbound' | 'whatsapp_byo', boolean>>;
+  limits: Partial<Record<'max_contacts' | 'max_users' | 'max_branches' | 'ai_messages_monthly' | 'voice_minutes_monthly' | 'whatsapp_messages_monthly', number | null>>;
 }

@@ -7,6 +7,8 @@ import {
   Gauge,
   KeyRound,
   MapPin,
+  MessageSquareQuote,
+  MessageSquareText,
   MonitorSmartphone,
   Palette,
   Percent,
@@ -59,7 +61,13 @@ export const GROUPS: SectionGroup[] = [
   },
   {
     title: 'Cartera',
-    items: [{ to: '/cartera/interes', label: 'Políticas de interés', Icon: Percent }],
+    items: [
+      { to: '/cartera/interes', label: 'Políticas de interés', Icon: Percent },
+      // La política es un ajuste que se toca una vez; el historial de lo que se
+      // le escribió al deudor es trabajo diario y vive en el sidebar (§14).
+      { to: '/config/cobranza', label: 'Cobranza por WhatsApp', Icon: MessageSquareText },
+      { to: '/config/plantillas', label: 'Plantillas de WhatsApp', Icon: MessageSquareQuote },
+    ],
   },
   {
     // Su hermana del otro lado del dinero: una política, no un catálogo.

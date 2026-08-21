@@ -28,6 +28,8 @@ export const FEATURE_KEYS: (keyof FeatureMap)[] = [
   'api_access',
   'notifications_email',
   'notifications_whatsapp',
+  'whatsapp_outbound',
+  'whatsapp_byo',
 ]
 
 /** Primero lo que se acumula (aforos), después lo que se gasta cada mes (cuotas). */
@@ -37,6 +39,7 @@ export const LIMIT_KEYS: (keyof LimitMap)[] = [
   'max_branches',
   'ai_messages_monthly',
   'voice_minutes_monthly',
+  'whatsapp_messages_monthly',
 ]
 
 const FEATURE_LABELS: Record<keyof FeatureMap, string> = {
@@ -48,6 +51,8 @@ const FEATURE_LABELS: Record<keyof FeatureMap, string> = {
   api_access: 'el acceso por API',
   notifications_email: 'los avisos por correo',
   notifications_whatsapp: 'los avisos por WhatsApp',
+  whatsapp_outbound: 'la cobranza por WhatsApp',
+  whatsapp_byo: 'usar tu propia cuenta de WhatsApp',
 }
 
 /** El nombre de una feature **dentro de una frase**: «tu plan no incluye …». */
@@ -76,6 +81,7 @@ const LIMIT_LABELS: Record<keyof LimitMap | 'free_organizations', string> = {
   max_branches: 'sedes',
   ai_messages_monthly: 'mensajes de Numi',
   voice_minutes_monthly: 'minutos de voz',
+  whatsapp_messages_monthly: 'mensajes de cobranza',
   free_organizations: 'organizaciones gratuitas',
 }
 
@@ -88,7 +94,14 @@ export function limitLabel(key: string): string {
  * cuentan filas que existen ahora. Cambia lo que se puede hacer al chocar con
  * uno: un contador se espera; un aforo se libera archivando.
  */
-const PERIODIC_LIMITS = new Set<string>(['ai_messages_monthly', 'voice_minutes_monthly'])
+const PERIODIC_LIMITS = new Set<string>([
+  'ai_messages_monthly',
+  'voice_minutes_monthly',
+  // El cupo de cobranza es mensual: chocar con él se arregla esperando al
+  // siguiente período, no archivando nada. Es lo que hace que un mensaje
+  // saltado por `quota_exceeded` no sea un callejón sin salida.
+  'whatsapp_messages_monthly',
+])
 
 export function isPeriodicLimit(key: string): boolean {
   return PERIODIC_LIMITS.has(key)

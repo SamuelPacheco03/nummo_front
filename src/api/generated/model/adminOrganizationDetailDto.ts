@@ -28,8 +28,8 @@ export interface AdminOrganizationDetailDto {
      */
   contacts: number;
   period: string;
-  usage: Partial<Record<'ai_messages_monthly' | 'voice_minutes_monthly', number>>;
-  features: Partial<Record<'ai_byok' | 'custom_roles' | 'accounting' | 'bank_reconciliation' | 'approvals' | 'api_access' | 'notifications_email' | 'notifications_whatsapp', boolean>>;
-  limits: Partial<Record<'max_contacts' | 'max_users' | 'max_branches' | 'ai_messages_monthly' | 'voice_minutes_monthly', number | null>>;
+  usage: Partial<Record<'ai_messages_monthly' | 'voice_minutes_monthly' | 'whatsapp_messages_monthly', number>>;
+  features: Partial<Record<'ai_byok' | 'custom_roles' | 'accounting' | 'bank_reconciliation' | 'approvals' | 'api_access' | 'notifications_email' | 'notifications_whatsapp' | 'whatsapp_outbound' | 'whatsapp_byo', boolean>>;
+  limits: Partial<Record<'max_contacts' | 'max_users' | 'max_branches' | 'ai_messages_monthly' | 'voice_minutes_monthly' | 'whatsapp_messages_monthly', number | null>>;
   overrides: AdminOrganizationDetailDtoOverrides;
 }
