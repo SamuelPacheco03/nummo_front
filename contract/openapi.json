@@ -24,6 +24,10 @@
       "description": "Authentication and sessions"
     },
     {
+      "name": "Public",
+      "description": "Superficie sin sesión: lo que lee la página pública de Nummo"
+    },
+    {
       "name": "Organizations",
       "description": "Organizations, settings, branches and members"
     },
@@ -389,6 +393,119 @@
         "responses": {
           "204": {
             "description": "Other sessions revoked."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/pricing": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Los planes en venta, para la página pública",
+        "description": "Sin sesión: es lo que lee la página de precios. Devuelve solo los planes públicos y no archivados, y de cada uno solo las características y los topes que tienen texto publicable — una clave del catálogo sin copy no aparece aquí, así que declarar una función nueva no la anuncia antes de tiempo. `price` en null significa «sin precio publicado» («consultar»), no gratis: el plan gratuito trae precio 0. La respuesta se puede cachear cinco minutos.",
+        "responses": {
+          "200": {
+            "description": "Plans on sale, as a visitor sees them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPricing"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/signals": {
+      "post": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Qué hizo un visitante en la página pública",
+        "description": "Sin sesión y sin CSRF: no autoriza nada, solo anota. Acepta hasta veinte eventos del catálogo cerrado por lote; un nombre que no esté en el catálogo hace fallar la validación entera, y repetir un evento dentro de la misma sesión no lo cuenta dos veces (`accepted` dice cuántos eran nuevos). La respuesta deja una cookie de visitante first-party, que es lo que permite atribuir un registro posterior a la campaña que lo trajo.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How many events of the batch were new.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/numi": {
+      "post": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Preguntarle a Numi antes de tener cuenta",
+        "description": "Numi de preventa: responde solo con la documentación pública del producto y la lista real de precios, sin herramientas y sin datos de nadie. Lleva cuatro topes —por visitante, por IP y día, y dos globales— y cuando alguno se agota **no devuelve un error**: contesta con un mensaje cordial y `exhausted: true`, para que la página muestre el registro en vez de un widget roto. `remaining` dice cuántas preguntas le quedan a este visitante. Con el asistente apagado responde igual, diciendo que por aquí todavía no atiende.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NumiAskInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The answer, or the reason there is none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NumiAnswer"
+                }
+              }
+            }
           },
           "default": {
             "description": "Error.",
@@ -2040,6 +2157,174 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SavePlanResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/marketing/overview": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Cuánta gente llegó a la página pública y cuánta abrió cuenta",
+        "description": "Cohorte por llegada: de quienes entraron en la ventana, cuántos terminaron registrándose — que es lo que juzga a la campaña, y no contar registros por su propia fecha. Los totales salen de la tabla de visitantes, que es exacta y no se purga; la serie diaria sale del agregado. Sin fechas, los últimos treinta días.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visitors, sign-ups and devices for the window.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingOverview"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/marketing/funnel": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Hasta dónde baja la gente antes de irse",
+        "description": "Alcance por sección, en el orden en que se recorren, con la primera como denominador: es una caída, no una lista de cifras. Sale del agregado diario, así que responde también para fechas anteriores a la purga del rastro individual; a cambio, alguien que volvió otro día cuenta en los dos, lo que afecta por igual a todas las secciones y deja la forma intacta.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Section reach, CTA clicks and sign-ups.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingFunnel"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/marketing/sources": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Qué trae cada canal, hasta la organización que paga",
+        "description": "Por fuente y campaña: visitantes, registros, cuántos de esos crearon una organización y cuántos están en un plan de pago. Es la mitad del embudo que ningún analítico externo puede ver, porque vive en las tablas del producto. `campaign` vacío significa una visita sin `utm_campaign`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The funnel by source and campaign.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingSources"
                 }
               }
             }
@@ -12448,6 +12733,240 @@
           "password"
         ]
       },
+      "TrackInput": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 40
+          },
+          "landingPath": {
+            "default": "/",
+            "type": "string",
+            "maxLength": 200
+          },
+          "referrer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "utm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LandingUtm"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "events": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LandingEventInput"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "events"
+        ]
+      },
+      "LandingUtm": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "medium": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "campaign": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "term": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "LandingEventInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "const": "page_view"
+              },
+              "path": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "name",
+              "path"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "const": "section_viewed"
+              },
+              "section": {
+                "type": "string",
+                "enum": [
+                  "hero",
+                  "automation",
+                  "product_demo",
+                  "numi",
+                  "use_cases",
+                  "integrations",
+                  "pricing",
+                  "final_cta"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "section"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "const": "demo_tab_selected"
+              },
+              "tab": {
+                "type": "string",
+                "enum": [
+                  "collections",
+                  "finances",
+                  "numi",
+                  "whatsapp",
+                  "reports"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "tab"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "const": "cta_clicked"
+              },
+              "section": {
+                "type": "string",
+                "enum": [
+                  "hero",
+                  "automation",
+                  "product_demo",
+                  "numi",
+                  "use_cases",
+                  "integrations",
+                  "pricing",
+                  "final_cta"
+                ]
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "signup",
+                  "login",
+                  "demo",
+                  "contact"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "section",
+              "action"
+            ]
+          }
+        ],
+        "type": "object"
+      },
+      "NumiAskInput": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 40
+          },
+          "question": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "sessionId",
+          "question"
+        ]
+      },
       "CreateOrganizationInput": {
         "type": "object",
         "properties": {
@@ -16837,6 +17356,203 @@
         ],
         "additionalProperties": false
       },
+      "PublicPricing": {
+        "type": "object",
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingPlan"
+            }
+          }
+        },
+        "required": [
+          "plans"
+        ],
+        "additionalProperties": false
+      },
+      "PricingPlan": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "PRO",
+              "ENTERPRISE"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "price": {
+            "$ref": "#/components/schemas/PricingPrice"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingFeature"
+            }
+          },
+          "limits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingLimit"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "description",
+          "price",
+          "features",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "PricingPrice": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d{1,2})?$"
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "PricingFeature": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "included": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "detail",
+          "included"
+        ],
+        "additionalProperties": false
+      },
+      "PricingLimit": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "unit"
+        ],
+        "additionalProperties": false
+      },
+      "TrackResult": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "accepted"
+        ],
+        "additionalProperties": false
+      },
+      "NumiAnswer": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string"
+          },
+          "remaining": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "exhausted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "answer",
+          "remaining",
+          "exhausted"
+        ],
+        "additionalProperties": false
+      },
       "OrganizationSummary": {
         "type": "object",
         "properties": {
@@ -18147,6 +18863,261 @@
         "required": [
           "plan",
           "recomputed"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingOverview": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "visitors": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "signups": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "conversionRate": {
+            "type": "number"
+          },
+          "devices": {
+            "$ref": "#/components/schemas/MarketingDevices"
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketingDailyPoint"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "visitors",
+          "signups",
+          "conversionRate",
+          "devices",
+          "daily"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingDevices": {
+        "type": "object",
+        "properties": {
+          "mobile": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "tablet": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "desktop": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "mobile",
+          "tablet",
+          "desktop"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingDailyPoint": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "visitors": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "sessions": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "signups": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "day",
+          "visitors",
+          "sessions",
+          "signups"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingFunnel": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketingSectionReach"
+            }
+          },
+          "ctaClicks": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "signups": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "sections",
+          "ctaClicks",
+          "signups"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingSectionReach": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string",
+            "enum": [
+              "hero",
+              "automation",
+              "product_demo",
+              "numi",
+              "use_cases",
+              "integrations",
+              "pricing",
+              "final_cta"
+            ]
+          },
+          "reach": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "share": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "section",
+          "reach",
+          "share"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingSources": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "campaigns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketingCampaign"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "campaigns"
+        ],
+        "additionalProperties": false
+      },
+      "MarketingCampaign": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "google",
+              "instagram",
+              "facebook",
+              "whatsapp",
+              "linkedin",
+              "tiktok",
+              "youtube",
+              "email",
+              "direct",
+              "other"
+            ]
+          },
+          "campaign": {
+            "type": "string"
+          },
+          "visitors": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "signups": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "withOrganization": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "paying": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "source",
+          "campaign",
+          "visitors",
+          "signups",
+          "withOrganization",
+          "paying"
         ],
         "additionalProperties": false
       },

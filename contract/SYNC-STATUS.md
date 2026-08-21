@@ -1,6 +1,31 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-20 (contrato traído de `dev`, 127 paths) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral + centro de notificaciones + Web Push + stream único de eventos + identidad de conceptos y categorías + auto-registro de recurrentes.**
+**Fecha:** 2026-08-21 (contrato traído de `dev`, **159 paths / 223 esquemas**) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral + centro de notificaciones + Web Push + stream único de eventos + identidad de conceptos y categorías + auto-registro de recurrentes.**
+
+## 🆕 La página pública — precios, señales y Numi de preventa
+
+Entra el módulo `marketing` del backend y con él la **primera superficie sin sesión que no es
+auth**. Tres rutas públicas:
+
+| Ruta | Qué es |
+| --- | --- |
+| `GET /api/v1/public/pricing` | Los planes en venta, ya filtrados a lo publicable. Cacheable 5 min |
+| `POST /api/v1/public/signals` | Eventos de la portada, catálogo cerrado, sin CSRF. Deja la cookie de visitante |
+| `POST /api/v1/public/numi` | Numi de preventa sobre la documentación pública. Responde **siempre 200** |
+
+Y tres de consola de plataforma (`requirePlatformAdmin`), que **no son parte de la landing**:
+`GET /api/v1/admin/marketing/{overview,funnel,sources}` — el embudo por campaña hasta la
+organización que paga.
+
+Dos cosas que sorprenden si no se leen antes:
+
+- **`price: null` no es gratis, es «consultar».** Hoy solo FREE trae precio (`"0.00"`); Básico
+  y Pro llegan en `null` hasta que se fijen desde la consola.
+- **Quedarse sin cuota de Numi devuelve `200` con `exhausted: true`**, no un `429`. Un error de
+  ratio en una portada es un widget roto para quien lo está leyendo.
+
+**Todo el detalle —endpoints, catálogos cerrados, trampas y las decisiones de diseño ya
+tomadas— en `contract/HANDOFF-landing.md`.**
 
 ## ⚠️ ROMPE — el estado de la organización salió de `PATCH /organizations/:orgId`
 
