@@ -215,6 +215,10 @@ export function CollectionPolicyPage() {
                     Las plantillas las aprueba Meta antes de poder usarse.{' '}
                     <Link to="/config/plantillas" className="text-brand underline">
                       Ver plantillas
+                    </Link>{' '}
+                    ·{' '}
+                    <Link to="/config/whatsapp" className="text-brand underline">
+                      Desde qué número sale
                     </Link>
                   </p>
                 </div>
