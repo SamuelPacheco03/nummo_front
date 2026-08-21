@@ -3453,9 +3453,18 @@ misma sesión, y montar una segunda aplicación para siete endpoints habría dup
 HTTP y el sistema visual entero. Su ficha cuelga de la lista como cualquier otra (§87.5) y su
 navegación es `SectionedLayout`, la misma de Configuración y Ayuda (§11.1.3).
 
-**Pero el cuerpo no es el de Configuración.** La consola entera va con `SectionedLayout console`:
-alto de ventana, scroll de la pantalla y no de la página, y contenido centrado en 72rem
-(`PlatformPage`). La columna de 48rem que comparten Ajustes y Ayuda es la que hace legible un
+**Y su navegación es un sidebar propio, no la sub-navegación de Configuración.** Durante un
+tiempo la consola navegó con `SectionedLayout`, que está pensado para vivir **dentro** de una
+página: una columna clara sobre el fondo, sin peso. Era la única superficie de Nummo donde
+navegar no pesaba nada, y cruzar del inquilino a la plataforma parecía cambiar de producto.
+Hoy tiene `PlatformSidebarBody`, con la misma forma que el del negocio —superficie oscura,
+grupos en versaditas, el activo con su barra de marca— y lo que cambia es **lo que lleva
+dentro**: ni selector de organización (un superadmin puede no tener ninguna) ni secciones del
+negocio, y en el pie la salida a Nummo y el estado del sistema. La cabecera se reparte como
+manda §11.1.1: el sidebar navega, y tema y cuenta viven arriba a la derecha.
+
+**Y el cuerpo no es el de Configuración.** Alto de ventana, scroll de la pantalla y no de la
+página, y contenido centrado en 72rem (`PlatformPage`). La columna de 48rem que comparten Ajustes y Ayuda es la que hace legible un
 texto; aquí lo que hay son **tablas densas de administración**, y esa columna las dejaba apretadas
 con medio monitor en blanco al lado. Las dos que no la usan son las que no se leen sino que se
 operan —la consola de Numi y la comparación—, que traen su propio marco con la barra de contexto
@@ -5027,6 +5036,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `ApprovalPolicyPage` | `features/config/approval-policy-page.tsx` | El umbral de aprobación de egresos (§47.4) |
 | `usePlatformAccess` | `features/platform/hooks.ts` | ¿Se ofrece la consola? Orientativo, no autorización (§47.1) |
 | `PlatformShell` | `features/admin/platform-shell.tsx` | Shell de la consola, **fuera de `AppShell`** (§47.2) |
+| `PlatformSidebarBody` | `features/admin/platform-sidebar.tsx` | Su navegación: el idioma del sidebar del negocio, con otro contenido |
+| `PlatformPage` | `features/admin/platform-page.tsx` | El cuerpo de una pantalla de plataforma: alto de ventana y 72rem |
 | `AdminOrganizationsPage` · `AdminOrganizationDetailPage` | `features/admin/` | Las organizaciones de la plataforma y su ficha |
 | `OverridesDialog` | `features/admin/overrides-dialog.tsx` | Negociar features y topes: **tres** estados, no dos |
 | `AdminPlansPage` | `features/admin/plans-page.tsx` | Editar planes, con la decisión de si alcanzan a los actuales |

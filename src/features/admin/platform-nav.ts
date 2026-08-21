@@ -65,3 +65,20 @@ export function isPlaygroundPath(pathname: string): boolean {
 export function isPlatformPath(pathname: string): boolean {
   return pathname === '/plataforma' || pathname.startsWith('/plataforma/')
 }
+
+/**
+ * Cómo se llama la pantalla en la que estamos, para la miga de pan de la cabecera.
+ *
+ * Gana la coincidencia **más larga**: `/plataforma/playground` es prefijo de las otras
+ * cuatro del playground, y sin esto todas dirían «Probar».
+ */
+export function activeSectionLabel(pathname: string): string | null {
+  let best: { to: string; label: string } | null = null
+  for (const group of GROUPS) {
+    for (const item of group.items) {
+      const matches = item.end ? pathname === item.to : pathname.startsWith(item.to)
+      if (matches && (!best || item.to.length > best.to.length)) best = item
+    }
+  }
+  return best?.label ?? null
+}

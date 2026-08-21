@@ -1,15 +1,16 @@
-import { Link, Outlet } from 'react-router'
-import { ArrowLeft, ShieldAlert } from 'lucide-react'
+import { useState } from 'react'
+import { Outlet, useLocation } from 'react-router'
+import { Menu, ShieldAlert } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { PageLoader } from '@/components/ui/loader'
-import { SectionedLayout } from '@/components/ui/sectioned-layout'
 import { UserMenu } from '@/features/auth/user-menu'
-import { useCurrentOrg } from '@/features/organizations/hooks'
 import { usePlatformAccess } from '@/features/platform/hooks'
-import { GROUPS } from './platform-nav'
+import { activeSectionLabel } from './platform-nav'
+import { PlatformSidebarBody } from './platform-sidebar'
 
 /**
  * **El shell de la consola de plataforma**, y vive fuera de `AppShell` por una
@@ -26,66 +27,87 @@ import { GROUPS } from './platform-nav'
  * Es también lo coherente con el backend: `requirePlatformAdmin` corre **fuera**
  * de `requireTenant`. Si allí no hace falta un inquilino, aquí tampoco.
  *
- * De ahí que el cromo sea el mínimo: marca, tema y cuenta. La navegación del
- * negocio —Cartera, Gastos, Caja— no significa nada mirando la plataforma, y el
- * selector de organización estaría vacío.
+ * **Pero fuera de `AppShell` no significa con otro lenguaje.** La consola tuvo un
+ * tiempo por navegación la sub-navegación de Configuración —una columna clara sobre
+ * el fondo de la página, pensada para vivir *dentro* de una pantalla— y era la única
+ * superficie de Nummo donde navegar no pesaba nada: cruzar del inquilino a la
+ * plataforma parecía cambiar de producto. Hoy tiene su propio sidebar con la misma
+ * forma que el del negocio (`PlatformSidebarBody`), y lo que cambia es lo que lleva
+ * dentro, no cómo se ve.
+ *
+ * El reparto de la cabecera es el de §11.1.1: el sidebar navega, y tema y cuenta
+ * viven arriba a la derecha, una sola vez por pantalla.
  */
 export function PlatformShell() {
-  /*
-    **Toda la consola de plataforma se opera igual.** Empezó siendo solo el playground,
-    pero organizaciones y planes son la misma clase de pantalla —tablas densas de
-    administración— y quedaban en la columna de 48rem de Ajustes, que es la que hace
-    legible un texto y deja una tabla de seis columnas apretada con medio monitor al lado.
-  */
   const { isPlatformAdmin, isLoading, isError, error } = usePlatformAccess()
-  // Solo para saber si hay algo a lo que volver: un superadmin puede tener su
-  // propia organización, o ninguna.
-  const { organizations } = useCurrentOrg()
+  const { pathname } = useLocation()
+  const section = activeSectionLabel(pathname)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="bg-background flex h-dvh flex-col">
-      <header className="bg-background/85 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur lg:px-8">
-        <Link to="/plataforma" className="flex items-center" aria-label="Consola de plataforma">
-          <BrandLockup />
-        </Link>
-        <span className="border-brand/40 text-brand hidden rounded-full border px-2 py-0.5 text-xs font-medium sm:inline">
-          Plataforma
-        </span>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          {organizations.length > 0 && (
-            <Link
-              to="/"
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-            >
-              <ArrowLeft aria-hidden className="size-4" />
-              <span className="hidden sm:inline">Volver a Nummo</span>
-            </Link>
-          )}
-          <ThemeToggle />
-          <UserMenu />
-        </div>
-      </header>
+    <div className="bg-background flex h-dvh">
+      <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border hidden h-dvh w-64 shrink-0 flex-col border-r lg:flex">
+        <PlatformSidebarBody />
+      </aside>
 
-      {/*
-        La consola de Numi (§47.5) es la única sección de plataforma que se opera
-        en vez de leerse: pide el ancho entero y el alto de la ventana, y
-        administra su propio scroll. Las demás —organizaciones, planes— siguen
-        siendo páginas que bajan.
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="bg-background/85 sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b px-4 backdrop-blur lg:px-8">
+          {/*
+            Por debajo de `lg` no hay columna: la misma navegación entra en la hoja
+            lateral, que es lo que ya hace el shell del inquilino. Y aquí no hay barra
+            inferior que la sustituya, así que el menú es el único camino.
+          */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Abrir la navegación"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -ml-1 grid size-9 shrink-0 place-items-center rounded-md focus-visible:ring-[3px] focus-visible:outline-none lg:hidden"
+          >
+            <Menu aria-hidden className="size-5" />
+          </button>
 
-        La decisión se toma aquí y por la ruta a propósito: el shell es quien sabe
-        cuánto alto hay, y hacer que cada página lo negociara por su cuenta es como
-        se acaba con tres pantallas midiendo la ventana de tres maneras.
-      */}
-      <main className="min-h-0 flex-1 overflow-hidden px-4 py-4 lg:px-8 lg:py-6">
-        <div className="mx-auto h-full min-h-0 w-full max-w-[110rem]">
-          <PlatformBody
-            isPlatformAdmin={isPlatformAdmin}
-            isLoading={isLoading}
-            isError={isError}
-            error={error}
-          />
+          <div className="flex items-center gap-2 lg:hidden">
+            <BrandLockup />
+          </div>
+
+          {/*
+            La miga de pan es lo único que la cabecera aporta en escritorio: la marca y la
+            navegación se fueron al sidebar, y dejarla vacía era pedir 64 px por nada. En
+            móvil no cabe —ahí manda la marca— y el título de la página está a un dedo.
+          */}
+          <nav aria-label="Ruta" className="text-muted-foreground hidden items-center gap-1.5 text-sm lg:flex">
+            <span>Plataforma</span>
+            {section && (
+              <>
+                <span aria-hidden className="text-muted-foreground/50">/</span>
+                <span className="text-foreground font-medium">{section}</span>
+              </>
+            )}
+          </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <UserMenu />
+          </div>
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-hidden px-4 py-4 lg:px-8 lg:py-6">
+          <div className="mx-auto h-full min-h-0 w-full max-w-[110rem]">
+            <PlatformBody
+              isPlatformAdmin={isPlatformAdmin}
+              isLoading={isLoading}
+              isError={isError}
+              error={error}
+            />
+          </div>
+        </main>
+      </div>
+
+      <Drawer open={menuOpen} onOpenChange={setMenuOpen} title="Plataforma">
+        <div className="bg-sidebar text-sidebar-foreground -mx-5 -my-4 flex min-h-[60vh] flex-col sm:-mx-6">
+          <PlatformSidebarBody onNavigate={() => setMenuOpen(false)} />
         </div>
-      </main>
+      </Drawer>
     </div>
   )
 }
@@ -136,9 +158,5 @@ function PlatformBody({
     )
   }
 
-  return (
-    <SectionedLayout label="Plataforma" groups={GROUPS} console>
-      <Outlet />
-    </SectionedLayout>
-  )
+  return <Outlet />
 }
