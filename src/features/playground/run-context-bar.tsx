@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2, PenLine, Settings2, Wrench } from 'lucide-react'
+import { Building2, PenLine, Settings2, TriangleAlert, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Drawer } from '@/components/ui/drawer'
@@ -35,6 +35,8 @@ export function RunContextBar({
   promptEdited,
   allowWrite = true,
   showChips = true,
+  openSettings,
+  onOpenSettings,
 }: {
   settings: RunSettings
   context: PlaygroundContext | undefined
@@ -61,8 +63,18 @@ export function RunContextBar({
    * «18 de 24 herramientas» encima de la tabla que las lista es decir dos veces lo mismo.
    */
   showChips?: boolean
+  /**
+   * El cajón de contexto, abierto desde fuera.
+   *
+   * Lo usa el vacío de «elige una organización»: el botón que ofrece la salida y el que la
+   * abre en la barra tienen que ser el mismo cajón, no dos caminos que se parecen.
+   */
+  openSettings?: boolean
+  onOpenSettings?: (open: boolean) => void
 }) {
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [ownSettings, setOwnSettings] = useState(false)
+  const settingsOpen = openSettings ?? ownSettings
+  const setSettingsOpen = onOpenSettings ?? setOwnSettings
   const [confirmWrite, setConfirmWrite] = useState(false)
   const organization = context?.organization
   /*
@@ -81,6 +93,18 @@ export function RunContextBar({
           writing ? 'border-warning/40 bg-warning/10' : 'bg-card',
         )}
       >
+        {/*
+          **Sin proveedor de IA no hay turno que valga.** Antes esto se descubría enviando
+          un mensaje y leyendo el error; y como es lo único que hay que arreglar, cinco
+          pantallas vacías lo callaban cada una por su cuenta. Se dice aquí, una vez, en
+          cuanto se sabe.
+        */}
+        {context && !context.model && (
+          <span className="text-warning-strong flex w-full items-center gap-1.5 text-xs sm:w-auto">
+            <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
+            Esta organización no tiene proveedor de IA configurado
+          </span>
+        )}
         <div className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden text-sm sm:flex-wrap sm:gap-y-1.5">
           {isLoading ? (
             <Skeleton className="h-5 w-56" />

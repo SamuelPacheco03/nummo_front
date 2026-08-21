@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { PenLine } from 'lucide-react'
 import { Panel } from '@/components/panel'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,9 @@ import { TraceDrawer } from './trace-drawer'
  * organización.
  */
 export function WritesTab() {
+  const navigate = useNavigate()
+  const onGoToRatings = () =>
+    navigate('/plataforma/playground/vigilar?vista=puntuaciones')
   const [params, setParams] = useSearchParams()
   const fromUrl = params.get('conversacion') ?? ''
   const [draft, setDraft] = useState(fromUrl)
@@ -75,7 +78,12 @@ export function WritesTab() {
         <EmptyState
           Icon={PenLine}
           title="Elige una conversación"
-          description="Aquí se enseña lo que esa corrida dejó escrito en la contabilidad del cliente."
+          description="Aquí se enseña lo que esa corrida dejó escrito en la contabilidad del cliente. El identificador sale de una traza o del panel de puntuaciones."
+          action={
+            <Button variant="outline" size="sm" onClick={onGoToRatings}>
+              Ver las respuestas puntuadas
+            </Button>
+          }
         />
       ) : isError ? (
         <ErrorState error={error} fallback="No se pudieron cargar las escrituras." />

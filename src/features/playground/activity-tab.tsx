@@ -91,7 +91,11 @@ export function ActivityTab({ params }: { params: GetApiV1AdminPlaygroundStatsPa
       <EmptyState
         Icon={Activity}
         title="Sin turnos en esta ventana"
-        description="Nadie le habló a Numi en esas fechas con ese origen."
+        description={
+          params.origin === 'user'
+            ? 'Nadie le habló a Numi en esas fechas. Prueba a ampliar la ventana, o a incluir las pruebas de esta consola en el origen.'
+            : 'Nadie le habló a Numi en esas fechas. Prueba a ampliar la ventana o a quitar el filtro de organización.'
+        }
       />
     )
   }

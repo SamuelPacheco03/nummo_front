@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react'
 import { Wrench } from 'lucide-react'
-import { DataList } from '@/components/ui/data-list'
+import { DataList, RowChevron } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -27,16 +26,20 @@ export function ToolCatalog({
   isError,
   error,
   onSelect,
-  action,
 }: {
   tools: PlaygroundTool[]
   isPending: boolean
   isError: boolean
   error: unknown
-  /** Abrir la ficha de una herramienta: su esquema y, si se puede, correrla. */
+  /**
+   * Abrir la ficha de una herramienta: qué es, por qué se ofrece o no, su esquema y —si se
+   * puede— correrla.
+   *
+   * La fila no lleva su propio botón de ejecutar: llevarlo obligaba a repetir en la tabla
+   * el motivo por el que no se puede («cambia el modo», «el rol no tiene el permiso»), que
+   * es justo lo que ya dice la columna de al lado y lo que explica la ficha al abrirla.
+   */
   onSelect?: (tool: PlaygroundTool) => void
-  /** Lo que cada fila ofrece hacer, a la derecha del todo. */
-  action?: (tool: PlaygroundTool) => ReactNode
 }) {
   if (isError) {
     return <ErrorState error={error} fallback="No se pudo cargar el catálogo de herramientas." />
@@ -86,13 +89,13 @@ export function ToolCatalog({
         <StatusBadge {...toolOfferStatus(row.original.offered, row.original.withheld)} />
       ),
     }),
-    ...(action
+    ...(onSelect
       ? [
           column.display({
-            id: 'action',
+            id: 'chevron',
             header: '',
-            meta: { align: 'right' as const },
-            cell: ({ row }) => action(row.original),
+            meta: { hideOnStack: true as const },
+            cell: () => <RowChevron />,
           }),
         ]
       : []),

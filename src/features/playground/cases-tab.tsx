@@ -1,4 +1,4 @@
-import { ListChecks, Play } from 'lucide-react'
+import { ListChecks, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataList } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -94,7 +94,7 @@ export function CasesTab({
   lastRuns,
   organizationId,
   onEdit,
-  onRun,
+  onCreate,
   running,
 }: {
   cases: PlaygroundCase[]
@@ -104,7 +104,7 @@ export function CasesTab({
   lastRuns: Map<string, PlaygroundCaseRun>
   organizationId: string
   onEdit: (item: PlaygroundCase) => void
-  onRun: (caseIds?: string[]) => void
+  onCreate: () => void
   running: boolean
 }) {
   if (isError) return <ErrorState error={error} fallback="No se pudieron cargar los casos." />
@@ -123,16 +123,16 @@ export function CasesTab({
           title="Todavía no hay casos"
           description={
             organizationId
-              ? 'Guarda el primero desde la traza de una corrida que salió mal, o créalo aquí.'
-              : 'Elige una organización para crear el primero.'
+              ? 'El camino corto es guardarlos desde la traza de una corrida que salió mal: «esto no debe volver a pasar».'
+              : 'Los casos son de una organización. Elige una para crear el primero.'
           }
           action={
-            cases.length === 0 && !isPending ? undefined : (
-              <Button size="sm" onClick={() => onRun()} disabled={running}>
-                <Play aria-hidden />
-                Correr
+            organizationId ? (
+              <Button size="sm" onClick={onCreate}>
+                <Plus aria-hidden />
+                Nuevo caso
               </Button>
-            )
+            ) : undefined
           }
         />
       }

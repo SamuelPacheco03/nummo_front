@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -8,13 +7,15 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Note } from '@/components/ui/note'
 import { SegmentedControl } from '@/components/ui/segmented-control'
+import { DetailRow, DetailRows } from '@/components/ui/detail-drawer'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Wrench } from 'lucide-react'
 import { getErrorMessage } from '@/lib/errors'
 import type { PlaygroundTool, PlaygroundToolRun } from '@/api/generated/model'
-import { JsonBlock } from './code-block'
+import { Disclosure, JsonBlock } from './code-block'
 import { usePlaygroundContext, usePlaygroundTools, useRunTool } from './hooks'
+import { toolOfferStatus } from './labels'
 import { formatMs } from './metrics'
 import { RunContextBar } from './run-context-bar'
 import { useRunSettings } from './run-settings'
@@ -79,13 +80,6 @@ export function ToolsTab() {
           isError={tools.isError}
           error={tools.error}
           onSelect={(tool) => setRunning(tool)}
-          action={(tool) => (
-            <ToolAction
-              tool={tool}
-              readOnly={settings.mode === 'read_only'}
-              onRun={() => setRunning(tool)}
-            />
-          )}
         />
       )}
 
@@ -104,34 +98,8 @@ export function ToolsTab() {
   )
 }
 
-function ToolAction({
-  tool,
-  readOnly,
-  onRun,
-}: {
-  tool: PlaygroundTool
-  readOnly: boolean
-  onRun: () => void
-}) {
-  // Una herramienta de escritura en solo lectura responde 403: no se ofrece (§88.5).
-  const blocked = tool.kind === 'write' && readOnly
-  return (
-    <div className="flex flex-wrap items-center gap-3 pt-1">
-      <Button size="sm" variant="outline" onClick={onRun} disabled={blocked}>
-        <Play aria-hidden />
-        Ejecutar
-      </Button>
-      {blocked && (
-        <p className="text-muted-foreground text-xs">
-          Escribe: cambia el modo a lectura y escritura para poder correrla.
-        </p>
-      )}
-    </div>
-  )
-}
-
 /**
- * El cajón que la corre.
+ * **La ficha de una herramienta**, y desde ella se corre.
  *
  * **Un fallo de la herramienta responde 200 con `ok: false`**, no un 500. Por eso el
  * resultado tiene dos caras y ninguna es un error de red: lo que devolvió y por qué no
@@ -152,6 +120,11 @@ function ToolRunner({
   mode: 'read_only' | 'read_write'
   onClose: () => void
 }) {
+  /*
+    Correr lo que el backend va a rechazar no enseña nada: una herramienta de escritura en
+    solo lectura responde 403, y una que el rol no puede, también. Se dice antes (§88.5).
+  */
+  const blocked = (tool.kind === 'write' && mode === 'read_only') || tool.withheld === 'permission'
   const fields = readSchemaFields(tool.schema)
   const [tab, setTab] = useState<'form' | 'json'>(fields ? 'form' : 'json')
   const [values, setValues] = useState<FieldValues>(() => initialValues(fields ?? []))
@@ -207,17 +180,39 @@ function ToolRunner({
       title={tool.name}
       meta={tool.description}
       footer={
-        <div className="flex justify-end gap-2">
+        <div className="flex items-center justify-end gap-3">
+          {blocked && (
+            <span className="text-muted-foreground mr-auto text-xs">
+              {tool.kind === 'write' && mode === 'read_only'
+                ? 'Cambia el modo para poder correrla'
+                : 'El rol suplantado no tiene el permiso'}
+            </span>
+          )}
           <Button variant="outline" onClick={onClose}>
             Cerrar
           </Button>
-          <Button onClick={submit} disabled={run.isPending}>
+          <Button onClick={submit} disabled={run.isPending || blocked}>
             {run.isPending ? 'Corriendo…' : 'Ejecutar'}
           </Button>
         </div>
       }
     >
       <div className="space-y-4">
+        {/*
+          **Qué es y por qué se ofrece o no.** Vivía en el acordeón del catálogo y se perdió
+          al pasarlo a tabla; su sitio es este, que es donde se mira una herramienta en
+          concreto. La tabla responde «¿cuál?» y la ficha responde «¿y esta qué hace?».
+        */}
+        <DetailRows>
+          <DetailRow label="Tipo">{tool.kind === 'write' ? 'Escribe' : 'Solo lee'}</DetailRow>
+          <DetailRow label="Permiso">
+            <span className="font-mono text-xs">{tool.permission ?? '—'}</span>
+          </DetailRow>
+          <DetailRow label="En esta corrida">
+            <StatusBadge {...toolOfferStatus(tool.offered, tool.withheld)} />
+          </DetailRow>
+        </DetailRows>
+
         {tool.kind === 'write' && (
           <Note tone="warning" title="Esta herramienta escribe">
             Sin <code className="text-xs">confirmed: true</code> devuelve su petición de
@@ -272,6 +267,25 @@ function ToolRunner({
             />
           </Field>
         )}
+
+        {/*
+          El esquema literal, debajo del formulario que se genera con él. No es redundante:
+          el formulario solo sabe pintar lo plano, y cuando algo no cuadra —un argumento que
+          el backend rechaza— lo primero que se mira es qué esperaba de verdad.
+        */}
+        <Disclosure
+          summary="El esquema, tal cual"
+          meta={tool.schema == null ? 'sin representar' : undefined}
+        >
+          {tool.schema == null ? (
+            <p className="text-muted-foreground text-xs">
+              Su esquema no se pudo representar. La herramienta funciona igual; lo que no hay
+              es formulario.
+            </p>
+          ) : (
+            <JsonBlock value={tool.schema} />
+          )}
+        </Disclosure>
 
         {failure && <p className="text-destructive text-sm">{failure}</p>}
 

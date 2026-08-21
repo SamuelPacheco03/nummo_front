@@ -229,7 +229,7 @@ export function PlaygroundProtegerPage() {
               lastRuns={lastRuns}
               organizationId={settings.orgId}
               onEdit={setEditing}
-              onRun={run}
+              onCreate={() => setCreating({ organizationId: settings.orgId, message: '' })}
               running={runSuite.isPending}
             />
           </div>

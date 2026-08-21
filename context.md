@@ -3504,7 +3504,15 @@ Y dos cosas que **no** se construyen, por decisión de producto:
 aparece porque el rol no puede» y «no aparece porque estás en solo lectura» son dos bugs distintos,
 y sin distinguirlos los dos se investigan igual. Va en **tabla y no en acordeón**: con veinticuatro
 filas plegadas, el motivo —que es la mitad del valor— había que ir a buscarlo abriéndolas una por
-una.
+una. La fila abre la **ficha** de la herramienta —qué es, qué permiso pide, por qué se ofrece o no,
+su esquema literal y el formulario para correrla—, que es lo que se mira **después** de encontrarla.
+
+**Y los vacíos dicen qué hacer.** Sin proveedor de IA no hay turno que valga, y eso se descubría
+enviando un mensaje y leyendo el error mientras cinco pantallas vacías lo callaban cada una por su
+cuenta; hoy lo dice la barra de contexto en cuanto se sabe. El resto siguen la misma regla: el vacío
+de «elige una organización» trae el botón que la elige, el de un panel sin datos propone ampliar la
+ventana o incluir las pruebas, y el de escrituras dice de dónde sale un identificador de
+conversación (§27: un vacío que solo describe deja el trabajo en manos de quien lo lee).
 
 **Los criterios de la corrida viven en la URL** (`useRunSettings`, §21.1), compartidos por las
 cuatro pantallas de prueba. Es lo que hace que «volver a correrla» desde un pulgar abajo abra la

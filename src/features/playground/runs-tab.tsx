@@ -156,7 +156,11 @@ export function RunsTab({
           <EmptyState
             Icon={History}
             title="Sin corridas"
-            description="Nadie le habló a Numi con esos criterios."
+            description={
+              origin === 'user'
+                ? 'Con estos criterios no hay turnos. Las pruebas de esta consola no cuentan como uso de clientes: cámbialo en el origen para verlas.'
+                : 'Con estos criterios no hay turnos. Prueba a quitar la clase de llamada o el filtro de organización.'
+            }
           />
         }
       />

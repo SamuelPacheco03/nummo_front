@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { MessageSquare, RotateCcw } from 'lucide-react'
+import { Building2, MessageSquare, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState, InlineError } from '@/components/ui/error-state'
@@ -75,6 +76,7 @@ export function PlaygroundConsolePage() {
   const [sessionId, setSessionId] = useState<string | undefined>()
   const [openTrace, setOpenTrace] = useState<Turn | null>(null)
   const [toolsOpen, setToolsOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [promptOpen, setPromptOpen] = useState(false)
   const abort = useRef<AbortController | null>(null)
   const bottom = useRef<HTMLDivElement>(null)
@@ -184,6 +186,8 @@ export function PlaygroundConsolePage() {
         onOpenTools={() => setToolsOpen(true)}
         onOpenPrompt={() => setPromptOpen(true)}
         promptEdited={promptEdited}
+        openSettings={pickerOpen}
+        onOpenSettings={setPickerOpen}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -193,7 +197,14 @@ export function PlaygroundConsolePage() {
               <EmptyState
                 Icon={MessageSquare}
                 title="Elige una organización para empezar"
-                description="El playground corre el pipeline de verdad contra los datos de un cliente, así que primero hay que decir contra cuál. Se elige en «Cambiar contexto», arriba."
+                description="El playground corre el pipeline de verdad contra los datos de un cliente, así que primero hay que decir contra cuál."
+                action={
+                  /* Un vacío que solo describe deja el trabajo en manos de quien lo lee. */
+                  <Button onClick={() => setPickerOpen(true)}>
+                    <Building2 aria-hidden />
+                    Elegir organización
+                  </Button>
+                }
               />
             </div>
           ) : (
