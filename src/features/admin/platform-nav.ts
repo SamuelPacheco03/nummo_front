@@ -1,4 +1,16 @@
-import { Building2, Layers } from 'lucide-react'
+import {
+  Activity,
+  BookOpen,
+  Building2,
+  Columns3,
+  History,
+  Layers,
+  ListChecks,
+  MessageSquareCode,
+  PenLine,
+  ThumbsDown,
+  Wrench,
+} from 'lucide-react'
 import type { SectionGroup } from '@/components/ui/sectioned-layout'
 
 /**
@@ -16,6 +28,32 @@ export const GROUPS: SectionGroup[] = [
     items: [
       { to: '/plataforma/organizaciones', label: 'Organizaciones', Icon: Building2 },
       { to: '/plataforma/planes', label: 'Planes', Icon: Layers },
+    ],
+  },
+  {
+    /*
+      El playground de Numi: probar el asistente contra una organización real y ver qué
+      costó cada turno. Es superficie de plataforma y **no de cliente** — ningún usuario
+      de una organización la ve nunca.
+    */
+    title: 'Playground de Numi',
+    items: [
+      // `end`: es el padre de las otras cuatro rutas y sin esto quedaría activo en todas.
+      { to: '/plataforma/playground', label: 'Consola', Icon: MessageSquareCode, end: true },
+      { to: '/plataforma/playground/herramientas', label: 'Herramientas', Icon: Wrench },
+      { to: '/plataforma/playground/comparar', label: 'Comparar', Icon: Columns3 },
+      { to: '/plataforma/playground/regresion', label: 'Regresión', Icon: ListChecks },
+    ],
+  },
+  {
+    // Lo que ya pasó, con clientes de verdad: la otra mitad del panel.
+    title: 'Numi en producción',
+    items: [
+      { to: '/plataforma/playground/actividad', label: 'Actividad', Icon: Activity },
+      { to: '/plataforma/playground/historial', label: 'Historial', Icon: History },
+      { to: '/plataforma/playground/votos', label: 'Puntuaciones', Icon: ThumbsDown },
+      { to: '/plataforma/playground/escrituras', label: 'Escrituras', Icon: PenLine },
+      { to: '/plataforma/playground/conocimiento', label: 'Conocimiento', Icon: BookOpen },
     ],
   },
 ]

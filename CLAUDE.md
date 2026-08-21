@@ -120,8 +120,8 @@ pnpm icons:gen  # regenera favicons e iconos PWA desde brand/logo_nummo.png
 ## Contexto del repositorio
 
 - Frontend React que consume `nummo-api` mediante contrato OpenAPI congelado
-  (`contract/openapi.json`, v1.0.0, 111 paths / 141 operaciones).
-- Handoffs por área en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`; resumen en
+  (`contract/openapi.json`, v1.0.0, 147 paths / 182 operaciones).
+- Handoffs por área en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`; resumen en
   `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
 - Demo local: `demo@nummo.app` / `Demo1234!` (con el backend corriendo y sembrado).
 - La UI y las rutas van en **español**; el código, en inglés.

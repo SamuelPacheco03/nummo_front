@@ -2155,6 +2155,15 @@ escribir. Va sobre `fetch` y no sobre `EventSource` —que solo hace GET y no pu
 cabecera CSRF— ni sobre el cliente generado, que consume el cuerpo entero antes de
 devolverlo, que es justo lo que aquí no se puede hacer.
 
+**El transporte vive en `lib/sse.ts`**, no en el chat: el playground del superadmin (§47.5) habla
+igual y con un evento más. Ahí están el troceado del flujo —un `read()` puede traer medio evento,
+o tres y pico—, el CSRF y la trampa de abajo; en `features/assistant/stream-chat.ts` queda lo
+propio del inquilino, que es qué eventos entiende y qué devuelve un turno.
+
+**Y lo que falla antes del primer trozo vuelve como JSON, no como flujo.** Se mira el
+`content-type` antes de abrir el lector: tratar un cuerpo JSON como flujo de eventos no produce ni
+un evento, y la pantalla se queda esperando un turno que ya falló.
+
 **Los puntos viven dentro de la burbuja de Numi**, no en una fila aparte. La burbuja se abre
 vacía en cuanto hay turno y la primera palabra sustituye los puntos en el mismo sitio: nada
 aparece ni desaparece, y el hilo no salta.
@@ -2861,6 +2870,7 @@ Y por si alguien aterriza en el onboarding de todas formas, esa pantalla ofrece 
 | `/plataforma/organizaciones` | Todas, con su plan, su estado y su consumo del período |
 | `/plataforma/organizaciones/:id` | La ficha: topes efectivos, condiciones negociadas, cambiar plan, suspender |
 | `/plataforma/planes` | Editar los planes, que son filas y no una constante del código |
+| `/plataforma/playground/*` | **El playground de Numi** (§47.5): probar el asistente contra una organización real |
 
 Tres cosas de aquí que se hacen mal solas:
 
@@ -2946,6 +2956,66 @@ aprobación hasta el café.
 
 **Sin notificaciones**, y la pantalla lo dice: quien aprueba los encuentra filtrando la lista de
 egresos por «Espera aprobación».
+
+## 47.5. El playground de Numi
+
+La segunda superficie de plataforma (§47.2), y la única donde se **prueba** el producto en vez de
+administrarlo: se elige una organización real, se suplanta un rol, se habla con Numi y se ve qué
+costó el turno. Cuelga de `/plataforma/playground` y **ningún usuario de una organización la ve**.
+
+Corre el **mismo** caso de uso que atiende a un cliente —mismo system prompt, mismas herramientas,
+mismo grounding—, así que lo que se ve aquí es lo que pasa en producción. Lo que cambia lo cambia
+**estrechando**, nunca ampliando: un rol suplantado no puede más que ese rol.
+
+| Ruta | Qué hace |
+| --- | --- |
+| `/plataforma/playground` | La consola: organización, rol, modo, modelo y prompt, y el chat |
+| `…/herramientas` | Correr una herramienta a mano, con argumentos, sin modelo |
+| `…/comparar` | El mismo mensaje contra 2–4 variantes de modelo o prompt |
+| `…/regresion` | Casos guardados con sus expectativas, y correrlos todos |
+| `…/actividad` | Turnos por día, latencia, tokens y en qué herramientas se van |
+| `…/historial` | Todos los turnos archivados, uno a uno, con su traza |
+| `…/votos` | Respuestas puntuadas, con la pregunta que las provocó |
+| `…/escrituras` | Qué dejó escrito una corrida |
+| `…/conocimiento` | La sonda del RAG: qué trozos devuelve una consulta y con qué score |
+
+**Cinco cosas de aquí que se hacen mal solas**, y las cinco pintan un panel que miente:
+
+1. **`null` no es cero.** Los tokens que un proveedor no reporta llegan `null` = «no lo sé». Se
+   pintan «—» (`formatTokens`). Un cero ahí inventa un ahorro de caché que no ocurrió, y es
+   exactamente el número que alguien va a mirar para decidir si el prompt cacheado sirve de algo.
+   Cuando **ninguno** se sabe, la traza lo dice con palabras: un panel entero de guiones parece
+   roto y no lo está.
+2. **`costMicroUsd` son micro-dólares** (÷ 1.000.000) y puede ser `null` → «Sin precio
+   configurado», nunca `$0`. Va con código ISO —`USD 0,0032`— y no con `$`, que aquí es el peso
+   (§9.2).
+3. **`generations` puede traer dos.** Cuando el grounding obliga a reintentar son dos llamadas y
+   los tokens del turno son la **suma**. Por eso la cabecera sale de `trace.usage` y no de la
+   primera generación: enseñar solo esa saca el coste a mitad de precio.
+4. **`read_write` escribe de verdad** en la contabilidad del cliente. Interruptor con estado
+   visible y aviso al encenderlo, nunca una casilla en un menú. El modo por defecto es solo
+   lectura, y una organización que no está activa **no lo ofrece** (§88.5: no se ofrece lo que va
+   a responder 403).
+5. **Lo que falla antes del primer trozo vuelve como JSON, no como SSE** —sin proveedor,
+   organización suspendida, sin clave—. Se mira el `content-type` antes de abrir el lector
+   (`lib/sse.ts`), y el mensaje se enseña **tal cual**: «falta ANTHROPIC_API_KEY» es accionable y
+   traducirlo a «no se pudo contactar a Numi» borra la única parte que dice qué hacer.
+
+Y dos cosas que **no** se construyen, por decisión de producto:
+
+- **Reversa masiva de escrituras.** Deshacer movimientos de dinero en bloque es una operación de
+  dinero, y las reversas ya existen una a una con su auditoría (§55). El panel dice qué revisar.
+- **Un formulario para pegar API keys.** El backend no las acepta: se manda `{ provider, model }`
+  y la clave la resuelve el servidor.
+
+**El catálogo de herramientas enseña el porqué de cada ausencia** (`offered` / `withheld`): «no
+aparece porque el rol no puede» y «no aparece porque estás en solo lectura» son dos bugs distintos,
+y sin distinguirlos los dos se investigan igual.
+
+**Los criterios de la corrida viven en la URL** (`useRunSettings`, §21.1), compartidos por las
+cuatro pantallas de prueba. Es lo que hace que «volver a correrla» desde un pulgar abajo abra la
+consola con la pregunta y la organización ya puestas, y que saltar de la consola al ejecutor no
+obligue a reelegir.
 
 ---
 
@@ -3114,6 +3184,10 @@ directo:
   crudos (`--chart-1`), no a los de Tailwind: `@theme inline` **no emite** `--color-chart-1` a
   CSS —eso significa `inline`—, así que dentro de un SVG resolvería a nada y todo saldría negro.
 - **Dinero en los dos idiomas** (§62): compacto en el eje, exacto en el tooltip.
+- **Y lo que no es dinero, tampoco**: `unit="count"` pinta cuentas —turnos de Numi por día,
+  tokens— sin `$` delante. El valor por defecto sigue siendo `money`, que es casi todo lo que
+  grafica la app; la excepción existe porque una cifra de tokens con símbolo de peso no es un
+  formato pobre, es una cifra falsa.
 - **Un solo tooltip** para todas, con el formato de §58.
 - **Vacío explícito** (§45) en vez de unos ejes sin nada dentro.
 - **Sin animación** si el sistema pide menos movimiento.
@@ -3872,9 +3946,9 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, 111 paths / 141 operaciones) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, 147 paths / 182 operaciones) y en vivo en
   `http://localhost:4010/openapi.json`.
-- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-9.md`, y el
+- Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`, y el
   resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
 - Cuando el backend publica un contrato nuevo: se copia el `openapi.json` a `contract/` y se
   corre `pnpm api:gen`.
@@ -4326,6 +4400,15 @@ Todos son parte del sistema y deben reutilizarse:
 | `useHydrateOnce` | `lib/use-hydrate-once.ts` | Rellenar un formulario **una vez por registro** (§45.7) |
 | `useListFilters` | `lib/use-list-filters.ts` | Filtros en la URL, recordados en la sesión |
 | `ListResult<T>` | `lib/list-result.ts` | Lo que devuelve cualquier hook de listado |
+| `postEventStream` · `asRecord` | `lib/sse.ts` | **El transporte de un flujo de eventos sobre POST** — lo comparten el chat del inquilino y el playground |
+| `PlaygroundConsolePage` | `features/playground/console-page.tsx` | La consola del playground (§47.5) |
+| `PlaygroundRunsPage` | `features/playground/runs-page.tsx` | El historial de corridas, turno por turno |
+| `TraceView` · `TraceHighlights` · `TraceDrawer` | `features/playground/` | La traza de un turno: entera, resumida en cuatro cifras, o pedida por su id |
+| `ToolCatalog` | `features/playground/tool-catalog.tsx` | Qué herramientas ve el modelo y **por qué no ve las otras** |
+| `useRunSettings` · `RunSettingsFields` | `features/playground/run-settings.ts`, `run-settings-fields.tsx` | Contra qué se prueba, en la URL y compartido por las cuatro pantallas |
+| `readSchemaFields` | `features/playground/schema-fields.ts` | El esquema de una herramienta como formulario — o `null`, y entonces es JSON |
+| `formatTokens` · `formatCost` · `phaseSlices` | `features/playground/metrics.ts` | Las cifras de un turno sin mentir: `null` es «—», los micro-dólares se dividen |
+| `CodeBlock` · `JsonBlock` · `Disclosure` · `CopyButton` | `features/playground/code-block.tsx` | Texto literal y bloques que se abren, para prompts y argumentos |
 
 ---
 
@@ -4803,6 +4886,27 @@ slot nuevo de `SettlementDetail` — porque un pago que entra no lo aprueba nadi
 
 ---
 
+## Fase 13 — Playground de Numi ✅ **completada**
+
+La segunda superficie de plataforma (§47.5): consola con suplantación de rol, traza del turno,
+ejecutor de herramientas, comparación de variantes, conjunto de regresión y los paneles de lo que
+ya pasó. Nueve rutas bajo `/plataforma/playground`, contra las 18 del contrato — todas usadas.
+
+**La actividad y el historial son dos preguntas, no una.** El panel por día dice **cuánto** pasó;
+el historial dice **qué** pasó, turno por turno. Hace falta cuando el pico de p95 de un martes
+tiene nombre y apellido, y es desde donde se abre la traza de algo que ya ocurrió.
+
+Trajo tres cosas que no son suyas y son de todos: el transporte SSE salió de
+`features/assistant/stream-chat.ts` a `lib/sse.ts` —lo hablan dos pantallas—, `Chart` aprendió a
+graficar cuentas y no solo dinero (§57), y `ChatComposer` acepta `textOnly` para una consola donde
+un clip «próximamente» y un micrófono muerto no llevan a ninguna parte.
+
+**Verificación:** typecheck limpio, 0 warnings, 468 tests en verde, build OK. **Sin verificar
+contra el backend en el navegador**: la base local no tiene sembrado el usuario demo, así que las
+pantallas autenticadas no se pudieron abrir con datos reales.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -4819,6 +4923,7 @@ slot nuevo de `SettlementDetail` — porque un pago que entra no lo aprueba nadi
 | ✅ 10 | Consola de plataforma | medio | 7, 9 |
 | ✅ 11 | Roles propios de la organización | medio | 7 |
 | ✅ 12 | Aprobación de egresos | medio | 7, 9 |
+| ✅ 13 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro
 secciones a la vez — el documento existe precisamente para que no haga falta.
