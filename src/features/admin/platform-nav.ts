@@ -3,12 +3,10 @@ import {
   BookOpen,
   Building2,
   Columns3,
-  History,
   Layers,
   ListChecks,
   MessageSquareCode,
   PenLine,
-  ThumbsDown,
   Wrench,
 } from 'lucide-react'
 import type { SectionGroup } from '@/components/ui/sectioned-layout'
@@ -49,9 +47,11 @@ export const GROUPS: SectionGroup[] = [
     // Lo que ya pasó, con clientes de verdad: la otra mitad del panel.
     title: 'Numi en producción',
     items: [
-      { to: '/plataforma/playground/actividad', label: 'Actividad', Icon: Activity },
-      { to: '/plataforma/playground/historial', label: 'Historial', Icon: History },
-      { to: '/plataforma/playground/votos', label: 'Puntuaciones', Icon: ThumbsDown },
+      /*
+        Actividad, Historial y Puntuaciones eran tres destinos y son la misma pregunta a
+        tres escalas: hoy son las tres pestañas de Vigilar (§47.5).
+      */
+      { to: '/plataforma/playground/vigilar', label: 'Vigilar', Icon: Activity },
       { to: '/plataforma/playground/escrituras', label: 'Escrituras', Icon: PenLine },
       { to: '/plataforma/playground/conocimiento', label: 'Conocimiento', Icon: BookOpen },
     ],

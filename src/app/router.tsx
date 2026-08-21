@@ -101,24 +101,30 @@ export const router = createBrowserRouter([
                 }),
               },
               {
-                path: 'actividad',
+                path: 'vigilar',
                 lazy: async () => ({
-                  Component: (await import('@/features/playground/activity-page'))
-                    .PlaygroundActivityPage,
+                  Component: (await import('@/features/playground/vigilar-page'))
+                    .PlaygroundVigilarPage,
                 }),
+              },
+              /*
+                Los tres destinos de antes siguen resolviendo: un enlace guardado —o el que
+                deja un panel en un mensaje— no puede morir porque se reorganizara el menú.
+                Cada uno entra por su pestaña.
+              */
+              {
+                path: 'actividad',
+                element: <Navigate to="/plataforma/playground/vigilar?vista=resumen" replace />,
               },
               {
                 path: 'historial',
-                lazy: async () => ({
-                  Component: (await import('@/features/playground/runs-page')).PlaygroundRunsPage,
-                }),
+                element: <Navigate to="/plataforma/playground/vigilar?vista=turnos" replace />,
               },
               {
                 path: 'votos',
-                lazy: async () => ({
-                  Component: (await import('@/features/playground/feedback-page'))
-                    .PlaygroundFeedbackPage,
-                }),
+                element: (
+                  <Navigate to="/plataforma/playground/vigilar?vista=puntuaciones" replace />
+                ),
               },
               {
                 path: 'escrituras',

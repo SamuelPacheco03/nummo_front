@@ -3463,9 +3463,7 @@ mismo grounding—, así que lo que se ve aquí es lo que pasa en producción. L
 | `…/herramientas` | Correr una herramienta a mano, con argumentos, sin modelo |
 | `…/comparar` | El mismo mensaje contra 2–4 variantes de modelo o prompt |
 | `…/regresion` | Casos guardados con sus expectativas, y correrlos todos |
-| `…/actividad` | Turnos por día, latencia, tokens y en qué herramientas se van |
-| `…/historial` | Todos los turnos archivados, uno a uno, con su traza |
-| `…/votos` | Respuestas puntuadas, con la pregunta que las provocó |
+| `…/vigilar` | **Lo que pasó con clientes**, en tres pestañas: Resumen, Turnos y Puntuaciones |
 | `…/escrituras` | Qué dejó escrito una corrida |
 | `…/conocimiento` | La sonda del RAG: qué trozos devuelve una consulta y con qué score |
 
@@ -4927,7 +4925,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `SystemPromptDialog` | `features/playground/system-prompt-dialog.tsx` | El prompt vigente a tamaño de leerse, con su huella y su contador |
 | `TraceRail` | `features/playground/trace-rail.tsx` | La traza al lado de la conversación, no detrás de un botón |
 | `TracePanel` · `TraceDrawer` | `features/playground/trace-drawer.tsx` | **Cómo se abre una traza**, con la traza en la mano o solo con su id |
-| `OriginFilter` · `OrganizationFilter` | `features/playground/panel-filters.tsx` | Los dos filtros que comparten actividad e historial |
+| `OriginFilter` · `OrganizationFilter` | `features/playground/panel-filters.tsx` | Los dos filtros que comparten las pestañas de Vigilar |
+| `PlaygroundVigilarPage` | `features/playground/vigilar-page.tsx` | Resumen, Turnos y Puntuaciones: la misma pregunta a tres escalas |
+| `previousRange` · `delta` | `features/playground/ranges.ts` | La ventana anterior y el cambio, **pedidos** al backend y no estimados |
 
 ---
 
@@ -5777,9 +5777,16 @@ La segunda superficie de plataforma (§47.5): consola con suplantación de rol, 
 ejecutor de herramientas, comparación de variantes, conjunto de regresión y los paneles de lo que
 ya pasó. Nueve rutas bajo `/plataforma/playground`, contra las 18 del contrato — todas usadas.
 
-**La actividad y el historial son dos preguntas, no una.** El panel por día dice **cuánto** pasó;
-el historial dice **qué** pasó, turno por turno. Hace falta cuando el pico de p95 de un martes
-tiene nombre y apellido, y es desde donde se abre la traza de algo que ya ocurrió.
+**La actividad y el historial son dos escalas, no dos pantallas.** El resumen por día dice
+**cuánto** pasó; los turnos dicen **qué** pasó, uno a uno. Hacen falta las dos —el pico de p95 de
+un martes tiene nombre y apellido— pero separarlas en dos destinos obligaba a saber de antemano en
+cuál estaba la respuesta, que es justo lo que no se sabe al venir a mirar. Hoy son pestañas de
+`…/vigilar`, con las tres rutas viejas redirigiendo a la suya.
+
+**Y la comparación con el período anterior se pide, no se estima.** `GET /stats` mide una ventana
+y solo una, así que «+18 % respecto al anterior» sale de una **segunda llamada** a la misma ruta
+con la ventana inmediatamente anterior del mismo tamaño (`ranges.ts`). Sin período anterior —o con
+un anterior en cero— no hay porcentaje: se enseña la cifra sola.
 
 Trajo tres cosas que no son suyas y son de todos: el transporte SSE salió de
 `features/assistant/stream-chat.ts` a `lib/sse.ts` —lo hablan dos pantallas—, `Chart` aprendió a

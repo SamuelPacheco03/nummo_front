@@ -2,12 +2,13 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
-import { PlaygroundRunsPage } from './runs-page'
+import { RunsTab } from './runs-tab'
 import { json } from '@/test/tenant-api'
 
 /**
- * El historial repite las cifras de la traza en forma de columna, así que repite también
- * su forma de mentir: un `null` pintado como cero aquí sale multiplicado por cada fila.
+ * La pestaña de turnos repite las cifras de la traza en forma de columna, así que repite
+ * también su forma de mentir: un `null` pintado como cero aquí sale multiplicado por cada
+ * fila.
  */
 
 function summary(over: Record<string, unknown> = {}) {
@@ -59,8 +60,14 @@ function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/plataforma/playground/historial']}>
-        <PlaygroundRunsPage />
+      <MemoryRouter initialEntries={['/plataforma/playground/vigilar?vista=turnos']}>
+        <RunsTab
+          origin="user"
+          kind={undefined}
+          organizationId=""
+          page={1}
+          onPage={() => {}}
+        />
       </MemoryRouter>
     </QueryClientProvider>,
   )

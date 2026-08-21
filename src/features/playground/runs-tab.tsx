@@ -1,40 +1,23 @@
 import { useState } from 'react'
 import { History } from 'lucide-react'
-import { PageHeader } from '@/components/page-header'
 import { Pagination } from '@/components/pagination'
-import { Panel } from '@/components/panel'
 import { DataList, RowChevron } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
-import { Field } from '@/components/ui/field'
-import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { listColumns } from '@/components/ui/list-columns'
 import { formatConversationStamp } from '@/features/assistant/utils'
-import { useListFilters } from '@/lib/use-list-filters'
 import type {
   GetApiV1AdminPlaygroundRunsParams,
   PlaygroundTraceSummary,
 } from '@/api/generated/model'
 import { usePlaygroundRuns } from './hooks'
-import { kindLabel, originLabel, readOrigin, runStatus } from './labels'
+import { kindLabel, originLabel, runStatus } from './labels'
 import { formatCost, formatMs, formatTokens, totalTokens, SIN_DATO } from './metrics'
-import { OrganizationFilter, OriginFilter } from './panel-filters'
-import { useRunSettings } from './run-settings'
 import { TraceDrawer } from './trace-drawer'
 
 /** Diez, como el resto de listados. */
 const PAGE_SIZE = 10
-
-const FILTER_KEYS = ['origen', 'clase', 'pagina'] as const
-type FilterKey = (typeof FILTER_KEYS)[number]
-
-const KINDS = [
-  { value: '', label: 'Todas' },
-  { value: 'turn', label: 'Turnos' },
-  { value: 'title', label: 'Títulos' },
-  { value: 'summary', label: 'Resúmenes' },
-]
 
 const column = listColumns<PlaygroundTraceSummary>()
 
@@ -127,91 +110,64 @@ const columns = column.columns([
  * esto dice **qué** pasó, turno por turno — que es lo que hace falta cuando el pico de p95
  * de un martes tiene nombre y apellido.
  */
-export function PlaygroundRunsPage() {
-  const { values, set } = useListFilters<FilterKey>('nummo:playground:historial', FILTER_KEYS)
-  const { settings, selectOrganization, set: setRun } = useRunSettings()
+/**
+ * **Turnos**: todos los archivados, uno a uno, con lo que costó cada uno.
+ *
+ * Es la otra escala del mismo panel. «Resumen» dice **cuánto** pasó por día; esto dice
+ * **qué** pasó — que es lo que hace falta cuando el pico de p95 de un martes tiene nombre
+ * y apellido. Los criterios los pone la pestaña de arriba, que son los mismos.
+ */
+export function RunsTab({
+  origin,
+  kind,
+  organizationId,
+  page,
+  onPage,
+}: {
+  origin: 'user' | 'playground' | undefined
+  kind: GetApiV1AdminPlaygroundRunsParams['kind']
+  organizationId: string
+  page: number
+  onPage: (page: number) => void
+}) {
   const [openTrace, setOpenTrace] = useState<string | null>(null)
 
-  const page = Number(values.pagina) || 1
   const params: GetApiV1AdminPlaygroundRunsParams = {
     page,
     pageSize: PAGE_SIZE,
-    organizationId: settings.orgId || undefined,
-    origin: readOrigin(values.origen),
-    kind: (values.clase || undefined) as GetApiV1AdminPlaygroundRunsParams['kind'],
+    organizationId: organizationId || undefined,
+    origin,
+    kind,
   }
   const { runs, total, totalPages, isPending, isError, error } = usePlaygroundRuns(params)
 
+  if (isError) return <ErrorState error={error} fallback="No se pudo cargar el historial." />
+
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Historial de corridas"
-        description="Todos los turnos archivados, con lo que costó cada uno y su traza completa."
+    <div className="space-y-4">
+      <DataList
+        columns={columns}
+        rows={runs}
+        getRowId={(run) => run.id}
+        onRowClick={(run) => setOpenTrace(run.id)}
+        isLoading={isPending}
+        skeletonRows={PAGE_SIZE}
+        emptyText={
+          <EmptyState
+            Icon={History}
+            title="Sin corridas"
+            description="Nadie le habló a Numi con esos criterios."
+          />
+        }
       />
 
-      <Panel title="Qué se mira">
-        <div className="space-y-4">
-          <OriginFilter value={values.origen} onChange={(origen) => set({ origen, pagina: '' })} />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Clase de llamada" htmlFor="pg-clase">
-              <NativeSelect
-                id="pg-clase"
-                value={values.clase}
-                onChange={(e) => set({ clase: e.target.value, pagina: '' })}
-              >
-                {KINDS.map((kind) => (
-                  <option key={kind.value} value={kind.value}>
-                    {kind.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-
-            <OrganizationFilter
-              organizationId={settings.orgId}
-              onSelect={(org) => {
-                selectOrganization(org)
-                set({ pagina: '' })
-              }}
-              onClear={() => {
-                setRun({ org: '' })
-                set({ pagina: '' })
-              }}
-            />
-          </div>
-        </div>
-      </Panel>
-
-      {isError ? (
-        <ErrorState error={error} fallback="No se pudo cargar el historial." />
-      ) : (
-        <>
-          <DataList
-            columns={columns}
-            rows={runs}
-            getRowId={(run) => run.id}
-            onRowClick={(run) => setOpenTrace(run.id)}
-            isLoading={isPending}
-            skeletonRows={PAGE_SIZE}
-            emptyText={
-              <EmptyState
-                Icon={History}
-                title="Sin corridas"
-                description="Nadie le habló a Numi con esos criterios."
-              />
-            }
-          />
-
-          <Pagination
-            page={page}
-            pageSize={PAGE_SIZE}
-            total={total}
-            totalPages={totalPages}
-            onPage={(next) => set({ pagina: String(next) })}
-          />
-        </>
-      )}
+      <Pagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        totalPages={totalPages}
+        onPage={onPage}
+      />
 
       {openTrace && <TraceDrawer traceId={openTrace} onClose={() => setOpenTrace(null)} />}
     </div>

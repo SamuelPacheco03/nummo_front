@@ -1,7 +1,7 @@
 import { Field } from '@/components/ui/field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import type { PlaygroundOrganization } from '@/api/generated/model'
-import { usePlaygroundOrganizations } from './hooks'
+import { usePlaygroundContext } from './hooks'
 import { TODO_ORIGIN } from './labels'
 import { OrganizationPicker } from './organization-picker'
 import { QuietButton } from './quiet-button'
@@ -37,9 +37,14 @@ export function OriginFilter({
 /**
  * Contra qué organización se mira el panel, o contra todas.
  *
- * Resuelve por su cuenta **cómo se llama la elegida**: el selector solo guarda el id, y
- * sin esto cada panel repetía la misma consulta y el mismo `find` para poner un nombre en
- * el botón.
+ * Resuelve por su cuenta **cómo se llama la elegida**, y lo hace preguntando **por su id**
+ * y no buscándola en la primera página del listado. Con diez mil organizaciones en la
+ * plataforma, la elegida casi nunca está entre las cincuenta primeras: el botón decía
+ * «elige una organización» teniendo una elegida, y el filtro mentía sobre su propio estado
+ * mientras el panel de al lado sí estaba filtrado.
+ *
+ * `/context` la devuelve entera por id y es la misma consulta que ya hace la consola, así
+ * que después de la primera vez sale de la caché.
  */
 export function OrganizationFilter({
   organizationId,
@@ -52,8 +57,8 @@ export function OrganizationFilter({
   onClear: () => void
   clearLabel?: string
 }) {
-  const { organizations } = usePlaygroundOrganizations({ page: 1, pageSize: 50 })
-  const organization = organizations.find((org) => org.id === organizationId)
+  const { context } = usePlaygroundContext(organizationId)
+  const organization = context?.organization
 
   return (
     <Field label="Organización" hint="Vacío son todas.">
