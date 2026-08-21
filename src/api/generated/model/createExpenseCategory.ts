@@ -5,6 +5,8 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { CreateExpenseCategoryColor } from './createExpenseCategoryColor';
+import type { CreateExpenseCategoryIcon } from './createExpenseCategoryIcon';
 import type { CreateExpenseCategoryScope } from './createExpenseCategoryScope';
 
 export interface CreateExpenseCategory {
@@ -16,4 +18,11 @@ export interface CreateExpenseCategory {
   name: string;
   description?: string | null;
   scope?: CreateExpenseCategoryScope;
+  icon?: CreateExpenseCategoryIcon;
+  color?: CreateExpenseCategoryColor;
+  /**
+     * @minimum 0
+     * @maximum 9999
+     */
+  position?: number;
 }

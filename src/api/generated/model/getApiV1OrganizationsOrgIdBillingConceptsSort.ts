@@ -10,6 +10,7 @@ export type GetApiV1OrganizationsOrgIdBillingConceptsSort = typeof GetApiV1Organ
 
 
 export const GetApiV1OrganizationsOrgIdBillingConceptsSort = {
+  position: 'position',
   name: 'name',
   createdAt: 'createdAt',
 } as const;

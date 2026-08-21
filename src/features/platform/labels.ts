@@ -26,6 +26,8 @@ export const FEATURE_KEYS: (keyof FeatureMap)[] = [
   'bank_reconciliation',
   'approvals',
   'api_access',
+  'notifications_email',
+  'notifications_whatsapp',
 ]
 
 /** Primero lo que se acumula (aforos), después lo que se gasta cada mes (cuotas). */
@@ -44,6 +46,8 @@ const FEATURE_LABELS: Record<keyof FeatureMap, string> = {
   bank_reconciliation: 'la conciliación bancaria',
   approvals: 'las aprobaciones',
   api_access: 'el acceso por API',
+  notifications_email: 'los avisos por correo',
+  notifications_whatsapp: 'los avisos por WhatsApp',
 }
 
 /** El nombre de una feature **dentro de una frase**: «tu plan no incluye …». */

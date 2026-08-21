@@ -6,4 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type FeaturePatch = Partial<Record<'ai_byok' | 'custom_roles' | 'accounting' | 'bank_reconciliation' | 'approvals' | 'api_access', boolean>>;
+export type FeaturePatch = Partial<Record<'ai_byok' | 'custom_roles' | 'accounting' | 'bank_reconciliation' | 'approvals' | 'api_access' | 'notifications_email' | 'notifications_whatsapp', boolean>>;

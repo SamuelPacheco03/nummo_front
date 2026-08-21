@@ -5,6 +5,8 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { UpdateBillingConceptColor } from './updateBillingConceptColor';
+import type { UpdateBillingConceptIcon } from './updateBillingConceptIcon';
 
 export interface UpdateBillingConcept {
   code?: string | null;
@@ -15,5 +17,12 @@ export interface UpdateBillingConcept {
   name?: string;
   description?: string | null;
   defaultAmount?: string | null;
+  icon?: UpdateBillingConceptIcon;
+  color?: UpdateBillingConceptColor;
+  /**
+     * @minimum 0
+     * @maximum 9999
+     */
+  position?: number;
   isActive?: boolean;
 }

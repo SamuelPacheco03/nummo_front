@@ -42,6 +42,8 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   'organization.members': { label: 'Miembros', area: 'Organización' },
   'organization.roles': { label: 'Roles', area: 'Organización' },
   subscription: { label: 'Plan y suscripción', area: 'Organización' },
+  notifications: { label: 'Avisos', area: 'Organización' },
+  'notifications.settings': { label: 'Ajustes de avisos', area: 'Organización' },
   contacts: { label: 'Contactos', area: 'Contactos' },
   agreements: { label: 'Acuerdos de cobro', area: 'Cartera' },
   receivables: { label: 'Cuentas por cobrar', area: 'Cartera' },
@@ -76,6 +78,7 @@ const ACTIONS: Record<string, string> = {
   approve: 'Aprobar',
   transfer: 'Transferir',
   transfer_ownership: 'Transferir la propiedad',
+  team_activity: 'Recibir los del equipo',
   delete: 'Eliminar',
 }
 

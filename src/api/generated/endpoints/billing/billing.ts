@@ -38,6 +38,7 @@ import type {
   GetApiV1OrganizationsOrgIdInterestPolicies200,
   GetApiV1OrganizationsOrgIdInterestPoliciesParams,
   InterestPolicy,
+  SetAutoCharge,
   UpdateBillingAgreement,
   UpdateBillingConcept,
   UpdateInterestPolicy
@@ -1125,6 +1126,98 @@ export const usePatchApiV1OrganizationsOrgIdBillingAgreementsId = <TError = Erro
         TContext
       > => {
       return useMutation(getPatchApiV1OrganizationsOrgIdBillingAgreementsIdMutationOptions(options), queryClient);
+    }
+    export type putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponse200 = {
+  data: BillingAgreement
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponseSuccess = (putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponseError = (putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponse = (putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponseSuccess | putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponseError)
+
+export const getPutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeUrl = (orgId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/billing-agreements/${id}/auto-charge`
+}
+
+/**
+ * @summary Arm or disarm auto-record for an agreement (requiere payments.create). Con AUTO_RECORD, la cuenta por cobrar que venza se registra como cobrada sin intervención. Solo para plata que sabes que entra: marcarla cobrada apaga su mora, su interés y sus recordatorios.
+ */
+export const putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge = async (orgId: string,
+    id: string,
+    setAutoCharge: SetAutoCharge, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeResponse>(getPutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeUrl(orgId,id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setAutoCharge)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge>>, TError,{orgId: string;id: string;data: SetAutoCharge}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge>>, TError,{orgId: string;id: string;data: SetAutoCharge}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge>>, {orgId: string;id: string;data: SetAutoCharge}> = (props) => {
+          const {orgId,id,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge(orgId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge>>>
+    export type PutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeMutationBody = SetAutoCharge
+    export type PutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeMutationError = ErrorResponse
+
+    /**
+ * @summary Arm or disarm auto-record for an agreement (requiere payments.create). Con AUTO_RECORD, la cuenta por cobrar que venza se registra como cobrada sin intervención. Solo para plata que sabes que entra: marcarla cobrada apaga su mora, su interés y sus recordatorios.
+ */
+export const usePutApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge>>, TError,{orgId: string;id: string;data: SetAutoCharge}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdBillingAgreementsIdAutoCharge>>,
+        TError,
+        {orgId: string;id: string;data: SetAutoCharge},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdBillingAgreementsIdAutoChargeMutationOptions(options), queryClient);
     }
     export type postApiV1OrganizationsOrgIdBillingAgreementsIdPauseResponse200 = {
   data: BillingAgreement

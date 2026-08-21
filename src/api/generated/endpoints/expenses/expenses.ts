@@ -41,6 +41,7 @@ import type {
   GetApiV1OrganizationsOrgIdExpenseSchedulesParams,
   GetApiV1OrganizationsOrgIdExpenses200,
   GetApiV1OrganizationsOrgIdExpensesParams,
+  SetAutoCharge,
   UpdateExpenseCategory,
   UpdateExpenseSchedule
 } from '../../model';
@@ -818,6 +819,98 @@ export const usePatchApiV1OrganizationsOrgIdExpenseSchedulesId = <TError = Error
         TContext
       > => {
       return useMutation(getPatchApiV1OrganizationsOrgIdExpenseSchedulesIdMutationOptions(options), queryClient);
+    }
+    export type putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponse200 = {
+  data: ExpenseSchedule
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponseSuccess = (putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponseError = (putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponse = (putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponseSuccess | putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponseError)
+
+export const getPutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeUrl = (orgId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/expense-schedules/${id}/auto-charge`
+}
+
+/**
+ * @summary Arm or disarm auto-record for a schedule (requiere disbursements.create). Con AUTO_RECORD, el gasto que venza se registra como pagado sin intervención; por encima del umbral de aprobación queda como solicitud, sin mover dinero.
+ */
+export const putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge = async (orgId: string,
+    id: string,
+    setAutoCharge: SetAutoCharge, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeResponse>(getPutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeUrl(orgId,id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setAutoCharge)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge>>, TError,{orgId: string;id: string;data: SetAutoCharge}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge>>, TError,{orgId: string;id: string;data: SetAutoCharge}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge>>, {orgId: string;id: string;data: SetAutoCharge}> = (props) => {
+          const {orgId,id,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge(orgId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge>>>
+    export type PutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeMutationBody = SetAutoCharge
+    export type PutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeMutationError = ErrorResponse
+
+    /**
+ * @summary Arm or disarm auto-record for a schedule (requiere disbursements.create). Con AUTO_RECORD, el gasto que venza se registra como pagado sin intervención; por encima del umbral de aprobación queda como solicitud, sin mover dinero.
+ */
+export const usePutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge>>, TError,{orgId: string;id: string;data: SetAutoCharge}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdExpenseSchedulesIdAutoCharge>>,
+        TError,
+        {orgId: string;id: string;data: SetAutoCharge},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdExpenseSchedulesIdAutoChargeMutationOptions(options), queryClient);
     }
     export type postApiV1OrganizationsOrgIdExpenseSchedulesIdPauseResponse200 = {
   data: ExpenseSchedule
