@@ -2,7 +2,7 @@ import { inkOnFill, luminance, rgbTriplet } from './contrast'
 import type { Palette, PaletteMode, PaletteSlots } from './palettes'
 
 /**
- * Expande las 19 ranuras de una candidata al juego completo de tokens semánticos que
+ * Expande las 20 ranuras de una candidata al juego completo de tokens semánticos que
  * consume `components/ui/`.
  *
  * **La regla que hay que entender antes de tocar esto:** el resultado se aplica como
@@ -96,6 +96,13 @@ export function derive(palette: Palette, mode: PaletteMode): Record<string, stri
     '--secondary-foreground': s.ink,
     '--muted': s.sunken,
     '--muted-foreground': s.inkMuted,
+    /*
+      Token NUEVO, de la portada: la segunda línea de un titular a dos tonos. No es
+      `--muted-foreground` aunque se le parezca — ese se lee como cuerpo y va a 4.5:1,
+      y este es siempre texto grande y vive en el umbral de 3:1. Confundirlos deja un
+      párrafo ilegible o un titular apagado de más.
+    */
+    '--heading-muted': s.inkDisplay,
 
     /* accent = hover sutil de UI (rol shadcn), NO el color de marca. */
     '--accent': s.sunken,

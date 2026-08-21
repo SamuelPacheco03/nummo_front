@@ -67,6 +67,9 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #475569;
+  /* La segunda línea de un titular a dos tonos (§97.6). SIEMPRE texto grande: vive en el
+     umbral de 3:1, no en el de 4.5:1, y por eso no es `--muted-foreground`. */
+  --heading-muted: #64748b;
 
   /* accent = hover sutil de UI (rol shadcn), NO el teal de marca */
   --accent: #f1f5f9;
@@ -168,6 +171,7 @@
   --secondary-foreground: #f8fafc;
   --muted: #1f2937;
   --muted-foreground: #94a3b8;
+  --heading-muted: #94a3b8;
 
   --accent: #1f2937;
   --accent-foreground: #f8fafc;
@@ -231,6 +235,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-heading-muted: var(--heading-muted);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-success: var(--success);

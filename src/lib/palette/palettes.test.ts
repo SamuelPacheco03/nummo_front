@@ -44,6 +44,26 @@ const PARES: readonly Par[] = [
     minimo: AA_TEXT,
   },
 
+  /*
+    La segunda línea de un titular a dos tonos. Va a 3:1 y no a 4.5 porque es SIEMPRE
+    texto grande —48 px para arriba—; es el mismo criterio de la norma que permite bajar
+    el umbral con el tamaño, y sin él la salvia de los mockups no existiría. Se mide
+    contra las dos superficies claras porque el gesto aparece sobre las dos: el crema del
+    grueso de la página y la banda salvia de las secciones alternas.
+  */
+  {
+    que: 'segunda línea del titular sobre el fondo',
+    frente: '--heading-muted',
+    sobre: '--background',
+    minimo: AA_LARGE,
+  },
+  {
+    que: 'segunda línea del titular sobre la banda',
+    frente: '--heading-muted',
+    sobre: '--secondary',
+    minimo: AA_LARGE,
+  },
+
   // Rellenos de marca y de acción.
   {
     que: 'texto del botón primario',

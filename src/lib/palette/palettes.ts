@@ -1,10 +1,10 @@
 /**
- * La capa de paletas: **19 ranuras crudas por modo**, de las que sale el juego
+ * La capa de paletas: **20 ranuras crudas por modo**, de las que sale el juego
  * completo de tokens semánticos (`tokens.ts`).
  *
  * Sin esta capa cada candidata serían las ~77 declaraciones de `index.css` × 2 modos,
  * escritas a mano, y el test de contraste leería una copia en vez de lo que se pinta.
- * Con ella una candidata son 38 valores y **una sola** fuente: el test, las muestras
+ * Con ella una candidata son 40 valores y **una sola** fuente: el test, las muestras
  * del laboratorio y el hero leen exactamente el mismo objeto.
  *
  * Lo que NO entra en las ranuras, a propósito:
@@ -17,7 +17,7 @@
  */
 
 /**
- * Las 19 ranuras. Cada candidata las rellena dos veces, una por modo.
+ * Las 20 ranuras. Cada candidata las rellena dos veces, una por modo.
  *
  * `accentLink` existe aparte de `accent` porque no son el mismo trabajo: el relleno de
  * un botón puede ser oscuro, pero un enlace sobre el fondo tiene que leerse como texto,
@@ -37,8 +37,19 @@ export interface PaletteSlots {
   /* Tinta */
   /** Texto principal sobre las superficies del modo. */
   ink: string
-  /** Texto secundario: metadatos, ayudas. */
+  /** Texto secundario: metadatos, ayudas. Se lee como CUERPO, así que va a 4.5:1. */
   inkMuted: string
+  /**
+   * La **segunda línea de un titular a dos tonos**, que es el gesto de firma de la
+   * portada: la primera línea en tinta y la segunda en este tono, más apagado.
+   *
+   * Existe aparte de `inkMuted` por la misma razón que `positiveText` existe aparte de
+   * `positive`: son dos trabajos con dos umbrales. Esto es SIEMPRE texto grande —48 px
+   * para arriba—, así que se mide contra 3:1 y puede permitirse un tono que como cuerpo
+   * sería ilegible. Usarlo para un párrafo es el error que este comentario existe para
+   * evitar.
+   */
+  inkDisplay: string
   /** Tinta para escribir ENCIMA de un relleno saturado. */
   onFilled: string
 
@@ -112,6 +123,7 @@ const azul: Palette = {
     line: '#e2e8f0',
     ink: '#0f172a',
     inkMuted: '#475569',
+    inkDisplay: '#64748b',
     onFilled: '#ffffff',
     accent: '#2563eb',
     accentDeep: '#1d4ed8',
@@ -133,6 +145,7 @@ const azul: Palette = {
     line: '#1f2937',
     ink: '#f8fafc',
     inkMuted: '#94a3b8',
+    inkDisplay: '#94a3b8',
     onFilled: '#ffffff',
     accent: '#2563eb',
     accentDeep: '#1d4ed8',
@@ -150,59 +163,82 @@ const azul: Palette = {
 }
 
 /**
- * La de los mockups: crema, verde bosque, menta y durazno.
+ * La de los mockups, leída de ellos y no imaginada.
  *
- * El salto de verdad respecto a lo de hoy no es el verde, es el **fondo**: cambia el
- * gris azulado por un crema, y con él la temperatura de todo lo demás. Los grises
- * neutros sobre crema se ven sucios, así que hasta los bordes van tibios.
+ * El salto de verdad respecto a lo de hoy no es el verde: es el **fondo**. Cambia el gris
+ * azulado por un crema, y con él la temperatura de todo lo demás — los grises neutros
+ * sobre crema se ven sucios, así que hasta los bordes van tibios.
+ *
+ * Y la acción principal **no es verde, es durazno**. Es lo que más sorprende de los
+ * mockups y lo que más cuesta creer hasta que se mide: el durazno solo sostiene tinta
+ * oscura (8.4:1) y con blanco encima da 1.9:1. `inkOnFill` lo resuelve sola —el durazno
+ * cae por debajo del corte de 3:1 con la tinta clara y baja a la oscura—, así que aquí no
+ * hay nada que declarar: basta con no «arreglarlo» poniéndole blanco a mano.
+ *
+ * El verde profundo se queda con dos trabajos que sí son suyos: la tinta y las secciones
+ * oscuras.
  */
 const bosque: Palette = {
   id: 'bosque',
   name: 'Bosque',
   note: 'La de los mockups: crema, verde bosque, menta y durazno.',
   light: {
-    surface: '#faf6ed',
+    surface: '#f4f1e9',
     raised: '#ffffff',
-    sunken: '#f2ebdd',
-    line: '#e3d9c6',
-    ink: '#16281d',
-    inkMuted: '#55655a',
+    /*
+      La banda salvia con la que alternan las secciones (el ritmo, el CTA final). Ocupa la
+      ranura de superficie hundida porque eso es: el fondo un punto más denso sobre el que
+      se apoya una sección entera.
+    */
+    sunken: '#dce7dc',
+    line: '#e0dbcd',
+    ink: '#14231b',
+    inkMuted: '#51665a',
+    /*
+      La salvia de las segundas líneas. En los mockups se ve más clara —alrededor de
+      #8fa396— y a ese valor da 2.4:1 sobre el crema y 2.1:1 sobre la banda salvia: por
+      debajo incluso del 3:1 de texto grande. Oscurecerla hasta aquí la deja en 4.2 y 3.7,
+      que es lo que hace legible el gesto que la portada repite en cinco secciones.
+    */
+    inkDisplay: '#63796c',
     onFilled: '#ffffff',
-    accent: '#2c5a43',
-    accentDeep: '#1f4331',
+    accent: '#f5a97c',
+    accentDeep: '#e89563',
+    /* El enlace no puede ser el durazno: como texto sobre crema no llega. Va el verde. */
     accentLink: '#2c5a43',
-    accentSoft: '#d8ecdf',
-    positive: '#7fceac',
+    accentSoft: '#b9dec6',
+    positive: '#a8d5ba',
     positiveText: '#1b6647',
     caution: '#f0a878',
     cautionText: '#9c4c18',
     danger: '#b3392c',
     dangerText: '#b3392c',
-    shell: '#16281d',
-    shellRaised: '#294032',
+    shell: '#14231b',
+    shellRaised: '#1f3227',
   },
   dark: {
+    /*
+      El oscuro no está en los mockups: se deriva. Las secciones oscuras de la portada ya
+      dicen cuál es el verde profundo de la marca, así que el modo oscuro es esa misma
+      superficie llevada a página entera, con la tinta crema que ya usan.
+    */
     surface: '#0e1712',
     raised: '#17241c',
     sunken: '#22322a',
     line: '#2c3d33',
     ink: '#f1ece0',
     inkMuted: '#9aab9f',
+    /* Sobre el fondo oscuro la salvia de los mockups sí se lee (6.1:1), así que se queda. */
+    inkDisplay: '#8fa396',
     onFilled: '#ffffff',
-    /*
-      El verde de acción va más profundo de lo que pediría el ojo sobre un fondo oscuro:
-      a #4a8c69 el blanco encima daba 4.00:1 y no llegaba a AA. Aclarar el relleno para
-      «que se vea en oscuro» es justo lo que vuelve ilegible su etiqueta.
-    */
-    accent: '#3d7a58',
-    accentDeep: '#2f6246',
+    accent: '#f5a97c',
+    accentDeep: '#e89563',
     accentLink: '#8ad7b6',
     accentSoft: '#1d3729',
     positive: '#7fceac',
     positiveText: '#8ad7b6',
     caution: '#f0a878',
     cautionText: '#f3bb94',
-    /* Mismo caso: el terracota claro daba 3.28:1 con el blanco de un botón «Eliminar». */
     danger: '#bd4236',
     dangerText: '#e2695c',
     shell: '#0a110d',
@@ -228,6 +264,7 @@ const bruma: Palette = {
     line: '#ddd5c9',
     ink: '#1b1916',
     inkMuted: '#544e46',
+    inkDisplay: '#6b6459',
     onFilled: '#ffffff',
     accent: '#0f766e',
     accentDeep: '#0b5b55',
@@ -249,6 +286,7 @@ const bruma: Palette = {
     line: '#342f28',
     ink: '#f5f0e9',
     inkMuted: '#a89f93',
+    inkDisplay: '#a89f93',
     onFilled: '#ffffff',
     /* Igual que en «bosque»: a #17958a el blanco encima se quedaba en 3.68:1. */
     accent: '#128073',
