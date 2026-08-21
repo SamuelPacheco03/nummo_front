@@ -2139,6 +2139,604 @@
         }
       }
     },
+    "/api/v1/organizations/{orgId}/whatsapp/templates": {
+      "get": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Plantillas que la organización puede usar",
+        "description": "Incluye las de la plataforma, que comparten todas las organizaciones. `canSend` es la única respuesta a «¿puedo usar esta?»: solo una plantilla aprobada por Meta se puede enviar.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantillas disponibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplateList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.read"
+      },
+      "post": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Envía una plantilla propia a revisión de Meta",
+        "description": "Devuelve 202 y no 201: Meta la acepta para revisión, no la aprueba. El veredicto llega por webhook minutos u horas después y actualiza `status`.\n\nRequiere que la organización haya conectado su propia cuenta de Meta: en la WABA de la plataforma una organización podría agotarle a las demás el cupo de 100 creaciones por hora, o dejar un nombre bloqueado 30 días al borrar una aprobada.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWhatsAppTemplateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Enviada a revisión.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplate"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/whatsapp/templates/sync": {
+      "post": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Contrasta el estado guardado con el que dice Meta ahora",
+        "description": "Reconcilia; no sustituye al webhook, que es quien avisa del cambio en cuanto ocurre. Sirve cuando se perdió una notificación o al conectar una cuenta que ya tenía plantillas.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado de la sincronización.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncWhatsAppTemplatesResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/whatsapp/templates/{templateKey}": {
+      "delete": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Borra una plantilla propia",
+        "description": "Solo las de la organización: las de la plataforma se ven pero no se borran. **Borrar una aprobada bloquea su nombre en Meta durante 30 días** y no es reversible.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "templateKey",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Borrada."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/messaging/messages": {
+      "get": {
+        "tags": [
+          "Mensajería"
+        ],
+        "summary": "Lo que se le ha escrito a los clientes",
+        "description": "Incluye lo que **no** salió, como `SKIPPED` y con su motivo en `skipReason`. Es la respuesta a «¿por qué no le llegó?» sin abrir un log: falta de consentimiento, plantilla no aprobada, cuota agotada u horas de silencio.\n\nNo se gatea por plan: es la historia de lo que ya se hizo, y quien baje de plan sigue teniendo que poder responderle a un cliente.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "SENT",
+                "DELIVERED",
+                "READ",
+                "FAILED",
+                "SKIPPED"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "contactId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mensajes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OutboundMessage"
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page",
+                    "pageSize",
+                    "total",
+                    "totalPages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "messaging.read"
+      }
+    },
+    "/api/v1/organizations/{orgId}/messaging/consents": {
+      "get": {
+        "tags": [
+          "Mensajería"
+        ],
+        "summary": "Quién consintió recibir mensajes, y quién lo revocó",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consentimientos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MessageConsent"
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page",
+                    "pageSize",
+                    "total",
+                    "totalPages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "messaging.read"
+      },
+      "put": {
+        "tags": [
+          "Mensajería"
+        ],
+        "summary": "Registra lo que dijo un destinatario",
+        "description": "La clave es la **dirección**, no el contacto: se le escribe a un número, y ese número puede no estar en ninguna ficha.\n\n`UNKNOWN` no es un no. Un cliente al que se le factura recibe avisos `UTILITY` sin haber firmado nada; lo que exige un sí explícito es el marketing, y lo que cierra la puerta del todo es `REVOKED`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMessageConsentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consentimiento guardado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageConsent"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "messaging.settings.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/messaging/collection-policy": {
+      "get": {
+        "tags": [
+          "Mensajería"
+        ],
+        "summary": "Cuándo y con qué plantilla se le recuerda a un deudor que debe",
+        "description": "Una organización que nunca lo configuró recibe la política por defecto —apagada—, no un vacío.\n\nEl *cuándo* no está aquí: son los `dueReminderDays` de los ajustes de la organización, que ya rigen los avisos internos.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Política de cobranza.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "messaging.read"
+      },
+      "put": {
+        "tags": [
+          "Mensajería"
+        ],
+        "summary": "Activa o ajusta los recordatorios de cobro",
+        "description": "Endpoint propio y no un campo de los ajustes generales, como la política de aprobaciones: encender o apagar los recordatorios de una empresa entera tiene que ser un acto deliberado.\n\nSin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora. Las horas de silencio **aplazan, no cancelan**: un recordatorio nocturno sale a la mañana siguiente.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionPolicyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Política actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "messaging.settings.manage",
+        "x-required-feature": "whatsapp_outbound"
+      }
+    },
     "/api/v1/admin/playground/organizations": {
       "get": {
         "tags": [
@@ -12169,6 +12767,9 @@
                 "assistant.use",
                 "notifications.read",
                 "notifications.manage",
+                "whatsapp.templates.read",
+                "whatsapp.settings.read",
+                "messaging.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -12199,6 +12800,10 @@
                 "assistant.settings.read",
                 "assistant.settings.manage",
                 "notifications.settings.manage",
+                "whatsapp.templates.manage",
+                "whatsapp.settings.manage",
+                "messaging.send",
+                "messaging.settings.manage",
                 "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
@@ -12259,6 +12864,9 @@
                 "assistant.use",
                 "notifications.read",
                 "notifications.manage",
+                "whatsapp.templates.read",
+                "whatsapp.settings.read",
+                "messaging.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -12289,6 +12897,10 @@
                 "assistant.settings.read",
                 "assistant.settings.manage",
                 "notifications.settings.manage",
+                "whatsapp.templates.manage",
+                "whatsapp.settings.manage",
+                "messaging.send",
+                "messaging.settings.manage",
                 "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
@@ -12403,7 +13015,9 @@
             "approvals",
             "api_access",
             "notifications_email",
-            "notifications_whatsapp"
+            "notifications_whatsapp",
+            "whatsapp_outbound",
+            "whatsapp_byo"
           ]
         },
         "additionalProperties": {
@@ -12419,7 +13033,8 @@
             "max_users",
             "max_branches",
             "ai_messages_monthly",
-            "voice_minutes_monthly"
+            "voice_minutes_monthly",
+            "whatsapp_messages_monthly"
           ]
         },
         "additionalProperties": {
@@ -12538,6 +13153,236 @@
         "required": [
           "to"
         ]
+      },
+      "CreateWhatsAppTemplateInput": {
+        "type": "object",
+        "properties": {
+          "templateKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9_.-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 15
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "UTILITY",
+              "MARKETING",
+              "AUTHENTICATION"
+            ]
+          },
+          "spec": {
+            "$ref": "#/components/schemas/WhatsAppTemplateSpec"
+          }
+        },
+        "required": [
+          "templateKey",
+          "name",
+          "language",
+          "category",
+          "spec"
+        ]
+      },
+      "WhatsAppTemplateSpec": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "bodyExamples": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "header": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "headerExamples": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "footer": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "buttons": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WhatsAppButtonSpec"
+            }
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "WhatsAppButtonSpec": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "quick_reply",
+              "url",
+              "phone_number"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 25
+          },
+          "link": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "example": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "number": {
+            "type": "string",
+            "maxLength": 20
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ]
+      },
+      "SetMessageConsentInput": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 25,
+            "pattern": "^\\+?[\\d\\s()-]+$"
+          },
+          "channel": {
+            "default": "WHATSAPP",
+            "type": "string",
+            "enum": [
+              "WHATSAPP"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "GRANTED",
+              "REVOKED"
+            ]
+          },
+          "source": {
+            "default": "MANUAL",
+            "type": "string",
+            "enum": [
+              "IMPORTED",
+              "CONTRACT",
+              "REPLY",
+              "MANUAL"
+            ]
+          },
+          "contactId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "address",
+          "status"
+        ]
+      },
+      "UpdateCollectionPolicyInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "quietStart": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "quietEnd": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "dueSoonTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdueTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       },
       "PlaygroundChatInput": {
         "type": "object",
@@ -14039,6 +14884,14 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 60
+          },
+          "collectionReminders": {
+            "type": "string",
+            "enum": [
+              "INHERIT",
+              "ON",
+              "OFF"
+            ]
           },
           "notes": {
             "anyOf": [
@@ -16310,6 +17163,9 @@
                 "assistant.use",
                 "notifications.read",
                 "notifications.manage",
+                "whatsapp.templates.read",
+                "whatsapp.settings.read",
+                "messaging.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -16340,6 +17196,10 @@
                 "assistant.settings.read",
                 "assistant.settings.manage",
                 "notifications.settings.manage",
+                "whatsapp.templates.manage",
+                "whatsapp.settings.manage",
+                "messaging.send",
+                "messaging.settings.manage",
                 "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
@@ -16495,6 +17355,9 @@
                 "assistant.use",
                 "notifications.read",
                 "notifications.manage",
+                "whatsapp.templates.read",
+                "whatsapp.settings.read",
+                "messaging.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -16525,6 +17388,10 @@
                 "assistant.settings.read",
                 "assistant.settings.manage",
                 "notifications.settings.manage",
+                "whatsapp.templates.manage",
+                "whatsapp.settings.manage",
+                "messaging.send",
+                "messaging.settings.manage",
                 "notifications.team_activity",
                 "organization.transfer_ownership",
                 "organization.delete",
@@ -16592,6 +17459,12 @@
           },
           "notifications_whatsapp": {
             "type": "boolean"
+          },
+          "whatsapp_outbound": {
+            "type": "boolean"
+          },
+          "whatsapp_byo": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -16602,7 +17475,9 @@
           "approvals",
           "api_access",
           "notifications_email",
-          "notifications_whatsapp"
+          "notifications_whatsapp",
+          "whatsapp_outbound",
+          "whatsapp_byo"
         ],
         "additionalProperties": false
       },
@@ -16668,6 +17543,18 @@
                 "type": "null"
               }
             ]
+          },
+          "whatsapp_messages_monthly": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -16675,7 +17562,8 @@
           "max_users",
           "max_branches",
           "ai_messages_monthly",
-          "voice_minutes_monthly"
+          "voice_minutes_monthly",
+          "whatsapp_messages_monthly"
         ],
         "additionalProperties": false,
         "description": "null significa sin tope."
@@ -16692,11 +17580,17 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "whatsapp_messages_monthly": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "ai_messages_monthly",
-          "voice_minutes_monthly"
+          "voice_minutes_monthly",
+          "whatsapp_messages_monthly"
         ],
         "additionalProperties": false
       },
@@ -16879,7 +17773,8 @@
               "type": "string",
               "enum": [
                 "ai_messages_monthly",
-                "voice_minutes_monthly"
+                "voice_minutes_monthly",
+                "whatsapp_messages_monthly"
               ]
             },
             "additionalProperties": {
@@ -16889,7 +17784,8 @@
             },
             "required": [
               "ai_messages_monthly",
-              "voice_minutes_monthly"
+              "voice_minutes_monthly",
+              "whatsapp_messages_monthly"
             ]
           }
         },
@@ -16960,7 +17856,8 @@
               "type": "string",
               "enum": [
                 "ai_messages_monthly",
-                "voice_minutes_monthly"
+                "voice_minutes_monthly",
+                "whatsapp_messages_monthly"
               ]
             },
             "additionalProperties": {
@@ -16970,7 +17867,8 @@
             },
             "required": [
               "ai_messages_monthly",
-              "voice_minutes_monthly"
+              "voice_minutes_monthly",
+              "whatsapp_messages_monthly"
             ]
           },
           "features": {
@@ -16985,7 +17883,9 @@
                 "approvals",
                 "api_access",
                 "notifications_email",
-                "notifications_whatsapp"
+                "notifications_whatsapp",
+                "whatsapp_outbound",
+                "whatsapp_byo"
               ]
             },
             "additionalProperties": {
@@ -16999,7 +17899,9 @@
               "approvals",
               "api_access",
               "notifications_email",
-              "notifications_whatsapp"
+              "notifications_whatsapp",
+              "whatsapp_outbound",
+              "whatsapp_byo"
             ]
           },
           "limits": {
@@ -17011,7 +17913,8 @@
                 "max_users",
                 "max_branches",
                 "ai_messages_monthly",
-                "voice_minutes_monthly"
+                "voice_minutes_monthly",
+                "whatsapp_messages_monthly"
               ]
             },
             "additionalProperties": {
@@ -17031,7 +17934,8 @@
               "max_users",
               "max_branches",
               "ai_messages_monthly",
-              "voice_minutes_monthly"
+              "voice_minutes_monthly",
+              "whatsapp_messages_monthly"
             ]
           },
           "overrides": {
@@ -17097,7 +18001,9 @@
                 "approvals",
                 "api_access",
                 "notifications_email",
-                "notifications_whatsapp"
+                "notifications_whatsapp",
+                "whatsapp_outbound",
+                "whatsapp_byo"
               ]
             },
             "additionalProperties": {
@@ -17111,7 +18017,9 @@
               "approvals",
               "api_access",
               "notifications_email",
-              "notifications_whatsapp"
+              "notifications_whatsapp",
+              "whatsapp_outbound",
+              "whatsapp_byo"
             ]
           },
           "limits": {
@@ -17123,7 +18031,8 @@
                 "max_users",
                 "max_branches",
                 "ai_messages_monthly",
-                "voice_minutes_monthly"
+                "voice_minutes_monthly",
+                "whatsapp_messages_monthly"
               ]
             },
             "additionalProperties": {
@@ -17143,7 +18052,8 @@
               "max_users",
               "max_branches",
               "ai_messages_monthly",
-              "voice_minutes_monthly"
+              "voice_minutes_monthly",
+              "whatsapp_messages_monthly"
             ]
           }
         },
@@ -17316,6 +18226,387 @@
         ],
         "additionalProperties": false
       },
+      "WhatsAppTemplateList": {
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WhatsAppTemplate"
+            }
+          }
+        },
+        "required": [
+          "templates"
+        ],
+        "additionalProperties": false
+      },
+      "WhatsAppTemplate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "templateKey": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "UTILITY",
+              "MARKETING",
+              "AUTHENTICATION"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "canSend": {
+            "type": "boolean"
+          },
+          "parameterNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rejectedReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastSyncedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "templateKey",
+          "name",
+          "language",
+          "category",
+          "status",
+          "canSend",
+          "parameterNames",
+          "rejectedReason",
+          "lastSyncedAt",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "SyncWhatsAppTemplatesResult": {
+        "type": "object",
+        "properties": {
+          "reviewed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "updated": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "reviewed",
+          "updated"
+        ],
+        "additionalProperties": false
+      },
+      "OutboundMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "WHATSAPP"
+            ]
+          },
+          "address": {
+            "type": "string"
+          },
+          "contactId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "UTILITY",
+              "MARKETING"
+            ]
+          },
+          "templateKey": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "SENT",
+              "DELIVERED",
+              "READ",
+              "FAILED",
+              "SKIPPED"
+            ]
+          },
+          "skipReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entityType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entityId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "sentAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deliveredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "address",
+          "contactId",
+          "purpose",
+          "templateKey",
+          "status",
+          "skipReason",
+          "lastError",
+          "entityType",
+          "entityId",
+          "createdAt",
+          "sentAt",
+          "deliveredAt",
+          "readAt"
+        ],
+        "additionalProperties": false
+      },
+      "MessageConsent": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "WHATSAPP"
+            ]
+          },
+          "address": {
+            "type": "string"
+          },
+          "contactId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "GRANTED",
+              "REVOKED"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "IMPORTED",
+              "CONTRACT",
+              "REPLY",
+              "MANUAL"
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "channel",
+          "address",
+          "contactId",
+          "status",
+          "source",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CollectionPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "quietStart": {
+            "type": "string"
+          },
+          "quietEnd": {
+            "type": "string"
+          },
+          "dueSoonTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdueTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "enabled",
+          "quietStart",
+          "quietEnd",
+          "dueSoonTemplateKey",
+          "overdueTemplateKey",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
       "PlaygroundOrganizationPage": {
         "type": "object",
         "properties": {
@@ -17473,6 +18764,9 @@
                       "assistant.use",
                       "notifications.read",
                       "notifications.manage",
+                      "whatsapp.templates.read",
+                      "whatsapp.settings.read",
+                      "messaging.read",
                       "contacts.write",
                       "contacts.archive",
                       "receivables.create",
@@ -17503,6 +18797,10 @@
                       "assistant.settings.read",
                       "assistant.settings.manage",
                       "notifications.settings.manage",
+                      "whatsapp.templates.manage",
+                      "whatsapp.settings.manage",
+                      "messaging.send",
+                      "messaging.settings.manage",
                       "notifications.team_activity",
                       "organization.transfer_ownership",
                       "organization.delete",
@@ -17649,6 +18947,9 @@
                   "assistant.use",
                   "notifications.read",
                   "notifications.manage",
+                  "whatsapp.templates.read",
+                  "whatsapp.settings.read",
+                  "messaging.read",
                   "contacts.write",
                   "contacts.archive",
                   "receivables.create",
@@ -17679,6 +18980,10 @@
                   "assistant.settings.read",
                   "assistant.settings.manage",
                   "notifications.settings.manage",
+                  "whatsapp.templates.manage",
+                  "whatsapp.settings.manage",
+                  "messaging.send",
+                  "messaging.settings.manage",
                   "notifications.team_activity",
                   "organization.transfer_ownership",
                   "organization.delete",
@@ -19838,6 +21143,14 @@
           "autoCharge": {
             "$ref": "#/components/schemas/AutoCharge"
           },
+          "collectionReminders": {
+            "type": "string",
+            "enum": [
+              "INHERIT",
+              "ON",
+              "OFF"
+            ]
+          },
           "notes": {
             "anyOf": [
               {
@@ -19876,6 +21189,7 @@
           "generateDaysBefore",
           "status",
           "autoCharge",
+          "collectionReminders",
           "notes",
           "createdAt",
           "updatedAt"
