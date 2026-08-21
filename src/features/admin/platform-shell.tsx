@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router'
-import { Menu, ShieldAlert } from 'lucide-react'
+import { Menu, PanelLeft, ShieldAlert } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Drawer } from '@/components/ui/drawer'
@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ui/error-state'
 import { PageLoader } from '@/components/ui/loader'
 import { UserMenu } from '@/features/auth/user-menu'
 import { usePlatformAccess } from '@/features/platform/hooks'
+import { cn } from '@/lib/utils'
 import { activeSectionLabel } from './platform-nav'
 import { PlatformSidebarBody } from './platform-sidebar'
 
@@ -38,16 +39,54 @@ import { PlatformSidebarBody } from './platform-sidebar'
  * El reparto de la cabecera es el de §11.1.1: el sidebar navega, y tema y cuenta
  * viven arriba a la derecha, una sola vez por pantalla.
  */
+/** Dónde se recuerda si el carril está plegado. Es una preferencia, no un filtro. */
+const RAIL_KEY = 'nummo:plataforma:carril'
+
+function useCollapsedRail(): [boolean, (value: boolean) => void] {
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(RAIL_KEY) === '1'
+    } catch {
+      // Safari privado y las cookies de terceros bloqueadas lanzan aquí. Sin memoria del
+      // carril se trabaja igual; sin consola, no.
+      return false
+    }
+  })
+
+  return [
+    collapsed,
+    (value: boolean) => {
+      setCollapsed(value)
+      try {
+        localStorage.setItem(RAIL_KEY, value ? '1' : '0')
+      } catch {
+        /* sin memoria, pero la consola funciona */
+      }
+    },
+  ]
+}
+
 export function PlatformShell() {
   const { isPlatformAdmin, isLoading, isError, error } = usePlatformAccess()
   const { pathname } = useLocation()
   const section = activeSectionLabel(pathname)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [collapsed, setCollapsed] = useCollapsedRail()
 
   return (
     <div className="bg-background flex h-dvh">
-      <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border hidden h-dvh w-64 shrink-0 flex-col border-r lg:flex">
-        <PlatformSidebarBody />
+      {/*
+        `sidebar-platform` cambia el acento de esta superficie sin tocar el del negocio: el
+        índigo del isotipo en vez del azul, para que la consola no se confunda con la app
+        del cliente (§47.2).
+      */}
+      <aside
+        className={cn(
+          'sidebar-platform bg-sidebar text-sidebar-foreground border-sidebar-border hidden h-dvh shrink-0 flex-col border-r transition-[width] lg:flex',
+          collapsed ? 'w-[4.5rem]' : 'w-64',
+        )}
+      >
+        <PlatformSidebarBody collapsed={collapsed} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -69,6 +108,21 @@ export function PlatformShell() {
           <div className="flex items-center gap-2 lg:hidden">
             <BrandLockup />
           </div>
+
+          {/*
+            Plegar y el menú comparten hueco: el mismo sitio, y lo que hace depende del
+            ancho. En escritorio pliega el carril; por debajo de `lg` no hay carril que
+            plegar y ese botón es el que abre la navegación.
+          */}
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Desplegar la navegación' : 'Plegar la navegación'}
+            aria-pressed={collapsed}
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -ml-1 hidden size-9 shrink-0 place-items-center rounded-md focus-visible:ring-[3px] focus-visible:outline-none lg:grid"
+          >
+            <PanelLeft aria-hidden className="size-[1.05rem]" />
+          </button>
 
           {/*
             La miga de pan es lo único que la cabecera aporta en escritorio: la marca y la
@@ -104,7 +158,7 @@ export function PlatformShell() {
       </div>
 
       <Drawer open={menuOpen} onOpenChange={setMenuOpen} title="Plataforma">
-        <div className="bg-sidebar text-sidebar-foreground -mx-5 -my-4 flex min-h-[60vh] flex-col sm:-mx-6">
+        <div className="sidebar-platform bg-sidebar text-sidebar-foreground -mx-5 -my-4 flex min-h-[60vh] flex-col sm:-mx-6">
           <PlatformSidebarBody onNavigate={() => setMenuOpen(false)} />
         </div>
       </Drawer>

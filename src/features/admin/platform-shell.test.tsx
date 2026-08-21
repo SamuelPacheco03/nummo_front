@@ -15,6 +15,15 @@ vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({ organizations: orgs.current }),
 }))
 vi.mock('@/features/auth/user-menu', () => ({ UserMenu: () => null }))
+/*
+  El sidebar dice quién está dentro —«Jorge · superadmin»—, que es la mitad del
+  recordatorio de que esta consola no es la app del cliente. Eso lo lee del contrato, así
+  que el shell pasa a depender de la sesión: aquí se simula, que lo que se prueba es qué
+  pinta el shell y no cómo se pide el usuario.
+*/
+vi.mock('@/features/auth/hooks', () => ({
+  useAuth: () => ({ user: { id: 'u1', fullName: 'Demo Owner', email: 'demo@nummo.app' } }),
+}))
 
 const { PlatformShell } = await import('./platform-shell')
 

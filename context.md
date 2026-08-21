@@ -3457,11 +3457,29 @@ navegación es `SectionedLayout`, la misma de Configuración y Ayuda (§11.1.3).
 tiempo la consola navegó con `SectionedLayout`, que está pensado para vivir **dentro** de una
 página: una columna clara sobre el fondo, sin peso. Era la única superficie de Nummo donde
 navegar no pesaba nada, y cruzar del inquilino a la plataforma parecía cambiar de producto.
-Hoy tiene `PlatformSidebarBody`, con la misma forma que el del negocio —superficie oscura,
-grupos en versaditas, el activo con su barra de marca— y lo que cambia es **lo que lleva
-dentro**: ni selector de organización (un superadmin puede no tener ninguna) ni secciones del
-negocio, y en el pie la salida a Nummo y el estado del sistema. La cabecera se reparte como
-manda §11.1.1: el sidebar navega, y tema y cuenta viven arriba a la derecha.
+
+Hoy tiene `PlatformSidebarBody`, con la **forma** del sidebar del negocio —superficie oscura,
+grupos, el activo con su barra— pero deliberadamente **no con su acento**:
+
+- **Índigo, no azul** (`--sidebar-platform-primary`, el del isotipo aclarado para leerse sobre
+  una superficie que va oscura en los dos temas). No es decoración: esta es la única pantalla
+  donde alguien mira la contabilidad de otro y, con un interruptor, escribe en ella. Si se
+  parece del todo a la app del cliente, se olvida dónde se está — y el sidebar es lo único que
+  está siempre a la vista para recordarlo.
+- **Bloque «Consola de plataforma»** bajo la marca, y **quién está dentro** en el pie, con su
+  condición de superadmin.
+- **Ni selector de organización** (un superadmin puede no ser miembro de ninguna) **ni
+  secciones del negocio**. En el pie, la salida a Nummo —solo si hay a dónde volver— y el
+  estado del sistema.
+- **Se pliega a carril de 72 px** desde la cabecera, y la elección se recuerda en
+  `localStorage` porque es una preferencia y no un filtro (§21.1). Plegado devuelve **184 px**
+  al contenido, que en la tabla de organizaciones y en la comparación de cuatro variantes es
+  justo lo que falta; lo que se pierde es el texto, no la estructura — los grupos se separan
+  con una raya. (Y no con el nombre recortado: «Plataforma» cabía como «Plata», que en español
+  es otra palabra.)
+
+La cabecera se reparte como manda §11.1.1: el sidebar navega, y tema y cuenta viven arriba a
+la derecha.
 
 **Y el cuerpo no es el de Configuración.** Alto de ventana, scroll de la pantalla y no de la
 página, y contenido centrado en 72rem (`PlatformPage`). La columna de 48rem que comparten Ajustes y Ayuda es la que hace legible un

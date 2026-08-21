@@ -113,6 +113,25 @@
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: #1e293b;
   --sidebar-ring: #3b82f6;
+
+  /*
+    **El acento de la consola de plataforma.**
+
+    El índigo del isotipo, aclarado. El sidebar va oscuro en los dos temas (arriba), así
+    que su acento no puede re-tematizarse: `--chart-3` en claro es #4f46e5 y sobre esta
+    superficie se apaga. Este es fijo y se lee en ambos.
+
+    Existe porque la consola **no debe confundirse con la app del cliente**: es la única
+    superficie donde alguien puede escribir en la contabilidad de otro, y el sidebar es lo
+    único que está siempre a la vista para recordarlo (§47.2).
+  */
+  --sidebar-platform-primary: #818cf8;
+}
+
+/* La consola de plataforma se pinta con su acento sin tocar el del negocio. */
+.sidebar-platform {
+  --sidebar-primary: var(--sidebar-platform-primary);
+  --sidebar-ring: var(--sidebar-platform-primary);
 }
 
 .dark {
