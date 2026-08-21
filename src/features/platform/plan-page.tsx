@@ -6,6 +6,7 @@ import {
   Circle,
   MapPin,
   MessageCircle,
+  MessageSquareText,
   Mic,
   UserCog,
   Users,
@@ -74,6 +75,7 @@ const LIMIT_ICONS: Record<keyof LimitMap, LucideIcon> = {
   max_branches: MapPin,
   ai_messages_monthly: MessageCircle,
   voice_minutes_monthly: Mic,
+  whatsapp_messages_monthly: MessageSquareText,
 }
 
 /**

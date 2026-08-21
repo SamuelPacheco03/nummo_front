@@ -50,6 +50,8 @@ function capacidades(permissions: CapabilitiesDto['permissions']): CapabilitiesD
       api_access: false,
       notifications_email: false,
       notifications_whatsapp: false,
+      whatsapp_outbound: false,
+      whatsapp_byo: false,
     },
     limits: {
       max_contacts: 30,
@@ -57,9 +59,10 @@ function capacidades(permissions: CapabilitiesDto['permissions']): CapabilitiesD
       max_branches: 1,
       ai_messages_monthly: 50,
       voice_minutes_monthly: 10,
+      whatsapp_messages_monthly: 0,
     },
     period: '2026-08',
-    usage: { ai_messages_monthly: 0, voice_minutes_monthly: 0 },
+    usage: { ai_messages_monthly: 0, voice_minutes_monthly: 0, whatsapp_messages_monthly: 0 },
   }
 }
 

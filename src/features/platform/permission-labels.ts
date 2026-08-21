@@ -23,11 +23,13 @@ type Area =
   | 'Informes'
   | 'Asistente'
   | 'Notificaciones'
+  | 'Cobranza'
 
 /** El orden en que se presentan los grupos: el de la navegación (§14). */
 const AREA_ORDER: Area[] = [
   'Contactos',
   'Cartera',
+  'Cobranza',
   'Gastos',
   'Caja',
   'Informes',
@@ -64,6 +66,13 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   'assistant.settings': { label: 'Ajustes de Numi', area: 'Asistente' },
   notifications: { label: 'Notificaciones', area: 'Notificaciones' },
   'notifications.settings': { label: 'Política de avisos', area: 'Notificaciones' },
+  // La cobranza por WhatsApp es su propia área y no un apartado de Cartera: el
+  // destinatario no es quien usa Nummo, es el deudor. Los mensajes y su política
+  // van por `messaging`; el canal —plantillas y cuenta de Meta— por `whatsapp`.
+  messaging: { label: 'Mensajes al deudor', area: 'Cobranza' },
+  'messaging.settings': { label: 'Política de cobranza', area: 'Cobranza' },
+  'whatsapp.templates': { label: 'Plantillas de WhatsApp', area: 'Cobranza' },
+  'whatsapp.settings': { label: 'Cuenta de WhatsApp', area: 'Cobranza' },
 }
 
 /** La última parte: el verbo. */
@@ -74,6 +83,10 @@ const ACTIONS: Record<string, string> = {
   // recibir lo que registran los demás; nunca da acceso a algo que no pudiera ver.
   team_activity: 'Recibir la actividad del equipo',
   write: 'Crear y editar',
+  // Existe en el catálogo y **ninguna ruta lo usa todavía**: no hay endpoint de
+  // enviar un mensaje suelto. Se nombra igual porque el editor de roles lo lista
+  // —el backend lo publica— y una clave cruda ahí no la entiende nadie.
+  send: 'Enviar',
   archive: 'Archivar',
   create: 'Registrar',
   adjust: 'Ajustar',

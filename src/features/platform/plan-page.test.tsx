@@ -49,6 +49,8 @@ const SIN_FEATURES = {
   api_access: false,
   notifications_email: false,
   notifications_whatsapp: false,
+  whatsapp_outbound: false,
+  whatsapp_byo: false,
 }
 
 function plan(over: Partial<PublicPlan>): PublicPlan {
@@ -65,6 +67,7 @@ function plan(over: Partial<PublicPlan>): PublicPlan {
       max_branches: 1,
       ai_messages_monthly: 50,
       voice_minutes_monthly: 10,
+      whatsapp_messages_monthly: 0,
     },
     ...over,
   }
@@ -83,9 +86,10 @@ function capacidades(over: Partial<CapabilitiesDto> = {}): CapabilitiesDto {
       max_branches: 1,
       ai_messages_monthly: 300,
       voice_minutes_monthly: 30,
+      whatsapp_messages_monthly: 200,
     },
     period: '2026-08',
-    usage: { ai_messages_monthly: 120, voice_minutes_monthly: 4 },
+    usage: { ai_messages_monthly: 120, voice_minutes_monthly: 4, whatsapp_messages_monthly: 8 },
     ...over,
   }
 }
@@ -116,6 +120,7 @@ test('un tope en null es «sin límite», nunca cero', () => {
       max_branches: null,
       ai_messages_monthly: null,
       voice_minutes_monthly: null,
+      whatsapp_messages_monthly: null,
     },
   })
   estado.contactos = 4200
