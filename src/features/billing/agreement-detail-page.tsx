@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { AutoChargeSection } from '@/components/auto-charge-section'
+import { CollectionRemindersSection } from '@/features/messaging/collection-reminders-section'
 import { useContact } from '@/features/contacts/hooks'
 import { useBranches } from '@/features/config/hooks'
 import { useBillingConcepts } from '@/features/masters/hooks'
@@ -31,6 +32,7 @@ import {
   usePauseAgreement,
   useResumeAgreement,
   useSetAgreementAutoCharge,
+  useUpdateAgreement,
 } from './hooks'
 
 const LIST = '/cartera/acuerdos'
@@ -76,6 +78,7 @@ export function AgreementDetailPage() {
   const resume = useResumeAgreement(orgId ?? '')
   const end = useEndAgreement(orgId ?? '')
   const autoCharge = useSetAgreementAutoCharge(orgId ?? '')
+  const update = useUpdateAgreement(orgId ?? '')
   const [endOpen, setEndOpen] = useState(false)
 
   const { contact: payer } = useContact(orgId, agreement?.payerContactId)
@@ -221,6 +224,19 @@ export function AgreementDetailPage() {
           copy={COPY}
           onSave={(data) =>
             autoCharge.mutateAsync({ orgId: orgId ?? '', id: agreement.id, data })
+          }
+        />
+
+        <CollectionRemindersSection
+          orgId={orgId}
+          value={agreement.collectionReminders}
+          canManage={canManage}
+          onSave={(collectionReminders) =>
+            update.mutateAsync({
+              orgId: orgId ?? '',
+              id: agreement.id,
+              data: { collectionReminders },
+            })
           }
         />
 
