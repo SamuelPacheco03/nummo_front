@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router'
+import { Link, Outlet, useLocation } from 'react-router'
 import { ArrowLeft, ShieldAlert } from 'lucide-react'
 import { BrandLockup } from '@/components/brand-mark'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -9,7 +9,8 @@ import { SectionedLayout } from '@/components/ui/sectioned-layout'
 import { UserMenu } from '@/features/auth/user-menu'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { usePlatformAccess } from '@/features/platform/hooks'
-import { GROUPS } from './platform-nav'
+import { cn } from '@/lib/utils'
+import { GROUPS, isPlaygroundPath } from './platform-nav'
 
 /**
  * **El shell de la consola de plataforma**, y vive fuera de `AppShell` por una
@@ -31,13 +32,15 @@ import { GROUPS } from './platform-nav'
  * selector de organización estaría vacío.
  */
 export function PlatformShell() {
+  const { pathname } = useLocation()
+  const isConsole = isPlaygroundPath(pathname)
   const { isPlatformAdmin, isLoading, isError, error } = usePlatformAccess()
   // Solo para saber si hay algo a lo que volver: un superadmin puede tener su
   // propia organización, o ninguna.
   const { organizations } = useCurrentOrg()
 
   return (
-    <div className="bg-background flex min-h-dvh flex-col">
+    <div className={cn('bg-background flex flex-col', isConsole ? 'h-dvh' : 'min-h-dvh')}>
       <header className="bg-background/85 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur lg:px-8">
         <Link to="/plataforma" className="flex items-center" aria-label="Consola de plataforma">
           <BrandLockup />
@@ -60,13 +63,29 @@ export function PlatformShell() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-        <div className="mx-auto w-full max-w-6xl">
+      {/*
+        La consola de Numi (§47.5) es la única sección de plataforma que se opera
+        en vez de leerse: pide el ancho entero y el alto de la ventana, y
+        administra su propio scroll. Las demás —organizaciones, planes— siguen
+        siendo páginas que bajan.
+
+        La decisión se toma aquí y por la ruta a propósito: el shell es quien sabe
+        cuánto alto hay, y hacer que cada página lo negociara por su cuenta es como
+        se acaba con tres pantallas midiendo la ventana de tres maneras.
+      */}
+      <main
+        className={cn(
+          'flex-1',
+          isConsole ? 'min-h-0 overflow-hidden px-4 py-4 lg:px-8 lg:py-6' : 'px-4 py-6 lg:px-8 lg:py-8',
+        )}
+      >
+        <div className={cn('mx-auto w-full', isConsole ? 'h-full min-h-0 max-w-[110rem]' : 'max-w-6xl')}>
           <PlatformBody
             isPlatformAdmin={isPlatformAdmin}
             isLoading={isLoading}
             isError={isError}
             error={error}
+            isConsole={isConsole}
           />
         </div>
       </main>
@@ -79,11 +98,13 @@ function PlatformBody({
   isLoading,
   isError,
   error,
+  isConsole,
 }: {
   isPlatformAdmin: boolean
   isLoading: boolean
   isError: boolean
   error: unknown
+  isConsole: boolean
 }) {
   if (isLoading) return <PageLoader />
 
@@ -121,7 +142,7 @@ function PlatformBody({
   }
 
   return (
-    <SectionedLayout label="Plataforma" groups={GROUPS}>
+    <SectionedLayout label="Plataforma" groups={GROUPS} console={isConsole}>
       <Outlet />
     </SectionedLayout>
   )

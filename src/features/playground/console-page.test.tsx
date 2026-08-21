@@ -110,23 +110,30 @@ afterEach(() => {
 test('la corrida arranca en solo lectura', async () => {
   mount()
 
-  const soloLectura = await screen.findByRole('tab', { name: 'Solo lectura' })
-  expect(soloLectura).toHaveAttribute('aria-selected', 'true')
-  expect(screen.queryByText(/escribe en la organización del cliente/i)).not.toBeInTheDocument()
+  // El modo se lee en la barra de contexto, no dentro de un formulario.
+  expect(await screen.findByText('Solo lectura')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Activar escritura' })).toBeInTheDocument()
+  expect(screen.queryByText(/Lectura y escritura/i)).not.toBeInTheDocument()
 })
 
-test('el modo de escritura es un interruptor visible y avisa de lo que hace', async () => {
+test('activar la escritura es una decisión, no un cambio de criterio', async () => {
   /*
-    `read_write` escribe de verdad en la contabilidad de un cliente. Una casilla escondida
-    en un menú sería la peor forma de ofrecerlo.
+    `read_write` escribe de verdad en la contabilidad de un cliente. No se enciende de
+    pasada: hay que confirmarlo, y el aviso dice qué implica y que no hay deshacer en
+    bloque.
   */
   const user = userEvent.setup()
   mount()
 
-  await user.click(await screen.findByRole('tab', { name: 'Lectura y escritura' }))
+  await user.click(await screen.findByRole('button', { name: 'Activar escritura' }))
 
-  expect(await screen.findByText(/Esta corrida escribe en la organización del cliente/i)).toBeInTheDocument()
+  expect(await screen.findByText(/registrar pagos, egresos y contactos de verdad/i)).toBeInTheDocument()
   expect(screen.getByText(/no hay deshacer en bloque/i)).toBeInTheDocument()
+
+  // Y mientras está activo, la barra lo dice en vez de esconderlo.
+  await user.click(screen.getByRole('button', { name: 'Activar escritura', hidden: false }))
+  expect(await screen.findByText('Lectura y escritura')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Volver a solo lectura' })).toBeInTheDocument()
 })
 
 test('una organización que no está activa no ofrece escribir', async () => {
@@ -134,8 +141,8 @@ test('una organización que no está activa no ofrece escribir', async () => {
   m.writable = false
   mount()
 
-  await waitFor(() => expect(screen.getByText(/no está activa/i)).toBeInTheDocument())
-  expect(screen.queryByRole('tab', { name: 'Lectura y escritura' })).not.toBeInTheDocument()
+  await waitFor(() => expect(screen.getByText(/No está activa/i)).toBeInTheDocument())
+  expect(screen.queryByRole('button', { name: 'Activar escritura' })).not.toBeInTheDocument()
 })
 
 test('lo que falla antes del primer trozo se enseña tal cual lo dice el backend', async () => {
@@ -195,9 +202,17 @@ test('la traza del turno se abre desde la respuesta', async () => {
   })
   canal.done('s1', 'Te deben $1.000.')
 
-  await user.click(await screen.findByRole('button', { name: 'Ver la traza' }))
+  /*
+    El carril enseña la traza sin abrir nada: es la mitad del rediseño. Antes había que
+    abrir un cajón por turno, y el cajón tapaba la respuesta que se estaba juzgando.
+  */
+  expect(await screen.findByText('Dónde se fue el tiempo')).toBeInTheDocument()
+  // El coste sin precio configurado se dice con palabras, no con un cero.
+  expect(screen.getAllByText('Sin precio configurado').length).toBeGreaterThan(0)
+  // Un token que el proveedor no reportó tampoco es cero.
+  expect(screen.getAllByText('sin dato').length).toBeGreaterThan(0)
 
-  expect(await screen.findByText('Traza del turno')).toBeInTheDocument()
-  // Y el coste sin precio configurado se dice con palabras, no con un cero.
-  expect(screen.getByText('Sin precio configurado')).toBeInTheDocument()
+  // Y la traza larga sigue estando, a un clic.
+  await user.click(await screen.findByRole('button', { name: 'Ver la traza completa' }))
+  expect(await screen.findByText('El modelo que contestó')).toBeInTheDocument()
 })

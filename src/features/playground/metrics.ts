@@ -8,8 +8,16 @@ import type { PlaygroundTokenUsage } from '@/api/generated/model'
  * número**, y tratarlo como cero convierte el panel en un informe falso.
  */
 
-/** Lo que se pinta cuando el proveedor no reportó el dato. */
+/**
+ * Lo que se pinta cuando el proveedor no reportó el dato.
+ *
+ * Dos formas y una sola decisión: el guion en una columna de cifras, donde una palabra
+ * rompería la rejilla y el hueco ya se lee como ausencia; las palabras donde hay sitio —el
+ * carril de la traza, una cifra de cabecera—, porque ahí un guion suelto se confunde con
+ * un separador y no dice nada.
+ */
 export const SIN_DATO = '—'
+export const SIN_DATO_LARGO = 'sin dato'
 
 const ENTEROS = new Intl.NumberFormat('es-CO')
 

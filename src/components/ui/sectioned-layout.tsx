@@ -71,17 +71,30 @@ function Groups({ groups, onNavigate }: { groups: SectionGroup[]; onNavigate?: (
 export function SectionedLayout({
   label,
   groups,
+  console = false,
   children,
 }: {
   /** Nombre de la sección: rotula la navegación y titula el cajón. */
   label: string
   groups: SectionGroup[]
+  /**
+   * **Consola**: la sección se queda con todo el ancho y todo el alto, y el
+   * scroll lo administra ella.
+   *
+   * La regla de arriba —el ancho lo pone el layout— sigue valiendo para las
+   * pantallas que se leen: Configuración y Ayuda son texto y formularios, y una
+   * columna de 48rem es lo que los hace legibles. Pero el playground de Numi no
+   * se lee: se opera. Tiene un chat que quiere alto propio con su caja anclada
+   * abajo, y una traza que acompaña a la conversación en un carril; las dos cosas
+   * mueren dentro de una columna de 48rem que además scrollea con la página.
+   */
+  console?: boolean
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="lg:flex lg:gap-8">
+    <div className={cn('lg:flex lg:gap-8', console && 'h-full min-h-0')}>
       {/*
         `top-24` y no `top-8`: la cabecera de escritorio es `sticky` y mide 64 px,
         así que una columna pegada a 32 px se metía por debajo al desplazar y
@@ -106,7 +119,9 @@ export function SectionedLayout({
         </Drawer>
       </div>
 
-      <div className="min-w-0 max-w-3xl flex-1">{children}</div>
+      <div className={cn('min-w-0 flex-1', console ? 'h-full min-h-0' : 'max-w-3xl')}>
+        {children}
+      </div>
     </div>
   )
 }

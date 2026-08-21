@@ -58,6 +58,16 @@ export const GROUPS: SectionGroup[] = [
   },
 ]
 
+/**
+ * ¿Estamos en el playground?
+ *
+ * Lo pregunta el shell para darle el ancho y el alto de la ventana: es la única
+ * sección de plataforma que se opera en vez de leerse (§47.5).
+ */
+export function isPlaygroundPath(pathname: string): boolean {
+  return pathname === '/plataforma/playground' || pathname.startsWith('/plataforma/playground/')
+}
+
 /** Rutas que cuelgan de la consola, para que el sidebar marque su enlace activo. */
 export function isPlatformPath(pathname: string): boolean {
   return pathname === '/plataforma' || pathname.startsWith('/plataforma/')

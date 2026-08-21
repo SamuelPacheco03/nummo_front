@@ -1,14 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { MessageSquare, RotateCcw, Wrench } from 'lucide-react'
-import { Panel } from '@/components/panel'
-import { PageHeader } from '@/components/page-header'
-import { Button } from '@/components/ui/button'
+import { MessageSquare, RotateCcw } from 'lucide-react'
 import { Drawer } from '@/components/ui/drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState, InlineError } from '@/components/ui/error-state'
-import { Field } from '@/components/ui/field'
-import { Textarea } from '@/components/ui/textarea'
 import { ChatComposer } from '@/features/assistant/chat-composer'
 import { ChatBubble } from '@/features/assistant/chat-message-item'
 import { NumiAvatar } from '@/features/assistant/numi-avatar'
@@ -17,24 +12,37 @@ import { TypingIndicator } from '@/features/assistant/typing-indicator'
 import { getErrorMessage } from '@/lib/errors'
 import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import type { PlaygroundTrace } from '@/api/generated/model'
-import { CopyButton } from './code-block'
 import { usePlaygroundContext, usePlaygroundTools } from './hooks'
-import { modeLabel } from './labels'
-import { RunSettingsFields } from './run-settings-fields'
+import { formatCost, formatMs } from './metrics'
+import { QuietButton } from './quiet-button'
+import { RunContextBar } from './run-context-bar'
 import { modelOverride, useRunSettings } from './run-settings'
 import { runTurn } from './stream-run'
+import { SystemPromptDialog } from './system-prompt-dialog'
 import { ToolCatalog } from './tool-catalog'
-import { QuietButton } from './quiet-button'
 import { TracePanel } from './trace-drawer'
+import { TraceRail } from './trace-rail'
 
 /**
- * **La consola del playground.** Se elige una organización, se suplanta un rol, se elige
- * el modo y se habla con Numi — contra el mismo pipeline que atiende a un cliente.
+ * **Probar**: la consola del playground.
  *
- * Lo que se ve aquí es lo que pasa en producción: mismo system prompt, mismas
- * herramientas, mismo grounding. Lo que cambia, lo cambia **estrechando**: un rol
- * suplantado no puede más que ese rol, y el modo de solo lectura no ve una sola
- * herramienta de escritura.
+ * Se habla con Numi contra una organización real suplantando un rol, y se ve en el mismo
+ * sitio qué costó cada respuesta. Corre el mismo pipeline que atiende a un cliente: mismo
+ * system prompt, mismas herramientas, mismo grounding. Lo que cambia, lo cambia
+ * **estrechando** — un rol suplantado no puede más que ese rol, y en solo lectura el
+ * modelo no ve una sola herramienta de escritura.
+ *
+ * La pantalla son tres franjas y ninguna es un formulario:
+ *
+ * - **La barra de contexto** (`RunContextBar`) dice contra qué se prueba, en una línea.
+ *   Antes esto era un panel de seis campos que empujaba la conversación por debajo del
+ *   pliegue; la organización y el rol se cambian una vez cada muchos turnos, así que no
+ *   pueden ocupar sitio permanente.
+ * - **El hilo** se queda con el alto que sobra y ancla la caja de escribir abajo. Scrollea
+ *   la conversación, no la página: dentro de un documento, el composer acababa en mitad
+ *   del scroll y había que ir a buscarlo.
+ * - **El carril** (`TraceRail`) enseña la traza al lado de la respuesta que la produjo, no
+ *   detrás de un botón que la tapa.
  */
 
 interface Turn {
@@ -52,9 +60,7 @@ export function PlaygroundConsolePage() {
   const { settings, set, selectOrganization } = useRunSettings()
   const [params, setParams] = useSearchParams()
 
-  const { context, isPending: contextPending, isError, error } = usePlaygroundContext(
-    settings.orgId,
-  )
+  const { context, isPending: contextPending, isError, error } = usePlaygroundContext(settings.orgId)
   const tools = usePlaygroundTools(settings.orgId, {
     role: settings.role,
     customRoleId: settings.customRoleId || undefined,
@@ -68,19 +74,21 @@ export function PlaygroundConsolePage() {
   const [sessionId, setSessionId] = useState<string | undefined>()
   const [openTrace, setOpenTrace] = useState<Turn | null>(null)
   const [toolsOpen, setToolsOpen] = useState(false)
+  const [promptOpen, setPromptOpen] = useState(false)
   const abort = useRef<AbortController | null>(null)
+  const bottom = useRef<HTMLDivElement>(null)
 
   /*
-    El prompt vigente, precargado. Editarlo **no lo guarda en ningún sitio**: corre solo
-    ese turno. Se rellena una vez por organización y no en cada respuesta de la consulta,
-    o lo escrito desaparecería al revalidar la caché (§45.7).
+    El prompt vigente, precargado. Se rellena una vez por organización y no en cada
+    respuesta de la consulta, o lo escrito desaparecería al revalidar la caché (§45.7).
   */
   const [system, setSystem] = useState('')
   useHydrateOnce(context?.promptHash, context, (c) => setSystem(c.systemPrompt))
+  const promptEdited = !!context && system !== context.systemPrompt
 
   /*
-    «Volver a correrla» del panel de pulgares abajo: llega la pregunta en la URL, se
-    precarga y se suelta del parámetro — dejarla ahí la reviviría en cada recarga.
+    «Volver a correrla» del panel de puntuaciones: llega la pregunta en la URL, se precarga
+    y se suelta del parámetro — dejarla ahí la reviviría en cada recarga.
   */
   const prefill = params.get('mensaje') ?? ''
   const [draft, setDraft] = useState('')
@@ -96,6 +104,11 @@ export function PlaygroundConsolePage() {
       { replace: true },
     )
   }, [prefill, setParams])
+
+  // El hilo sigue a la última respuesta, que es lo que se está leyendo.
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: 'end' })
+  }, [turns, streaming])
 
   const stop = () => abort.current?.abort()
 
@@ -128,7 +141,7 @@ export function PlaygroundConsolePage() {
           mode: settings.mode,
           model: modelOverride(settings),
           // Un prompt igual al vigente no es una variante: se manda solo si se tocó.
-          system: system.trim() && system !== context?.systemPrompt ? system : undefined,
+          system: promptEdited ? system : undefined,
         },
         signal: controller.signal,
         onStart: setSessionId,
@@ -152,132 +165,107 @@ export function PlaygroundConsolePage() {
     }
   }
 
+  const last = [...turns].reverse().find((turn) => turn.role === 'assistant')
+
   if (isError) {
-    return (
-      <div className="space-y-5">
-        <ConsoleHeader />
-        <ErrorState error={error} fallback="No se pudo cargar el contexto de la organización." />
-      </div>
-    )
+    return <ErrorState error={error} fallback="No se pudo cargar el contexto de la organización." />
   }
 
   return (
-    <div className="space-y-5">
-      <ConsoleHeader />
+    <div className="bg-background flex h-full min-h-0 flex-col overflow-hidden rounded-xl border">
+      <RunContextBar
+        settings={settings}
+        context={context}
+        isLoading={contextPending && !!settings.orgId}
+        onChange={set}
+        onSelectOrganization={selectOrganization}
+        tools={{ offered: tools.tools.filter((t) => t.offered).length, total: tools.tools.length }}
+        onOpenTools={() => setToolsOpen(true)}
+        onOpenPrompt={() => setPromptOpen(true)}
+        promptEdited={promptEdited}
+      />
 
-      <Panel title="Contra qué se prueba">
-        <RunSettingsFields
-          settings={settings}
-          context={context}
-          isLoading={contextPending && !!settings.orgId}
-          onChange={set}
-          onSelectOrganization={selectOrganization}
-        />
-
-        {context && (
-          <div className="mt-4 space-y-4 border-t pt-4">
-            <Field
-              label="System prompt"
-              htmlFor="pg-system"
-              hint="Editarlo no lo guarda en ningún sitio: corre solo en esta conversación."
-            >
-              <Textarea
-                id="pg-system"
-                value={system}
-                onChange={(e) => setSystem(e.target.value)}
-                rows={6}
-                className="scrollbar-slim font-mono text-xs"
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
+          {!settings.orgId ? (
+            <div className="grid flex-1 place-items-center p-6">
+              <EmptyState
+                Icon={MessageSquare}
+                title="Elige una organización para empezar"
+                description="El playground corre el pipeline de verdad contra los datos de un cliente, así que primero hay que decir contra cuál. Se elige en «Cambiar contexto», arriba."
               />
-            </Field>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-muted-foreground text-xs">
-                Prompt vigente: <span className="nums">{context.promptChars.toLocaleString('es-CO')}</span>{' '}
-                caracteres · huella <span className="nums">{context.promptHash.slice(0, 8)}</span>
-              </p>
-              <div className="flex items-center gap-3">
-                <CopyButton text={context.systemPrompt} label="Copiar el vigente" />
-                {system !== context.systemPrompt && (
-                  <QuietButton onClick={() => setSystem(context.systemPrompt)}>
-                    Volver al vigente
-                  </QuietButton>
-                )}
-              </div>
             </div>
+          ) : (
+            <>
+              <div className="scrollbar-slim min-h-0 flex-1 overflow-y-auto px-4 py-6 lg:px-6">
+                <div className="mx-auto w-full max-w-3xl space-y-4">
+                  {turns.length === 0 && !busy && (
+                    <p className="text-muted-foreground py-10 text-center text-sm">
+                      Pregúntale lo que le preguntaría esa persona.
+                    </p>
+                  )}
 
-            <Button variant="outline" size="sm" onClick={() => setToolsOpen(true)}>
-              <Wrench aria-hidden />
-              Ver las herramientas que verá ({tools.tools.length})
-            </Button>
-          </div>
-        )}
-      </Panel>
+                  {turns.map((turn) => (
+                    <TurnRow key={turn.id} turn={turn} onTrace={() => setOpenTrace(turn)} />
+                  ))}
 
-      {!settings.orgId ? (
-        <EmptyState
-          Icon={MessageSquare}
-          title="Elige una organización para empezar"
-          description="El playground corre el pipeline de verdad contra los datos de un cliente, así que primero hay que decir contra cuál."
-        />
-      ) : (
-        <Panel
-          title="Conversación"
-          action={
-            turns.length > 0 ? (
-              <Button variant="ghost" size="sm" onClick={reset}>
-                <RotateCcw aria-hidden />
-                Empezar de nuevo
-              </Button>
-            ) : undefined
-          }
-        >
-          <div className="space-y-4">
-            <p className="text-muted-foreground text-xs">
-              {modeLabel(settings.mode)}
-              {settings.provider && settings.model ? ` · ${settings.model}` : ''}
-            </p>
+                  {busy && (
+                    <div className="flex items-start gap-2">
+                      <NumiAvatar className="mt-1 size-7 shrink-0" />
+                      <ChatBubble role="assistant">
+                        {streaming ? <RichText text={streaming} /> : <TypingIndicator />}
+                      </ChatBubble>
+                    </div>
+                  )}
 
-            <div className="min-h-32 space-y-3">
-              {turns.length === 0 && !streaming && !busy && (
-                <p className="text-muted-foreground py-6 text-center text-sm">
-                  Pregúntale lo que le preguntaría esa persona.
-                </p>
-              )}
-
-              {turns.map((turn) => (
-                <TurnRow key={turn.id} turn={turn} onTrace={() => setOpenTrace(turn)} />
-              ))}
-
-              {busy && (
-                <div className="flex items-start gap-2">
-                  <NumiAvatar className="mt-1 size-7 shrink-0" />
-                  <ChatBubble role="assistant">
-                    {streaming ? <RichText text={streaming} /> : <TypingIndicator />}
-                  </ChatBubble>
+                  {turnError && <InlineError>{turnError}</InlineError>}
+                  <div ref={bottom} />
                 </div>
-              )}
-            </div>
+              </div>
 
-            {turnError && <InlineError>{turnError}</InlineError>}
+              <div className="bg-card border-t">
+                <div className="mx-auto w-full max-w-3xl">
+                  {turns.length > 0 && (
+                    <div className="flex justify-end px-4 pt-2">
+                      <QuietButton onClick={reset}>
+                        <RotateCcw aria-hidden className="mr-1 inline size-3" />
+                        Empezar de nuevo
+                      </QuietButton>
+                    </div>
+                  )}
+                  <ChatComposer
+                    key={draft}
+                    textOnly
+                    busy={busy}
+                    initialValue={draft}
+                    onSend={(text) => void send(text)}
+                    onStop={stop}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
-            <div className="-mx-4 -mb-4 sm:-mx-5 sm:-mb-5">
-              {/* `key`: la caja lee lo precargado al montar, así que remonta al llegar. */}
-              <ChatComposer
-                key={draft}
-                textOnly
-                busy={busy}
-                initialValue={draft}
-                onSend={(text) => void send(text)}
-                // Detener vive dentro de la caja, en el sitio del micrófono (§32.6).
-                onStop={stop}
-              />
-            </div>
-          </div>
-        </Panel>
-      )}
+        <TraceRail
+          trace={last?.trace}
+          busy={busy}
+          hasTurns={turns.length > 0}
+          onOpenFull={() => last && setOpenTrace(last)}
+        />
+      </div>
 
       {openTrace && (
         <TracePanel trace={openTrace.trace ?? null} onClose={() => setOpenTrace(null)} />
+      )}
+
+      {promptOpen && context && (
+        <SystemPromptDialog
+          context={context}
+          value={system}
+          onSave={setSystem}
+          onClose={() => setPromptOpen(false)}
+        />
       )}
 
       <Drawer open={toolsOpen} onOpenChange={setToolsOpen} title="Herramientas de la corrida">
@@ -289,15 +277,6 @@ export function PlaygroundConsolePage() {
         />
       </Drawer>
     </div>
-  )
-}
-
-function ConsoleHeader() {
-  return (
-    <PageHeader
-      title="Consola de Numi"
-      description="Habla con Numi contra una organización real, suplantando un rol. Corre el mismo pipeline que atiende a un cliente."
-    />
   )
 }
 
@@ -321,7 +300,19 @@ function TurnRow({ turn, onTrace }: { turn: Turn; onTrace: () => void }) {
         <ChatBubble role="assistant">
           <RichText text={turn.text} />
         </ChatBubble>
-        <QuietButton onClick={onTrace}>Ver la traza</QuietButton>
+        {/*
+          Lo que costó, bajo su propia respuesta. El carril enseña la última; esto es lo que
+          permite comparar dos turnos de la misma conversación sin abrir nada.
+        */}
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          {turn.trace && (
+            <>
+              <span className="nums">{formatCost(turn.trace.costMicroUsd)}</span>
+              <span className="nums">{formatMs(turn.trace.timings.totalMs)}</span>
+            </>
+          )}
+          <QuietButton onClick={onTrace}>Ver la traza</QuietButton>
+        </div>
       </div>
     </div>
   )

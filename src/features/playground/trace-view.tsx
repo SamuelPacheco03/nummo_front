@@ -41,7 +41,7 @@ const PHASE_COLOR: Record<string, string> = {
  * Es la mitad del diagnóstico: si `toolsMs` se come el turno, el problema no es el
  * modelo. Con seis filas de números eso hay que calcularlo; con la barra se ve.
  */
-function PhaseBar({ timings }: { timings: PlaygroundTrace['timings'] }) {
+export function PhaseBar({ timings }: { timings: PlaygroundTrace['timings'] }) {
   const slices = phaseSlices(timings)
   if (slices.length === 0) return null
 
