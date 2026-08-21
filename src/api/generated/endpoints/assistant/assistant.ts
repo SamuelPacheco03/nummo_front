@@ -35,6 +35,7 @@ import type {
   AssistantTranscribeForm,
   AssistantTranscription,
   AudioUrl,
+  ConnectWhatsAppAccountInput,
   Conversation,
   ConversationList,
   ErrorResponse,
@@ -45,7 +46,8 @@ import type {
   MessageSearch,
   RenameConversationInput,
   SetFeedbackInput,
-  UpsertAiProviderCredential
+  UpsertAiProviderCredential,
+  WhatsAppAccountState
 } from '../../model';
 
 import { customFetch } from '../../../http-client';
@@ -77,7 +79,307 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export type getApiV1OrganizationsOrgIdAssistantSettingsResponse200 = {
+export type getApiV1OrganizationsOrgIdWhatsappAccountResponse200 = {
+  data: WhatsAppAccountState
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdWhatsappAccountResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdWhatsappAccountResponseSuccess = (getApiV1OrganizationsOrgIdWhatsappAccountResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdWhatsappAccountResponseError = (getApiV1OrganizationsOrgIdWhatsappAccountResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdWhatsappAccountResponse = (getApiV1OrganizationsOrgIdWhatsappAccountResponseSuccess | getApiV1OrganizationsOrgIdWhatsappAccountResponseError)
+
+export const getGetApiV1OrganizationsOrgIdWhatsappAccountUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/account`
+}
+
+/**
+ * `connected: false` significa que la organización envía por la cuenta de la plataforma y consume cuota del plan. El token nunca vuelve: solo sus últimos cuatro caracteres.
+ * @summary La cuenta de WhatsApp propia, si la hay (requiere whatsapp.settings.read)
+ */
+export const getApiV1OrganizationsOrgIdWhatsappAccount = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdWhatsappAccountResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdWhatsappAccountResponse>(getGetApiV1OrganizationsOrgIdWhatsappAccountUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdWhatsappAccountQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/whatsapp/account`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdWhatsappAccountQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError = ErrorResponse>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdWhatsappAccountQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>> = ({ signal }) => getApiV1OrganizationsOrgIdWhatsappAccount(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdWhatsappAccountQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>>
+export type GetApiV1OrganizationsOrgIdWhatsappAccountQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdWhatsappAccount<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError = ErrorResponse>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdWhatsappAccount<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdWhatsappAccount<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary La cuenta de WhatsApp propia, si la hay (requiere whatsapp.settings.read)
+ */
+
+export function useGetApiV1OrganizationsOrgIdWhatsappAccount<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdWhatsappAccountQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type putApiV1OrganizationsOrgIdWhatsappAccountResponse200 = {
+  data: WhatsAppAccountState
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdWhatsappAccountResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdWhatsappAccountResponseSuccess = (putApiV1OrganizationsOrgIdWhatsappAccountResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdWhatsappAccountResponseError = (putApiV1OrganizationsOrgIdWhatsappAccountResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdWhatsappAccountResponse = (putApiV1OrganizationsOrgIdWhatsappAccountResponseSuccess | putApiV1OrganizationsOrgIdWhatsappAccountResponseError)
+
+export const getPutApiV1OrganizationsOrgIdWhatsappAccountUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/account`
+}
+
+/**
+ * @summary Conectar o reemplazar la cuenta propia (requiere whatsapp.settings.manage)
+ */
+export const putApiV1OrganizationsOrgIdWhatsappAccount = async (orgId: string,
+    connectWhatsAppAccountInput: ConnectWhatsAppAccountInput, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdWhatsappAccountResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdWhatsappAccountResponse>(getPutApiV1OrganizationsOrgIdWhatsappAccountUrl(orgId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(connectWhatsAppAccountInput)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdWhatsappAccountMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappAccount>>, TError,{orgId: string;data: ConnectWhatsAppAccountInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappAccount>>, TError,{orgId: string;data: ConnectWhatsAppAccountInput}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdWhatsappAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappAccount>>, {orgId: string;data: ConnectWhatsAppAccountInput}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdWhatsappAccount(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdWhatsappAccountMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappAccount>>>
+    export type PutApiV1OrganizationsOrgIdWhatsappAccountMutationBody = ConnectWhatsAppAccountInput
+    export type PutApiV1OrganizationsOrgIdWhatsappAccountMutationError = ErrorResponse
+
+    /**
+ * @summary Conectar o reemplazar la cuenta propia (requiere whatsapp.settings.manage)
+ */
+export const usePutApiV1OrganizationsOrgIdWhatsappAccount = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappAccount>>, TError,{orgId: string;data: ConnectWhatsAppAccountInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappAccount>>,
+        TError,
+        {orgId: string;data: ConnectWhatsAppAccountInput},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdWhatsappAccountMutationOptions(options), queryClient);
+    }
+    export type deleteApiV1OrganizationsOrgIdWhatsappAccountResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteApiV1OrganizationsOrgIdWhatsappAccountResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type deleteApiV1OrganizationsOrgIdWhatsappAccountResponseSuccess = (deleteApiV1OrganizationsOrgIdWhatsappAccountResponse204) & {
+  headers: Headers;
+};
+export type deleteApiV1OrganizationsOrgIdWhatsappAccountResponseError = (deleteApiV1OrganizationsOrgIdWhatsappAccountResponseDefault) & {
+  headers: Headers;
+};
+
+export type deleteApiV1OrganizationsOrgIdWhatsappAccountResponse = (deleteApiV1OrganizationsOrgIdWhatsappAccountResponseSuccess | deleteApiV1OrganizationsOrgIdWhatsappAccountResponseError)
+
+export const getDeleteApiV1OrganizationsOrgIdWhatsappAccountUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/account`
+}
+
+/**
+ * No apaga la cobranza: los mensajes vuelven a salir por la cuenta de la plataforma, y con ella vuelven a consumir cuota del plan.
+ * @summary Desconectarla y volver a la de la plataforma (requiere whatsapp.settings.manage)
+ */
+export const deleteApiV1OrganizationsOrgIdWhatsappAccount = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdWhatsappAccountResponse> => {
+
+  return customFetch<deleteApiV1OrganizationsOrgIdWhatsappAccountResponse>(getDeleteApiV1OrganizationsOrgIdWhatsappAccountUrl(orgId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteApiV1OrganizationsOrgIdWhatsappAccountMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappAccount>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappAccount>>, TError,{orgId: string}, TContext> => {
+
+const mutationKey = ['deleteApiV1OrganizationsOrgIdWhatsappAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappAccount>>, {orgId: string}> = (props) => {
+          const {orgId} = props ?? {};
+
+          return  deleteApiV1OrganizationsOrgIdWhatsappAccount(orgId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiV1OrganizationsOrgIdWhatsappAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappAccount>>>
+
+    export type DeleteApiV1OrganizationsOrgIdWhatsappAccountMutationError = ErrorResponse
+
+    /**
+ * @summary Desconectarla y volver a la de la plataforma (requiere whatsapp.settings.manage)
+ */
+export const useDeleteApiV1OrganizationsOrgIdWhatsappAccount = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappAccount>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappAccount>>,
+        TError,
+        {orgId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteApiV1OrganizationsOrgIdWhatsappAccountMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdAssistantSettingsResponse200 = {
   data: AssistantSettings
   status: 200
 }

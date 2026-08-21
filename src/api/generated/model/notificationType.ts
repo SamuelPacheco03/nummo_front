@@ -31,4 +31,6 @@ export const NotificationType = {
   teamdisbursement_registered: 'team.disbursement_registered',
   memberjoined: 'member.joined',
   memberrole_changed: 'member.role_changed',
+  whatsapp_quotawarning: 'whatsapp_quota.warning',
+  whatsapp_quotaexhausted: 'whatsapp_quota.exhausted',
 } as const;

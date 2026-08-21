@@ -14,4 +14,5 @@ export const NotificationPreferenceCategory = {
   PAYABLES: 'PAYABLES',
   TREASURY: 'TREASURY',
   TEAM: 'TEAM',
+  ACCOUNT: 'ACCOUNT',
 } as const;
