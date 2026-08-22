@@ -6973,8 +6973,11 @@ prometía que el desorden **cuesta** y el dibujo no enseñaba ningún costo en n
 
 Lo sustituye **la factura**: una sola tarjeta donde cada cosa suelta lleva al lado lo que
 costó, y debajo de una línea el hallazgo — *«Y nada de esto te avisó.»* Es lo que la sección
-venía diciendo con palabras desde que existe. El «¿Ya pagaste?» se queda como **«¿Ya me
-consignaste?»**, que es la frase que de verdad se recibe.
+venía diciendo con palabras desde que existe.
+
+Son **dos** filas y no tres. Hubo una tercera, «¿Ya me consignaste?» → «la tercera vez que
+preguntas», y se cayó: las otras dos cuestan dinero o cuadre, y esa costaba incomodidad. En una
+tarjeta titulada «lo que te está costando», la que no cuesta plata desafina.
 
 El «después» no se sustituyó por nada: la sección de al lado —el gráfico— *es* el después, y
 enseñarlo aquí en barras era contarlo dos veces y peor la primera.

@@ -1,4 +1,4 @@
-import { FileText, MessageCircle, Wallet } from 'lucide-react'
+import { FileText, Wallet } from 'lucide-react'
 import { formatMoney } from '@/lib/format'
 import { SectionHeading } from './section-heading'
 import { useReveal } from './use-reveal'
@@ -43,12 +43,6 @@ const COSTOS = [
     Icon: Wallet,
     que: 'El pago de marzo, sin registrar',
     cuesta: 'El mes no cuadra',
-    enPlata: false,
-  },
-  {
-    Icon: MessageCircle,
-    que: '«¿Ya me consignaste?»',
-    cuesta: 'La tercera vez que preguntas',
     enPlata: false,
   },
 ] as const
