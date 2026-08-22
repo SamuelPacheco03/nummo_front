@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   plantillas: [] as WhatsAppTemplate[],
   feature: true,
   permisos: new Set<string>(),
+  correr: vi.fn(),
 }))
 
 vi.mock('sonner', () => ({
@@ -32,6 +33,8 @@ vi.mock('./hooks', () => ({
     refetch: vi.fn(),
   }),
   useUpdateCollectionPolicy: () => ({ mutateAsync: m.guardar, isPending: false }),
+  // La pantalla monta «Enviar ahora» cuando la política guardada está activa.
+  useRunCollectionReminders: () => ({ mutateAsync: m.correr, isPending: false }),
   useWhatsAppTemplates: () => ({
     templates: m.plantillas,
     isPending: false,
@@ -87,7 +90,15 @@ beforeEach(() => {
   m.politica = politica()
   m.plantillas = [plantilla(), plantilla({ id: 't2', templateKey: 'cobro_por_vencer', name: 'Por vencer' })]
   m.feature = true
-  m.permisos = new Set(['messaging.read', 'messaging.settings.manage', 'whatsapp.templates.read'])
+  m.permisos = new Set([
+    'messaging.read',
+    'messaging.settings.manage',
+    'messaging.send',
+    'whatsapp.templates.read',
+  ])
+  m.correr = vi.fn().mockResolvedValue({
+    data: { dueSoon: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0 },
+  })
 })
 afterEach(cleanup)
 
@@ -210,4 +221,24 @@ test('una política que nadie ha tocado lo dice', () => {
   m.politica = politica({ updatedAt: null })
   pintar()
   expect(screen.getByText(/Nadie ha tocado esta política todavía/)).toBeInTheDocument()
+})
+
+test('«Enviar ahora» solo con la política guardada activa, no con la casilla', async () => {
+  // Apagada, el endpoint responde 409: ofrecer el botón sería ofrecer un error.
+  m.politica = politica({ enabled: false })
+  pintar()
+  expect(screen.queryByRole('button', { name: /Enviar ahora/ })).not.toBeInTheDocument()
+
+  cleanup()
+  m.politica = politica({ enabled: true })
+  pintar()
+  expect(screen.getByRole('button', { name: /Enviar ahora/ })).toBeInTheDocument()
+})
+
+test('sin `messaging.send` la política se guarda igual, pero no se dispara', () => {
+  m.permisos = new Set(['messaging.read', 'messaging.settings.manage'])
+  pintar()
+
+  expect(screen.getByRole('button', { name: /Guardar política/ })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Enviar ahora/ })).not.toBeInTheDocument()
 })

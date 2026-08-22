@@ -22,6 +22,7 @@ import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import type { CollectionPolicy, WhatsAppTemplate } from '@/api/generated/model'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
 import { describeQuietWindow } from './quiet-hours'
+import { RunNowPanel } from './run-now-panel'
 
 /**
  * **La política de cobranza por WhatsApp.**
@@ -135,6 +136,13 @@ export function CollectionPolicyPage() {
         />
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
+          {/*
+            Solo con la política **guardada** como activa, no con la casilla del
+            borrador: apagada, el endpoint responde 409 y el botón no tendría
+            sentido. Pide `messaging.send`, que es otro permiso que el de guardar.
+          */}
+          {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
+
           {/* El plan es lo primero que hay que saber: sin la feature, todo lo de
               abajo se puede leer y nada se puede guardar (§45.5). */}
           {!hasFeature && (

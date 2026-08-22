@@ -2,10 +2,12 @@ import { keepPreviousData, useQueryClient, type QueryClient } from '@tanstack/re
 import {
   getGetApiV1OrganizationsOrgIdMessagingCollectionPolicyQueryKey,
   getGetApiV1OrganizationsOrgIdMessagingConsentsQueryKey,
+  getGetApiV1OrganizationsOrgIdMessagingMessagesQueryKey,
   useGetApiV1OrganizationsOrgIdMessagingCollectionPolicy,
   useGetApiV1OrganizationsOrgIdMessagingConsents,
   useGetApiV1OrganizationsOrgIdMessagingMessages,
   usePutApiV1OrganizationsOrgIdMessagingCollectionPolicy,
+  usePostApiV1OrganizationsOrgIdMessagingCollectionRemindersRun,
   usePutApiV1OrganizationsOrgIdMessagingConsents,
 } from '@/api/generated/endpoints/mensajería/mensajería'
 /*
@@ -320,5 +322,38 @@ function invalidateTemplates(qc: QueryClient, orgId: string): void {
   // deja ese aviso sin plantilla, y esa pantalla tiene que enterarse.
   void qc.invalidateQueries({
     queryKey: getGetApiV1OrganizationsOrgIdMessagingCollectionPolicyQueryKey(orgId),
+  })
+}
+
+/* ---------- Disparar la pasada de recordatorios ---------- */
+
+/**
+ * **«Enviar ahora»**: corre el escaneo de recordatorios sin esperar a la hora.
+ *
+ * El automático sale **una sola vez al día**, a la hora local de la
+ * organización. Sin esto, activar la cobranza a las once significa que el primer
+ * aviso sale mañana — y eso se siente roto.
+ *
+ * Dos cosas que cambian cómo se pinta el resultado:
+ *
+ * - **Encola, no envía.** El worker despacha después, así que el `200` no puede
+ *   prometer «enviado»: las filas aparecen en `QUEUED` y pasan a `SENT` en
+ *   segundos.
+ * - **Pulsarlo dos veces no duplica nada**, y lo garantiza la clave de
+ *   deduplicación de cada mensaje, no un bloqueo del cliente. Por eso el botón no
+ *   se deshabilita «por si acaso» ni avisa de que ya se pulsó.
+ *
+ * Invalida el historial: lo encolado tiene que aparecer sin recargar.
+ */
+export function useRunCollectionReminders(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdMessagingCollectionRemindersRun({
+    mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({
+          queryKey: getGetApiV1OrganizationsOrgIdMessagingMessagesQueryKey(orgId),
+        })
+      },
+    },
   })
 }
