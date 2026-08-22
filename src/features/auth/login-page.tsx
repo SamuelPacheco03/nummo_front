@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { Field } from '@/components/ui/field'
@@ -86,25 +86,35 @@ export function LoginPage() {
     <AuthLayout title="Iniciar sesión" subtitle="Entra con tu cuenta para continuar.">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Field label="Email" htmlFor="email" error={errors.email?.message}>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="tu@empresa.com"
-            aria-invalid={!!errors.email}
-            {...register('email')}
-          />
+          <div className="relative">
+            {/* El icono es decorativo: la etiqueta ya dice qué va aquí. */}
+            <span className="pointer-events-none absolute inset-y-0 left-0 grid w-10 place-items-center text-muted-foreground">
+              <Mail aria-hidden className="size-4" />
+            </span>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="tu@empresa.com"
+              className="pl-10"
+              aria-invalid={!!errors.email}
+              {...register('email')}
+            />
+          </div>
         </Field>
 
         <Field label="Contraseña" htmlFor="password" error={errors.password?.message}>
           <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-0 grid w-10 place-items-center text-muted-foreground">
+              <Lock aria-hidden className="size-4" />
+            </span>
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               placeholder="••••••••"
               aria-invalid={!!errors.password}
-              className="pr-10"
+              className="pl-10 pr-10"
               {...register('password')}
             />
             <button
