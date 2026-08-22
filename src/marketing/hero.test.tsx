@@ -72,5 +72,4 @@ test('la acción principal confía el color de su tinta al token', () => {
 test('el hero no insinúa clientes que no existen', () => {
   const { container } = render(<Hero />)
   expect(container.textContent).not.toMatch(/creado para quienes hacen que las cosas pasen/i)
-  expect(container.textContent).toContain('Pensado para cómo se mueve la plata en Colombia')
 })

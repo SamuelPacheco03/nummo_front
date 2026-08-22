@@ -23,7 +23,8 @@ import { ThemeButton } from './theme-button'
  */
 
 const ENLACES = [
-  { href: '#producto', texto: 'Producto' },
+  /* Al gráfico y no a «El desorden cuesta»: aquello es el problema, no el producto. */
+  { href: '#demo', texto: 'Producto' },
   { href: '#numi', texto: 'Numi' },
   { href: '#para-quien', texto: 'Para quién' },
 ] as const

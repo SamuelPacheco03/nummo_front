@@ -113,12 +113,10 @@ export function Hero({ className, cola }: { className?: string; cola?: Cola | nu
             que las cosas pasen». Eso IMITA un «1.200 negocios ya lo usan» sin decirlo, y
             quien lo mire dos veces se da cuenta: prueba social de la que no hay prueba.
 
-            Lo sustituye algo que sí es verdad y además separa: ninguna herramienta de
-            fuera te causa la mora ni te cobra por WhatsApp.
+            **No lo sustituye nada.** Hubo un intento —«pensado para cómo se mueve la plata
+            en Colombia»— y sobraba: el titular ya dijo lo que tenía que decir y una línea
+            más solo le quita aire. Cuando haya clientes que citar, aquí es donde van.
           */}
-          <p className="animate-hero-in mt-12 text-sm text-muted-foreground" style={paso(300)}>
-            Pensado para cómo se mueve la plata en Colombia: pesos, mora y WhatsApp.
-          </p>
         </div>
 
         {/*

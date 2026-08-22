@@ -6,6 +6,10 @@ import { useReveal } from './use-reveal'
 /**
  * «El desorden cuesta»: el antes y el después, uno al lado del otro.
  *
+ * **Ya no lleva `id`.** Tenía `producto`, y el navegador enlazaba ahí bajo esa palabra —
+ * o sea que «Producto» te llevaba a la sección del *problema*. El enlace apunta ahora al
+ * gráfico (`#demo`) y aquí no queda ancla, porque nadie la enlaza.
+ *
  * **Va sin señal, a propósito.** El catálogo cerrado de `section` no tiene un nombre para
  * esta sección —se fijó antes de que la página existiera— y está pedido al backend (issue
  * #2 de `nummo_api`). Meterla bajo `automation` o `integrations` mediría una cosa
@@ -19,23 +23,28 @@ import { useReveal } from './use-reveal'
 const DISPERSOS = [
   { Icon: FileText, texto: 'Factura #048', cola: 'vencida', pos: 'left-[6%] top-[18%]' },
   { Icon: Wallet, texto: 'Pago sin conciliar', cola: null, pos: 'right-[8%] top-[38%]' },
-  { Icon: MessageCircle, texto: '«¿Ya pagaste?»', cola: null, pos: 'left-[16%] bottom-[16%]' },
+  { Icon: MessageCircle, texto: '«¿Ya me consignaste?»', cola: null, pos: 'left-[16%] bottom-[16%]' },
 ] as const
 
 export function DisorderSection() {
   const ref = useReveal<HTMLDivElement>()
 
   return (
-    <section id="producto" className="bg-background px-6 py-24">
+    <section className="bg-background px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           rotulo="El desorden cuesta"
-          principal="La operación financiera"
-          secundaria="no debería depender de tu memoria."
+          principal="El problema no es que falte plata."
+          secundaria="Es que no sabes dónde está."
         />
+        {/*
+          El rótulo prometía que el desorden cuesta y la sección nunca decía cuánto: se
+          quedaba en «cada decisión toma más tiempo», que no le duele a nadie. Ahora el
+          párrafo cobra la promesa del rótulo, en plata.
+        */}
         <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-          Cuando todo vive en diferentes lugares, cada decisión toma más tiempo. Nummo reúne las
-          señales para que puedas actuar.
+          Una cuenta que se te pasó son treinta días sin ese dinero. Un gasto que no anotaste es
+          un mes que no cuadra. El desorden no es incomodidad: es plata.
         </p>
 
         <div ref={ref} className="mt-14 grid items-stretch gap-6 lg:grid-cols-[1fr_auto_1fr]">
@@ -85,7 +94,7 @@ export function DisorderSection() {
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-sidebar-foreground">
-                  Todo bajo control
+                  Todo en un solo lugar
                 </span>
                 <span className="block text-xs text-sidebar-muted-foreground">
                   4 cuentas necesitan tu atención

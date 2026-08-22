@@ -65,23 +65,30 @@ export function RhythmSection({ cola }: { cola: Cola | null }) {
       <div className="mx-auto max-w-6xl">
         <div className="gap-10 lg:flex lg:items-end lg:justify-between">
           <SectionHeading
-            rotulo="Una nueva forma de operar"
-            principal="Tu dinero tiene"
-            secundaria="un ritmo. Nummo lo entiende."
+            rotulo="Cómo vas, de un vistazo"
+            principal="¿Cómo vas este mes?"
+            secundaria="Ya está respondido."
           />
+          {/*
+            El titular es una pregunta y la respuesta está **físicamente al lado**: es el
+            hero cumpliéndose en la misma pantalla. Antes decía «Tu dinero tiene un ritmo.
+            Nummo lo entiende», que teniendo el gráfico ahí al lado no significaba nada.
+          */}
           <p className="mt-6 max-w-sm text-base leading-relaxed text-muted-foreground lg:mt-0">
-            Una vista viva de lo que entra, sale y necesita tu atención. Diseñada para que el
-            control se sienta natural.
+            Lo que entró, lo que salió y lo que falta por entrar, en la misma pantalla. Sin
+            exportar nada y sin sumar nada a mano.
           </p>
         </div>
 
         <div ref={refGrafico} data-revelar className="mt-12 rounded-2xl bg-card p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs text-muted-foreground">Movimientos</p>
-              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                Todo en movimiento
-              </p>
+              {/*
+                Una sola línea. Había un rótulo pequeño «Movimientos» sobre un titular
+                «Todo en movimiento» que no decía nada, y el pie del gráfico ya dice de
+                qué periodo se habla.
+              */}
+              <p className="text-xl font-semibold tracking-tight text-foreground">Movimientos</p>
             </div>
 
             {/* Segmentado: la pastilla oscura marca la activa, como en la consola. */}

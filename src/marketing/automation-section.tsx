@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { FLUJO } from './flow'
 import { SectionHeading } from './section-heading'
 import type { Cola } from './signals'
@@ -19,6 +20,21 @@ import { useSectionViewed } from './use-section-viewed'
  * Único gesto: se encienden en secuencia.
  */
 
+/**
+ * Lo que a nadie se le ocurre preguntar hasta que ya firmó, contestado antes.
+ *
+ * Las cuatro salen del contrato, no de un folleto: la política de cobranza corre antes y
+ * después del vencimiento, `overdueSummaryTemplateKey` agrupa lo que debe cada persona en
+ * un aviso, las horas de silencio de la organización son una ventana fuera de la cual no
+ * se escribe a nadie, y `interest-policies` + `accrue-interest` causan la mora.
+ */
+const GARANTIAS = [
+  'Antes y después del vencimiento',
+  'Un mensaje por persona, no uno por factura',
+  'Nunca fuera de horario',
+  'La mora, calculada',
+] as const
+
 /* El texto sale de `FLUJO`; aquí solo se decide con qué tono se pinta cada cuadro. */
 const TONOS = ['bg-success/20 text-success', 'bg-success/20 text-success', 'bg-primary/25 text-primary'] as const
 
@@ -32,21 +48,25 @@ export function AutomationSection({ cola }: { cola: Cola | null }) {
         <div className="gap-10 lg:flex lg:items-end lg:justify-between">
           <SectionHeading
             claro
-            rotulo="Las cosas pasan solas"
-            principal="Del movimiento"
-            secundaria="a la acción."
+            rotulo="Cobranza que no tienes que hacer"
+            principal="Deja de perseguir"
+            secundaria="a quien te debe."
           />
           {/*
-            Cada afirmación de aquí sale de `contract/HANDOFF-whatsapp-cobranza.md`: los
-            recordatorios salen antes y después del vencimiento, un deudor recibe UN aviso
-            con todo lo que debe —no uno por factura—, y las horas de silencio de la
-            organización son una ventana fuera de la cual no se le escribe a nadie.
+            Aquí es donde la cobranza pega con todo, y por eso el hero no la vende (§97.22):
+            la portada promete saber cómo vas, y esta sección es la prueba de que además
+            actúa.
+
+            Cada frase es una capacidad distinta de `HANDOFF-whatsapp-cobranza.md`:
+            `dueSoon`/`overdue`, plantillas aprobadas por Meta más las horas de silencio,
+            `overdueSummaryTemplateKey` —que existe porque Meta no pluraliza y un deudor
+            recibe UN aviso con todo lo que debe—, e `interest-policies`.
           */}
-          <p className="mt-6 max-w-sm text-base leading-relaxed text-sidebar-muted-foreground lg:mt-0">
-            Nummo convierte cada evento en el siguiente paso. Los recordatorios de cobro salen
-            por <strong className="font-semibold text-sidebar-foreground">WhatsApp</strong>{' '}
-            antes y después del vencimiento: un solo mensaje por cliente, con todo lo que debe,
-            y nunca fuera de horario.
+          <p className="mt-6 max-w-md text-base leading-relaxed text-sidebar-muted-foreground lg:mt-0">
+            Nummo sabe quién está por vencer y quién ya venció. Escribe por{' '}
+            <strong className="font-semibold text-sidebar-foreground">WhatsApp</strong>, con tu
+            plantilla y en tu horario. Un solo mensaje por persona, con todo lo que debe. Y si
+            hay mora, la calcula.
           </p>
         </div>
 
@@ -83,6 +103,24 @@ export function AutomationSection({ cola }: { cola: Cola | null }) {
             </li>
           ))}
         </ol>
+
+        {/*
+          Las cuatro objeciones de quien duda en automatizar cobros —«¿va a spamear a mis
+          clientes?», «¿va a escribir a medianoche?», «¿me toca calcular intereses?»—
+          respondidas antes de que las haga. Es lo que separa una sección bonita de una que
+          vende, y por eso esta es la única que añade maquetación.
+
+          Van como lista y no como párrafo porque se leen de un barrido: cuatro anclas, no
+          una frase que hay que terminar.
+        */}
+        <ul className="mt-14 grid gap-4 border-t border-sidebar-border pt-8 sm:grid-cols-2 lg:grid-cols-4">
+          {GARANTIAS.map((texto) => (
+            <li key={texto} className="flex items-start gap-2.5">
+              <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-sidebar-primary" />
+              <span className="text-sm leading-relaxed text-sidebar-muted-foreground">{texto}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )

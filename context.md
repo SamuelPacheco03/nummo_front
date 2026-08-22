@@ -6860,16 +6860,77 @@ Cayó «ya no cabes en una hoja de cálculo»: es una *etapa*, no una audiencia.
 
 Bajo el hero había tres avatares con iniciales inventadas y «Creado para quienes hacen que las
 cosas pasen». Eso tiene **la forma** de un «1.200 negocios ya lo usan» sin el respaldo, y quien
-lo mire dos veces se da cuenta. No hay clientes que citar todavía, así que no se insinúan. Lo
-sustituye algo verdadero que además separa: *«Pensado para cómo se mueve la plata en Colombia:
-pesos, mora y WhatsApp.»* Ninguna herramienta de fuera te causa la mora ni te cobra por
-WhatsApp.
+lo mire dos veces se da cuenta. No hay clientes que citar todavía, así que no se insinúan.
 
-`hero.test.tsx` vigila que no vuelva.
+**Y no lo sustituye nada.** Hubo un intento —«pensado para cómo se mueve la plata en Colombia:
+pesos, mora y WhatsApp»— y sobraba: el titular ya dijo lo que tenía que decir, y una línea más
+debajo solo le quita aire. Un hero se mide por lo que se puede quitar. Cuando haya clientes que
+citar, ese es el sitio.
+
+`hero.test.tsx` vigila que la prueba social falsa no vuelva.
 
 ### El `<title>` y la descripción van con el titular
 
 Son lo que sale en Google y en la vista previa de WhatsApp: si el hero cambia de promesa y
 ellos no, la portada promete dos cosas distintas según por dónde se llegue. Van en el mismo
 commit, siempre.
+
+## 97.23. Las tres secciones de en medio
+
+Con el hero vendiendo la categoría (§97.22), las tres secciones intermedias se reparten el
+trabajo que antes hacía ninguna: **el problema, la prueba de que se ve, y la prueba de que
+además actúa.**
+
+### «El desorden cuesta» cobra su propia promesa
+
+El rótulo prometía que el desorden cuesta y la sección nunca decía cuánto: se quedaba en
+«cada decisión toma más tiempo», que no le duele a nadie. Ahora el titular nombra el hallazgo
+—**«El problema no es que falte plata. Es que no sabes dónde está»**— y el párrafo lo cobra en
+dinero: treinta días sin ese dinero, un mes que no cuadra.
+
+Dos retoques en los paneles. El «¿Ya pagaste?» del antes pasó a **«¿Ya me consignaste?»**, que
+es la frase que de verdad recibe por WhatsApp quien cobra. Y el después decía «Todo bajo
+control» encima de «4 cuentas necesitan tu atención», que se contradicen: ahora dice **«Todo
+en un solo lugar»**.
+
+### «Tu dinero tiene un ritmo» era el titular más vacío de la portada
+
+No significaba nada, y la sección tiene al lado un gráfico que responde la pregunta más
+concreta que existe. Así que el titular **es** esa pregunta y la respuesta está físicamente al
+lado:
+
+> ¿Cómo vas este mes? · *Ya está respondido.*
+
+Es el hero cumpliéndose en la misma pantalla. Del panel se fue «Todo en movimiento» —atmósfera
+otra vez— y con él el rótulo pequeño que lo acompañaba: el pie del gráfico ya dice de qué
+periodo se habla, así que basta un título.
+
+### «Del movimiento a la acción» es ahora el golpe de cobranza
+
+Aquí es donde la cobranza pega con todo, y **por eso el hero no la vende**. La portada promete
+saber cómo vas; esta sección prueba que además actúa.
+
+> **Deja de perseguir a quien te debe.**
+> Nummo sabe quién está por vencer y quién ya venció. Escribe por WhatsApp, con tu plantilla y
+> en tu horario. Un solo mensaje por persona, con todo lo que debe. Y si hay mora, la calcula.
+
+Cuatro frases, cuatro capacidades distintas del contrato: `dueSoon`/`overdue`, plantillas
+aprobadas por Meta más las horas de silencio, `overdueSummaryTemplateKey`, `interest-policies`.
+
+**Y es la única sección que estrena maquetación**: una fila de cuatro garantías bajo los pasos.
+
+> Antes y después del vencimiento · Un mensaje por persona, no uno por factura · Nunca fuera
+> de horario · La mora, calculada
+
+Son las objeciones de quien duda en automatizar cobros —«¿va a spamear a mis clientes?», «¿va
+a escribir a medianoche?», «¿me toca calcular intereses?»— contestadas antes de que las haga.
+Van como lista y no como párrafo porque se leen de un barrido: cuatro anclas, no una frase que
+hay que terminar.
+
+### «Producto» del navegador llevaba al problema
+
+El enlace apuntaba a `#producto`, que era el `id` de «El desorden cuesta». O sea que quien
+pulsaba «Producto» aterrizaba en la sección que describe lo mal que está todo. Ahora apunta a
+`#demo` —el gráfico—, que es lo que esa palabra promete. «El desorden cuesta» se queda **sin
+`id`**: no hay ancla huérfana esperando a que alguien la reutilice mal.
 
