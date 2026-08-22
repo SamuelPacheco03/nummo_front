@@ -96,6 +96,14 @@ const PARES: readonly Par[] = [
     ese 3:1 a lo que identifica un control, no al separador entre una tarjeta y su fondo: el
     borde de hoy da 1.18:1 y es un borde perfectamente normal.
   */
+  /*
+    El icono de pérdida de «El desorden cuesta», que vive sobre el shell. Va a 3:1 y NO a
+    4.5 porque es un icono: como texto da 3.70:1 en claro y por eso la cifra que acompaña
+    se destaca con peso en vez de con color. Si algún día alguien quiere ese rojo como
+    texto ahí, este par es donde se ve que no puede.
+  */
+  { que: 'icono de pérdida sobre el shell', frente: '--destructive-strong', sobre: '--sidebar', minimo: AA_LARGE },
+
   { que: 'anillo de foco sobre el fondo', frente: '--ring', sobre: '--background', minimo: AA_LARGE },
   { que: 'acento del sidebar', frente: '--sidebar-primary', sobre: '--sidebar', minimo: AA_LARGE },
 ]

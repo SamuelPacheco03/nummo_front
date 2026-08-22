@@ -6959,17 +6959,32 @@ Con el hero vendiendo la categoría (§97.22), las tres secciones intermedias se
 trabajo que antes hacía ninguna: **el problema, la prueba de que se ve, y la prueba de que
 además actúa.**
 
-### «El desorden cuesta» cobra su propia promesa
+### «El desorden cuesta» cobra su propia promesa, y estrena dibujo
 
 El rótulo prometía que el desorden cuesta y la sección nunca decía cuánto: se quedaba en
 «cada decisión toma más tiempo», que no le duele a nadie. Ahora el titular nombra el hallazgo
 —**«El problema no es que falte plata. Es que no sabes dónde está»**— y el párrafo lo cobra en
 dinero: treinta días sin ese dinero, un mes que no cuadra.
 
-Dos retoques en los paneles. El «¿Ya pagaste?» del antes pasó a **«¿Ya me consignaste?»**, que
-es la frase que de verdad recibe por WhatsApp quien cobra. Y el después decía «Todo bajo
-control» encima de «4 cuentas necesitan tu atención», que se contradicen: ahora dice **«Todo
-en un solo lugar»**.
+**Y el gráfico se fue entero.** Eran dos paneles: a la izquierda tres pastillas flotando sobre
+gris —una recreación del desorden que se leía como una pantalla a medio hacer— y a la derecha
+dos barras de progreso que decían menos que el gráfico de la sección siguiente. El rótulo
+prometía que el desorden **cuesta** y el dibujo no enseñaba ningún costo en ninguna parte.
+
+Lo sustituye **la factura**: una sola tarjeta donde cada cosa suelta lleva al lado lo que
+costó, y debajo de una línea el hallazgo — *«Y nada de esto te avisó.»* Es lo que la sección
+venía diciendo con palabras desde que existe. El «¿Ya pagaste?» se queda como **«¿Ya me
+consignaste?»**, que es la frase que de verdad se recibe.
+
+El «después» no se sustituyó por nada: la sección de al lado —el gráfico— *es* el después, y
+enseñarlo aquí en barras era contarlo dos veces y peor la primera.
+
+> **Un par de colores nuevo, medido.** La cifra de pérdida se quiso pintar en
+> `--destructive-strong` y sobre el shell da **3.70:1** en claro — por debajo de AA. Ese token
+> está afinado contra `--card`, que es claro, y el shell va oscuro en los dos modos (§3.2). El
+> rojo se movió al **icono**, donde 3.70 sí cumple porque la 1.4.11 pide 3:1 a lo no textual,
+> y la cifra se destaca con peso, que ahí rinde 17:1. El par entró en `tokens.test.ts`: el
+> siguiente que quiera tintar algo sobre esa superficie se entera antes de subirlo.
 
 ### «Tu dinero tiene un ritmo» era el titular más vacío de la portada
 
@@ -7011,4 +7026,22 @@ El enlace apuntaba a `#producto`, que era el `id` de «El desorden cuesta». O s
 pulsaba «Producto» aterrizaba en la sección que describe lo mal que está todo. Ahora apunta a
 `#demo` —el gráfico—, que es lo que esa palabra promete. «El desorden cuesta» se queda **sin
 `id`**: no hay ancla huérfana esperando a que alguien la reutilice mal.
+
+## 97.24. El cierre repite la promesa del hero
+
+Decía «Menos desorden. / Más movimiento.» sobre «empieza a ver tus finanzas de otra forma»:
+tres frases de atmósfera pura, y las dos palabras del titular eran justo las que se limpiaron
+del resto de la portada (§97.22).
+
+> **Tus números ya están ahí.** · *Solo falta quien los mire.*
+>
+> Tres campos y estás dentro.
+
+Cierra lo que el hero abrió —«alguien tiene que estar mirando tus números, que no seas tú»—
+con las palabras del final, y remata quitando la última objeción de quien llegó hasta abajo:
+cuánto cuesta empezar.
+
+**«Tres campos» no es una manera de hablar.** `RegisterInput` pide correo, contraseña y
+nombre, y nada más. El día que pida un cuarto, esa frase deja de ser verdad — está anotado en
+el propio componente para que quien toque el registro lo vea.
 

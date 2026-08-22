@@ -1,29 +1,56 @@
-import { ArrowRight, Check, FileText, HelpCircle, MessageCircle, Wallet } from 'lucide-react'
-import { formatCompactAmount } from '@/lib/format'
+import { FileText, MessageCircle, Wallet } from 'lucide-react'
+import { formatMoney } from '@/lib/format'
 import { SectionHeading } from './section-heading'
 import { useReveal } from './use-reveal'
 
 /**
- * «El desorden cuesta»: el antes y el después, uno al lado del otro.
+ * «El desorden cuesta»: la factura, no la metáfora.
  *
  * **Ya no lleva `id`.** Tenía `producto`, y el navegador enlazaba ahí bajo esa palabra —
  * o sea que «Producto» te llevaba a la sección del *problema*. El enlace apunta ahora al
  * gráfico (`#demo`) y aquí no queda ancla, porque nadie la enlaza.
  *
- * **Va sin señal, a propósito.** El catálogo cerrado de `section` no tiene un nombre para
- * esta sección —se fijó antes de que la página existiera— y está pedido al backend (issue
- * #2 de `nummo_api`). Meterla bajo `automation` o `integrations` mediría una cosa
- * llamándola otra, y una tabla de analítica que miente es peor que un hueco.
+ * **Aquí había un antes/después y se fue.** Dos paneles: a la izquierda tres pastillas
+ * flotando sobre gris —una recreación del desorden que se leía como una pantalla a medio
+ * hacer— y a la derecha dos barras de progreso que decían menos que el gráfico de la
+ * sección siguiente. El rótulo prometía que el desorden **cuesta** y el dibujo no enseñaba
+ * ningún costo en ninguna parte.
  *
- * Único gesto: las tarjetas del «antes» flotan apenas al entrar y las barras del «después»
- * se llenan.
+ * Lo sustituye una sola tarjeta: **cada cosa suelta con lo que costó al lado**. Es lo que
+ * la sección venía diciendo con palabras desde que existe.
+ *
+ * Y el «después» sobra: la sección de al lado —el gráfico— *es* el después, y enseñarlo
+ * aquí en barras era contarlo dos veces y peor la primera.
+ *
+ * Único gesto: las filas entran escalonadas, como el resto de la página.
  */
 
-/** Los papeles sueltos del «antes». La posición es parte del mensaje: no están alineados. */
-const DISPERSOS = [
-  { Icon: FileText, texto: 'Factura #048', cola: 'vencida', pos: 'left-[6%] top-[18%]' },
-  { Icon: Wallet, texto: 'Pago sin conciliar', cola: null, pos: 'right-[8%] top-[38%]' },
-  { Icon: MessageCircle, texto: '«¿Ya me consignaste?»', cola: null, pos: 'left-[16%] bottom-[16%]' },
+/**
+ * Lo que se pierde y lo que vale perderlo.
+ *
+ * Cifras de ejemplo, como las del panel del hero, y pasan por `formatMoney` para que un
+ * peso se escriba igual en toda la app (§88). El remate no es una fila más: es el hallazgo
+ * de la sección, y por eso vive fuera de la lista y detrás de una línea.
+ */
+const COSTOS = [
+  {
+    Icon: FileText,
+    que: 'Factura #048, vencida hace 34 días',
+    cuesta: `${formatMoney('2400000.00')} sin entrar`,
+    enPlata: true,
+  },
+  {
+    Icon: Wallet,
+    que: 'El pago de marzo, sin registrar',
+    cuesta: 'El mes no cuadra',
+    enPlata: false,
+  },
+  {
+    Icon: MessageCircle,
+    que: '«¿Ya me consignaste?»',
+    cuesta: 'La tercera vez que preguntas',
+    enPlata: false,
+  },
 ] as const
 
 export function DisorderSection() {
@@ -31,116 +58,64 @@ export function DisorderSection() {
 
   return (
     <section className="bg-background px-6 py-24">
-      <div className="mx-auto max-w-6xl">
-        <SectionHeading
-          rotulo="El desorden cuesta"
-          principal="El problema no es que falte plata."
-          secundaria="Es que no sabes dónde está."
-        />
-        {/*
-          El rótulo prometía que el desorden cuesta y la sección nunca decía cuánto: se
-          quedaba en «cada decisión toma más tiempo», que no le duele a nadie. Ahora el
-          párrafo cobra la promesa del rótulo, en plata.
-        */}
-        <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-          Una cuenta que se te pasó son treinta días sin ese dinero. Un gasto que no anotaste es
-          un mes que no cuadra. El desorden no es incomodidad: es plata.
-        </p>
+      <div className="mx-auto grid max-w-6xl gap-14 lg:grid-cols-2 lg:items-center">
+        <div>
+          <SectionHeading
+            rotulo="El desorden cuesta"
+            principal="El problema no es que falte plata."
+            secundaria="Es que no sabes dónde está."
+          />
+          <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
+            Una cuenta que se te pasó son treinta días sin ese dinero. Un gasto que no anotaste
+            es un mes que no cuadra. El desorden no es incomodidad: es plata.
+          </p>
+        </div>
 
-        <div ref={ref} className="mt-14 grid items-stretch gap-6 lg:grid-cols-[1fr_auto_1fr]">
-          {/* ANTES: superficie apagada y nada en su sitio. */}
-          <div
-            data-revelar
-            className="relative min-h-[19rem] overflow-hidden rounded-2xl bg-muted p-6"
-          >
-            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Antes · disperso
-            </p>
-            {DISPERSOS.map(({ Icon, texto, cola, pos }) => (
-              <span
-                key={texto}
-                className={`absolute ${pos} flex items-center gap-2 rounded-lg bg-card px-3 py-2 text-xs shadow-sm`}
+        <div ref={ref} className="rounded-2xl bg-sidebar p-6 sm:p-8">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-sidebar-muted-foreground">
+            Lo que te está costando
+          </p>
+
+          <ul className="mt-7 space-y-6">
+            {COSTOS.map(({ Icon, que, cuesta, enPlata }, i) => (
+              <li
+                key={que}
+                data-revelar
+                style={{ ['--paso' as string]: `${i * 130}ms` }}
+                className="flex items-start gap-3.5"
               >
-                <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="whitespace-nowrap text-foreground">{texto}</span>
-                {cola && <span className="whitespace-nowrap text-destructive-strong">{cola}</span>}
-              </span>
+                {/*
+                  **El rojo va en el icono, no en la cifra**, y no es una preferencia: en
+                  claro `--destructive-strong` sobre el shell da 3.70:1, por debajo de AA
+                  para texto. Ese token está afinado contra `--card`, que es claro, y el
+                  shell va oscuro en los DOS modos (§3.2).
+
+                  Como icono sí vale: la 1.4.11 pide 3:1 a lo no textual y da 3.70. Así que
+                  la señal de pérdida se queda y la cifra se destaca con peso, que sobre
+                  esta superficie rinde 17:1. Antes de tintar aquí cualquier otra cosa, hay
+                  que medirla — `tokens.test.ts` ya vigila este par.
+                */}
+                <Icon
+                  aria-hidden
+                  className={`mt-0.5 size-4 shrink-0 ${
+                    enPlata ? 'text-destructive-strong' : 'text-sidebar-muted-foreground'
+                  }`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm text-sidebar-foreground">{que}</span>
+                  <span className="mt-1 block text-sm font-semibold text-sidebar-foreground">
+                    {cuesta}
+                  </span>
+                </span>
+              </li>
             ))}
-            <span
-              className="absolute left-1/2 top-1/2 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-dashed border-border"
-              aria-hidden
-            >
-              <HelpCircle className="size-4 text-muted-foreground" />
-            </span>
-          </div>
+          </ul>
 
-          <span className="grid place-items-center" aria-hidden>
-            <ArrowRight className="size-5 rotate-90 text-muted-foreground lg:rotate-0" />
-          </span>
-
-          {/* DESPUÉS: una sola superficie, y las cifras en su sitio. */}
-          <div
-            data-revelar
-            style={{ ['--paso' as string]: '140ms' }}
-            className="min-h-[19rem] rounded-2xl bg-sidebar p-6"
-          >
-            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-sidebar-muted-foreground">
-              Después · Nummo
-            </p>
-
-            <div className="mt-6 flex items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-success" aria-hidden>
-                <Check className="size-4 text-success-foreground" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-sidebar-foreground">
-                  Todo en un solo lugar
-                </span>
-                <span className="block text-xs text-sidebar-muted-foreground">
-                  4 cuentas necesitan tu atención
-                </span>
-              </span>
-            </div>
-
-            <dl className="mt-8 space-y-5">
-              <Barra etiqueta="Ingresos" valor={formatCompactAmount('18400000.00')} porcentaje={82} tono="bg-success" />
-              <Barra etiqueta="Próximos pagos" valor="3" porcentaje={38} tono="bg-primary" />
-            </dl>
-          </div>
+          <p className="mt-7 border-t border-sidebar-border pt-6 text-base font-semibold text-sidebar-foreground">
+            Y nada de esto te avisó.
+          </p>
         </div>
       </div>
     </section>
-  )
-}
-
-/** Una barra del panel «después». Se llena al entrar, con el mismo escalonado del resto. */
-function Barra({
-  etiqueta,
-  valor,
-  porcentaje,
-  tono,
-}: {
-  etiqueta: string
-  valor: string
-  porcentaje: number
-  tono: string
-}) {
-  return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3">
-        <dt className="text-sm text-sidebar-muted-foreground">{etiqueta}</dt>
-        <dd className="text-sm font-medium text-sidebar-foreground tabular-nums">{valor}</dd>
-      </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sidebar-accent">
-        {/*
-          El ancho va en línea porque es un dato, no una escala: una utilidad `w-[82%]`
-          escondería en una clase lo que aquí se lee de un vistazo.
-        */}
-        <span
-          className={`block h-full rounded-full transition-[width] duration-1000 ease-out ${tono}`}
-          style={{ width: `${porcentaje}%` }}
-        />
-      </div>
-    </div>
   )
 }

@@ -14,6 +14,16 @@ import { rutasApp } from './links'
  *
  * La segunda línea va en serif cursiva sobre `--heading-muted`, cerrando el gesto que abrió
  * el hero — el mismo con el que empieza la página termina la página.
+ *
+ * **Y el texto cierra lo que el hero abrió.** Decía «Menos desorden. Más movimiento» sobre
+ * «empieza a ver tus finanzas de otra forma»: tres frases de atmósfera pura, y las dos
+ * palabras del titular eran justo las que se limpiaron del resto de la portada (§97.22).
+ * Ahora repite la promesa del hero con las palabras del final —los números ya existen, lo
+ * que falta es quien los mire— y remata quitando la última objeción que le queda a quien
+ * llegó hasta aquí: cuánto cuesta empezar.
+ *
+ * «Tres campos» no es una manera de hablar: `RegisterInput` pide correo, contraseña y
+ * nombre, y nada más. Si algún día pide un cuarto, esta frase deja de ser verdad.
  */
 export function FinalCta({ cola }: { cola: Cola | null }) {
   const refSeccion = useSectionViewed(cola, 'final_cta')
@@ -54,21 +64,21 @@ export function FinalCta({ cola }: { cola: Cola | null }) {
 
         <div className="relative">
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            El siguiente movimiento es tuyo
+            Lo que sigue
           </p>
 
           <h2 className="mt-6 text-balance text-[2.5rem] font-semibold leading-[1.04] tracking-tight text-foreground sm:text-6xl">
-            <span className="block">Menos desorden.</span>
+            <span className="block">Tus números ya están ahí.</span>
             <span
               className="block font-normal text-heading-muted"
               style={{ fontFamily: SERIF_STACK, fontStyle: 'italic' }}
             >
-              Más movimiento.
+              Solo falta quien los mire.
             </span>
           </h2>
 
           <p className="mt-6 text-base text-muted-foreground">
-            Empieza a ver tus finanzas de otra forma.
+            Tres campos y estás dentro.
           </p>
 
           <a
