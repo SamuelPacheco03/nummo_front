@@ -54,3 +54,20 @@ test('la portada no promete integración bancaria', () => {
   // fase 10 lo dice con todas las letras: «Nummo no mueve dinero real, registra».
   expect(texto).not.toMatch(/banco conectad|conecta tu banco|sincroniz\w* con tu banco/i)
 })
+
+test('el ciclo de cobro se cuenta una sola vez', async () => {
+  const { FLUJO } = await import('./flow')
+  const { container } = render(<LandingPage />)
+
+  /*
+    Los tres pasos los enseñan dos superficies con formas distintas —la actividad del panel
+    del hero y los pasos numerados— y vivían copiados. Cuando «Banco conectado» resultó
+    falso hubo que corregirlo en los dos sitios, y la segunda vez solo porque alguien se
+    acordó. Que aparezcan DOS veces cada uno es la prueba de que las dos beben del mismo
+    sitio; una sola querría decir que una superficie se quedó atrás.
+  */
+  for (const { titulo } of FLUJO) {
+    expect(container.textContent).toContain(titulo)
+    expect([...container.querySelectorAll('*')].filter((e) => e.textContent === titulo)).toHaveLength(2)
+  }
+})

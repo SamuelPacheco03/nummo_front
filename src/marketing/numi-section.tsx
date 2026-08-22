@@ -38,7 +38,7 @@ const LO_QUE_HACE = [
   {
     Icon: BellRing,
     titulo: 'Actúa contigo',
-    texto: 'Prepara el cobro, redacta el recordatorio y lo manda cuando le dices que sí.',
+    texto: 'Prepara el cobro, redacta el recordatorio y lo manda por WhatsApp cuando le dices que sí.',
   },
 ] as const
 

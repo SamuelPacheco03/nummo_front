@@ -1,5 +1,6 @@
-import { ArrowUpRight, BellRing, CheckCircle2, ReceiptText, Sparkles } from 'lucide-react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { RowIconBadge, type RowIconTone } from '@/components/ui/row-icon'
+import { FLUJO } from './flow'
 import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -14,18 +15,8 @@ import { cn } from '@/lib/utils'
  * cambia aquí también y no hay dos maneras de escribir un peso.
  */
 
-interface Actividad {
-  Icon: typeof ReceiptText
-  tone: RowIconTone
-  titulo: string
-  detalle: string
-}
-
-const ACTIVIDAD: readonly Actividad[] = [
-  { Icon: ReceiptText, tone: 'success', titulo: 'Cobro creado', detalle: 'Cliente · Mensualidad' },
-  { Icon: BellRing, tone: 'brand', titulo: 'Recordatorio enviado', detalle: 'Automático · hace 2 min' },
-  { Icon: CheckCircle2, tone: 'success', titulo: 'Pago registrado', detalle: 'Aplicado a la factura' },
-]
+/* El texto sale de `FLUJO`; aquí solo se decide con qué tono se pinta cada pastilla. */
+const TONOS: readonly RowIconTone[] = ['success', 'brand', 'success']
 
 export function AppPreview({
   className,
@@ -80,10 +71,10 @@ export function AppPreview({
         </div>
 
         <ul className="mt-3 space-y-3">
-          {ACTIVIDAD.map((a) => (
+          {FLUJO.map((a, i) => (
             <li key={a.titulo} className="flex items-center gap-3">
               {/* La pastilla de la consola, no una imitación (§94). */}
-              <RowIconBadge Icon={a.Icon} tone={a.tone} />
+              <RowIconBadge Icon={a.Icon} tone={TONOS[i]} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-foreground">{a.titulo}</span>
                 <span className="block truncate text-xs text-muted-foreground">{a.detalle}</span>

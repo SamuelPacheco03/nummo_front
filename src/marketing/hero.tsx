@@ -71,7 +71,7 @@ export function Hero({ className }: { className?: string }) {
             className="animate-hero-in mt-6 max-w-md text-lg leading-relaxed text-muted-foreground"
             style={paso(160)}
           >
-            Nummo conecta cobros, pagos y movimientos en una sola experiencia. Menos dispersión.
+            Nummo reúne cobros, pagos y movimientos en una sola experiencia. Menos dispersión.
             Más control para decidir mejor.
           </p>
 

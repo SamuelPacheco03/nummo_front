@@ -6658,3 +6658,39 @@ salió.
 corrida diaria. «Numi dice: tu flujo está…» es el insight del Panel, calculado solo con
 cifras del API (§35). «Disponible» y «Por cobrar» son dos de los cuatro KPIs reales.
 
+## 97.19. WhatsApp se nombra, y el ciclo de cobro se cuenta una sola vez
+
+La auditoría de §97.18 dejó ver la incongruencia contraria: la portada prometía un banco que
+no existe y **se callaba lo único difícil de copiar que sí está construido**. La cobranza por
+WhatsApp aparecía como un genérico «Recordatorio enviado · Automático», sin canal.
+
+Ahora se nombra, y con detalles que se pueden comprobar en
+`contract/HANDOFF-whatsapp-cobranza.md`: salen **antes y después del vencimiento**, un deudor
+recibe **un solo mensaje con todo lo que debe** —por eso existe `overdueSummaryTemplateKey`,
+porque Meta no pluraliza— y **nunca fuera de horario**, que son las horas de silencio de la
+organización en su zona. Nada de eso es aspiracional.
+
+En el hero, «Nummo *conecta* cobros, pagos y movimientos» pasó a **«reúne»**. Era la última
+palabra de la portada con lectura de integración, y después de quitar la promesa bancaria
+dejarla puesta era invitar a la misma confusión por la puerta de atrás.
+
+### El ciclo vivía copiado, y se pagó
+
+Los tres eventos —cobro creado, recordatorio, pago registrado— los enseñan **dos**
+superficies: la actividad reciente del panel del hero y los pasos numerados de «Del
+movimiento a la acción». Con formas distintas y el mismo texto, en dos archivos.
+
+Eso no se dedujo, se sufrió: corregir «Banco conectado» costó dos ediciones, y la segunda
+solo ocurrió porque alguien se acordó de que existía. Es exactamente el caso que «Nada por
+duplicado» describe, y llevaba desde la fase 2 esperando.
+
+El texto vive ahora en `marketing/flow.ts` con su icono. Lo que **no** viaja ahí es el color:
+una superficie pinta pastillas de `RowIconBadge` y la otra cuadros tintados con su número, y
+forzar un vocabulario común entre las dos habría sido acoplarlas por donde de verdad se
+diferencian. La numeración se calcula del índice, que era el único dato que el array
+duplicado aportaba de su cosecha.
+
+`landing-page.test.tsx` exige que cada título aparezca **exactamente dos veces** en la
+portada. Una sola vez querría decir que una de las dos superficies se quedó atrás — que es la
+forma que tiene este fallo de volver.
+

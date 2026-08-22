@@ -1,4 +1,4 @@
-import { BellRing, CheckCircle2, ReceiptText } from 'lucide-react'
+import { FLUJO } from './flow'
 import { SectionHeading } from './section-heading'
 import type { Cola } from './signals'
 import { useReveal } from './use-reveal'
@@ -19,11 +19,8 @@ import { useSectionViewed } from './use-section-viewed'
  * Único gesto: se encienden en secuencia.
  */
 
-const PASOS = [
-  { n: '01', Icon: ReceiptText, tono: 'bg-success/20 text-success', titulo: 'Cobro creado', pie: 'Cliente · Mensualidad' },
-  { n: '02', Icon: BellRing, tono: 'bg-success/20 text-success', titulo: 'Recordatorio enviado', pie: 'Automático · hace 2 min' },
-  { n: '03', Icon: CheckCircle2, tono: 'bg-primary/25 text-primary', titulo: 'Pago registrado', pie: 'Aplicado a la factura' },
-] as const
+/* El texto sale de `FLUJO`; aquí solo se decide con qué tono se pinta cada cuadro. */
+const TONOS = ['bg-success/20 text-success', 'bg-success/20 text-success', 'bg-primary/25 text-primary'] as const
 
 export function AutomationSection({ cola }: { cola: Cola | null }) {
   const refSeccion = useSectionViewed(cola, 'automation')
@@ -39,16 +36,24 @@ export function AutomationSection({ cola }: { cola: Cola | null }) {
             principal="Del movimiento"
             secundaria="a la acción."
           />
+          {/*
+            Cada afirmación de aquí sale de `contract/HANDOFF-whatsapp-cobranza.md`: los
+            recordatorios salen antes y después del vencimiento, un deudor recibe UN aviso
+            con todo lo que debe —no uno por factura—, y las horas de silencio de la
+            organización son una ventana fuera de la cual no se le escribe a nadie.
+          */}
           <p className="mt-6 max-w-sm text-base leading-relaxed text-sidebar-muted-foreground lg:mt-0">
-            Nummo convierte cada evento en el siguiente paso. Sin perseguir pendientes. Sin
-            trabajo duplicado.
+            Nummo convierte cada evento en el siguiente paso. Los recordatorios de cobro salen
+            por <strong className="font-semibold text-sidebar-foreground">WhatsApp</strong>{' '}
+            antes y después del vencimiento: un solo mensaje por cliente, con todo lo que debe,
+            y nunca fuera de horario.
           </p>
         </div>
 
         <ol ref={refPasos} className="mt-16 grid gap-10 md:grid-cols-3">
-          {PASOS.map(({ n, Icon, tono, titulo, pie }, i) => (
+          {FLUJO.map(({ Icon, titulo, detalle }, i) => (
             <li
-              key={n}
+              key={titulo}
               data-revelar
               style={{ ['--paso' as string]: `${i * 160}ms` }}
               className="relative flex items-start gap-4"
@@ -57,21 +62,23 @@ export function AutomationSection({ cola }: { cola: Cola | null }) {
                 La línea que une los pasos. Decorativa y solo en escritorio: apilados en
                 móvil, una línea horizontal entre ellos no uniría nada.
               */}
-              {i < PASOS.length - 1 && (
+              {i < FLUJO.length - 1 && (
                 <span
                   className="absolute left-16 right-[-2.5rem] top-6 hidden h-px bg-sidebar-border md:block"
                   aria-hidden
                 />
               )}
-              <span className={`grid size-12 shrink-0 place-items-center rounded-xl ${tono}`} aria-hidden>
+              <span className={`grid size-12 shrink-0 place-items-center rounded-xl ${TONOS[i]}`} aria-hidden>
                 <Icon className="size-5" />
               </span>
               <span className="min-w-0">
-                <span className="block text-xs text-sidebar-muted-foreground tabular-nums">{n}</span>
+                <span className="block text-xs text-sidebar-muted-foreground tabular-nums">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
                 <span className="mt-1 block text-base font-semibold text-sidebar-foreground">
                   {titulo}
                 </span>
-                <span className="mt-0.5 block text-sm text-sidebar-muted-foreground">{pie}</span>
+                <span className="mt-0.5 block text-sm text-sidebar-muted-foreground">{detalle}</span>
               </span>
             </li>
           ))}
