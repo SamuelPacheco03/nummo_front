@@ -10476,6 +10476,250 @@
         "x-required-permission": "financial_accounts.manage"
       }
     },
+    "/api/v1/organizations/{orgId}/payment-instructions": {
+      "get": {
+        "tags": [
+          "Finances"
+        ],
+        "summary": "Dónde puede pagar quien le debe a esta organización",
+        "description": "Dónde puede pagar quien debe: cuentas bancarias, llaves, billeteras y enlaces. Distinto de `payment-methods`, que es *cómo se registró* un pago que ya entró.\n\nCada una trae `preview`, que es exactamente el renglón que verá el deudor en el recordatorio. Úsalo para la vista previa en vez de rearmarlo: si la pantalla lo compone por su cuenta, acabará diciendo algo distinto del mensaje real.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "includeArchived",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Formas de pago.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "instructions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PaymentInstruction"
+                      }
+                    }
+                  },
+                  "required": [
+                    "instructions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "payment_instructions.read"
+      },
+      "post": {
+        "tags": [
+          "Finances"
+        ],
+        "summary": "Añade una forma de pago",
+        "description": "`details` es una unión por `kind`, porque cada forma de cobrar tiene la suya: una cuenta lleva tipo y número, una llave su clase y su valor, un Nequi solo el celular.\n\nLos textos se guardan **en una línea**: acaban dentro de un parámetro de plantilla de WhatsApp, y Meta rechaza el envío entero si lleva saltos de línea o tabuladores. El backend los normaliza al entrar.\n\n`showInReminders: false` la deja en el catálogo sin publicarla al deudor. Pide `payment_instructions.manage`, que es un permiso aparte de la contabilidad: esto decide **a qué cuenta le llega la plata** de los cobros que salen, y el deudor no tiene forma de notar un cambio. Cada cambio queda auditado con el antes y el después.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentInstruction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Creada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInstruction"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "payment_instructions.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/payment-instructions/{id}": {
+      "patch": {
+        "tags": [
+          "Finances"
+        ],
+        "summary": "Edita una forma de pago",
+        "description": "Cambiar `details` cambia lo que el deudor lee en el próximo recordatorio. Pide `payment_instructions.manage`, que es un permiso aparte de la contabilidad: esto decide **a qué cuenta le llega la plata** de los cobros que salen, y el deudor no tiene forma de notar un cambio. Cada cambio queda auditado con el antes y el después.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePaymentInstruction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInstruction"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "payment_instructions.manage"
+      },
+      "delete": {
+        "tags": [
+          "Finances"
+        ],
+        "summary": "Archiva una forma de pago",
+        "description": "Archiva, **no borra**: un recordatorio que ya salió nombró esta cuenta, y quien mire ese mensaje mañana tiene que poder saber a dónde se le pidió que pagara. Deja de salir en los recordatorios y del listado, salvo con `includeArchived`. Pide `payment_instructions.manage`, que es un permiso aparte de la contabilidad: esto decide **a qué cuenta le llega la plata** de los cobros que salen, y el deudor no tiene forma de notar un cambio. Cada cambio queda auditado con el antes y el después.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Archivada."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "payment_instructions.manage"
+      }
+    },
     "/api/v1/organizations/{orgId}/reports/cashflow": {
       "get": {
         "tags": [
@@ -13776,6 +14020,7 @@
                 "expenses.read",
                 "disbursements.read",
                 "payment_methods.read",
+                "payment_instructions.read",
                 "financial_accounts.read",
                 "treasury.read",
                 "reports.read",
@@ -13805,6 +14050,7 @@
                 "disbursements.approve",
                 "disbursements.reverse",
                 "treasury.transfer",
+                "payment_instructions.manage",
                 "organization.manage",
                 "organization.branches.manage",
                 "organization.members.manage",
@@ -13873,6 +14119,7 @@
                 "expenses.read",
                 "disbursements.read",
                 "payment_methods.read",
+                "payment_instructions.read",
                 "financial_accounts.read",
                 "treasury.read",
                 "reports.read",
@@ -13902,6 +14149,7 @@
                 "disbursements.approve",
                 "disbursements.reverse",
                 "treasury.transfer",
+                "payment_instructions.manage",
                 "organization.manage",
                 "organization.branches.manage",
                 "organization.members.manage",
@@ -17437,6 +17685,376 @@
           }
         }
       },
+      "CreatePaymentInstruction": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "BANK_ACCOUNT"
+                  },
+                  "bankName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "accountKind": {
+                    "type": "string",
+                    "enum": [
+                      "SAVINGS",
+                      "CHECKING"
+                    ]
+                  },
+                  "accountNumber": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "holderName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "holderDocument": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "bankName",
+                  "accountKind",
+                  "accountNumber",
+                  "holderName"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "TRANSFER_KEY"
+                  },
+                  "bankName": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "keyKind": {
+                    "type": "string",
+                    "enum": [
+                      "PHONE",
+                      "EMAIL",
+                      "DOCUMENT",
+                      "ALPHANUMERIC"
+                    ]
+                  },
+                  "keyValue": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "kind",
+                  "keyKind",
+                  "keyValue"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "WALLET"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "phone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25
+                  }
+                },
+                "required": [
+                  "kind",
+                  "provider",
+                  "phone"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "PAYMENT_LINK"
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 300,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "url"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "OTHER"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "kind",
+                  "text"
+                ]
+              }
+            ],
+            "type": "object"
+          },
+          "showInReminders": {
+            "default": true,
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999
+          }
+        },
+        "required": [
+          "details"
+        ]
+      },
+      "UpdatePaymentInstruction": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "BANK_ACCOUNT"
+                  },
+                  "bankName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "accountKind": {
+                    "type": "string",
+                    "enum": [
+                      "SAVINGS",
+                      "CHECKING"
+                    ]
+                  },
+                  "accountNumber": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "holderName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "holderDocument": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "bankName",
+                  "accountKind",
+                  "accountNumber",
+                  "holderName"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "TRANSFER_KEY"
+                  },
+                  "bankName": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "keyKind": {
+                    "type": "string",
+                    "enum": [
+                      "PHONE",
+                      "EMAIL",
+                      "DOCUMENT",
+                      "ALPHANUMERIC"
+                    ]
+                  },
+                  "keyValue": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "kind",
+                  "keyKind",
+                  "keyValue"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "WALLET"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "phone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25
+                  }
+                },
+                "required": [
+                  "kind",
+                  "provider",
+                  "phone"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "PAYMENT_LINK"
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 300,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "url"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "OTHER"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "kind",
+                  "text"
+                ]
+              }
+            ],
+            "type": "object"
+          },
+          "showInReminders": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999
+          }
+        }
+      },
       "UpsertAiProviderCredential": {
         "type": "object",
         "properties": {
@@ -18434,6 +19052,7 @@
                 "expenses.read",
                 "disbursements.read",
                 "payment_methods.read",
+                "payment_instructions.read",
                 "financial_accounts.read",
                 "treasury.read",
                 "reports.read",
@@ -18463,6 +19082,7 @@
                 "disbursements.approve",
                 "disbursements.reverse",
                 "treasury.transfer",
+                "payment_instructions.manage",
                 "organization.manage",
                 "organization.branches.manage",
                 "organization.members.manage",
@@ -18626,6 +19246,7 @@
                 "expenses.read",
                 "disbursements.read",
                 "payment_methods.read",
+                "payment_instructions.read",
                 "financial_accounts.read",
                 "treasury.read",
                 "reports.read",
@@ -18655,6 +19276,7 @@
                 "disbursements.approve",
                 "disbursements.reverse",
                 "treasury.transfer",
+                "payment_instructions.manage",
                 "organization.manage",
                 "organization.branches.manage",
                 "organization.members.manage",
@@ -20598,6 +21220,7 @@
                       "expenses.read",
                       "disbursements.read",
                       "payment_methods.read",
+                      "payment_instructions.read",
                       "financial_accounts.read",
                       "treasury.read",
                       "reports.read",
@@ -20627,6 +21250,7 @@
                       "disbursements.approve",
                       "disbursements.reverse",
                       "treasury.transfer",
+                      "payment_instructions.manage",
                       "organization.manage",
                       "organization.branches.manage",
                       "organization.members.manage",
@@ -20781,6 +21405,7 @@
                   "expenses.read",
                   "disbursements.read",
                   "payment_methods.read",
+                  "payment_instructions.read",
                   "financial_accounts.read",
                   "treasury.read",
                   "reports.read",
@@ -20810,6 +21435,7 @@
                   "disbursements.approve",
                   "disbursements.reverse",
                   "treasury.transfer",
+                  "payment_instructions.manage",
                   "organization.manage",
                   "organization.branches.manage",
                   "organization.members.manage",
@@ -25204,6 +25830,246 @@
           "openingBalance",
           "openingBalanceDate",
           "isActive",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentInstruction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BANK_ACCOUNT",
+              "TRANSFER_KEY",
+              "WALLET",
+              "PAYMENT_LINK",
+              "OTHER"
+            ]
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "BANK_ACCOUNT"
+                  },
+                  "bankName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "accountKind": {
+                    "type": "string",
+                    "enum": [
+                      "SAVINGS",
+                      "CHECKING"
+                    ]
+                  },
+                  "accountNumber": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "holderName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "holderDocument": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "bankName",
+                  "accountKind",
+                  "accountNumber",
+                  "holderName",
+                  "holderDocument"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "TRANSFER_KEY"
+                  },
+                  "bankName": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "keyKind": {
+                    "type": "string",
+                    "enum": [
+                      "PHONE",
+                      "EMAIL",
+                      "DOCUMENT",
+                      "ALPHANUMERIC"
+                    ]
+                  },
+                  "keyValue": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "kind",
+                  "bankName",
+                  "keyKind",
+                  "keyValue"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "WALLET"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "phone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25
+                  }
+                },
+                "required": [
+                  "kind",
+                  "provider",
+                  "phone"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "PAYMENT_LINK"
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 300,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "url"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "OTHER"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "kind",
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "type": "object"
+          },
+          "preview": {
+            "type": "string"
+          },
+          "showInReminders": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "archivedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "details",
+          "preview",
+          "showInReminders",
+          "sortOrder",
+          "archivedAt",
           "createdAt",
           "updatedAt"
         ],
