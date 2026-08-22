@@ -1412,7 +1412,7 @@ solo comparten la palabra «aviso».
 
 | Dónde | Qué | Permiso |
 | --- | --- | --- |
-| `/config/cobranza` | La política: si se escribe, a qué horas y con qué plantilla | `messaging.read` · `messaging.settings.manage` |
+| `/config/cobranza` | La política: si se escribe, a qué horas y con qué **tres** plantillas | `messaging.read` · `messaging.settings.manage` |
 | `/config/plantillas` | Las plantillas y su estado en Meta | `whatsapp.templates.read` |
 | `/config/whatsapp` | Desde qué número sale: la cuenta de Meta del negocio | `whatsapp.settings.read` · `whatsapp.settings.manage` |
 | `/cartera/cobranza` | Lo enviado, a quién no se le escribe y el cupo, en dos pestañas | `messaging.read` |
@@ -1438,6 +1438,34 @@ sueltos no cuentan que el silencio pasa por la madrugada.
 `overdueTemplateKey` en `null` los vencidos no se avisan aunque la política esté encendida.
 Un `<select>` vacío se lee como «todavía no lo he elegido», así que el hueco se nombra con
 palabras debajo del control.
+
+### Un solo aviso de mora por deudor, y dos plantillas para decirlo
+
+Un cliente con tres facturas vencidas recibe **un mensaje**, no tres el mismo día. Baja el
+coste —cada plantilla que sale se paga— y sobre todo la presión sobre la calificación del
+número, que con la cuenta de plataforma es compartida entre todos los clientes.
+
+Eso obliga a **dos plantillas de mora**, y la pantalla tiene que explicar por qué:
+`overdueTemplateKey` sale cuando el deudor debe una sola factura y
+`overdueSummaryTemplateKey` cuando debe varias. Están separadas porque **Meta no
+pluraliza**, y con una sola saldría «tienes 1 facturas vencidas».
+
+**Dejar vacía la de resumen es válido, y por eso su hueco no va en ámbar.** Sin ella el
+aviso sale igual, con el total pero sin decir cuántas facturas son: se cae a la singular.
+Los otros dos huecos sí apagan su aviso, y esa diferencia es justo la que el color tiene
+que contar (§7) — degradar no es fallar.
+
+### El historial es mixto, y el enlace se decide por fila
+
+`entityType` viene `'receivable'` **o** `'contact'`, a propósito: el aviso agrupado no habla
+de una factura, así que apunta al deudor; los de «por vencer» y los anteriores a la
+agrupación siguen apuntando a la cuenta. **La historia no se reescribe**, así que las dos
+formas conviven para siempre.
+
+Mandarlo todo a cartera serviría un 404 en cuanto el id fuera de un contacto, así que
+`relatedEntity` ramifica — y **el rótulo cambia con el destino**: «Ver la cuenta» sobre un
+enlace a un contacto sería una promesa que el destino no cumple. Lo que no reconoce no
+enlaza a ninguna parte, como `notificationRoute` (§95.16).
 
 ### `SKIPPED` no es un error, y no va en rojo
 

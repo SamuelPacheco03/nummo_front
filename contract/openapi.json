@@ -14103,6 +14103,17 @@
                 "type": "null"
               }
             ]
+          },
+          "overdueSummaryTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -19831,6 +19842,16 @@
               }
             ]
           },
+          "overdueSummaryTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "updatedAt": {
             "anyOf": [
               {
@@ -19850,6 +19871,7 @@
           "quietEnd",
           "dueSoonTemplateKey",
           "overdueTemplateKey",
+          "overdueSummaryTemplateKey",
           "updatedAt"
         ],
         "additionalProperties": false

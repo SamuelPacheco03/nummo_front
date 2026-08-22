@@ -60,6 +60,7 @@ export function CollectionPolicyPage() {
   const [quietEnd, setQuietEnd] = useState('07:00')
   const [dueSoon, setDueSoon] = useState('')
   const [overdue, setOverdue] = useState('')
+  const [overdueSummary, setOverdueSummary] = useState('')
 
   useHydrateOnce(orgId, policy, (current) => {
     setEnabled(current.enabled)
@@ -67,6 +68,7 @@ export function CollectionPolicyPage() {
     setQuietEnd(current.quietEnd.slice(0, 5))
     setDueSoon(current.dueSoonTemplateKey ?? '')
     setOverdue(current.overdueTemplateKey ?? '')
+    setOverdueSummary(current.overdueSummaryTemplateKey ?? '')
   })
 
   if (!canRead) {
@@ -95,6 +97,7 @@ export function CollectionPolicyPage() {
           // Vacío es «sin plantilla», que apaga ese aviso. No es una cadena vacía.
           dueSoonTemplateKey: dueSoon || null,
           overdueTemplateKey: overdue || null,
+          overdueSummaryTemplateKey: overdueSummary || null,
         },
       })
       const data = saved.data as CollectionPolicy
@@ -105,6 +108,7 @@ export function CollectionPolicyPage() {
       setQuietEnd(data.quietEnd.slice(0, 5))
       setDueSoon(data.dueSoonTemplateKey ?? '')
       setOverdue(data.overdueTemplateKey ?? '')
+      setOverdueSummary(data.overdueSummaryTemplateKey ?? '')
       toast.success('Política guardada')
     } catch (err) {
       toastApiError(err, 'No se pudo guardar la política')
@@ -233,14 +237,39 @@ export function CollectionPolicyPage() {
                   onChange={setDueSoon}
                 />
 
+                {/*
+                  Dos plantillas para la mora, y la pantalla tiene que explicar
+                  por qué: **un deudor recibe un solo aviso** con todo lo que
+                  debe, no uno por factura. Están separadas porque Meta no
+                  pluraliza, y con una sola saldría «tienes 1 facturas vencidas».
+                */}
+                <p className="text-muted-foreground border-t pt-4 text-xs">
+                  A quien debe varias facturas se le escribe <strong>una sola vez</strong>, con el
+                  total. Por eso la mora lleva dos plantillas: Meta no pluraliza, y con una sola
+                  saldría «tienes 1 facturas vencidas».
+                </p>
+
                 <TemplateField
                   id="overdue"
-                  label="Aviso de que ya está vencido"
+                  label="Aviso de mora, cuando debe una sola factura"
                   emptyWarning="Sin plantilla, no se avisa de la mora aunque la cobranza esté encendida."
                   templates={templates}
                   value={overdue}
                   disabled={!writable}
                   onChange={setOverdue}
+                />
+
+                <TemplateField
+                  id="overdue-summary"
+                  label="Aviso de mora, cuando debe varias"
+                  /* Vacía **no es un error**: se cae a la singular con el total.
+                     Lo que se pierde es el conteo, y eso sí hay que decirlo. */
+                  emptyWarning="Sin plantilla se usa la de arriba, con el total pero sin decir cuántas facturas son."
+                  emptyTone="muted"
+                  templates={templates}
+                  value={overdueSummary}
+                  disabled={!writable}
+                  onChange={setOverdueSummary}
                 />
               </div>
 
@@ -292,6 +321,7 @@ function TemplateField({
   id,
   label,
   emptyWarning,
+  emptyTone = 'warning',
   templates,
   value,
   disabled,
@@ -300,6 +330,12 @@ function TemplateField({
   id: string
   label: string
   emptyWarning: string
+  /**
+   * Qué pesa el hueco. Sin plantilla de «por vencer» o de mora **ese aviso no
+   * sale**, y eso es ámbar; sin la de resumen el aviso sale igual, solo que sin
+   * el conteo — degradar no es fallar, así que no gasta el ámbar (§7).
+   */
+  emptyTone?: 'warning' | 'muted'
   templates: WhatsAppTemplate[]
   value: string
   disabled: boolean
@@ -329,7 +365,13 @@ function TemplateField({
       </NativeSelect>
 
       {value === '' ? (
-        <p className="text-warning-strong text-xs">{emptyWarning}</p>
+        <p
+          className={
+            emptyTone === 'warning' ? 'text-warning-strong text-xs' : 'text-muted-foreground text-xs'
+          }
+        >
+          {emptyWarning}
+        </p>
       ) : chosen && !chosen.canSend ? (
         <p className="text-warning-strong text-xs">
           Meta todavía no la aprobó, así que este aviso no sale hasta que lo haga.

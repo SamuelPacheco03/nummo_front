@@ -12,5 +12,6 @@ export interface CollectionPolicy {
   quietEnd: string;
   dueSoonTemplateKey: string | null;
   overdueTemplateKey: string | null;
+  overdueSummaryTemplateKey: string | null;
   updatedAt: string | null;
 }
