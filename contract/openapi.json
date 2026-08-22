@@ -3170,6 +3170,56 @@
         "x-required-feature": "whatsapp_outbound"
       }
     },
+    "/api/v1/organizations/{orgId}/messaging/collection-reminders/run": {
+      "post": {
+        "tags": [
+          "Mensajería"
+        ],
+        "summary": "Manda los recordatorios de cobro ahora, sin esperar a la hora",
+        "description": "El escaneo automático corre a la hora local de la organización y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.\n\n**Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.\n\nSigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.\n\nExige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lo que hizo la pasada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRemindersRun"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "messaging.send",
+        "x-required-feature": "whatsapp_outbound"
+      }
+    },
     "/api/v1/admin/playground/organizations": {
       "get": {
         "tags": [
@@ -19875,6 +19925,50 @@
           "overdueTemplateKey",
           "overdueSummaryTemplateKey",
           "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CollectionRemindersRun": {
+        "type": "object",
+        "properties": {
+          "dueSoon": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "overdue": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "queued": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "overdueDeferred": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "withoutPhone": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "dueSoon",
+          "overdue",
+          "queued",
+          "skipped",
+          "overdueDeferred",
+          "withoutPhone"
         ],
         "additionalProperties": false
       },

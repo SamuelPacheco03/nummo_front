@@ -1,5 +1,5 @@
 <!--
-  Copia literal de `HANDOFF-fase-12.md` del backend (nummo_api), commit 0dbc02c.
+  Copia literal de `HANDOFF-fase-12.md` del backend (nummo_api), commit 91c77ce.
 
   La versión que vivía aquí antes —la de `df3277e`— tenía siete errores
   comprobados contra el contrato: decía que BYO Meta era «fase 5, no lo
@@ -57,6 +57,7 @@ Todos bajo `/api/v1/organizations/{orgId}`. La columna «feature» es lo que dev
 | --- | --- | --- | --- |
 | `GET` | `/messaging/collection-policy` | `messaging.read` | |
 | `PUT` | `/messaging/collection-policy` | `messaging.settings.manage` | `whatsapp_outbound` |
+| `POST` | `/messaging/collection-reminders/run` | `messaging.send` | `whatsapp_outbound` |
 
 `CollectionPolicy`: `enabled`, `quietStart`, `quietEnd`, `dueSoonTemplateKey`,
 `overdueTemplateKey`, `overdueSummaryTemplateKey`, `updatedAt`.
@@ -72,6 +73,34 @@ separadas porque Meta no pluraliza y «tienes 1 facturas vencidas» saldría tal
 Dejar vacía la de resumen es válido: se cae a la singular con el total. No es un error que
 haya que forzar a corregir, pero sí conviene decir en la UI qué implica —el aviso pierde el
 conteo—, porque la de resumen es la que se quiere en el caso normal.
+
+#### «Enviar ahora» — **nuevo**
+
+Los recordatorios salen solos a la **hora local de la organización** y **una sola vez al
+día** (`reminderLocalTime` de los ajustes de notificaciones, por defecto `08:00`, el mismo
+que ya rige los avisos internos). Sin este botón, activar la cobranza a las once significa
+que el primer aviso sale mañana, y eso se siente roto.
+
+`POST /messaging/collection-reminders/run` devuelve conteos:
+
+```json
+{ "dueSoon": 0, "overdue": 1, "queued": 1, "skipped": 0,
+  "overdueDeferred": 0, "withoutPhone": 0 }
+```
+
+Tres cosas que cambian cómo se pinta:
+
+1. **Pulsarlo dos veces no duplica nada.** Lo garantiza la clave de deduplicación de cada
+   mensaje, no un bloqueo del cliente: no hace falta deshabilitar el botón «por si acaso»
+   ni avisar de que ya se pulsó. En la segunda pulsación verás `overdue: 1, queued: 0`, y
+   eso **no es un error** — significa «ya estaba dicho».
+2. **Encola, no envía.** El worker despacha después. El `200` no debe prometer «enviado»;
+   la fila aparece en `QUEUED` y pasa a `SENT` en segundos.
+3. **`withoutPhone` y `overdueDeferred` merecen mostrarse.** Son la respuesta a «pedí
+   avisar a treinta y salieron doce». Un cero sin explicación parece un fallo del sistema.
+
+Responde **409** `COLLECTION_POLICY_DISABLED` si la cobranza está apagada: el botón solo
+tiene sentido con la política activada.
 
 ### Consentimiento
 
@@ -215,6 +244,10 @@ esos mensajes no pasan por la cuota.
 
 - **No hay recargas de cupo.** Agotado es agotado hasta el próximo periodo. Los paquetes
   necesitan pasarela de pago, que no existe.
-- **No hay envío manual.** No hay «escríbele a este cliente ahora».
+- **No hay envío manual a un cliente concreto.** No existe «escríbele a este cliente
+  ahora». Lo que sí existe es disparar **la pasada completa** de recordatorios sin esperar
+  a la hora (ver «Enviar ahora»): decide el escaneo a quién le toca, no la pantalla. El
+  permiso `messaging.send` ya está, así que el día que se quiera lo individual no hará
+  falta tocar la autorización.
 - **No hay conversación entrante.** El webhook recibe estados de entrega y bajas; no hay
   bandeja de respuestas.
