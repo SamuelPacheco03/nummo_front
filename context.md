@@ -6752,3 +6752,48 @@ hay desajuste que reconciliar aunque el build sea de diciembre y la visita de en
 
 Y en el hilo de Numi, «Vence hace 4 días» pasó a «Venció».
 
+## 97.21. Numi se presenta como asesor, no como chat
+
+La sección decía «Conoce a Numi / La claridad que te estaba faltando», con un rótulo de «tu
+asistente financiero» y tres virtudes en viñetas pequeñas. Correcto y olvidable: se leía como
+**una IA con chat metida en una aplicación**, que es de lo que el visitante ya está cansado y
+lo contrario de lo que Numi es.
+
+Ahora la sección se ordena alrededor de **tres palabras grandes**:
+
+> **Entiende → Recomienda → Actúa**
+
+Explican a Numi entero sin obligar a leer un párrafo, y la tercera es la que ningún chat
+puede decir. Por eso «Actúa» es la única cuya línea no puede quedarse en algo que suene a
+conversación: nombra `receivables.create` y `messaging.send` en el idioma de quien lee —
+«crea el cobro, redacta el recordatorio y lo manda por WhatsApp».
+
+### El titular carga la oposición en el corte que ya existía
+
+> Tus números te dicen **qué pasó**. · Numi te ayuda a decidir **qué sigue**.
+
+La portada ya parte sus titulares en dos tonos y los venía usando como una frase que
+continúa. Aquí las dos mitades se **oponen** —pasado/futuro, dato/decisión—, así que el corte
+tipográfico deja de ser adorno y lleva significado. Es el mismo componente; lo que cambia es
+que ahora hay una razón para partir por ahí.
+
+### Por qué las palabras van fuera de la rejilla
+
+La sección es titular + panel a dos columnas. Las tres palabras **no** van dentro de la
+columna izquierda: a tamaño de titular no caben en media página, y apretadas junto al panel
+dejarían de ser palabras grandes, que es todo lo que tienen que ser. Van en su propia fila a
+lo ancho, debajo.
+
+Se separan con una **línea fina encima**, no con una que las una. «Del movimiento a la
+acción» ya usa una línea que conecta sus pasos, y repetir el mismo recurso los volvería la
+misma sección: aquello es una secuencia en el tiempo, esto son tres capacidades.
+
+### Dos cosas dichas, no calladas
+
+1. **«Asesor financiero» tiene un uso regulado en Colombia** (asesoría sobre productos de
+   inversión). Nummo no vende productos financieros, así que no está en ese terreno, pero es
+   la única frase de la sección que un abogado marcaría. Queda escrito para poder cambiarlo
+   por «tu mano derecha financiera» sin volver a razonarlo.
+2. **La acción de la tarjeta pasó de «Ver y recordar» a «Enviar recordatorio».** Nombra la
+   acción y no la pantalla: es «Actúa» ocurriendo dentro del panel, y hay que verlo.
+

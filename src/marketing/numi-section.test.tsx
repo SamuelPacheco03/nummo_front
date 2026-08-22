@@ -38,13 +38,33 @@ test('sin movimiento, la conversación se lee entera', () => {
   expect(screen.queryByText(/está escribiendo/i)).not.toBeInTheDocument()
 })
 
-test('explica qué hace Numi, que es a lo que vino la sección', () => {
+/*
+  Las tres palabras son el esqueleto de la sección, no un adorno: si alguna desaparece, lo
+  que queda es otra vez un chat con virtudes en viñetas. Van como encabezados porque a eso
+  equivalen — y así un lector de pantalla recorre la sección por ellas.
+*/
+test('las tres palabras son encabezados y están las tres', () => {
   conMovimientoReducido()
   render(<NumiSection cola={null} />)
 
-  expect(screen.getByText('Mira por ti')).toBeInTheDocument()
-  expect(screen.getByText('Prioriza')).toBeInTheDocument()
-  expect(screen.getByText('Actúa contigo')).toBeInTheDocument()
+  expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+    'Entiende',
+    'Recomienda',
+    'Actúa',
+  ])
+})
+
+/*
+  «Actúa» es la que separa a Numi de un chat, así que su línea no puede quedarse en algo
+  que suene a conversación: tiene que nombrar lo que Numi hace de verdad con
+  `receivables.create` y `messaging.send`.
+*/
+test('«Actúa» nombra acciones, no respuestas', () => {
+  conMovimientoReducido()
+  render(<NumiSection cola={null} />)
+
+  expect(screen.getByText(/crea el cobro, redacta el recordatorio y lo manda por whatsapp/i))
+    .toBeInTheDocument()
 })
 
 test('la acción lleva a crear cuenta, que es donde se prueba Numi de verdad', () => {
