@@ -7010,18 +7010,32 @@ saber cómo vas; esta sección prueba que además actúa.
 > Nummo sabe quién está por vencer y quién ya venció. Escribe por WhatsApp, con tu plantilla y
 > en tu horario. Un solo mensaje por persona, con todo lo que debe. Y si hay mora, la calcula.
 
-Cuatro frases, cuatro capacidades distintas del contrato: `dueSoon`/`overdue`, plantillas
-aprobadas por Meta más las horas de silencio, `overdueSummaryTemplateKey`, `interest-policies`.
-
 **Y es la única sección que estrena maquetación**: una fila de cuatro garantías bajo los pasos.
 
-> Antes y después del vencimiento · Un mensaje por persona, no uno por factura · Nunca fuera
-> de horario · La mora, calculada
+> Avisa antes de vencer, no solo después · Un solo mensaje, aunque deba cinco facturas · Nunca
+> a deshoras · Con los intereses ya calculados
 
 Son las objeciones de quien duda en automatizar cobros —«¿va a spamear a mis clientes?», «¿va
 a escribir a medianoche?», «¿me toca calcular intereses?»— contestadas antes de que las haga.
 Van como lista y no como párrafo porque se leen de un barrido: cuatro anclas, no una frase que
-hay que terminar.
+hay que terminar. Y están escritas **desde el lado del que recibe el mensaje**, no desde el
+ajuste que las produce: «un solo mensaje, aunque deba cinco facturas» es
+`overdueSummaryTemplateKey` contado donde duele.
+
+### El párrafo vende; las garantías tranquilizan
+
+La primera versión de este párrafo enumeraba «con tu plantilla y en tu horario, un solo mensaje
+por persona, y si hay mora la calcula» — o sea, **exactamente las cuatro garantías de abajo**.
+La sección decía su ficha técnica dos veces y en ningún momento decía por qué le importa a
+quien lee.
+
+Lo que le importa es que **cobrar es incómodo, no difícil**. Nadie deja de perseguir un pago
+porque le falte una herramienta: deja de hacerlo porque no quiere quedar de malo con alguien
+que le cae bien. Eso es lo que dice ahora el párrafo; los hechos viven abajo, donde
+tranquilizan en vez de repetirse.
+
+Es la trampa más fácil de esta portada y ya cayó dos veces (§97.22): un texto exacto no es
+todavía un texto que venda.
 
 ### «Producto» del navegador llevaba al problema
 

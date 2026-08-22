@@ -27,12 +27,17 @@ import { useSectionViewed } from './use-section-viewed'
  * después del vencimiento, `overdueSummaryTemplateKey` agrupa lo que debe cada persona en
  * un aviso, las horas de silencio de la organización son una ventana fuera de la cual no
  * se escribe a nadie, y `interest-policies` + `accrue-interest` causan la mora.
+ *
+ * **Están escritas desde el lado del que recibe el mensaje**, no desde el ajuste que las
+ * produce: quien duda en automatizar cobros no teme una configuración, teme quedar mal con
+ * un cliente. «Un solo mensaje, aunque deba cinco facturas» es el mismo hecho que
+ * `overdueSummaryTemplateKey` contado donde duele.
  */
 const GARANTIAS = [
-  'Antes y después del vencimiento',
-  'Un mensaje por persona, no uno por factura',
-  'Nunca fuera de horario',
-  'La mora, calculada',
+  'Avisa antes de vencer, no solo después',
+  'Un solo mensaje, aunque deba cinco facturas',
+  'Nunca a deshoras',
+  'Con los intereses ya calculados',
 ] as const
 
 /* El texto sale de `FLUJO`; aquí solo se decide con qué tono se pinta cada cuadro. */
@@ -57,16 +62,21 @@ export function AutomationSection({ cola }: { cola: Cola | null }) {
             la portada promete saber cómo vas, y esta sección es la prueba de que además
             actúa.
 
-            Cada frase es una capacidad distinta de `HANDOFF-whatsapp-cobranza.md`:
-            `dueSoon`/`overdue`, plantillas aprobadas por Meta más las horas de silencio,
-            `overdueSummaryTemplateKey` —que existe porque Meta no pluraliza y un deudor
-            recibe UN aviso con todo lo que debe—, e `interest-policies`.
+            **El párrafo vende; las garantías tranquilizan.** Hubo una versión donde este
+            párrafo enumeraba «con tu plantilla y en tu horario, un solo mensaje por
+            persona, y si hay mora la calcula» — o sea, exactamente las cuatro garantías de
+            abajo. La sección decía su ficha técnica dos veces y en ningún momento decía por
+            qué le importa a quien lee.
+
+            Lo que le importa es que **cobrar es incómodo**, no difícil. Nadie deja de
+            perseguir un pago porque le falte una herramienta: deja de hacerlo porque no
+            quiere quedar de malo. Eso es lo que va aquí; los hechos, abajo.
           */}
           <p className="mt-6 max-w-md text-base leading-relaxed text-sidebar-muted-foreground lg:mt-0">
-            Nummo sabe quién está por vencer y quién ya venció. Escribe por{' '}
-            <strong className="font-semibold text-sidebar-foreground">WhatsApp</strong>, con tu
-            plantilla y en tu horario. Un solo mensaje por persona, con todo lo que debe. Y si
-            hay mora, la calcula.
+            A nadie le gusta cobrar. Toca acordarse, escribir, insistir — y quedar de malo con
+            un cliente que te cae bien. Eso lo hace Nummo por ti, por{' '}
+            <strong className="font-semibold text-sidebar-foreground">WhatsApp</strong>, a
+            tiempo y sin que tengas que pedirlo.
           </p>
         </div>
 
