@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { BrandLockup } from '@/components/brand-mark'
 import { cn } from '@/lib/utils'
-import { Wordmark } from './brand'
 import type { Cola } from './signals'
 import { rutasApp } from './links'
+import { ThemeButton } from './theme-button'
 
 /**
  * La navegación flotante de la portada.
@@ -16,9 +16,10 @@ import { rutasApp } from './links'
  * del todo va limpia, sin borde ni fondo, para que el hero empiece en el borde de la
  * ventana y no debajo de una barra.
  *
- * **El selector de tema es el mismo componente que usa la consola**, y lee el mismo store:
- * quien tiene la app en oscuro no espera que la portada le dé un fogonazo blanco, ni al
- * revés. Es una preferencia de la persona, no de la página.
+ * **El interruptor de tema lee el mismo store que la consola**: quien tiene la app en
+ * oscuro no espera que la portada le dé un fogonazo blanco, ni al revés. Es una preferencia
+ * de la persona, no de la página. El mando sí es distinto —un botón y no el segmentado de
+ * tres—, y el porqué está en `theme-button.tsx`.
  */
 
 const ENLACES = [
@@ -27,7 +28,7 @@ const ENLACES = [
   { href: '#para-quien', texto: 'Para quién' },
 ] as const
 
-export function Nav({ cola }: { cola?: Cola | null }) {
+export function Nav({ cola, dark }: { cola?: Cola | null; dark: boolean }) {
   const [bajado, setBajado] = useState(false)
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export function Nav({ cola }: { cola?: Cola | null }) {
     >
       <nav className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
         <a href="/" className="rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
-          <Wordmark />
+          <BrandLockup textClassName="text-lg" markClassName="size-8" />
           <span className="sr-only">Nummo, inicio</span>
         </a>
 
@@ -64,8 +65,7 @@ export function Nav({ cola }: { cola?: Cola | null }) {
         </ul>
 
         <div className="ml-auto flex items-center gap-3 md:ml-0 sm:gap-4">
-          {/* Hereda su superficie (§11.2): la barra es clara u oscura según el tema. */}
-          <ThemeToggle className="hidden border-border bg-transparent sm:inline-flex" />
+          <ThemeButton dark={dark} />
           <a
             href={rutasApp.ingreso}
             onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'login' })}

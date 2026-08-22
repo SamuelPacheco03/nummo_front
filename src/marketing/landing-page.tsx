@@ -95,7 +95,7 @@ export function LandingPage() {
       style={paletteStyle(paletteById(paleta), dark ? 'dark' : 'light')}
     >
       <div className="min-h-dvh bg-background font-sans text-foreground">
-        <Nav cola={cola} />
+        <Nav cola={cola} dark={dark} />
         <main>
           <section ref={heroRef}>
             <Hero />
