@@ -2424,6 +2424,304 @@
         }
       }
     },
+    "/api/v1/admin/whatsapp/inbound-events/health": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Cuántas entregas de Meta hay en cada estado",
+        "description": "La respuesta a «¿se está procesando lo que llega?». `FAILED` creciendo significa que Meta manda algo que este despliegue ya no sabe leer — y el síntoma que ve el cliente es que sus mensajes se quedan en `SENT`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de la cola.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboundQueueHealth"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/whatsapp/inbound-events": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Las entregas del webhook de Meta, las más recientes primero",
+        "description": "La cola por la que entra todo lo que Meta dice: estados de entrega, veredictos de plantillas y bajas. Es global —cuando llega una entrega todavía no se sabe de qué organización es—, y por eso vive en la consola de plataforma y no en la de un cliente.\n\n**No devuelve el cuerpo del webhook.** Lleva teléfonos de deudores, que no son usuarios de Nummo; `shape` dice qué clase de evento era, que es lo que hace falta para diagnosticar.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PROCESSED",
+                "FAILED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entregas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminInboundEvent"
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page",
+                    "pageSize",
+                    "total",
+                    "totalPages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/whatsapp/inbound-events/retry": {
+      "post": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Devuelve a la cola todas las entregas fallidas",
+        "description": "Para después de arreglar lo que las rompía. Reinicia los intentos: dejarlas con los intentos gastados las haría fallar otra vez sin llegar a procesarse.\n\nSolo toca las `FAILED`. Reencolar una ya procesada la aplicaría dos veces.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuántas volvieron a la cola.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Requeued"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/whatsapp/inbound-events/{id}/retry": {
+      "post": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Devuelve una entrega fallida a la cola",
+        "description": "Responde **404** si no existe o si no estaba fallida: desde fuera son la misma respuesta útil — esa entrega no es reencolable.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reencolada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Requeued"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/whatsapp/templates": {
+      "get": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Las plantillas de la plataforma, con lo que dice Meta de cada una",
+        "description": "Son de Nummo y las comparten todas las organizaciones, así que aquí es donde tienen sentido: si Meta pausa una, se cae la cobranza de todos los clientes a la vez.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantillas de la plataforma.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplateList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/whatsapp/templates/sync": {
+      "post": {
+        "tags": [
+          "Platform admin"
+        ],
+        "summary": "Empuja el catálogo a Meta y trae de vuelta su estado",
+        "description": "Lo mismo que `scripts/ops/sync-whatsapp-templates.ts`, por si no hay terminal a mano. **Idempotente**: lo que ya está en Meta se refleja en vez de recrearse — recrear gastaría cupo de creación para recibir un rechazo por nombre duplicado.\n\nLo nuevo queda `PENDING` hasta que Meta lo revise. Una plantilla que falla no detiene a las demás: sale en `failed` con su motivo.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lo que hizo el sync.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformTemplateSync"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{orgId}/whatsapp/templates": {
       "get": {
         "tags": [
@@ -19463,6 +19761,144 @@
         ],
         "additionalProperties": false
       },
+      "InboundQueueHealth": {
+        "type": "object",
+        "properties": {
+          "PENDING": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "PROCESSED": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "FAILED": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "PENDING",
+          "PROCESSED",
+          "FAILED"
+        ],
+        "additionalProperties": false
+      },
+      "AdminInboundEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "phoneNumberId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PROCESSED",
+              "FAILED"
+            ]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shape": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "entries": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "fields",
+              "entries"
+            ],
+            "additionalProperties": false
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "availableAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "processedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "phoneNumberId",
+          "status",
+          "attempts",
+          "lastError",
+          "shape",
+          "receivedAt",
+          "availableAt",
+          "processedAt"
+        ],
+        "additionalProperties": false
+      },
+      "Requeued": {
+        "type": "object",
+        "properties": {
+          "requeued": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "requeued"
+        ],
+        "additionalProperties": false
+      },
       "WhatsAppTemplateList": {
         "type": "object",
         "properties": {
@@ -19564,6 +20000,48 @@
           "rejectedReason",
           "lastSyncedAt",
           "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "PlatformTemplateSync": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alreadyThere": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "templateKey": {
+                  "type": "string"
+                },
+                "error": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "templateKey",
+                "error"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "created",
+          "alreadyThere",
+          "failed"
         ],
         "additionalProperties": false
       },

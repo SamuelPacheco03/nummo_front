@@ -34,17 +34,23 @@ import type {
   GetApiV1AdminMarketingOverviewParams,
   GetApiV1AdminMarketingSourcesParams,
   GetApiV1AdminOrganizationsParams,
+  GetApiV1AdminWhatsappInboundEvents200,
+  GetApiV1AdminWhatsappInboundEventsParams,
+  InboundQueueHealth,
   MarketingFunnel,
   MarketingOverview,
   MarketingSources,
   PlanDto,
+  PlatformTemplateSync,
+  Requeued,
   SavePlanInput,
   SavePlanResult,
   SendTestMessageInput,
   SetOrganizationStatusInput,
   SetOverridesInput,
   WhatsAppSendOutput,
-  WhatsAppStatusOutput
+  WhatsAppStatusOutput,
+  WhatsAppTemplateList
 } from '../../model';
 
 import { customFetch } from '../../../http-client';
@@ -1387,4 +1393,647 @@ export const usePostApiV1AdminWhatsappTestMessage = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getPostApiV1AdminWhatsappTestMessageMutationOptions(options), queryClient);
+    }
+    export type getApiV1AdminWhatsappInboundEventsHealthResponse200 = {
+  data: InboundQueueHealth
+  status: 200
+}
+
+export type getApiV1AdminWhatsappInboundEventsHealthResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminWhatsappInboundEventsHealthResponseSuccess = (getApiV1AdminWhatsappInboundEventsHealthResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminWhatsappInboundEventsHealthResponseError = (getApiV1AdminWhatsappInboundEventsHealthResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminWhatsappInboundEventsHealthResponse = (getApiV1AdminWhatsappInboundEventsHealthResponseSuccess | getApiV1AdminWhatsappInboundEventsHealthResponseError)
+
+export const getGetApiV1AdminWhatsappInboundEventsHealthUrl = () => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/inbound-events/health`
+}
+
+/**
+ * La respuesta a «¿se está procesando lo que llega?». `FAILED` creciendo significa que Meta manda algo que este despliegue ya no sabe leer — y el síntoma que ve el cliente es que sus mensajes se quedan en `SENT`.
+ * @summary Cuántas entregas de Meta hay en cada estado
+ */
+export const getApiV1AdminWhatsappInboundEventsHealth = async ( options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminWhatsappInboundEventsHealthResponse> => {
+
+  return customFetch<getApiV1AdminWhatsappInboundEventsHealthResponse>(getGetApiV1AdminWhatsappInboundEventsHealthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminWhatsappInboundEventsHealthQueryKey = () => {
+    return [
+    `/api/v1/admin/whatsapp/inbound-events/health`
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminWhatsappInboundEventsHealthQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminWhatsappInboundEventsHealthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>> = ({ signal }) => getApiV1AdminWhatsappInboundEventsHealth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminWhatsappInboundEventsHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>>
+export type GetApiV1AdminWhatsappInboundEventsHealthQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminWhatsappInboundEventsHealth<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappInboundEventsHealth<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappInboundEventsHealth<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Cuántas entregas de Meta hay en cada estado
+ */
+
+export function useGetApiV1AdminWhatsappInboundEventsHealth<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEventsHealth>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminWhatsappInboundEventsHealthQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1AdminWhatsappInboundEventsResponse200 = {
+  data: GetApiV1AdminWhatsappInboundEvents200
+  status: 200
+}
+
+export type getApiV1AdminWhatsappInboundEventsResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminWhatsappInboundEventsResponseSuccess = (getApiV1AdminWhatsappInboundEventsResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminWhatsappInboundEventsResponseError = (getApiV1AdminWhatsappInboundEventsResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminWhatsappInboundEventsResponse = (getApiV1AdminWhatsappInboundEventsResponseSuccess | getApiV1AdminWhatsappInboundEventsResponseError)
+
+export const getGetApiV1AdminWhatsappInboundEventsUrl = (params?: GetApiV1AdminWhatsappInboundEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/whatsapp/inbound-events?${stringifiedParams}` : `/api/v1/admin/whatsapp/inbound-events`
+}
+
+/**
+ * La cola por la que entra todo lo que Meta dice: estados de entrega, veredictos de plantillas y bajas. Es global —cuando llega una entrega todavía no se sabe de qué organización es—, y por eso vive en la consola de plataforma y no en la de un cliente.
+ *
+ * **No devuelve el cuerpo del webhook.** Lleva teléfonos de deudores, que no son usuarios de Nummo; `shape` dice qué clase de evento era, que es lo que hace falta para diagnosticar.
+ * @summary Las entregas del webhook de Meta, las más recientes primero
+ */
+export const getApiV1AdminWhatsappInboundEvents = async (params?: GetApiV1AdminWhatsappInboundEventsParams, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminWhatsappInboundEventsResponse> => {
+
+  return customFetch<getApiV1AdminWhatsappInboundEventsResponse>(getGetApiV1AdminWhatsappInboundEventsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminWhatsappInboundEventsQueryKey = (params?: GetApiV1AdminWhatsappInboundEventsParams,) => {
+    return [
+    `/api/v1/admin/whatsapp/inbound-events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminWhatsappInboundEventsQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError = ErrorResponse>(params?: GetApiV1AdminWhatsappInboundEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminWhatsappInboundEventsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>> = ({ signal }) => getApiV1AdminWhatsappInboundEvents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminWhatsappInboundEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>>
+export type GetApiV1AdminWhatsappInboundEventsQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminWhatsappInboundEvents<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError = ErrorResponse>(
+ params: undefined |  GetApiV1AdminWhatsappInboundEventsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappInboundEvents<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminWhatsappInboundEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappInboundEvents<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminWhatsappInboundEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Las entregas del webhook de Meta, las más recientes primero
+ */
+
+export function useGetApiV1AdminWhatsappInboundEvents<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError = ErrorResponse>(
+ params?: GetApiV1AdminWhatsappInboundEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappInboundEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminWhatsappInboundEventsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type postApiV1AdminWhatsappInboundEventsRetryResponse200 = {
+  data: Requeued
+  status: 200
+}
+
+export type postApiV1AdminWhatsappInboundEventsRetryResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1AdminWhatsappInboundEventsRetryResponseSuccess = (postApiV1AdminWhatsappInboundEventsRetryResponse200) & {
+  headers: Headers;
+};
+export type postApiV1AdminWhatsappInboundEventsRetryResponseError = (postApiV1AdminWhatsappInboundEventsRetryResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1AdminWhatsappInboundEventsRetryResponse = (postApiV1AdminWhatsappInboundEventsRetryResponseSuccess | postApiV1AdminWhatsappInboundEventsRetryResponseError)
+
+export const getPostApiV1AdminWhatsappInboundEventsRetryUrl = () => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/inbound-events/retry`
+}
+
+/**
+ * Para después de arreglar lo que las rompía. Reinicia los intentos: dejarlas con los intentos gastados las haría fallar otra vez sin llegar a procesarse.
+ *
+ * Solo toca las `FAILED`. Reencolar una ya procesada la aplicaría dos veces.
+ * @summary Devuelve a la cola todas las entregas fallidas
+ */
+export const postApiV1AdminWhatsappInboundEventsRetry = async ( options?: Parameters<typeof customFetch>[1]): Promise<postApiV1AdminWhatsappInboundEventsRetryResponse> => {
+
+  return customFetch<postApiV1AdminWhatsappInboundEventsRetryResponse>(getPostApiV1AdminWhatsappInboundEventsRetryUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1AdminWhatsappInboundEventsRetryMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsRetry>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsRetry>>, TError,void, TContext> => {
+
+const mutationKey = ['postApiV1AdminWhatsappInboundEventsRetry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsRetry>>, void> = () => {
+
+
+          return  postApiV1AdminWhatsappInboundEventsRetry(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1AdminWhatsappInboundEventsRetryMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsRetry>>>
+
+    export type PostApiV1AdminWhatsappInboundEventsRetryMutationError = ErrorResponse
+
+    /**
+ * @summary Devuelve a la cola todas las entregas fallidas
+ */
+export const usePostApiV1AdminWhatsappInboundEventsRetry = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsRetry>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsRetry>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostApiV1AdminWhatsappInboundEventsRetryMutationOptions(options), queryClient);
+    }
+    export type postApiV1AdminWhatsappInboundEventsIdRetryResponse200 = {
+  data: Requeued
+  status: 200
+}
+
+export type postApiV1AdminWhatsappInboundEventsIdRetryResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1AdminWhatsappInboundEventsIdRetryResponseSuccess = (postApiV1AdminWhatsappInboundEventsIdRetryResponse200) & {
+  headers: Headers;
+};
+export type postApiV1AdminWhatsappInboundEventsIdRetryResponseError = (postApiV1AdminWhatsappInboundEventsIdRetryResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1AdminWhatsappInboundEventsIdRetryResponse = (postApiV1AdminWhatsappInboundEventsIdRetryResponseSuccess | postApiV1AdminWhatsappInboundEventsIdRetryResponseError)
+
+export const getPostApiV1AdminWhatsappInboundEventsIdRetryUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/inbound-events/${id}/retry`
+}
+
+/**
+ * Responde **404** si no existe o si no estaba fallida: desde fuera son la misma respuesta útil — esa entrega no es reencolable.
+ * @summary Devuelve una entrega fallida a la cola
+ */
+export const postApiV1AdminWhatsappInboundEventsIdRetry = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1AdminWhatsappInboundEventsIdRetryResponse> => {
+
+  return customFetch<postApiV1AdminWhatsappInboundEventsIdRetryResponse>(getPostApiV1AdminWhatsappInboundEventsIdRetryUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1AdminWhatsappInboundEventsIdRetryMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsIdRetry>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsIdRetry>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['postApiV1AdminWhatsappInboundEventsIdRetry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsIdRetry>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postApiV1AdminWhatsappInboundEventsIdRetry(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1AdminWhatsappInboundEventsIdRetryMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsIdRetry>>>
+
+    export type PostApiV1AdminWhatsappInboundEventsIdRetryMutationError = ErrorResponse
+
+    /**
+ * @summary Devuelve una entrega fallida a la cola
+ */
+export const usePostApiV1AdminWhatsappInboundEventsIdRetry = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsIdRetry>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1AdminWhatsappInboundEventsIdRetry>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getPostApiV1AdminWhatsappInboundEventsIdRetryMutationOptions(options), queryClient);
+    }
+    export type getApiV1AdminWhatsappTemplatesResponse200 = {
+  data: WhatsAppTemplateList
+  status: 200
+}
+
+export type getApiV1AdminWhatsappTemplatesResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1AdminWhatsappTemplatesResponseSuccess = (getApiV1AdminWhatsappTemplatesResponse200) & {
+  headers: Headers;
+};
+export type getApiV1AdminWhatsappTemplatesResponseError = (getApiV1AdminWhatsappTemplatesResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1AdminWhatsappTemplatesResponse = (getApiV1AdminWhatsappTemplatesResponseSuccess | getApiV1AdminWhatsappTemplatesResponseError)
+
+export const getGetApiV1AdminWhatsappTemplatesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/templates`
+}
+
+/**
+ * Son de Nummo y las comparten todas las organizaciones, así que aquí es donde tienen sentido: si Meta pausa una, se cae la cobranza de todos los clientes a la vez.
+ * @summary Las plantillas de la plataforma, con lo que dice Meta de cada una
+ */
+export const getApiV1AdminWhatsappTemplates = async ( options?: Parameters<typeof customFetch>[1]): Promise<getApiV1AdminWhatsappTemplatesResponse> => {
+
+  return customFetch<getApiV1AdminWhatsappTemplatesResponse>(getGetApiV1AdminWhatsappTemplatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1AdminWhatsappTemplatesQueryKey = () => {
+    return [
+    `/api/v1/admin/whatsapp/templates`
+    ] as const;
+    }
+
+
+export const getGetApiV1AdminWhatsappTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1AdminWhatsappTemplatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>> = ({ signal }) => getApiV1AdminWhatsappTemplates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1AdminWhatsappTemplatesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>>
+export type GetApiV1AdminWhatsappTemplatesQueryError = ErrorResponse
+
+
+export function useGetApiV1AdminWhatsappTemplates<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappTemplates<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1AdminWhatsappTemplates<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Las plantillas de la plataforma, con lo que dice Meta de cada una
+ */
+
+export function useGetApiV1AdminWhatsappTemplates<TData = Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminWhatsappTemplates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1AdminWhatsappTemplatesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type postApiV1AdminWhatsappTemplatesSyncResponse200 = {
+  data: PlatformTemplateSync
+  status: 200
+}
+
+export type postApiV1AdminWhatsappTemplatesSyncResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1AdminWhatsappTemplatesSyncResponseSuccess = (postApiV1AdminWhatsappTemplatesSyncResponse200) & {
+  headers: Headers;
+};
+export type postApiV1AdminWhatsappTemplatesSyncResponseError = (postApiV1AdminWhatsappTemplatesSyncResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1AdminWhatsappTemplatesSyncResponse = (postApiV1AdminWhatsappTemplatesSyncResponseSuccess | postApiV1AdminWhatsappTemplatesSyncResponseError)
+
+export const getPostApiV1AdminWhatsappTemplatesSyncUrl = () => {
+
+
+
+
+  return `/api/v1/admin/whatsapp/templates/sync`
+}
+
+/**
+ * Lo mismo que `scripts/ops/sync-whatsapp-templates.ts`, por si no hay terminal a mano. **Idempotente**: lo que ya está en Meta se refleja en vez de recrearse — recrear gastaría cupo de creación para recibir un rechazo por nombre duplicado.
+ *
+ * Lo nuevo queda `PENDING` hasta que Meta lo revise. Una plantilla que falla no detiene a las demás: sale en `failed` con su motivo.
+ * @summary Empuja el catálogo a Meta y trae de vuelta su estado
+ */
+export const postApiV1AdminWhatsappTemplatesSync = async ( options?: Parameters<typeof customFetch>[1]): Promise<postApiV1AdminWhatsappTemplatesSyncResponse> => {
+
+  return customFetch<postApiV1AdminWhatsappTemplatesSyncResponse>(getPostApiV1AdminWhatsappTemplatesSyncUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1AdminWhatsappTemplatesSyncMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappTemplatesSync>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappTemplatesSync>>, TError,void, TContext> => {
+
+const mutationKey = ['postApiV1AdminWhatsappTemplatesSync'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1AdminWhatsappTemplatesSync>>, void> = () => {
+
+
+          return  postApiV1AdminWhatsappTemplatesSync(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1AdminWhatsappTemplatesSyncMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1AdminWhatsappTemplatesSync>>>
+
+    export type PostApiV1AdminWhatsappTemplatesSyncMutationError = ErrorResponse
+
+    /**
+ * @summary Empuja el catálogo a Meta y trae de vuelta su estado
+ */
+export const usePostApiV1AdminWhatsappTemplatesSync = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1AdminWhatsappTemplatesSync>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1AdminWhatsappTemplatesSync>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostApiV1AdminWhatsappTemplatesSyncMutationOptions(options), queryClient);
     }
