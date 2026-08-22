@@ -2,7 +2,8 @@ import { useBranches, useMembers } from '@/features/config/hooks'
 import { useContacts } from '@/features/contacts/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCapabilities } from './hooks'
-import { isPeriodicLimit, limitLabel } from './labels'
+import type { LimitMap } from '@/api/generated/model'
+import { isPeriodicLimit, LIMIT_KEYS, limitLabel } from './labels'
 
 /*
   Vive aparte de `hooks.ts` y no dentro por una razón de peso, literalmente: el
@@ -54,22 +55,35 @@ export function useLimitUsage(): { limits: LimitUsage[]; period: string | undefi
   const max = capabilities?.limits
   const usage = capabilities?.usage
 
-  const row = (key: keyof NonNullable<typeof max>, used: number | null): LimitUsage => ({
-    key,
-    label: limitLabel(key),
-    used,
-    max: max ? max[key] : null,
-    periodic: isPeriodicLimit(key),
-  })
+  /**
+   * De dónde sale el consumo de **cada** tope.
+   *
+   * Va tipado como `Record<keyof LimitMap, …>` a propósito: es lo que obliga a
+   * decir de dónde viene el consumo de un tope nuevo en vez de dejarlo fuera en
+   * silencio. Pasó con `whatsapp_messages_monthly` — el tope llegó al contrato y
+   * a las tarjetas de plan, pero la lista de medidores se escribía aparte y
+   * seguía teniendo cinco entradas, así que el cupo de cobranza no se veía en
+   * ninguna parte.
+   */
+  const used: Record<keyof LimitMap, number | null> = {
+    max_contacts: contactsLoading ? null : activeContacts,
+    max_users: membersLoading ? null : members.length,
+    max_branches: branchesLoading ? null : branches.length,
+    ai_messages_monthly: usage?.ai_messages_monthly ?? null,
+    voice_minutes_monthly: usage?.voice_minutes_monthly ?? null,
+    whatsapp_messages_monthly: usage?.whatsapp_messages_monthly ?? null,
+  }
 
   return {
     period: capabilities?.period,
-    limits: [
-      row('max_contacts', contactsLoading ? null : activeContacts),
-      row('max_users', membersLoading ? null : members.length),
-      row('max_branches', branchesLoading ? null : branches.length),
-      row('ai_messages_monthly', usage?.ai_messages_monthly ?? null),
-      row('voice_minutes_monthly', usage?.voice_minutes_monthly ?? null),
-    ],
+    // Se recorre `LIMIT_KEYS`, que es la lista que ya usan las tarjetas de plan:
+    // una segunda enumeración aquí es exactamente lo que se acaba de romper.
+    limits: LIMIT_KEYS.map((key) => ({
+      key,
+      label: limitLabel(key),
+      used: used[key],
+      max: max ? max[key] : null,
+      periodic: isPeriodicLimit(key),
+    })),
   }
 }
