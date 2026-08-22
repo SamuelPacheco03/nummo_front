@@ -7048,3 +7048,17 @@ cuánto cuesta empezar.
 nombre, y nada más. El día que pida un cuarto, esa frase deja de ser verdad — está anotado en
 el propio componente para que quien toque el registro lo vea.
 
+## 97.25. El pie dice quién publica esto
+
+`Un producto de SiriusTech S.A.S. · © 2026`
+
+Va en el pie y no en otra parte porque es lo primero que busca quien quiere saber **a quién le
+está entregando sus datos financieros**, y esta portada no tiene «Sobre nosotros» ni política
+de privacidad: el pie es el único sitio donde puede mirar. Comparte línea con el © a propósito
+— son la misma pregunta contestada dos veces: quién responde por esto.
+
+> **Lo que sigue faltando ahí.** El banner de consentimiento hace afirmaciones concretas sobre
+> qué se mide y quién lo mide (§97.20), y no hay ninguna página donde leerlas. Nombrar a la
+> empresa cierra la mitad de esa deuda; la otra mitad es una política de privacidad, que no es
+> texto que se pueda inventar desde aquí.
+
