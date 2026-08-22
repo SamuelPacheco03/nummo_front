@@ -143,8 +143,14 @@ test('un precio en null es «consultar», no gratis', () => {
   // acompaña, más pequeño.
   expect(within(screen.getByRole('group', { name: 'Free' })).getByText('$0')).toBeInTheDocument()
   const basico = screen.getByRole('group', { name: 'Básico' })
-  expect(within(basico).getByText('Consultar')).toBeInTheDocument()
-  expect(within(basico).getByText('Todavía sin precio publicado.')).toBeInTheDocument()
+  /*
+    Se vigila la REGLA, no el copy: un plan sin tarifa fijada no puede leerse como gratis
+    ni como cero. La forma de decirlo cambió al compartir la tarjeta con la portada; el
+    fondo no.
+  */
+  expect(within(basico).getByText('Precio personalizado')).toBeInTheDocument()
+  expect(within(basico).queryByText('$0')).not.toBeInTheDocument()
+  expect(within(basico).getByText(/se ajusta a tu operación/i)).toBeInTheDocument()
 })
 
 test('el plan contratado se distingue de los demás', () => {

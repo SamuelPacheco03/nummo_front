@@ -41,8 +41,14 @@ test('un plan sin tarifa dice «a consultar», no cero ni gratis', async () => {
   render(<PricingSection cola={null} />)
 
   expect(await screen.findByText('Gratis')).toBeInTheDocument()
-  expect(screen.getByText('A consultar')).toBeInTheDocument()
+  /*
+    Lo que se vigila es la REGLA, no el copy: un plan sin tarifa no puede leerse como
+    gratis ni como cero. La forma de decirlo cambió con el rediseño; el fondo no.
+  */
+  expect(screen.getByText('Precio personalizado')).toBeInTheDocument()
+  expect(screen.getByText(/se ajusta a tu operación/i)).toBeInTheDocument()
   expect(screen.queryByText('$0')).not.toBeInTheDocument()
+  expect(screen.queryByText(/^gratis$/i)).toBeInTheDocument()
 })
 
 /* WhatsApp en el plan gratis viene a cero A PROPÓSITO: es un tope, no la ausencia de uno. */

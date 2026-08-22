@@ -1,9 +1,6 @@
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import {
   ArrowRight,
-  Check,
-  CheckCircle2,
-  Circle,
   MapPin,
   MessageCircle,
   MessageSquareText,
@@ -14,6 +11,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import type { FeatureMap, LimitMap, PublicPlan } from '@/api/generated/model'
 import { PageHeader } from '@/components/page-header'
+import { PlanCard } from '@/components/plan-card'
 import { Panel } from '@/components/panel'
 import { Button } from '@/components/ui/button'
 import {
@@ -165,15 +163,17 @@ function UpgradeDialog({
 /**
  * Un plan del catálogo, como tarjeta y no como columna de tabla.
  *
- * Una tabla comparativa de cuatro planes por once filas no cabe en 360 px sin
- * desplazarse en horizontal, que es el gesto que §11.1.3 prohíbe para lo que hay
- * que leer entero. Apilada se lee de arriba abajo y en escritorio son columnas.
+ * Una tabla comparativa de cuatro planes por once filas no cabe en 360 px sin desplazarse
+ * en horizontal, que es el gesto que §11.1.3 prohíbe para lo que hay que leer entero.
+ * Apilada se lee de arriba abajo y en escritorio son columnas.
  *
- * **El plan contratado es el que destaca**, y no hay ningún «Recomendado»: el
- * contrato no publica esa señal, y ponerla aquí sería una decisión de precio
- * escrita en el front (§70: no se inventa lo que el API no firma).
+ * La tarjeta es **la misma que usa la portada** (`components/plan-card.tsx`): aquí solo se
+ * traduce la forma del contrato —mapas— a la que ella espera.
+ *
+ * **El plan contratado es el que destaca, y no hay ningún «Recomendado»**: el contrato no
+ * publica esa señal, y ponerla aquí sería una decisión de precio escrita en el front (§70).
  */
-function PlanCard({
+function PlanDelCatalogo({
   plan,
   features,
   isCurrent,
@@ -185,102 +185,38 @@ function PlanCard({
   isCurrent: boolean
   onUpgrade: () => void
 }) {
-  const titleId = useId()
   const price = priceLabel(plan.price)
 
   return (
-    // Agrupada y con nombre: un lector de pantalla anuncia «Básico» al entrar en
-    // la tarjeta, en vez de leer once cifras sueltas sin saber de quién son.
-    <div
-      role="group"
-      aria-labelledby={titleId}
-      className={cn(
-        'relative flex flex-col gap-4 rounded-lg border p-4 pt-5 transition-shadow',
-        isCurrent
-          ? 'border-brand/60 bg-brand/[0.04] shadow-sm'
-          : 'bg-card hover:border-border/80 hover:shadow-sm',
-      )}
-    >
-      {/* Montada sobre el borde: marca la tarjeta sin robarle una línea al contenido. */}
-      {isCurrent && (
-        <span className="bg-brand text-brand-foreground absolute -top-2.5 left-4 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.68rem] font-medium">
-          <Check aria-hidden className="size-3" />
-          Tu plan
-        </span>
-      )}
-
-      <div className="space-y-1">
-        <h3 id={titleId} className="font-display text-base font-semibold">
-          {plan.name}
-        </h3>
-        <p className="flex items-baseline gap-1.5">
-          <span className="nums font-display text-2xl font-semibold tracking-tight">
-            {price.amount}
-          </span>
-          {price.per && <span className="text-muted-foreground text-sm">{price.per}</span>}
-        </p>
-        {!price.per && (
-          <p className="text-muted-foreground text-xs">Todavía sin precio publicado.</p>
-        )}
-        {plan.description && (
-          <p className="text-muted-foreground pt-1 text-xs leading-relaxed">{plan.description}</p>
-        )}
-      </div>
-
-      <ul className="space-y-1.5 border-t pt-4 text-sm">
-        {LIMIT_KEYS.map((key) => {
-          const Icon = LIMIT_ICONS[key]
-          return (
-            <li key={key} className="flex items-start justify-between gap-3">
-              <span className="text-muted-foreground flex min-w-0 items-start gap-2">
-                <Icon aria-hidden className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0">{capitalize(limitLabel(key))}</span>
-              </span>
-              <span className="nums shrink-0 font-medium">{maxLabel(plan.limits[key])}</span>
-            </li>
-          )
-        })}
-      </ul>
-
-      {features.length > 0 && (
-        <ul className="space-y-1.5 border-t pt-4 text-sm">
-          {features.map((key) => {
-            const included = plan.features[key]
-            return (
-              <li
-                key={key}
-                className={cn(
-                  'flex items-start gap-2',
-                  included ? 'text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                {included ? (
-                  <CheckCircle2 aria-hidden className="text-brand mt-0.5 size-4 shrink-0" />
-                ) : (
-                  <Circle aria-hidden className="mt-0.5 size-4 shrink-0 opacity-40" />
-                )}
-                <span className="min-w-0">{featureTitle(key)}</span>
-                <span className="sr-only">{included ? 'incluido' : 'no incluido'}</span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-
-      {/* `mt-auto`: los pies quedan alineados aunque las descripciones midan distinto. */}
-      <div className="mt-auto pt-1">
-        {isCurrent ? (
-          <p className="text-muted-foreground border-brand/30 rounded-md border border-dashed py-2 text-center text-sm">
+    <PlanCard
+      nombre={plan.name}
+      precio={price.per ? { monto: price.amount, porMes: true } : null}
+      descripcion={plan.description}
+      topes={LIMIT_KEYS.map((key) => ({
+        key,
+        label: capitalize(limitLabel(key)),
+        valor: maxLabel(plan.limits[key]),
+      }))}
+      funciones={features.map((key) => ({
+        key,
+        label: featureTitle(key),
+        included: Boolean(plan.features[key]),
+      }))}
+      destacado={isCurrent}
+      insignia={isCurrent ? { texto: 'Tu plan', tono: 'actual' } : null}
+      accion={
+        isCurrent ? (
+          <p className="rounded-full border border-dashed border-brand/30 py-2.5 text-center text-sm text-muted-foreground">
             Tu plan actual
           </p>
         ) : (
-          <Button variant="outline" className="w-full" onClick={onUpgrade}>
+          <Button variant="outline" className="w-full rounded-full" onClick={onUpgrade}>
             Consultar {plan.name}
             <ArrowRight aria-hidden className="size-4" />
           </Button>
-        )}
-      </div>
-    </div>
+        )
+      }
+    />
   )
 }
 
@@ -369,7 +305,7 @@ export function PlanPage() {
           ) : (
             <div className="grid items-stretch gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
               {plans.map((plan) => (
-                <PlanCard
+                <PlanDelCatalogo
                   key={plan.code}
                   plan={plan}
                   features={features}

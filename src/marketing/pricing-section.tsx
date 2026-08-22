@@ -1,16 +1,9 @@
-import { Check, Minus, RefreshCw } from 'lucide-react'
+import { ArrowRight, RefreshCw } from 'lucide-react'
 import { getApiV1PublicPricing } from '@/api/generated/endpoints/public/public'
 import type { PricingPlan } from '@/api/generated/model'
-import { cn } from '@/lib/utils'
+import { PlanCard } from '@/components/plan-card'
 import { SectionHeading } from './section-heading'
-import {
-  clavesDeFunciones,
-  etiquetaDeFuncion,
-  incluye,
-  leerPrecio,
-  leerTope,
-  ordenarPlanes,
-} from './pricing'
+import { clavesDeFunciones, etiquetaDeFuncion, incluye, leerPrecio, leerTope, ordenarPlanes } from './pricing'
 import type { Cola } from './signals'
 import { useRecursoPublico } from './use-public-data'
 import { useSectionViewed } from './use-section-viewed'
@@ -31,101 +24,6 @@ async function cargarPrecios() {
   const res = await getApiV1PublicPricing()
   if (res.status !== 200) throw new Error('precios no disponibles')
   return res.data.plans
-}
-
-function Precio({ plan }: { plan: PricingPlan }) {
-  const { texto, consultar } = leerPrecio(plan.price)
-  return (
-    <p
-      className={cn(
-        'mt-3 text-3xl font-semibold tracking-tight tabular-nums',
-        consultar ? 'text-muted-foreground' : 'text-foreground',
-      )}
-    >
-      {texto}
-      {!consultar && plan.price && Number(plan.price.amount) > 0 && (
-        <span className="ml-1 text-sm font-normal text-muted-foreground">/mes</span>
-      )}
-    </p>
-  )
-}
-
-function TarjetaPlan({
-  plan,
-  claves,
-  planes,
-  destacado,
-  onElegir,
-}: {
-  plan: PricingPlan
-  claves: readonly string[]
-  planes: readonly PricingPlan[]
-  destacado: boolean
-  onElegir: () => void
-}) {
-  return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-col rounded-2xl p-6',
-        destacado ? 'bg-chat-bubble' : 'border border-border bg-card',
-      )}
-    >
-      <p className="text-sm font-semibold text-foreground">{plan.name}</p>
-      <Precio plan={plan} />
-      {plan.description && (
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{plan.description}</p>
-      )}
-
-      {plan.limits.length > 0 && (
-        <dl className="mt-5 space-y-1.5 border-t border-border pt-5 text-sm">
-          {plan.limits.map((l) => (
-            <div key={l.key} className="flex items-baseline justify-between gap-3">
-              <dt className="text-muted-foreground">{l.label}</dt>
-              <dd className="shrink-0 font-medium text-foreground tabular-nums">{leerTope(l)}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-
-      {claves.length > 0 && (
-        <ul className="mt-5 space-y-2 border-t border-border pt-5 text-sm">
-          {claves.map((key) => {
-            const estado = incluye(plan, key)
-            /*
-              `undefined` no se pinta como «no»: el backend no anuncia esa función para
-              este plan, y decir que no la tiene sería afirmar algo que nadie dijo.
-            */
-            if (estado === undefined) return null
-            return (
-              <li key={key} className="flex items-start gap-2">
-                {estado ? (
-                  <Check className="mt-0.5 size-4 shrink-0 text-success-strong" aria-hidden />
-                ) : (
-                  <Minus className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                )}
-                <span className={estado ? 'text-foreground' : 'text-muted-foreground'}>
-                  {etiquetaDeFuncion(planes, key)}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-
-      <a
-        href={rutasApp.registro}
-        onClick={onElegir}
-        className={cn(
-          'mt-6 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
-          destacado
-            ? 'bg-cta text-cta-foreground hover:opacity-90'
-            : 'border border-border text-foreground hover:bg-accent',
-        )}
-      >
-        Empezar
-      </a>
-    </div>
-  )
 }
 
 export function PricingSection({ cola }: { cola: Cola | null }) {
@@ -187,23 +85,55 @@ function Planes({ planes, cola }: { planes: PricingPlan[]; cola: Cola | null }) 
   const ordenados = ordenarPlanes(planes)
   const claves = clavesDeFunciones(ordenados)
   /*
-    El destacado es el del medio cuando hay tres, que es el que la tabla de precios
-    empuja siempre. Con uno o dos no se destaca ninguno: destacar el único es ruido.
+    **El «Recomendado» lo decide la página, no el contrato**, y conviene saberlo: el API no
+    publica esa señal, así que esto es una decisión de precio escrita en el front. La
+    consola, que negocia planes, se niega a hacerlo por eso mismo (§70) — aquí se acepta
+    porque una portada elige a qué plan empuja, y eso es marketing, no un dato.
+
+    Se destaca **el último**, que es el más capaz. La primera versión destacaba el del
+    medio y con los planes reales eso ponía «Recomendado» sobre el único que ni siquiera
+    tiene tarifa publicada. Con menos de tres no se destaca ninguno: destacar el único es
+    ruido.
   */
-  const destacado = ordenados.length >= 3 ? 1 : -1
+  const destacado = ordenados.length >= 3 ? ordenados.length - 1 : -1
 
   return (
-    <div className="grid gap-5 md:grid-cols-3">
-      {ordenados.map((plan, i) => (
-        <TarjetaPlan
-          key={plan.code}
-          plan={plan}
-          planes={ordenados}
-          claves={claves}
-          destacado={i === destacado}
-          onElegir={() => cola?.encolar({ name: 'cta_clicked', section: 'pricing', action: 'signup' })}
-        />
-      ))}
+    <div className="grid items-stretch gap-6 md:grid-cols-3">
+      {ordenados.map((plan, i) => {
+        const { texto, consultar } = leerPrecio(plan.price)
+        return (
+          <PlanCard
+            key={plan.code}
+            nombre={plan.name}
+            precio={consultar ? null : { monto: texto, porMes: Boolean(plan.price && Number(plan.price.amount) > 0) }}
+            descripcion={plan.description}
+            topes={plan.limits.map((l) => ({ key: l.key, label: l.label, valor: leerTope(l) }))}
+            /*
+              Una clave que el backend no anuncia para este plan NO se pinta como excluida:
+              una fila ausente no dice «no lo tiene», dice «no se sabe».
+            */
+            funciones={claves
+              .map((key) => ({ key, label: etiquetaDeFuncion(ordenados, key), included: incluye(plan, key) }))
+              .filter((f): f is { key: string; label: string; included: boolean } => f.included !== undefined)}
+            destacado={i === destacado}
+            insignia={i === destacado ? { texto: 'Recomendado', tono: 'recomendado' } : null}
+            accion={
+              <a
+                href={rutasApp.registro}
+                onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'pricing', action: 'signup' })}
+                className={
+                  i === destacado
+                    ? 'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-cta px-5 text-sm font-semibold text-cta-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                    : 'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                }
+              >
+                {consultar ? `Consultar ${plan.name}` : 'Empezar'}
+                <ArrowRight aria-hidden className="size-4" />
+              </a>
+            }
+          />
+        )
+      })}
     </div>
   )
 }
