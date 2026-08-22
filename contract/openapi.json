@@ -14103,6 +14103,17 @@
                 "type": "null"
               }
             ]
+          },
+          "overdueSummaryTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -19806,10 +19817,12 @@
             "type": "boolean"
           },
           "quietStart": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
           },
           "quietEnd": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
           },
           "dueSoonTemplateKey": {
             "anyOf": [
@@ -19822,6 +19835,16 @@
             ]
           },
           "overdueTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdueSummaryTemplateKey": {
             "anyOf": [
               {
                 "type": "string"
@@ -19850,6 +19873,7 @@
           "quietEnd",
           "dueSoonTemplateKey",
           "overdueTemplateKey",
+          "overdueSummaryTemplateKey",
           "updatedAt"
         ],
         "additionalProperties": false
