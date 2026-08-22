@@ -1,5 +1,5 @@
 <!--
-  Copia literal de `HANDOFF-fase-14.md` del backend (nummo_api), commit 8797740.
+  Copia literal de `HANDOFF-fase-14.md` del backend (nummo_api), commit 4247eb0.
 
   Se copia el documento de origen en vez de reescribirlo aquí: el original se
   mantiene contra el código, y dos copias del mismo texto se separan a la
@@ -136,10 +136,27 @@ a
 
 Dos cosas para la pantalla de plantillas y la de política:
 
-- Hay **tres claves nuevas** —`cobro_por_vencer_v2`, `cobro_vencido_v2`,
-  `cobro_vencido_resumen_v2`— que conviven con las tres anteriores. Están en `PENDING`
-  hasta que Meta las apruebe; las viejas siguen aprobadas y enviando, así que **no hay
-  corte**. Cuando estén `APPROVED`, la organización repunta su política a las nuevas.
+- **Hay dos juegos de plantillas, no una vieja y una nueva.** Uno dice solo lo que se
+  debe; el otro añade dónde pagarlo. El primero no está superado: hay quien no quiere
+  publicar su cuenta en un WhatsApp que sale del número de Nummo y prefiere que el deudor
+  le escriba. La organización elige, y la pantalla tiene que dejar clara esa diferencia.
+
+  | Clave | Se lee como |
+  | --- | --- |
+  | `cobro_por_vencer` | Por vencer — solo recordatorio |
+  | `cobro_vencido` | Vencida — solo recordatorio |
+  | `cobro_vencido_resumen` | Varias vencidas — solo recordatorio |
+  | `cobro_por_vencer_con_pago` | Por vencer — con datos de pago |
+  | `cobro_vencido_con_pago` | Vencida — con datos de pago |
+  | `cobro_vencido_resumen_con_pago` | Varias vencidas — con datos de pago |
+
+  Las de «con datos de pago» están en `PENDING` hasta que Meta las apruebe; las otras
+  siguen aprobadas y enviando, así que **no hay corte**. Mira `canSend`.
+
+- **Cada plantilla trae ahora `displayName` y `purpose`.** Úsalos: `templateKey` es un
+  identificador y `name` lo restringe Meta a minúsculas y guiones bajos. Ninguno de los
+  dos sirve para que alguien elija en una pantalla — `purpose` es literalmente la frase
+  que explica cuándo tomar ésta y no la otra.
 - **El renglón nunca va vacío.** Una variable sin valor hace que Meta rechace el envío
   entero, así que cuando no hay nada configurado el mensaje dice «Para pagar: comunícate
   con nosotros». Es cierto y es útil — y es lo que evitó tener que duplicar cada plantilla

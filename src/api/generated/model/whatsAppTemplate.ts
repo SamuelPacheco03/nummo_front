@@ -12,6 +12,8 @@ export interface WhatsAppTemplate {
   organizationId: string | null;
   templateKey: string;
   name: string;
+  displayName: string | null;
+  purpose: string | null;
   language: string;
   category: WhatsAppTemplateCategory;
   status: string;

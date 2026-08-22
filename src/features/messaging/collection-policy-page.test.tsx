@@ -48,7 +48,10 @@ function plantilla(over: Partial<WhatsAppTemplate> = {}): WhatsAppTemplate {
     id: 't1',
     organizationId: null,
     templateKey: 'cobro_vencido',
-    name: 'Cobro vencido',
+    name: 'nummo_cobro_vencido',
+    // El nombre legible y el porqué: es lo que la pantalla enseña al elegir, no la clave.
+    displayName: 'Vencida — solo recordatorio',
+    purpose: 'Avisa de una factura vencida, sin publicar dónde pagar.',
     language: 'es',
     category: 'UTILITY',
     status: 'APPROVED',

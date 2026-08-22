@@ -11,4 +11,5 @@ export interface PlatformTemplateSync {
   created: string[];
   alreadyThere: string[];
   failed: PlatformTemplateSyncFailedItem[];
+  orphaned: string[];
 }

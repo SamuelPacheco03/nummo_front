@@ -20558,6 +20558,26 @@
           "name": {
             "type": "string"
           },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "language": {
             "type": "string"
           },
@@ -20614,6 +20634,8 @@
           "organizationId",
           "templateKey",
           "name",
+          "displayName",
+          "purpose",
           "language",
           "category",
           "status",
@@ -20658,12 +20680,19 @@
               ],
               "additionalProperties": false
             }
+          },
+          "orphaned": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "created",
           "alreadyThere",
-          "failed"
+          "failed",
+          "orphaned"
         ],
         "additionalProperties": false
       },

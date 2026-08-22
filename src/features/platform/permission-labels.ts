@@ -57,6 +57,9 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   treasury: { label: 'Caja y transferencias', area: 'Caja' },
   financial_accounts: { label: 'Cuentas de dinero', area: 'Catálogos' },
   payment_methods: { label: 'Métodos de pago', area: 'Catálogos' },
+  // Dónde puede pagar quien debe: lo que sale en los recordatorios de cobro. Distinto de
+  // «Métodos de pago», que es cómo se registró un pago que ya entró.
+  payment_instructions: { label: 'Formas de cobro', area: 'Catálogos' },
   billing_concepts: { label: 'Conceptos de cobro', area: 'Catálogos' },
   expense_categories: { label: 'Categorías de gasto', area: 'Catálogos' },
   reports: { label: 'Informes', area: 'Informes' },
