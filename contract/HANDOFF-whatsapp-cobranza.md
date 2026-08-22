@@ -1,5 +1,5 @@
 <!--
-  Copia literal de `HANDOFF-fase-12.md` del backend (nummo_api), commit 91c77ce.
+  Copia literal de `HANDOFF-fase-12.md` del backend (nummo_api), commit 465e39f.
 
   La versión que vivía aquí antes —la de `df3277e`— tenía siete errores
   comprobados contra el contrato: decía que BYO Meta era «fase 5, no lo
