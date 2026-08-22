@@ -1,173 +1,220 @@
-# HANDOFF — Cobranza por WhatsApp (backend fases 0–3, en `main`)
+<!--
+  Copia literal de `HANDOFF-fase-12.md` del backend (nummo_api), commit 0dbc02c.
 
-> **Estado del backend:** hecho, mergeado a `main` y **verificado de punta a punta contra
-> la WhatsApp Cloud API real**. Un vencido de 8 días → escaneo → cola → worker → Meta →
-> entregado en el teléfono del deudor. 880 tests verdes.
->
-> **Contrato:** `contract/openapi.json` actualizado (153 rutas, 205 esquemas). Regenerá el
-> cliente con `pnpm api:gen` antes de empezar.
+  La versión que vivía aquí antes —la de `df3277e`— tenía siete errores
+  comprobados contra el contrato: decía que BYO Meta era «fase 5, no lo
+  diseñes» cuando ya son tres rutas reales, daba el historial como si
+  `entityId` fuera siempre una cuenta por cobrar, se dejaba el tercer
+  selector de plantilla, contaba 153/205 rutas en vez de 160/226, daba el
+  cupo de ENTERPRISE por ilimitado, listaba una variable de más en las
+  plantillas y omitía los avisos de cupo, el `source` del consentimiento y
+  la mora agrupada.
 
-## Qué hace esta función, en una frase
+  Se sustituye por la del backend en vez de corregirla a mano: el documento
+  de origen se mantiene contra el código, y dos copias del mismo texto se
+  separan a la primera corrección que solo se haga en una.
+-->
 
-La organización configura una política y Nummo le escribe **al deudor** por WhatsApp
-cuando su cuenta está por vencer o ya está en mora. El deudor **no tiene cuenta en Nummo**:
-es un contacto con teléfono.
+# Handoff — Fase 12 (cobranza por WhatsApp, para el front)
 
-Eso último es lo que explica casi todo el diseño. No hay preferencias de usuario ni centro
-de notificaciones aquí; hay una dirección, un consentimiento y una cola.
+El backend puede cobrarle a los clientes de una organización por WhatsApp: recordatorios
+automáticos antes y después del vencimiento, con plantillas aprobadas por Meta,
+consentimiento, horas de silencio y cuota por plan.
 
-## Las tres pantallas que hay que construir
+**Al front nunca se le entregó esta superficie**: el último handoff suyo fue el de la
+identidad visual de las maestras. Este documento cubre la cobranza entera —no solo lo
+último— más las tres cosas que se ajustaron después de revisarla.
 
-### 1. Política de cobranza — la principal
+Regenera el cliente antes de nada: el contrato pasó a **160 paths**.
 
-`GET` / `PUT /organizations/{orgId}/messaging/collection-policy`
+---
 
-| Campo                | Tipo             | Qué es                                    |
-| -------------------- | ---------------- | ----------------------------------------- |
-| `enabled`            | `boolean`        | El interruptor maestro                    |
-| `quietStart`         | `"HH:mm"`        | Desde cuándo no se molesta                |
-| `quietEnd`           | `"HH:mm"`        | Hasta cuándo                              |
-| `dueSoonTemplateKey` | `string \| null` | Plantilla del aviso «por vencer»          |
-| `overdueTemplateKey` | `string \| null` | Plantilla del aviso «vencido»             |
-| `updatedAt`          | `string \| null` | `null` = nadie la ha tocado nunca         |
+## 1. Lo que hay que entender antes de pintar nada
 
-Cosas que el diseño de la pantalla tiene que reflejar, porque son reglas del backend y no
-detalles:
+Tres conceptos, y confundirlos lleva a una interfaz que miente:
 
-- **Las horas de silencio aplazan, no cancelan.** Un aviso que cae a las 23:00 sale a la
-  mañana siguiente. No lo presentes como «no se enviará».
-- **La ventana puede cruzar la medianoche** (`22:00` → `07:00`) y es el caso normal. Un
-  selector que asuma `inicio < fin` está mal.
-- **Sin plantilla no hay aviso.** Si `overdueTemplateKey` es `null`, los vencidos no se
-  avisan aunque `enabled` sea `true`. Merece un estado visible, no un campo vacío.
-- El **cuándo** de los avisos «por vencer» no se configura aquí: sale de
-  `dueReminderDays`, que ya existe en los ajustes de la organización y ya rige los avisos
-  internos. Una sola cosa que configurar; no dupliques el control.
+**Cobrar por WhatsApp** (`whatsapp_outbound`) es la feature de plan que enciende el ciclo
+de cobranza. Sin ella no hay pantalla que mostrar.
 
-**Guardas:** `GET` pide `messaging.read`; `PUT` pide `messaging.settings.manage` **y** la
-feature `whatsapp_outbound`. Es la única ruta del lote con feature, así que es la que
-puede responder `FEATURE_NOT_AVAILABLE` (403) — ver «Errores de plan» abajo.
+**El número desde el que sale** puede ser el de Nummo o el del negocio. Con el de Nummo,
+cada mensaje **consume cuota del plan** (`whatsapp_messages_monthly`). Con el propio
+—feature `whatsapp_byo`— los paga el cliente directamente a Meta y **no consume nada**.
 
-### 2. Historial de mensajes — la pantalla de «¿por qué no le llegó?»
+**La plantilla** es lo que Meta aprueba. Un mensaje solo sale si su plantilla está
+aprobada; el backend expone `canSend` ya calculado por eso mismo, para que el front no
+deduzca esa regla por su cuenta.
 
-`GET /organizations/{orgId}/messaging/messages` — paginado (`page`, `pageSize` hasta 100),
-filtrable por `status` y `contactId`. Permiso `messaging.read`.
+---
 
-Cada fila trae `status`, `templateKey`, `address`, `contactId`, `skipReason`, `lastError`,
-`entityType`/`entityId` (apunta a la cuenta por cobrar) y las cuatro marcas de tiempo:
-`createdAt`, `sentAt`, `deliveredAt`, `readAt`.
+## 2. Los endpoints
 
-**Los estados no son una barra de progreso lineal.** Son dos caminos:
+Todos bajo `/api/v1/organizations/{orgId}`. La columna «feature» es lo que devuelve
+`403 FEATURE_NOT_AVAILABLE` cuando el plan no la incluye.
 
-```
-QUEUED → SENT → DELIVERED → READ        (salió bien)
-QUEUED → SKIPPED                        (no se envió, y hay motivo)
-QUEUED → FAILED                         (se intentó y falló, y hay error)
-```
+### Política de cobranza
 
-`SKIPPED` **no es un error** y no debe pintarse en rojo: es «no se envió, a propósito».
-Esta es la tabla que el usuario va a leer, así que traducí `skipReason` a lenguaje humano:
+| Método | Ruta | Permiso | Feature |
+| --- | --- | --- | --- |
+| `GET` | `/messaging/collection-policy` | `messaging.read` | |
+| `PUT` | `/messaging/collection-policy` | `messaging.settings.manage` | `whatsapp_outbound` |
 
-| `skipReason`             | Qué decirle al usuario                                            |
-| ------------------------ | ----------------------------------------------------------------- |
-| `consent_revoked`        | El destinatario pidió no recibir mensajes                         |
-| `consent_required`       | Falta su consentimiento explícito (solo aplica a marketing)       |
-| `template_unknown`       | La política nombra una plantilla que no existe                    |
-| `template_not_approved`  | Meta todavía no aprobó la plantilla, o la pausó                   |
-| `missing_parameters`     | A la plantilla le falta un dato que el escaneo no pudo armar      |
-| `quota_exceeded`         | Se agotó el cupo del mes — es un `LIMIT_EXCEEDED`, ofrecé el plan |
-| `channel_not_configured` | El canal no está montado en este despliegue                       |
-| `no_whatsapp_account`    | La organización no tiene cuenta con la que enviar                 |
+`CollectionPolicy`: `enabled`, `quietStart`, `quietEnd`, `dueSoonTemplateKey`,
+`overdueTemplateKey`, `overdueSummaryTemplateKey`, `updatedAt`.
 
-`deliveredAt` y `readAt` **solo se llenan cuando el webhook de Meta está dado de alta**.
-Mientras no lo esté, todo se queda en `SENT` — y eso es correcto, no un fallo. La UI no
-debería sugerir que el mensaje falló por quedarse ahí.
+Las horas de silencio son de la organización y en su zona horaria: fuera de esa ventana
+no se le escribe a nadie. Es un requisito de decencia y de Meta, no una preferencia.
 
-### 3. Consentimiento
+**Dos plantillas para la mora, y la pantalla tiene que explicar por qué.** Un deudor
+recibe **un solo aviso** con todo lo que debe, no uno por factura. `overdueTemplateKey` es
+la que sale cuando debe una sola; `overdueSummaryTemplateKey`, cuando debe varias. Están
+separadas porque Meta no pluraliza y «tienes 1 facturas vencidas» saldría tal cual.
 
-`GET` (permiso `messaging.read`) y `PUT` (`messaging.settings.manage`) en
-`/organizations/{orgId}/messaging/consents`.
+Dejar vacía la de resumen es válido: se cae a la singular con el total. No es un error que
+haya que forzar a corregir, pero sí conviene decir en la UI qué implica —el aviso pierde el
+conteo—, porque la de resumen es la que se quiere en el caso normal.
 
-Tres estados: `UNKNOWN`, `GRANTED`, `REVOKED`. Y la regla que hay que entender antes de
-diseñar la pantalla: **`UNKNOWN` deja pasar los mensajes de cobranza.** A un cliente al
-que se le factura no se le pide permiso para cobrarle; Meta solo exige consentimiento
-explícito para marketing, y estas plantillas son `UTILITY`. Así que `UNKNOWN` no es un
-estado pendiente que haya que resolver, y presentarlo como una advertencia sería mentir.
+### Consentimiento
 
-`REVOKED` sí bloquea, y se comprueba **al encolar**, no al enviar.
+| Método | Ruta | Permiso |
+| --- | --- | --- |
+| `GET` | `/messaging/consents` | `messaging.read` |
+| `PUT` | `/messaging/consents` | `messaging.settings.manage` |
 
-## El interruptor por acuerdo
+Quién aceptó recibir mensajes y quién dijo que no. **Se comprueba al encolar**, no al
+enviar: si alguien se da de baja el lunes, lo que ya estaba en cola sale igual, y el
+backend puede responder «quién autorizó esto y cuándo» sin decir «no sé».
 
-`PATCH /organizations/{orgId}/billing-agreements/{id}` gana el campo
-`collectionReminders`, tri-estado: `INHERIT` | `ON` | `OFF`.
+### Historial de mensajes
 
-Tri-estado y no un booleano, y esa es toda la gracia: `INHERIT` —el default— delega en la
-política de la organización, mientras que `ON` y `OFF` son decisiones sobre *ese* cobro.
-Con un booleano no habría forma de distinguir «este cliente pidió silencio» de «nadie lo
-ha decidido», y al cambiar la política de la empresa se arrastraría a quien había pedido
-que no.
+| Método | Ruta | Permiso |
+| --- | --- | --- |
+| `GET` | `/messaging/messages` | `messaging.read` |
 
-En la UI: un control de tres opciones, no un switch. El default tiene que decir de qué
-está heredando («Según la política de la organización: activada»).
+Lo que salió y lo que no, con su motivo. **Aquí aparece `quota_exceeded`**, que es cómo
+se ve un recordatorio que no salió por falta de cupo.
 
-## Plantillas
+**`entityType` viene mixto, a propósito.** Los avisos de mora nuevos apuntan al contacto
+(`'contact'`) porque el mensaje ya no habla de una sola factura; los anteriores a la
+agrupación siguen apuntando a `'receivable'`. La historia no se reescribe, así que el
+enlace de cada fila depende de su `entityType` y hay que manejar los dos.
 
-`GET /organizations/{orgId}/whatsapp/templates` (`whatsapp.templates.read`) devuelve las
-que la organización puede usar: **las de la plataforma y las suyas**.
+### Plantillas
 
-Hay dos platform templates ya **aprobadas por Meta** y son las que la política nombra:
+| Método | Ruta | Permiso |
+| --- | --- | --- |
+| `GET` | `/whatsapp/templates` | `whatsapp.templates.read` |
+| `POST` | `/whatsapp/templates` | `whatsapp.templates.manage` |
+| `POST` | `/whatsapp/templates/sync` | `whatsapp.templates.manage` |
+| `DELETE` | `/whatsapp/templates/{templateKey}` | `whatsapp.templates.manage` |
 
-| `templateKey`      | Cuándo             | Variables                              |
-| ------------------ | ------------------ | -------------------------------------- |
-| `cobro_por_vencer` | Antes del vencimiento | `nombre`, `empresa`, `monto`, `fecha`, `dias` |
-| `cobro_vencido`    | En mora            | `nombre`, `empresa`, `monto`, `fecha`, `dias` |
+El listado incluye las de la plataforma —son las que la organización puede usar aunque no
+sean suyas—. **Crear y borrar exige cuenta propia de Meta**: en la cuenta compartida, una
+organización podría agotarle a las demás el cupo de creación o dejar un nombre bloqueado
+30 días.
 
-Los `status` posibles vienen del catálogo de Meta (`APPROVED`, `PENDING`, `REJECTED`,
-`PAUSED`, `DISABLED`…). Solo con `APPROVED` se puede enviar.
+Usa `canSend` del propio recurso para decidir si una plantilla se puede elegir. No lo
+deduzcas del `status`.
 
-`POST` (crear) y `DELETE` piden `whatsapp.templates.manage`, y **crear exige que la
-organización tenga cuenta propia de Meta** — con la cuenta de plataforma una organización
-podría agotar el cupo de 100 creaciones/hora de todas las demás. Eso llega en la fase 5
-(BYO Meta), así que **por ahora el alta de plantillas propias no tiene a quién servirle**:
-construí primero la lectura, y dejá el botón de crear para después.
+### Cuenta propia de Meta — **nuevo**
 
-`POST .../templates/sync` (`whatsapp.templates.manage`) contrasta el estado guardado
-contra lo que dice Meta ahora. Es el botón «actualizar estado» de esa pantalla.
+| Método | Ruta | Permiso | Feature |
+| --- | --- | --- | --- |
+| `GET` | `/whatsapp/account` | `whatsapp.settings.read` | `whatsapp_byo` |
+| `PUT` | `/whatsapp/account` | `whatsapp.settings.manage` | `whatsapp_byo` |
+| `DELETE` | `/whatsapp/account` | `whatsapp.settings.manage` | `whatsapp_byo` |
 
-## Errores de plan, que aquí sí aparecen
+`WhatsAppAccountState`: `{ connected, account }`. Cuando `connected: false`, la
+organización envía por la cuenta de Nummo y consume cuota.
 
-- **`FEATURE_NOT_AVAILABLE` (403)** — el plan no incluye `whatsapp_outbound`. En FREE está
-  apagada; BASIC y arriba la traen. Es el momento de ofrecer el upgrade, no un error.
-- **`LIMIT_EXCEEDED` (409)** — se acabó el cupo mensual (`whatsapp_messages_monthly`: 200
-  en BASIC, 1500 en PRO, ilimitado en ENTERPRISE). Los `details` traen el tope, lo usado y
-  el período.
+`WhatsAppAccount`: `phoneNumberId`, `phoneNumberLabel`, `accessTokenLast4`, `wabaId`,
+`hasAppSecret`, `updatedAt`.
 
-Los dos llevan `details` accionables. Un plan que no alcanza **no es un 402**.
+**El token nunca vuelve.** Solo sus últimos cuatro caracteres, que sirven para reconocer
+cuál está puesto y no para escribirle a nadie. Lo mismo con el `appSecret`: solo
+`hasAppSecret`. Si la pantalla necesita mostrar el token completo, la respuesta es que no
+se puede — hay que volver a pedirlo.
 
-## Lo que este canal NO tiene, a propósito
+Dos errores propios que conviene manejar:
 
-**No hay opt-out ni pie de «responde STOP» en las plantillas.** Es una decisión de
-producto tomada y no un olvido: Nummo es el cobrador, y darle al deudor un botón para
-silenciar el cobro vaciaría la función. Meta solo lo exige en `MARKETING`, y estas son
-`UTILITY`. No agregues ese texto ni un control equivalente en la UI.
+- **`409 CONFLICT`** al conectar un número que ya reclamó otra organización. El número es
+  único en todo Nummo, porque es lo que identifica de quién es un webhook entrante.
+- **`404 NOT_FOUND`** al desconectar cuando no había cuenta propia.
 
-## Lo que todavía no existe (no lo diseñes)
+Y díselo al usuario al desconectar: **no apaga la cobranza**, la devuelve a la cuenta de
+Nummo — y con ella vuelve a consumir cuota del plan.
 
-- **Enviar un mensaje suelto a mano.** El permiso `messaging.send` existe en el catálogo
-  pero **ninguna ruta lo usa todavía**. No hay endpoint.
-- **Conectar la cuenta de Meta de la organización** (BYO) — fase 5.
-- **Hablar con Numi por WhatsApp** — fase 6.
-- **WhatsApp como canal de las notificaciones internas del equipo** — fase 4. Es distinto
-  de esto: aquel destinatario es un miembro con cuenta, éste es un deudor.
+---
 
-## Por dónde empezar
+## 3. Notificaciones: dos tipos nuevos y una categoría nueva
 
-1. `pnpm api:gen` — el cliente tipado sale solo del contrato nuevo.
-2. **La pantalla de política** es la que desbloquea todo lo demás: sin ella activada, no
-   hay mensajes que listar.
-3. **El historial** después, que es donde el usuario va a vivir cuando algo no llegue.
-4. Consentimiento y el tri-estado del acuerdo al final: son ajustes finos sobre algo que
-   ya funciona.
+`whatsapp_quota.warning` (al 80%) y `whatsapp_quota.exhausted` (al agotarse). Ambos con
+`used` y `max` en el payload, y `deepLink` a `/configuracion/plan`.
 
-Cualquier duda del contrato, `contract/openapi.json` manda — el backend lo genera desde
-los routers reales y cada endpoint sale anotado con `x-required-permission`.
+No le llegan a todo el mundo: solo a quien tiene `messaging.settings.manage`, que es
+quien puede hacer algo al respecto —subir de plan o conectar cuenta propia—. `exhausted`
+va con prioridad `HIGH` y `warning` con `NORMAL`; ambas por in-app y push.
+
+Van en la categoría **`ACCOUNT`**, que es nueva. Es aditiva al enum, así que un cliente
+que no la conozca no se rompe — pero si la pantalla de preferencias agrupa por categoría,
+hay que añadir su sección o quedarán tipos sin agrupar.
+
+`ACCOUNT` existe por una razón concreta que conviene respetar en la UI: bajo
+`RECEIVABLES`, **quien silenciara los avisos de cobranza se perdería justo el que dice que
+la cobranza va a parar**.
+
+---
+
+## 4. Lo que se ajustó al revisar, y afecta al front
+
+**`whatsapp_byo` estaba anunciada y no existía.** La página pública decía «conecta la
+cuenta de Meta de tu negocio» y no había endpoint. Ahora sí lo hay. Si la landing ya
+mostraba esa línea, a partir de ahora es verdad.
+
+**Cuatro permisos del catálogo no los exigía nadie.** Salían igual en
+`/me/capabilities`, así que el front podía pintar un botón con ellos y no protegían nada.
+Dos eran los de la cuenta propia y ya están en uso; los otros dos siguen declarados por
+delante de su superficie:
+
+- `messaging.send` — **no hay envío manual**. No pintes un botón «enviar mensaje»: todo lo
+  que sale lo encola el job de cobranza.
+- `subscription.read` — el plan se lee dentro de `me/capabilities`, no por un endpoint.
+
+**El cupo ahora avisa.** Antes se agotaba en silencio.
+
+---
+
+## 5. Los cuatro estados que la pantalla tiene que saber contar
+
+Es lo que más fácil se hace mal, porque son cuatro cosas distintas que se parecen:
+
+| Situación | Cómo se ve | Qué decirle al usuario |
+| --- | --- | --- |
+| El plan no incluye cobranza | `403` `FEATURE_NOT_AVAILABLE`, `details.feature` | «Está en el plan X» |
+| Sin permiso | `403` `FORBIDDEN` | No ofrecer la pantalla |
+| Cupo agotado | mensajes con `quota_exceeded` + notificación | «No saldrán hasta el próximo periodo» |
+| Sin cuenta ni plantillas | `connected: false`, `canSend: false` | Guiar al alta, no mostrar error |
+
+El tercero es el importante: **un recordatorio que no salió no es un error**, es un
+`SKIPPED` con su motivo. Si la interfaz lo pinta como fallo, el usuario intentará
+reintentarlo y no hay nada que reintentar hasta el mes que viene.
+
+---
+
+## 6. El consumo, para pintar la barra
+
+`GET /organizations/{orgId}/me/capabilities` trae `limits.whatsapp_messages_monthly` y
+`usage.whatsapp_messages_monthly`, más `period` (el mes **en la zona horaria de la
+organización**, que no tiene por qué ser la del navegador).
+
+Un límite en `null` es «sin tope». Con cuenta propia conectada, el consumo deja de subir:
+esos mensajes no pasan por la cuota.
+
+---
+
+## 7. Lo que el backend no hace, y no conviene prometer en la UI
+
+- **No hay recargas de cupo.** Agotado es agotado hasta el próximo periodo. Los paquetes
+  necesitan pasarela de pago, que no existe.
+- **No hay envío manual.** No hay «escríbele a este cliente ahora».
+- **No hay conversación entrante.** El webhook recibe estados de entrega y bajas; no hay
+  bandeja de respuestas.
