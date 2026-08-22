@@ -188,20 +188,34 @@ test('el filtro de estado viaja al API', async () => {
   expect(m.paramsMensajes).toMatchObject({ status: 'SKIPPED' })
 })
 
-test('un mensaje de una cuenta enlaza a su ficha; sin entidad no inventa ruta', () => {
+test('el historial es mixto: una factura lleva a la cuenta y la mora agrupada al contacto', () => {
+  /*
+    Un deudor con varias facturas vencidas recibe **un solo aviso** con el total,
+    y ese no habla de una cuenta: apunta al contacto. Los dos tipos conviven
+    porque la historia no se reescribe, así que mandarlo todo a cartera serviría
+    un 404 en cuanto el id fuera de un contacto.
+  */
   m.mensajes = [
     mensaje({ id: 'a', entityType: 'receivable', entityId: 'r1' }),
-    mensaje({ id: 'b', entityType: 'algo_que_no_conocemos', entityId: 'x1' }),
+    mensaje({ id: 'b', entityType: 'contact', entityId: 'c9' }),
   ]
   pintar()
 
-  // `DataList` monta la tabla y las tarjetas a la vez, así que cada fila que
-  // enlaza aparece dos veces; lo que se comprueba es que solo hay **un**
-  // destino, el de la entidad que sí sabemos traducir.
-  const destinos = new Set(
+  const cuenta = new Set(
     screen.getAllByRole('link', { name: 'Ver la cuenta' }).map((a) => a.getAttribute('href')),
   )
-  expect([...destinos]).toEqual(['/cartera/cxc/r1'])
+  const contacto = new Set(
+    screen.getAllByRole('link', { name: 'Ver el contacto' }).map((a) => a.getAttribute('href')),
+  )
+  expect([...cuenta]).toEqual(['/cartera/cxc/r1'])
+  expect([...contacto]).toEqual(['/contactos/c9'])
+})
+
+test('una entidad que no conocemos no inventa ruta', () => {
+  m.mensajes = [mensaje({ entityType: 'algo_que_no_conocemos', entityId: 'x1' })]
+  pintar()
+
+  expect(screen.queryByRole('link', { name: /Ver (la cuenta|el contacto)/ })).not.toBeInTheDocument()
 })
 
 /* ---------- El consentimiento ---------- */

@@ -108,24 +108,32 @@ export function lastEvent(message: {
 }
 
 /**
- * A qué cuenta pertenecía el aviso, para poder ir a ella desde el historial.
+ * A dónde lleva la fila del historial, y **es mixto a propósito**.
  *
- * **`entityType` llega como cadena libre** —el contrato no publica un enum—, así
- * que esto es un puente y está escrito para retirarse solo: lo que no reconoce
- * no enlaza a ninguna parte en vez de componer una ruta inventada. Es el mismo
- * criterio que `notificationRoute` (§95.16), y por el mismo motivo: las rutas se
- * declaran en un solo sitio (§87.5).
+ * Un deudor con tres facturas vencidas recibe **un solo aviso** con el total, no
+ * tres mensajes el mismo día. Ese aviso agrupado no habla de una factura, así
+ * que apunta al contacto (`'contact'`); los anteriores a la agrupación —y los de
+ * «por vencer», que sí son de una cuenta— siguen apuntando a `'receivable'`.
  *
- * Hoy la cobranza solo persigue cuentas por cobrar, que es lo que dice el
- * handoff; el día que el contrato publique el enum, esto se tipa contra él.
+ * **La historia no se reescribe**, así que las dos formas conviven para siempre
+ * y el enlace se decide por fila. Mandar todo a cartera serviría un 404 en
+ * cuanto el id fuera de un contacto.
+ *
+ * Lo que no reconozca **no enlaza a ninguna parte** en vez de componer una ruta
+ * inventada: es el mismo criterio que `notificationRoute` (§95.16), y por el
+ * mismo motivo — las rutas se declaran en un solo sitio (§87.5).
  */
-export function relatedAccountPath(message: {
+export function relatedEntity(message: {
   entityType: string | null
   entityId: string | null
-}): string | null {
+}): { to: string; label: string } | null {
   if (!message.entityType || !message.entityId) return null
+  // El contrato tipa `entityType` como cadena libre, así que se normaliza en vez
+  // de exigir la forma exacta que hoy emite el backend.
   const kind = message.entityType.toLowerCase().replace(/s$/, '')
-  return kind === 'receivable' ? `/cartera/cxc/${message.entityId}` : null
+  if (kind === 'receivable') return { to: `/cartera/cxc/${message.entityId}`, label: 'Ver la cuenta' }
+  if (kind === 'contact') return { to: `/contactos/${message.entityId}`, label: 'Ver el contacto' }
+  return null
 }
 
 /* ---------- Consentimiento ---------- */

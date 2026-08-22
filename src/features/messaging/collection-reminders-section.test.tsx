@@ -37,8 +37,7 @@ function politica(over: Partial<CollectionPolicy> = {}): CollectionPolicy {
     quietEnd: '07:00',
     dueSoonTemplateKey: 'cobro_por_vencer',
     overdueTemplateKey: 'cobro_vencido',
-    /* El contrato lo pasó de opcional a obligatorio: la plantilla del resumen existe siempre. */
-    overdueSummaryTemplateKey: null,
+    overdueSummaryTemplateKey: 'cobro_vencido_resumen',
     updatedAt: '2026-08-01T10:00:00Z',
     ...over,
   }
