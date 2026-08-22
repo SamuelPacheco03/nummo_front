@@ -46,12 +46,25 @@ export function ConsentBanner() {
       aria-label="Medición y privacidad"
       className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl border border-border bg-card p-5 shadow-sm sm:inset-x-auto sm:right-4"
     >
+      {/*
+        Lo que este texto dice tiene que ser lo que la página hace.
+
+        Decía «nos gustaría medir cómo se usa esta página […] solo si nos dices que sí», y
+        eso era falso en la mitad que importa: `/public/signals` sale al cargar, antes de
+        que nadie responda nada, y su respuesta deja una cookie de visitante `HttpOnly`
+        cuyo trabajo es precisamente atribuir un registro posterior a la campaña que lo
+        trajo. Lo único que este botón enciende o apaga es el tercero.
+
+        `consent.ts` ya tenía la distinción bien escrita —«lo que NO depende, y es la mitad
+        importante»—; lo que faltaba era decírsela a quien la lee.
+      */}
       <p className="text-sm leading-relaxed text-foreground">
-        Nos gustaría medir cómo se usa esta página para mejorarla.
+        ¿Activamos una herramienta de terceros para ver cómo se usa esta página?
       </p>
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-        Solo si nos dices que sí. Lo que contamos por nuestra cuenta —qué secciones se
-        miran— no sale de aquí y no te identifica.
+        Microsoft Clarity, y solo si dices que sí. Aparte de eso, Nummo cuenta por su cuenta
+        qué secciones se miran y de dónde llegó cada visita: eso no lo hace ningún tercero y
+        no depende de esta respuesta.
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <button

@@ -6694,3 +6694,61 @@ duplicado aportaba de su cosecha.
 portada. Una sola vez querría decir que una de las dos superficies se quedó atrás — que es la
 forma que tiene este fallo de volver.
 
+## 97.20. La segunda pasada: lo que la portada decía fuera de la portada
+
+§97.18 auditó el texto que se lee en pantalla. Lo que faltaba mirar era todo lo demás que
+también es contenido —los metadatos, el banner de consentimiento, lo que se anota en el
+embudo— y ahí estaban los dos hallazgos peores.
+
+### El banner de consentimiento decía lo que la página no hace
+
+Decía «nos gustaría medir cómo se usa esta página […] **solo si nos dices que sí**». Falso en
+la mitad que importa: `/public/signals` sale al cargar, antes de que nadie responda, y su
+respuesta deja una cookie de visitante `HttpOnly` cuyo trabajo es atribuir un registro
+posterior a la campaña que lo trajo. Comprobado en el navegador: **dos** peticiones
+recorriendo la página sin tocar el banner. Lo único que ese botón enciende es Clarity.
+
+Lo irónico es que `consent.ts` ya tenía la distinción escrita —«lo que NO depende, y es la
+mitad importante»—. Lo que faltaba era decírsela a quien lee. Ahora el banner pregunta por el
+tercero, lo nombra, y dice aparte que la medición propia no depende de esa respuesta.
+
+**Una promesa de privacidad mal escrita es peor que no escribirla**: es la única clase de
+texto de una portada donde equivocarse tiene consecuencias que no son de marketing.
+
+### `index.html` seguía pintado con una paleta borrada
+
+El `theme-color` estaba en `#f4f1e9` / `#0e1712` —crema y verde, la paleta «bosque» que se
+descartó al elegir el azul— y el comentario al lado lo explicaba tal cual. Eso pinta la barra
+del navegador **antes de que corra nada**, así que cada carga en un móvil empezaba con el
+color equivocado hasta que `ThemeProvider` llegaba a corregirlo.
+
+Derivó porque nadie lo miraba, y porque el comentario de `theme.ts` afirmaba que sí:
+«si se desincronizan, la compuerta de `index.css` lo dice (`tokens.test.ts`)». No era verdad
+— allí solo se mide contraste. **Un comentario que promete un test inexistente es peor que no
+tener el test**, porque el siguiente que pase confía en él. `theme.test.ts` compara ahora los
+tres sitios donde vive ese color: `index.css`, `index.html` y `TEMA_PORTADA`.
+
+### El embudo contaba las pulsaciones equivocadas
+
+El botón principal del hero —«Empezar ahora», la llamada a la acción de toda la portada— **no
+emitía nada**. Los `cta_clicked` de `hero`/`signup` que llegaban eran los del navegador de
+arriba, que se atribuye a esa sección. Y «Ver cómo funciona» tampoco, teniendo el catálogo un
+`action: 'demo'` puesto ahí para exactamente eso.
+
+### Lo demás
+
+La descripción de `index.html` y la de Open Graph seguían diciendo «Nummo **conecta**», que
+es el texto que sale en Google y en la vista previa de WhatsApp — o sea, la palabra que se
+quitó de la portada seguía siendo la primera que se lee de ella.
+
+`og:image` era relativa: la especificación pide URL completa y varios raspadores no resuelven
+una relativa, así que la vista previa se quedaba sin imagen. Y la tarjeta era
+`summary_large_image` con un icono cuadrado de 512, que en formato ancho se recorta; queda en
+`summary` hasta que exista una imagen 1200×630 de verdad.
+
+El © del pie estaba escrito a mano. Se calcula, que aquí es seguro: la portada monta con
+`createRoot` y no con `hydrateRoot`, así que el HTML del prerender se descarta al montar y no
+hay desajuste que reconciliar aunque el build sea de diciembre y la visita de enero.
+
+Y en el hilo de Numi, «Vence hace 4 días» pasó a «Venció».
+

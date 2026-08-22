@@ -1,4 +1,5 @@
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { cleanup, render, screen } from '@testing-library/react'
 import { Hero } from './hero'
 import { rutasApp } from './links'
@@ -23,6 +24,24 @@ test('las dos llamadas a la acción son enlaces', () => {
   render(<Hero />)
   expect(screen.getByRole('link', { name: /empezar ahora/i })).toHaveAttribute('href', rutasApp.registro)
   expect(screen.getByRole('link', { name: /ver cómo funciona/i })).toBeInTheDocument()
+})
+
+/*
+  Las dos anotaban en el embudo... o eso parecía. Ninguna emitía nada: los `cta_clicked` de
+  `hero` que llegaban eran los del navegador de arriba, que se atribuye a esta sección. El
+  embudo contaba las pulsaciones de la barra y ni una del hero.
+*/
+test('las dos llamadas a la acción se anotan en el embudo', async () => {
+  const encolar = vi.fn()
+  render(<Hero cola={{ encolar } as never} />)
+
+  await userEvent.click(screen.getByRole('link', { name: /empezar ahora/i }))
+  await userEvent.click(screen.getByRole('link', { name: /ver cómo funciona/i }))
+
+  expect(encolar.mock.calls.map(([e]) => e)).toEqual([
+    { name: 'cta_clicked', section: 'hero', action: 'signup' },
+    { name: 'cta_clicked', section: 'hero', action: 'demo' },
+  ])
 })
 
 test('las cifras se pintan con el formato de la app, no a mano', () => {

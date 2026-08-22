@@ -3,6 +3,7 @@ import { AppPreview, NumiNotice } from './app-preview'
 import { cn } from '@/lib/utils'
 import { SERIF_STACK } from './type'
 import { rutasApp } from './links'
+import type { Cola } from './signals'
 
 /**
  * El hero de la portada, maquetado contra los mockups.
@@ -38,7 +39,7 @@ function paso(ms: number): React.CSSProperties {
   return { animationDelay: `${ms}ms` }
 }
 
-export function Hero({ className }: { className?: string }) {
+export function Hero({ className, cola }: { className?: string; cola?: Cola | null }) {
   return (
     <section className={cn('relative overflow-hidden bg-background px-6 py-20 sm:py-28', className)}>
       <div className="mx-auto grid max-w-6xl gap-16 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-14">
@@ -79,15 +80,24 @@ export function Hero({ className }: { className?: string }) {
             className="animate-hero-in mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6"
             style={paso(230)}
           >
+            {/*
+              El botón principal de la portada **no emitía nada**. Los `cta_clicked` de
+              `hero`/`signup` que llegaban eran los del navegador de arriba, que se atribuye
+              a esta sección: el embudo contaba las pulsaciones de la barra y ninguna de las
+              del hero.
+            */}
             <a
               href={rutasApp.registro}
+              onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'signup' })}
               className="inline-flex h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-cta px-6 text-sm font-semibold text-cta-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               Empezar ahora
               <ArrowRight className="size-4" aria-hidden />
             </a>
+            {/* `action: 'demo'` existe en el catálogo de señales para exactamente esto. */}
             <a
               href="#demo"
+              onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'demo' })}
               className="inline-flex min-w-0 items-center gap-2.5 whitespace-nowrap rounded-full text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-full border border-border">

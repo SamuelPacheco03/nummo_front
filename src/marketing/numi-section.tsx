@@ -51,7 +51,7 @@ const HILO = [
     de: 'numi',
     tarjeta: {
       titulo: '1. Cobro vencido de Grupo Norte',
-      detalle: 'Vence hace 4 días · $2.400.000',
+      detalle: 'Venció hace 4 días · $2.400.000',
       accion: 'Ver y recordar',
     },
   },

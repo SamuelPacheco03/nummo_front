@@ -62,7 +62,7 @@ export function LandingPage() {
       <Nav cola={cola} dark={dark} />
       <main>
         <section ref={heroRef}>
-          <Hero />
+          <Hero cola={cola} />
         </section>
         <Ticker />
         <DisorderSection />

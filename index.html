@@ -7,7 +7,7 @@
     <title>Nummo · Tus finanzas, por fin en orden</title>
     <meta
       name="description"
-      content="Nummo conecta cobros, pagos y movimientos en una sola experiencia. Menos dispersión, más control para decidir mejor."
+      content="Nummo reúne cobros, pagos y movimientos en una sola experiencia. Menos dispersión, más control para decidir mejor."
     />
     <link rel="canonical" href="https://nummo.app/" />
 
@@ -18,10 +18,15 @@
 
     <!--
       La portada NO lleva manifest ni service worker: son de la app, que vive en /app.
-      El `theme-color` sale de la paleta de la portada (crema y verde), no de la consola.
+
+      El `theme-color` es `--background` de `index.css`, y tiene que seguir siéndolo: esto
+      pinta la barra del navegador ANTES de que corra nada, así que un valor viejo aquí es
+      un fogonazo del color equivocado en cada carga. Estuvo en crema y verde hasta agosto
+      de 2026 —la paleta «bosque», que se descartó— porque nada lo vigilaba; ahora sí:
+      `src/marketing/theme.test.ts`.
     -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f1e9" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e1712" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
     <meta name="color-scheme" content="light dark" />
 
     <!-- Previsualización al compartir el enlace -->
@@ -30,11 +35,20 @@
     <meta property="og:title" content="Nummo · Tus finanzas, por fin en orden" />
     <meta
       property="og:description"
-      content="Nummo conecta cobros, pagos y movimientos en una sola experiencia. Menos dispersión, más control para decidir mejor."
+      content="Nummo reúne cobros, pagos y movimientos en una sola experiencia. Menos dispersión, más control para decidir mejor."
     />
-    <meta property="og:image" content="/icons/icon-512.png" />
+    <!--
+      Absoluta a propósito: la especificación de Open Graph pide URL completa y varios
+      raspadores —WhatsApp entre ellos— no resuelven una relativa, así que la vista previa
+      se quedaba sin imagen justo donde más se comparte.
+
+      Y la tarjeta es `summary` y no `summary_large_image` porque lo único que hay es el
+      icono de 512×512: en una tarjeta ancha un cuadrado se recorta o se rellena con barras.
+      El día que exista una imagen 1200×630 de verdad, esto vuelve a `summary_large_image`.
+    -->
+    <meta property="og:image" content="https://nummo.app/icons/icon-512.png" />
     <meta property="og:url" content="https://nummo.app/" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
     <!--
