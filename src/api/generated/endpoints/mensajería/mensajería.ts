@@ -26,6 +26,7 @@ import type {
 
 import type {
   CollectionPolicy,
+  CollectionRemindersRun,
   ErrorResponse,
   GetApiV1OrganizationsOrgIdMessagingConsents200,
   GetApiV1OrganizationsOrgIdMessagingConsentsParams,
@@ -643,4 +644,100 @@ export const usePutApiV1OrganizationsOrgIdMessagingCollectionPolicy = <TError = 
         TContext
       > => {
       return useMutation(getPutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponse200 = {
+  data: CollectionRemindersRun
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponseSuccess = (postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponseError = (postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponse = (postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponseSuccess | postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponseError)
+
+export const getPostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/messaging/collection-reminders/run`
+}
+
+/**
+ * El escaneo automático corre a la hora local de la organización y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.
+ *
+ * **Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.
+ *
+ * Sigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.
+ *
+ * Exige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.
+ * @summary Manda los recordatorios de cobro ahora, sin esperar a la hora
+ */
+export const postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdMessagingCollectionRemindersRunResponse>(getPostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunUrl(orgId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun>>, TError,{orgId: string}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun>>, {orgId: string}> = (props) => {
+          const {orgId} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun(orgId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun>>>
+
+    export type PostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunMutationError = ErrorResponse
+
+    /**
+ * @summary Manda los recordatorios de cobro ahora, sin esperar a la hora
+ */
+export const usePostApiV1OrganizationsOrgIdMessagingCollectionRemindersRun = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun>>, TError,{orgId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdMessagingCollectionRemindersRun>>,
+        TError,
+        {orgId: string},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunMutationOptions(options), queryClient);
     }
