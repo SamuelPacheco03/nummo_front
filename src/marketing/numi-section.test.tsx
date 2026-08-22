@@ -1,112 +1,77 @@
-import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { afterEach, expect, test, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { NumiSection } from './numi-section'
+import { rutasApp } from './links'
 
-const preguntar = vi.fn()
-vi.mock('@/api/generated/endpoints/public/public', () => ({
-  postApiV1PublicNumi: (input: unknown) => preguntar(input),
-}))
-
-const { NumiSection } = await import('./numi-section')
-const { rutasApp } = await import('./links')
-
-/* Con llaves: un hook que DEVUELVE algo, Vitest lo espera — y un mock no es una promesa. */
-beforeEach(() => {
-  preguntar.mockReset()
-})
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
 })
 
-const responde = (answer: string, remaining: number, exhausted = false) =>
-  preguntar.mockResolvedValue({ status: 200, data: { answer, remaining, exhausted } })
-
-async function preguntarAlgo(texto = '¿Sirve para un colegio?') {
-  const usuario = userEvent.setup()
-  await usuario.type(screen.getByLabelText(/preguntale algo a numi/i), texto)
-  await usuario.click(screen.getByRole('button', { name: /enviar/i }))
-  return usuario
+/**
+ * Con `prefers-reduced-motion` el hilo aparece entero de golpe. Se prueba en ese modo a
+ * propósito: la conversación es **contenido**, no adorno, y quien pide menos movimiento no
+ * puede quedarse sin leerla — que es justo el fallo que un hilo escrito a plazos invita.
+ */
+function conMovimientoReducido() {
+  vi.stubGlobal(
+    'matchMedia',
+    (query: string) =>
+      ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  )
 }
 
-test('contesta en el hilo y deja seguir preguntando', async () => {
-  responde('Sí, sirve para un colegio.', 5)
+test('sin movimiento, la conversación se lee entera', () => {
+  conMovimientoReducido()
   render(<NumiSection cola={null} />)
-  await preguntarAlgo()
 
-  expect(await screen.findByText('Sí, sirve para un colegio.')).toBeInTheDocument()
-  expect(screen.getByLabelText(/preguntale algo a numi/i)).toBeInTheDocument()
+  expect(screen.getByText(/revisé tus movimientos de esta semana/i)).toBeInTheDocument()
+  expect(screen.getByText(/¿qué debería priorizar\?/i)).toBeInTheDocument()
+  expect(screen.getByText(/cobro vencido de grupo norte/i)).toBeInTheDocument()
+  // Y ya no queda nadie escribiendo.
+  expect(screen.queryByText(/está escribiendo/i)).not.toBeInTheDocument()
 })
 
-/*
-  La regla que más cambia el diseño: quedarse sin cuota NO es un error. Llega un 200 con
-  `exhausted: true`, y el sitio de la caja lo ocupa el REGISTRO — no un aviso de error.
-  Son seis preguntas que no se renuevan: el tope es el empujón.
-*/
-test('sin cuota, la caja de texto la sustituye el registro', async () => {
-  responde('Por hoy hasta aquí. Creá una cuenta y seguimos.', 0, true)
+test('explica qué hace Numi, que es a lo que vino la sección', () => {
+  conMovimientoReducido()
   render(<NumiSection cola={null} />)
-  await preguntarAlgo()
 
-  expect(await screen.findByRole('link', { name: /crear cuenta y seguir/i })).toHaveAttribute(
+  expect(screen.getByText('Mira por ti')).toBeInTheDocument()
+  expect(screen.getByText('Prioriza')).toBeInTheDocument()
+  expect(screen.getByText('Actúa contigo')).toBeInTheDocument()
+})
+
+test('la acción lleva a crear cuenta, que es donde se prueba Numi de verdad', () => {
+  conMovimientoReducido()
+  render(<NumiSection cola={null} />)
+
+  expect(screen.getByRole('link', { name: /probar numi con tu cuenta/i })).toHaveAttribute(
     'href',
     rutasApp.registro,
   )
-  expect(screen.queryByLabelText(/preguntale algo a numi/i)).not.toBeInTheDocument()
-  // Y en ningún sitio se habla de error ni de límite excedido.
-  expect(screen.queryByText(/error/i)).not.toBeInTheDocument()
 })
 
 /*
-  Con el asistente apagado —que es como está en desarrollo por defecto— la respuesta es la
-  misma forma: 200 y `exhausted`. Es el primer estado que se ve, así que tiene que leerse
-  como algo previsto y no como una integración rota.
+  El guard de la decisión de producto: **la portada no habla con Numi**. Probarlo de verdad
+  es crearse una cuenta, y un chat de preventa con cuota añade estados que diseñar —agotado,
+  apagado, sin conexión— para ahorrar un paso de treinta segundos.
+
+  Se comprueba sobre el archivo y no montando el componente porque lo que hay que impedir es
+  que alguien vuelva a **escribir** la llamada, no solo que se dispare en un render concreto.
+  El endpoint sigue existiendo en el backend; el front simplemente no lo usa.
 */
-test('apagado se comporta como sin cuota, no como un fallo', async () => {
-  responde('Por aquí todavía no atiendo.', 0, true)
-  render(<NumiSection cola={null} />)
-  await preguntarAlgo()
-
-  expect(await screen.findByText('Por aquí todavía no atiendo.')).toBeInTheDocument()
-  expect(screen.getByText(/ya no atiende/i)).toBeInTheDocument()
-})
-
-/* `remaining` avisa ANTES del último turno, no después: después ya no sirve de nada. */
-test('avisa cuando quedan pocas preguntas, no cuando ya no queda ninguna', async () => {
-  responde('Ahí va.', 1)
-  render(<NumiSection cola={null} />)
-  await preguntarAlgo()
-
-  expect(await screen.findByText('Te queda una pregunta.')).toBeInTheDocument()
-})
-
-test('con muchas preguntas por delante no avisa de nada', async () => {
-  responde('Ahí va.', 5)
-  render(<NumiSection cola={null} />)
-  await preguntarAlgo()
-
-  await screen.findByText('Ahí va.')
-  expect(screen.queryByText(/te quedan?/i)).not.toBeInTheDocument()
-})
-
-/* El backend limita por minuto: el widget no debe permitir una segunda con la primera en vuelo. */
-test('no deja mandar una segunda pregunta con la primera en vuelo', async () => {
+test('la portada no llama al Numi público', () => {
+  const fuente = readFileSync('src/marketing/numi-section.tsx', 'utf8')
   /*
-    `fireEvent` y no `userEvent` aquí a propósito: con la respuesta pendiente el campo se
-    deshabilita, y `userEvent` espera a que el elemento vuelva a ser interactuable — que
-    es justo lo que este test comprueba que NO pasa.
+    Se mira lo que IMPORTA, no la palabra suelta: el comentario del archivo menciona
+    `/public/numi` a propósito, para explicar por qué no se usa.
   */
-  let resolver: ((v: unknown) => void) | undefined
-  preguntar.mockImplementation(() => new Promise((r) => (resolver = r)))
-  render(<NumiSection cola={null} />)
-
-  const campo = screen.getByLabelText(/preguntale algo a numi/i)
-  fireEvent.change(campo, { target: { value: '¿Cuánto cuesta?' } })
-  fireEvent.click(screen.getByRole('button', { name: /enviar/i }))
-
-  expect(await screen.findByText(/está escribiendo/i)).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /enviar/i })).toBeDisabled()
-  expect(screen.getByLabelText(/preguntale algo a numi/i)).toBeDisabled()
-
-  resolver?.({ status: 200, data: { answer: 'Listo.', remaining: 4, exhausted: false } })
-  expect(await screen.findByText('Listo.')).toBeInTheDocument()
+  expect(fuente).not.toContain('postApiV1PublicNumi')
+  expect(fuente).not.toMatch(/from '@\/api\/generated/)
 })

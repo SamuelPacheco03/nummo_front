@@ -6188,10 +6188,9 @@ secciones a la vez — el documento existe precisamente para que no haga falta.
 
 # 97. La página pública
 
-La portada (`/`) es la primera superficie de Nummo que alguien ve **sin cuenta**: vende, mide de
-dónde viene cada visita y deja que Numi conteste preguntas de preventa. El contrato que la
-sostiene está en `contract/HANDOFF-landing.md`; esta sección es lo que la portada cambia **de
-este documento**.
+La portada (`/`) es la primera superficie de Nummo que alguien ve **sin cuenta**: vende y mide de
+dónde viene cada visita. El contrato que la sostiene está en `contract/HANDOFF-landing.md`; esta
+sección es lo que la portada cambia **de este documento**.
 
 ## 97.1. Por qué esta sección existe: una consola no es una portada
 
@@ -6362,11 +6361,8 @@ Las cuatro trampas de precios, que ninguna se ve sin backend y por eso están to
 | `value: 0` en un tope | Un tope real (WhatsApp en el gratis) | Sin límite |
 | Una clave ausente en un plan | «No se sabe» | «No lo tiene» |
 
-Y de Numi de preventa: **quedarse sin cuota no es un error.** Llega `200` con
-`exhausted: true`, y el sitio de la caja de texto **lo ocupa el registro**, no un aviso. Son
-seis preguntas por visitante y no se renuevan: el tope *es* el empujón. Con el asistente
-apagado —como está en desarrollo por defecto— responde igual, así que ese es el primer
-estado que se ve y está diseñado.
+De los tres endpoints públicos la portada llama a **dos**: `pricing` y `signals`. El tercero,
+`/public/numi`, existe y funciona, pero el front ya no lo usa — el porqué está en §97.17.
 
 ## 97.10. El movimiento: un gesto por sección, y sin librería
 
@@ -6582,3 +6578,26 @@ diálogos apilados dejan al segundo bajo el velo del primero y `esc` cierra el e
 > tiene un solo importe por plan —no hay precio anual en ninguna parte— así que ese
 > conmutador sería decoración que no cambia nada, o peor, insinuaría una tarifa que nadie ha
 > fijado.
+
+## 97.17. La sección de Numi explica; no conversa
+
+La portada **no habla con Numi**. La sección lo cuenta —qué mira, qué prioriza, qué hace
+contigo— y el hilo del panel es un guion escrito, revelado mensaje a mensaje.
+
+Hubo un chat de verdad contra `/public/numi`, y se quitó. Un asistente que solo puede
+responder de preventa contesta peor que la propia página: sabe menos de lo que ya está
+escrito arriba, no ve ningún dato de quien pregunta y gasta el turno bueno —la primera
+impresión— en demostrar lo que no puede hacer. **Probar a Numi de verdad es crearse una
+cuenta**, que además es lo que la portada quiere que pase. Así que donde estaba la caja de
+texto va el registro, y ese sigue siendo el único destino de la sección.
+
+El endpoint sigue en el contrato y sigue respondiendo; simplemente no lo llama nadie desde
+aquí. Si algún día se apaga, apagarlo no rompe la portada.
+
+Dos cosas que el guion **no** puede ser:
+
+1. **No es decoración.** Bajo `prefers-reduced-motion` los mensajes salen **todos a la vez**,
+   no se quedan escondidos: quien pide menos movimiento pide menos movimiento, no menos
+   contenido. Es el mismo criterio que el trazo de `plan-art` (§97.16).
+2. **No es una promesa de cifras.** Los números del hilo son de ejemplo, como los del panel
+   del hero: nombre inventado, monto inventado. Nada de lo que se ve ahí sale del API.
