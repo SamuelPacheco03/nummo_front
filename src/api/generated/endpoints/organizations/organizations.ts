@@ -39,6 +39,7 @@ import type {
   OrganizationSettings,
   OrganizationSummary,
   ProvisionSummary,
+  RoleCatalog,
   UpdateApprovalPolicyInput,
   UpdateBranchInput,
   UpdateCustomRoleInput,
@@ -1375,7 +1376,127 @@ export const usePostApiV1OrganizationsOrgIdRoles = <TError = ErrorResponse,
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdRolesMutationOptions(options), queryClient);
     }
-    export type getApiV1OrganizationsOrgIdRolesRoleIdResponse200 = {
+    export type getApiV1OrganizationsOrgIdRolesCatalogResponse200 = {
+  data: RoleCatalog
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdRolesCatalogResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getApiV1OrganizationsOrgIdRolesCatalogResponseSuccess = (getApiV1OrganizationsOrgIdRolesCatalogResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdRolesCatalogResponseError = (getApiV1OrganizationsOrgIdRolesCatalogResponse403) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdRolesCatalogResponse = (getApiV1OrganizationsOrgIdRolesCatalogResponseSuccess | getApiV1OrganizationsOrgIdRolesCatalogResponseError)
+
+export const getGetApiV1OrganizationsOrgIdRolesCatalogUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/roles/catalog`
+}
+
+/**
+ * El catálogo cerrado de permisos, cada uno diciendo si un rol propio puede llevarlo, más lo que hace cada uno de los cinco roles predefinidos. Los tres reservados al propietario —`organization.delete`, `organization.transfer_ownership` y `subscription.manage`— salen con `assignable: false`: mandarlos en un rol es un 422, así que el editor debe deshabilitarlos en vez de dejar armar algo que el servidor va a rechazar. No los escribas a mano en el cliente; pídelos aquí, que es donde no se pueden separar de la regla real. Es un catálogo derivado de constantes, idéntico para toda organización y estable entre despliegues: cachéalo.
+ * @summary Todo lo necesario para pintar un editor de roles (requiere organization.roles.read)
+ */
+export const getApiV1OrganizationsOrgIdRolesCatalog = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdRolesCatalogResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdRolesCatalogResponse>(getGetApiV1OrganizationsOrgIdRolesCatalogUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdRolesCatalogQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/roles/catalog`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdRolesCatalogQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError = ErrorResponse>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdRolesCatalogQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>> = ({ signal }) => getApiV1OrganizationsOrgIdRolesCatalog(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdRolesCatalogQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>>
+export type GetApiV1OrganizationsOrgIdRolesCatalogQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdRolesCatalog<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError = ErrorResponse>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdRolesCatalog<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdRolesCatalog<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Todo lo necesario para pintar un editor de roles (requiere organization.roles.read)
+ */
+
+export function useGetApiV1OrganizationsOrgIdRolesCatalog<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdRolesCatalog>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdRolesCatalogQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type getApiV1OrganizationsOrgIdRolesRoleIdResponse200 = {
   data: CustomRole
   status: 200
 }

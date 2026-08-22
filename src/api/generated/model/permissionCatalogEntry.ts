@@ -5,12 +5,9 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { PermissionCatalogEntryKey } from './permissionCatalogEntryKey';
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
-
-
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
-} as const;
+export interface PermissionCatalogEntry {
+  key: PermissionCatalogEntryKey;
+  assignable: boolean;
+}

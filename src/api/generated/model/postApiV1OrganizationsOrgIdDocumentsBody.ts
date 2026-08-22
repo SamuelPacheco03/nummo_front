@@ -6,11 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
-
-
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
-} as const;
+export type PostApiV1OrganizationsOrgIdDocumentsBody = {
+  /** Imagen: JPEG, PNG, WebP o GIF. */
+  file: Blob;
+};

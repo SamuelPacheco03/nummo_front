@@ -1,5 +1,5 @@
 <!--
-  Copia literal de `HANDOFF-fase-14.md` del backend (nummo_api), commit 4247eb0.
+  Copia literal de `HANDOFF-fase-14.md` del backend (nummo_api), commit c7c5617.
 
   Se copia el documento de origen en vez de reescribirlo aquí: el original se
   mantiene contra el código, y dos copias del mismo texto se separan a la

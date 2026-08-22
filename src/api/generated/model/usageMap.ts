@@ -21,5 +21,10 @@ export interface UsageMap {
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
+  vision_documents_monthly: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
   whatsapp_messages_monthly: number;
 }

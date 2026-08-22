@@ -66,6 +66,8 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   search: { label: 'Buscador', area: 'Informes' },
   knowledge: { label: 'Base de conocimiento', area: 'Informes' },
   assistant: { label: 'Numi', area: 'Asistente' },
+  // Las imágenes que se le mandan a Numi quedan archivadas aquí.
+  documents: { label: 'Documentos', area: 'Asistente' },
   'assistant.settings': { label: 'Ajustes de Numi', area: 'Asistente' },
   notifications: { label: 'Notificaciones', area: 'Notificaciones' },
   'notifications.settings': { label: 'Política de avisos', area: 'Notificaciones' },

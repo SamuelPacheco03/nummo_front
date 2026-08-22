@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
+export type DocumentExtractionConfidence = typeof DocumentExtractionConfidence[keyof typeof DocumentExtractionConfidence];
 
 
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
+export const DocumentExtractionConfidence = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
 } as const;

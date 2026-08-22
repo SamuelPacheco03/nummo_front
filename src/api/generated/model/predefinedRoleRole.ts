@@ -6,11 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
+export type PredefinedRoleRole = typeof PredefinedRoleRole[keyof typeof PredefinedRoleRole];
 
 
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
+export const PredefinedRoleRole = {
+  OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  ACCOUNTANT: 'ACCOUNTANT',
+  OPERATOR: 'OPERATOR',
+  VIEWER: 'VIEWER',
 } as const;

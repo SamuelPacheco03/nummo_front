@@ -6,11 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
+export type AiVisionProviderCatalogEntryProvider = typeof AiVisionProviderCatalogEntryProvider[keyof typeof AiVisionProviderCatalogEntryProvider];
 
 
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
+export const AiVisionProviderCatalogEntryProvider = {
+  deepseek: 'deepseek',
+  anthropic: 'anthropic',
+  openai: 'openai',
+  google: 'google',
 } as const;

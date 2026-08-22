@@ -39,6 +39,7 @@ export const LIMIT_KEYS: (keyof LimitMap)[] = [
   'max_branches',
   'ai_messages_monthly',
   'voice_minutes_monthly',
+  'vision_documents_monthly',
   'whatsapp_messages_monthly',
 ]
 
@@ -80,6 +81,7 @@ const LIMIT_LABELS: Record<keyof LimitMap | 'free_organizations', string> = {
   max_users: 'miembros',
   max_branches: 'sedes',
   ai_messages_monthly: 'mensajes de Numi',
+  vision_documents_monthly: 'imágenes leídas',
   voice_minutes_monthly: 'minutos de voz',
   whatsapp_messages_monthly: 'mensajes de cobranza',
   free_organizations: 'organizaciones gratuitas',

@@ -6,11 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
-
-
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
-} as const;
+export type DocumentExtractionFinancialLineItemsItem = {
+  description: string;
+  amount: string | null;
+};

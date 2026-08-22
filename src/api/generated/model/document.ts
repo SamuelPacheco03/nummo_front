@@ -5,21 +5,25 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { ChatMessageFeedback } from './chatMessageFeedback';
-import type { ChatMessageRole } from './chatMessageRole';
-import type { ChatMessageSource } from './chatMessageSource';
+import type { DocumentMediaType } from './documentMediaType';
 
-export interface ChatMessage {
+export interface Document {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
-  role: ChatMessageRole;
-  content: string;
-  source: ChatMessageSource;
-  hasAudio: boolean;
-  waveform: number[] | null;
-  audioSeconds: number | null;
-  documentIds: string[] | null;
-  feedback: ChatMessageFeedback;
+  mediaType: DocumentMediaType;
+  /**
+     * @maximum 9007199254740991
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+  /**
+     * @minLength 64
+     * @maxLength 64
+     */
+  sha256: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  uploadedBy: string;
   /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
   createdAt: string;
+  extractedAt: string | null;
 }

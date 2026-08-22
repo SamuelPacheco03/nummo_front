@@ -71,6 +71,7 @@ export function useLimitUsage(): { limits: LimitUsage[]; period: string | undefi
     max_branches: branchesLoading ? null : branches.length,
     ai_messages_monthly: usage?.ai_messages_monthly ?? null,
     voice_minutes_monthly: usage?.voice_minutes_monthly ?? null,
+    vision_documents_monthly: usage?.whatsapp_messages_monthly ?? null,
     whatsapp_messages_monthly: usage?.whatsapp_messages_monthly ?? null,
   }
 

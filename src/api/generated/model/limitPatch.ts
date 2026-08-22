@@ -9,4 +9,4 @@
 /**
  * null significa sin tope.
  */
-export type LimitPatch = Partial<Record<'max_contacts' | 'max_users' | 'max_branches' | 'ai_messages_monthly' | 'voice_minutes_monthly' | 'whatsapp_messages_monthly', number | null>>;
+export type LimitPatch = Partial<Record<'max_contacts' | 'max_users' | 'max_branches' | 'ai_messages_monthly' | 'voice_minutes_monthly' | 'vision_documents_monthly' | 'whatsapp_messages_monthly', number | null>>;

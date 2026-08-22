@@ -58,11 +58,13 @@ function capacidades(permissions: CapabilitiesDto['permissions']): CapabilitiesD
       max_users: 1,
       max_branches: 1,
       ai_messages_monthly: 50,
+      vision_documents_monthly: 10,
       voice_minutes_monthly: 10,
       whatsapp_messages_monthly: 0,
     },
     period: '2026-08',
-    usage: { ai_messages_monthly: 0, voice_minutes_monthly: 0, whatsapp_messages_monthly: 0 },
+    usage: { ai_messages_monthly: 0,
+    vision_documents_monthly: 0, voice_minutes_monthly: 0, whatsapp_messages_monthly: 0 },
   }
 }
 

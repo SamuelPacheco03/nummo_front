@@ -6,11 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
+export type DocumentMediaType = typeof DocumentMediaType[keyof typeof DocumentMediaType];
 
 
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
+export const DocumentMediaType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/gif': 'image/gif',
 } as const;

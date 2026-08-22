@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessageSource];
-
-
-export const ChatMessageSource = {
-  text: 'text',
-  audio: 'audio',
-  image: 'image',
-} as const;
+export interface DocumentDownload {
+  url: string;
+  /**
+     * @maximum 9007199254740991
+     * @exclusiveMinimum 0
+     */
+  expiresIn: number;
+}
