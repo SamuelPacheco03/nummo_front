@@ -20,6 +20,7 @@ import { useCan, useFeature } from '@/features/platform/permissions'
 import { cn } from '@/lib/utils'
 import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import type { CollectionPolicy, WhatsAppTemplate } from '@/api/generated/model'
+import { usePaymentInstructions } from '@/features/finances/hooks'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
 import { describeQuietWindow } from './quiet-hours'
 import { RunNowPanel } from './run-now-panel'
@@ -55,6 +56,16 @@ export function CollectionPolicyPage() {
     canRead && can('whatsapp.templates.read') ? orgId : undefined,
   )
   const save = useUpdateCollectionPolicy(orgId ?? '')
+  /*
+    El recordatorio dice **dónde pagar**, y ese renglón sale de las formas de
+    pago. Sin ninguna publicada el mensaje no se queda en blanco —una variable
+    vacía haría que Meta rechazara el envío entero— pero dice «comunícate con
+    nosotros», y desde aquí no había forma de enterarse.
+  */
+  const { instructions } = usePaymentInstructions(
+    canRead && can('payment_instructions.read') ? orgId : undefined,
+  )
+  const sinFormasDePago = instructions.every((i) => !i.showInReminders)
 
   const [enabled, setEnabled] = useState(false)
   const [quietStart, setQuietStart] = useState('22:00')
@@ -142,6 +153,18 @@ export function CollectionPolicyPage() {
             sentido. Pide `messaging.send`, que es otro permiso que el de guardar.
           */}
           {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
+
+          {/* Solo con la cobranza encendida: apagada no hay mensaje que salga
+              mal, y el aviso sería ruido. */}
+          {policy?.enabled && sinFormasDePago && (
+            <Note tone="warning" title="Los recordatorios no dicen dónde pagar">
+              Sin formas de pago publicadas, el mensaje dice «Para pagar: comunícate con
+              nosotros».{' '}
+              <Link to="/config/formas-de-pago" className="text-brand underline">
+                Añadir una
+              </Link>
+            </Note>
+          )}
 
           {/* El plan es lo primero que hay que saber: sin la feature, todo lo de
               abajo se puede leer y nada se puede guardar (§45.5). */}

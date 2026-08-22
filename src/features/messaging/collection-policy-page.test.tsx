@@ -12,10 +12,14 @@ const m = vi.hoisted(() => ({
   feature: true,
   permisos: new Set<string>(),
   correr: vi.fn(),
+  formasDePago: [] as { showInReminders: boolean }[],
 }))
 
 vi.mock('sonner', () => ({
   toast: { success: (t: string) => m.avisos.push(t), error: (t: string) => m.avisos.push(t) },
+}))
+vi.mock('@/features/finances/hooks', () => ({
+  usePaymentInstructions: () => ({ instructions: m.formasDePago }),
 }))
 vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' } }),
@@ -95,7 +99,9 @@ beforeEach(() => {
     'messaging.settings.manage',
     'messaging.send',
     'whatsapp.templates.read',
+    'payment_instructions.read',
   ])
+  m.formasDePago = [{ showInReminders: true }]
   m.correr = vi.fn().mockResolvedValue({
     data: { dueSoon: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0 },
   })
@@ -241,4 +247,35 @@ test('sin `messaging.send` la política se guarda igual, pero no se dispara', ()
 
   expect(screen.getByRole('button', { name: /Guardar política/ })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Enviar ahora/ })).not.toBeInTheDocument()
+})
+
+test('sin formas de pago publicadas se avisa: el recordatorio no dice dónde pagar', () => {
+  /*
+    El mensaje no se queda en blanco —una variable vacía haría que Meta rechazara
+    el envío entero—, pero dice «comunícate con nosotros». Desde esta pantalla no
+    había forma de enterarse.
+  */
+  m.formasDePago = [{ showInReminders: false }]
+  pintar()
+
+  expect(screen.getByText(/Los recordatorios no dicen dónde pagar/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Añadir una' })).toHaveAttribute(
+    'href',
+    '/config/formas-de-pago',
+  )
+})
+
+test('con al menos una publicada el aviso no sale', () => {
+  m.formasDePago = [{ showInReminders: true }]
+  pintar()
+  expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).not.toBeInTheDocument()
+})
+
+test('con la cobranza apagada el aviso sobra, aunque no haya formas de pago', () => {
+  // Apagada no hay mensaje que salga mal: el aviso sería ruido.
+  m.formasDePago = []
+  m.politica = politica({ enabled: false })
+  pintar()
+
+  expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).not.toBeInTheDocument()
 })

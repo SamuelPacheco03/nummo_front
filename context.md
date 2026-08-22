@@ -1414,6 +1414,7 @@ solo comparten la palabra «aviso».
 | --- | --- | --- |
 | `/config/cobranza` | La política: si se escribe, a qué horas y con qué **tres** plantillas | `messaging.read` · `messaging.settings.manage` |
 | `/config/plantillas` | Las plantillas y su estado en Meta | `whatsapp.templates.read` |
+| `/config/formas-de-pago` | Dónde puede pagar el deudor; sale dentro del recordatorio | `payment_instructions.read` · `.manage` |
 | `/config/whatsapp` | Desde qué número sale: la cuenta de Meta del negocio | `whatsapp.settings.read` · `whatsapp.settings.manage` |
 | `/plataforma/whatsapp` | **La otra mitad**: lo que Nummo ve del canal (§47.6) | superadmin |
 | `/cartera/cobranza` | Lo enviado, a quién no se le escribe y el cupo, en dos pestañas | `messaging.read` |
@@ -1603,6 +1604,47 @@ Tres cosas que se hacen mal solas:
    pegada — y solo cuando no son cero, que ahí sobra.
 3. **Encola, no envía.** El worker despacha después, así que el texto dice *encolados* y
    remite al historial.
+
+### Dónde puede pagar quien debe
+
+El recordatorio ya no dice solo cuánto se debe: dice **dónde pagarlo**. Ese renglón sale
+de `/config/formas-de-pago`, un catálogo de la organización.
+
+**No es `payment_methods`**, y la etiqueta del permiso lo dice: aquel es *cómo se registró*
+un pago que ya entró; éste es *dónde puede pagar* quien todavía debe. Tiene permiso propio
+—`payment_instructions.manage`— porque decide **a qué cuenta le llega la plata** de los
+cobros que salen, y el deudor no tiene forma de notar un cambio.
+
+Va **por organización**, no por acuerdo ni por concepto: una cuenta por cobrar puede no
+tener acuerdo —las creadas a mano no lo tienen— y colgarlo de ahí habría dejado sin datos
+de pago justo a esos cobros.
+
+**Cinco formas y cada una con sus campos** (cuenta bancaria, llave/Transfiya, billetera,
+enlace de pago, otro). `details` es una unión discriminada por `kind`, así que el
+formulario cambia de campos al elegir. Cobrar en Colombia no tiene una sola forma, y un
+«banco + número + link» dejaría fuera la mitad de los casos reales.
+
+Cuatro cosas que se hacen mal solas:
+
+1. **`preview` viene calculado: no se rearma.** Es exactamente el renglón que verá el
+   deudor. Componerlo en el front haría que la vista previa y el mensaje real acabaran
+   diciendo cosas distintas de la misma cuenta.
+2. **Ningún campo es un `textarea`.** Estos textos van dentro de un parámetro de plantilla
+   de WhatsApp, y Meta rechaza el envío entero si lleva saltos de línea. El backend
+   normaliza al entrar, pero una caja de varias líneas invita a escribir lo que no cabe.
+3. **En el recordatorio caben tres.** Con dos o tres el renglón se lee; con seis es un muro.
+   El backend se queda con las publicables por orden y **no tiene dónde avisarlo**, así que
+   lo dice la pantalla.
+4. **Archiva, no borra.** Un recordatorio que ya salió nombró esa cuenta, y quien lo mire
+   mañana tiene que poder saber a dónde se le pidió pagar.
+
+**Y `showInReminders` es un interruptor a la vista, no algo en un menú**: es lo único que
+decide si el deudor la ve. Sirve para la cuenta que solo usa un cliente grande.
+
+**Mientras no haya ninguna publicada, el mensaje dice «Para pagar: comunícate con
+nosotros».** No se queda en blanco —una variable vacía haría que Meta rechazara el envío
+entero— pero el deudor no sabe a dónde pagar, y desde la política no había forma de
+enterarse: ahora lo avisa, y solo con la cobranza encendida.
 
 ### Lo que no se construye, a propósito
 
@@ -4778,7 +4820,7 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, **167 paths / 231 esquemas**) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, **169 paths / 234 esquemas**) y en vivo en
   `http://localhost:4010/openapi.json`.
 - Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`, más los
   temáticos (`HANDOFF-whatsapp-cobranza.md`, `HANDOFF-buscador.md`, …), y el resumen en
@@ -5288,6 +5330,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
 | `QuotaStrip` | `features/messaging/quota-strip.tsx` | El cupo mensual de cobranza, y cuándo deja de significar algo |
 | `RunNowPanel` | `features/messaging/run-now-panel.tsx` | «Enviar ahora» y el desglose de la pasada, sin prometer envío |
+| `PaymentInstructionsPage` | `features/finances/payment-instructions-page.tsx` | **Dónde puede pagar quien debe** (§11.1.16) |
+| `PaymentInstructionDialog` | `features/finances/payment-instruction-dialog.tsx` | El alta, con los campos que cambian según el `kind` |
+| `instructionKind` · `MAX_IN_REMINDERS` | `features/finances/payment-instruction-labels.ts` | Las cinco formas en palabras, y cuántas caben en un mensaje |
 | `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: entrantes y plantillas (§47.6) |
 | `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
