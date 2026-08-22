@@ -1,7 +1,7 @@
+import { DateRangeFields } from '@/components/date-range-fields'
 import { PageHeader } from '@/components/page-header'
 import { PlatformPage } from '@/features/admin/platform-page'
 import { Field } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useListFilters } from '@/lib/use-list-filters'
@@ -10,7 +10,7 @@ import { ActivityTab } from './activity-tab'
 import { FeedbackTab } from './feedback-tab'
 import { readOrigin } from './labels'
 import { OrganizationFilter, OriginFilter } from './panel-filters'
-import { defaultRange } from './ranges'
+import { defaultRange } from '@/lib/date-range'
 import { RunsTab } from './runs-tab'
 import { useRunSettings } from './run-settings'
 
@@ -75,24 +75,12 @@ export function PlaygroundVigilarPage() {
         {/* Cada pestaña enseña los filtros que su endpoint acepta, y ni uno más. */}
         {tab === 'resumen' && (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Field label="Desde" htmlFor="pg-desde">
-              <Input
-                id="pg-desde"
-                type="date"
-                value={from}
-                max={to}
-                onChange={(e) => set({ desde: e.target.value })}
-              />
-            </Field>
-            <Field label="Hasta" htmlFor="pg-hasta">
-              <Input
-                id="pg-hasta"
-                type="date"
-                value={to}
-                min={from}
-                onChange={(e) => set({ hasta: e.target.value })}
-              />
-            </Field>
+            <DateRangeFields
+              idPrefix="pg"
+              from={from}
+              to={to}
+              onChange={(r) => set({ ...(r.from && { desde: r.from }), ...(r.to && { hasta: r.to }) })}
+            />
             <OriginFilter value={values.origen} onChange={(origen) => set({ origen })} />
             <OrganizationFilter
               organizationId={settings.orgId}

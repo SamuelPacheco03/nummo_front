@@ -1,6 +1,7 @@
 import {
   Activity,
   Building2,
+  ChartNoAxesCombined,
   Columns3,
   Layers,
   MessageSquareText,
@@ -28,6 +29,11 @@ export const GROUPS: SectionGroup[] = [
       // El canal de WhatsApp: la cola de entrantes y las plantillas compartidas.
       // Van aquí y no en el playground porque no son de Numi, son del despliegue.
       { to: '/plataforma/whatsapp', label: 'Canal de WhatsApp', Icon: MessageSquareText },
+      /*
+        La otra punta de `src/marketing/`: la portada lleva mandando señales desde la
+        fase 2 y no había dónde leerlas (§97.26).
+      */
+      { to: '/plataforma/marketing', label: 'Marketing', Icon: ChartNoAxesCombined },
     ],
   },
   {

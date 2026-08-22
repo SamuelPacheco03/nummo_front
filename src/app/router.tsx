@@ -85,6 +85,12 @@ export const router = createBrowserRouter(
                 .WhatsAppChannelPage,
             }),
           },
+          {
+            path: 'marketing',
+            lazy: async () => ({
+              Component: (await import('@/features/admin/marketing-page')).MarketingPage,
+            }),
+          },
           /*
             El playground de Numi (§47.5). Cuelga de la consola de plataforma porque es la
             misma persona con la misma sesión, y su guard es el mismo: `requirePlatformAdmin`
