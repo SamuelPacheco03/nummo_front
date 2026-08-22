@@ -178,17 +178,21 @@ function PlanDelCatalogo({
   features,
   isCurrent,
   onUpgrade,
+  denso = false,
 }: {
   plan: PublicPlan
   /** Solo las features que algún plan incluye: las demás son claves que aún no existen. */
   features: (keyof FeatureMap)[]
   isCurrent: boolean
   onUpgrade: () => void
+  /** Apretada: la usa el catálogo del diálogo, donde el alto es el que manda. */
+  denso?: boolean
 }) {
   const price = priceLabel(plan.price)
 
   return (
     <PlanCard
+      denso={denso}
       nombre={plan.name}
       codigo={plan.code}
       precio={price.per ? { monto: price.amount, porMes: true } : null}
@@ -342,21 +346,32 @@ export function PlanPage() {
       </Panel>
 
       <Dialog open={catalogo} onOpenChange={setCatalogo}>
-        <DialogContent className="sm:max-w-6xl">
+        {/*
+          Ancho y alto salen del espacio disponible, no de un tamaño fijo: el diálogo por
+          defecto se queda en `max-w-lg` y las tres tarjetas se apretaban hasta partir cada
+          rótulo en dos líneas. Con `min()` crece hasta llenar la pantalla y se detiene antes
+          de pegarse a los bordes.
+
+          `aria-describedby={undefined}` porque este diálogo **no lleva descripción**: sin
+          eso, Radix avisa por consola de que falta. Lo que había explicaba lo mismo que ya
+          dice el panel de detrás, y su única consecuencia visible era robarle alto a las
+          tarjetas — que es justo lo que sobra aquí.
+        */}
+        <DialogContent
+          aria-describedby={undefined}
+          className="w-[min(96vw,84rem)] max-w-none max-h-[94dvh] p-5 sm:p-6"
+        >
           <DialogHeader>
             <DialogTitle>Planes</DialogTitle>
-            <DialogDescription>
-              Lo que cambia entre planes es cuánta cartera, cuánto equipo y cuánta IA caben. El
-              ciclo completo —cobrar, pagar, mora y reportes— está en todos.
-            </DialogDescription>
           </DialogHeader>
-          <div className="grid items-stretch gap-5 pt-2 lg:grid-cols-3">
+          <div className="grid items-stretch gap-4 lg:grid-cols-3">
             {plans.map((plan) => (
               <PlanDelCatalogo
                 key={plan.code}
                 plan={plan}
                 features={features}
                 isCurrent={plan.code === capabilities?.planCode}
+                denso
                 /*
                   Cierra el catálogo antes de abrir la consulta: dos diálogos apilados dejan
                   al segundo bajo el velo del primero y la tecla `esc` cierra el equivocado.

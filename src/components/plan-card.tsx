@@ -92,6 +92,15 @@ export interface PlanCardProps {
   insignia?: { texto: string; tono: 'actual' | 'recomendado' } | null
   /** El pie. Cada lado pone el suyo: un enlace en la portada, un botón en la consola. */
   accion: ReactNode
+  /**
+   * Apretada, para cuando el alto es el que manda.
+   *
+   * La usa el catálogo de la consola, que va dentro de un diálogo: ahí lo que importa es
+   * que las tres quepan sin desplazarse, y unos pocos píxeles de aire por sección son la
+   * diferencia entre verlas enteras y tener que rodar dentro del modal. En la portada, que
+   * tiene toda la página, va suelta.
+   */
+  denso?: boolean
   className?: string
 }
 
@@ -105,6 +114,7 @@ export function PlanCard({
   destacado = false,
   insignia = null,
   accion,
+  denso = false,
   className,
 }: PlanCardProps) {
   const titleId = useId()
@@ -119,7 +129,8 @@ export function PlanCard({
       role="group"
       aria-labelledby={titleId}
       className={cn(
-        'relative flex min-w-0 flex-col rounded-2xl border p-6 transition-[transform,box-shadow] duration-300',
+        'relative flex min-w-0 flex-col rounded-2xl border transition-[transform,box-shadow] duration-300',
+        denso ? 'p-5' : 'p-6',
         'hover:-translate-y-1',
         destacado
           ? 'border-brand/40 bg-card shadow-[0_20px_50px_-24px_var(--brand)] hover:shadow-[0_28px_60px_-24px_var(--brand)]'
@@ -158,10 +169,10 @@ export function PlanCard({
         <p id={titleId} className="font-display text-lg font-semibold text-foreground">
           {nombre}
         </p>
-        {Arte && <Arte className="-mt-2 h-20 w-24 shrink-0" />}
+        {Arte && <Arte className={cn('-mt-2 w-24 shrink-0', denso ? 'h-16' : 'h-20')} />}
       </div>
 
-      <div className="relative mt-5">
+      <div className={cn('relative', denso ? 'mt-4' : 'mt-5')}>
         {precio ? (
           <p className="flex items-baseline gap-1.5">
             <span className="font-display text-4xl font-semibold tracking-tight text-foreground tabular-nums">
@@ -180,11 +191,23 @@ export function PlanCard({
       </div>
 
       {descripcion && (
-        <p className="relative mt-4 text-sm leading-relaxed text-muted-foreground">{descripcion}</p>
+        <p
+          className={cn(
+            'relative text-sm leading-relaxed text-muted-foreground',
+            denso ? 'mt-3' : 'mt-4',
+          )}
+        >
+          {descripcion}
+        </p>
       )}
 
       {topes.length > 0 && (
-        <ul className="relative mt-6 space-y-3 border-t border-border pt-6 text-sm">
+        <ul
+          className={cn(
+            'relative border-t border-border text-sm',
+            denso ? 'mt-4 space-y-2 pt-4' : 'mt-6 space-y-3 pt-6',
+          )}
+        >
           {topes.map((tope) => {
             const Icon = ICONO_DE_TOPE[tope.key]
             return (
@@ -210,7 +233,12 @@ export function PlanCard({
       )}
 
       {funciones.length > 0 && (
-        <ul className="relative mt-6 space-y-3 border-t border-border pt-6 text-sm">
+        <ul
+          className={cn(
+            'relative border-t border-border text-sm',
+            denso ? 'mt-4 space-y-2 pt-4' : 'mt-6 space-y-3 pt-6',
+          )}
+        >
           {funciones.map((f) => (
             <li
               key={f.key}
@@ -252,7 +280,7 @@ export function PlanCard({
       )}
 
       {/* `mt-auto`: los pies quedan alineados aunque las descripciones midan distinto. */}
-      <div className="relative mt-auto pt-6">{accion}</div>
+      <div className={cn('relative mt-auto', denso ? 'pt-4' : 'pt-6')}>{accion}</div>
     </div>
   )
 }
