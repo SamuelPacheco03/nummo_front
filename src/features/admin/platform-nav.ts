@@ -3,6 +3,7 @@ import {
   Building2,
   Columns3,
   Layers,
+  MessageSquareText,
   ListChecks,
   MessageSquareCode,
   Wrench,
@@ -24,6 +25,9 @@ export const GROUPS: SectionGroup[] = [
     items: [
       { to: '/plataforma/organizaciones', label: 'Organizaciones', Icon: Building2 },
       { to: '/plataforma/planes', label: 'Planes', Icon: Layers },
+      // El canal de WhatsApp: la cola de entrantes y las plantillas compartidas.
+      // Van aquí y no en el playground porque no son de Numi, son del despliegue.
+      { to: '/plataforma/whatsapp', label: 'Canal de WhatsApp', Icon: MessageSquareText },
     ],
   },
   {
