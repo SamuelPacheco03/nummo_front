@@ -68,6 +68,7 @@ function politica(over: Partial<CollectionPolicy> = {}): CollectionPolicy {
     quietEnd: '07:00',
     dueSoonTemplateKey: 'cobro_por_vencer',
     overdueTemplateKey: 'cobro_vencido',
+    overdueSummaryTemplateKey: 'cobro_vencido_resumen',
     updatedAt: '2026-08-01T10:00:00Z',
     ...over,
   }
@@ -133,7 +134,7 @@ test('una plantilla que Meta no aprobó se ofrece, pero avisada', () => {
 test('vaciar la plantilla manda null, no cadena vacía', async () => {
   pintar()
   await userEvent.selectOptions(
-    screen.getByLabelText('Aviso de que ya está vencido'),
+    screen.getByLabelText(/cuando debe una sola factura/),
     '',
   )
   await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
@@ -141,6 +142,40 @@ test('vaciar la plantilla manda null, no cadena vacía', async () => {
   expect(m.guardar).toHaveBeenCalledWith({
     orgId: 'o1',
     data: expect.objectContaining({ overdueTemplateKey: null }),
+  })
+})
+
+test('la mora lleva dos plantillas, y la pantalla explica por qué', () => {
+  // Meta no pluraliza: con una sola saldría «tienes 1 facturas vencidas».
+  pintar()
+
+  expect(screen.getByLabelText(/cuando debe una sola factura/)).toBeInTheDocument()
+  expect(screen.getByLabelText(/cuando debe varias/)).toBeInTheDocument()
+  expect(screen.getByText(/Meta no pluraliza/)).toBeInTheDocument()
+})
+
+test('sin la de resumen NO se apaga el aviso: se degrada, y se dice sin ámbar', () => {
+  /*
+    Es la diferencia con los otros dos huecos. Sin plantilla de «por vencer» o de
+    mora ese aviso **no sale**; sin la de resumen sale igual, con el total pero
+    sin el conteo. Degradar no es fallar, así que no gasta el ámbar de §7.
+  */
+  m.politica = politica({ overdueSummaryTemplateKey: null })
+  pintar()
+
+  const aviso = screen.getByText(/se usa la de arriba, con el total pero sin decir cuántas/)
+  expect(aviso).toBeInTheDocument()
+  expect(aviso).not.toHaveClass('text-warning-strong')
+})
+
+test('la de resumen viaja al guardar, y vacía va como null', async () => {
+  pintar()
+  await userEvent.selectOptions(screen.getByLabelText(/cuando debe varias/), '')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ overdueSummaryTemplateKey: null }),
   })
 })
 
