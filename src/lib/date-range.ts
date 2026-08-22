@@ -1,6 +1,10 @@
 /**
  * **La ventana de fechas de los paneles**, y la de antes.
  *
+ * Vive en `lib/` y no en una feature porque la usan dos: el panel de actividad del
+ * playground y la consola de marketing. Las dos preguntan lo mismo —«¿esto está
+ * subiendo?»— contra endpoints distintos que aceptan el mismo `from`/`to`.
+ *
  * `GET /stats` mide una ventana y solo una: el contrato no devuelve el período anterior.
  * Pero «¿esto está subiendo?» es la primera pregunta de un panel de actividad, y la
  * respuesta no hay que inventarla — se pide. La comparación de estas pantallas son **dos

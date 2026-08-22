@@ -5333,8 +5333,13 @@ Todos son parte del sistema y deben reutilizarse:
 | `PaymentInstructionsPage` | `features/finances/payment-instructions-page.tsx` | **Dónde puede pagar quien debe** (§11.1.16) |
 | `PaymentInstructionDialog` | `features/finances/payment-instruction-dialog.tsx` | El alta, con los campos que cambian según el `kind` |
 | `instructionKind` · `MAX_IN_REMINDERS` | `features/finances/payment-instruction-labels.ts` | Las cinco formas en palabras, y cuántas caben en un mensaje |
-| `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: entrantes y plantillas (§47.6) |
+| `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: estado, entrantes y plantillas (§47.6, §97.26) |
 | `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |
+| `WhatsAppStatusTab` | `features/admin/whatsapp-status-tab.tsx` | Si el canal está configurado, y una prueba para saberlo de verdad (§97.26) |
+| `MarketingPage` | `features/admin/marketing-page.tsx` | **La consola de marketing**: resumen, embudo y campañas, con una sola ventana (§97.26) |
+| `MarketingOverviewTab` · `MarketingFunnelTab` · `MarketingSourcesTab` | `features/admin/` | Cuánta gente llegó · hasta dónde bajó · de dónde venía y quién paga |
+| `DateRangeFields` | `components/date-range-fields.tsx` | El par «Desde / Hasta», con el `max`/`min` cruzado que se olvida al copiar |
+| `defaultRange` · `previousRange` · `delta` | `lib/date-range.ts` | La ventana de un panel y la de antes. Vivía en el playground; la usan dos |
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
 
 ---
@@ -7120,4 +7125,72 @@ de privacidad: el pie es el único sitio donde puede mirar. Comparte línea con 
 > qué se mide y quién lo mide (§97.20), y no hay ninguna página donde leerlas. Nombrar a la
 > empresa cierra la mitad de esa deuda; la otra mitad es una política de privacidad, que no es
 > texto que se pueda inventar desde aquí.
+
+## 97.26. La consola de marketing: la otra punta de la portada
+
+La portada lleva desde la fase 2 mandando señales a `POST /public/signals` —qué secciones
+se miran, dónde se pulsa, de qué campaña vino cada visita— y **no había ninguna pantalla
+donde leerlas**. Los tres endpoints estaban en el contrato desde entonces; el handoff avisó
+de que eran «una pantalla de `/plataforma` y va después», y el después no llegó. Se estuvo
+midiendo a ciegas toda la reescritura del texto de §97.22 y §97.23.
+
+De las 38 operaciones `/admin/` del contrato, el front consumía 32. Las tres de marketing
+eran el hueco grande; las otras tres son `whatsapp/status`, `whatsapp/test-message` —abajo—
+y `playground/chat`, que **no es un hueco**: el playground lo llama con `postEventStream` a
+mano porque necesita SSE y la función que genera Orval no sirve para eso.
+
+### Tres pestañas y no tres destinos, porque comparten la ventana
+
+Los tres endpoints piden el mismo `from`/`to`. Con tres destinos, mover una fecha en uno
+dejaría los otros dos midiendo otra cosa — y comparar dos pantallas que **dicen** mirar el
+mismo período y no lo hacen es cómo se llega a una conclusión falsa sin que nada falle. Por
+eso el rango vive encima del selector de pestaña, y hay un test que lo prueba.
+
+| Pestaña | Qué contesta |
+| --- | --- |
+| Resumen | Cuánta gente llegó, cuánta abrió cuenta, con qué dispositivo |
+| Embudo | Alcance por sección, clics en CTA, registros |
+| Campañas | Por canal: visitantes → registros → con organización → **pagando** |
+
+**El embudo no se reordena por alcance.** Lo que se lee ahí es el desplome de una sección a
+la siguiente, y eso solo existe en el orden en que están en la página; ordenar de mayor a
+menor lo convierte en un ranking, que responde otra pregunta.
+
+**Y dice cuáles de sus secciones no existen.** `integrations` está en el catálogo del
+backend y no en la portada, así que valdrá cero para siempre — y un cero sin explicación se
+lee como «esto no lo mira nadie» en lugar de «esto no está». Está pedido en `nummo_api#2`;
+mientras tanto lo dice la pantalla.
+
+La comparación con el período anterior son **dos llamadas de verdad** a la misma ruta, como
+en el panel del playground: el contrato devuelve una ventana y solo una (§70).
+
+### El canal de WhatsApp ya dice si está encendido
+
+`whatsapp/status` era el hueco que dejaba a las otras dos pestañas sin diagnóstico: **una
+cola de entrantes vacía y un catálogo de plantillas vacío se ven exactamente igual** con el
+canal apagado que con el canal encendido y sin tráfico. «No llega nada» no se podía
+distinguir de «no hay nada que llegue».
+
+Por eso «Estado» es ahora la **primera pestaña y la de entrada**: esta pantalla existe para
+diagnosticar, y quien entra a averiguar por qué no llega nada empezaba por la vista que
+menos podía contestarle. El envío de prueba va en esa misma pestaña y no en la suya: la
+configuración puede decir que todo está puesto y el mensaje no salir igual.
+
+> **El envío responde `202`, no `200`.** Meta lo aceptó para entregarlo, que no es lo mismo
+> que entregado, y el aviso lo dice así. Prometer «enviado» es justo lo que hace que alguien
+> descarte el canal como culpable cuando sí lo era.
+
+### Dos cosas que subieron de sitio
+
+`ranges.ts` vivía en `features/playground/` y ahora la usan dos features, así que es
+`lib/date-range.ts`. Y el par «Desde / Hasta» —dos `Field` con un `Input type="date"` y el
+`max` de uno atado al valor del otro— estaba escrito igual en las dos: es
+`components/date-range-fields.tsx`. Ese `max`/`min` cruzado es justo lo que se olvida al
+copiar, y sin él se puede pedir un rango invertido que el backend rechaza con un 422 que
+nadie sabe leer.
+
+> **Lo que no se pudo comprobar aquí:** estas pantallas nunca se han visto con datos
+> reales — hace falta `nummo-api` en el 4010. Lo que sí está probado es el render con datos
+> de forma correcta (6 tests con los hooks doblados), el tipado, y que el trozo perezoso de
+> la ruta se construye (`marketing-page-*.js` en `dist/assets`).
 

@@ -3,14 +3,22 @@ import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useListFilters } from '@/lib/use-list-filters'
 import { PlatformPage } from './platform-page'
 import { WhatsAppInboundTab } from './whatsapp-inbound-tab'
+import { WhatsAppStatusTab } from './whatsapp-status-tab'
 import { WhatsAppTemplatesTab } from './whatsapp-templates-tab'
 
 const KEYS = ['vista'] as const
 type Key = (typeof KEYS)[number]
 
-type Tab = 'entrantes' | 'plantillas'
+type Tab = 'estado' | 'entrantes' | 'plantillas'
 
 const TABS: { value: Tab; label: string }[] = [
+  /*
+    **«Estado» va primera y es la que sale por defecto.** Era la pieza que faltaba: una
+    cola vacía y un catálogo vacío se ven igual con el canal apagado que encendido y sin
+    tráfico, así que quien entraba a diagnosticar «no llega nada» empezaba por la pantalla
+    que menos podía contestarle.
+  */
+  { value: 'estado', label: 'Estado' },
   { value: 'entrantes', label: 'Entrantes' },
   { value: 'plantillas', label: 'Plantillas' },
 ]
@@ -23,7 +31,7 @@ const TABS: { value: Tab; label: string }[] = [
  * **fuera de `requireTenant`** — no hay `orgId` porque estas dos cosas no
  * pertenecen a ninguna organización.
  *
- * Dos pestañas y no dos destinos, porque las dos responden la misma pregunta —«¿el
+ * Tres pestañas y no tres destinos, porque las tres responden la misma pregunta —«¿el
  * canal está sano?»— y comparten el patrón que las hace necesarias: **el fallo
  * pasa en un sitio y el síntoma aparece en otro.** Un webhook que deja de
  * parsearse o una plantilla que Meta pausa se ven aquí como lo que son; en el
@@ -32,7 +40,7 @@ const TABS: { value: Tab; label: string }[] = [
  */
 export function WhatsAppChannelPage() {
   const { values, set } = useListFilters<Key>('nummo:plataforma:canal', KEYS)
-  const tab = (TABS.find((t) => t.value === values.vista)?.value ?? 'entrantes') as Tab
+  const tab = (TABS.find((t) => t.value === values.vista)?.value ?? 'estado') as Tab
 
   return (
     <PlatformPage>
@@ -48,7 +56,9 @@ export function WhatsAppChannelPage() {
         onChange={(vista) => set({ vista })}
       />
 
-      {tab === 'entrantes' ? <WhatsAppInboundTab /> : <WhatsAppTemplatesTab />}
+      {tab === 'estado' && <WhatsAppStatusTab />}
+      {tab === 'entrantes' && <WhatsAppInboundTab />}
+      {tab === 'plantillas' && <WhatsAppTemplatesTab />}
     </PlatformPage>
   )
 }

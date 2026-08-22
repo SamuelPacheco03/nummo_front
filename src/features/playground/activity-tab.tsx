@@ -13,7 +13,7 @@ import type {
 } from '@/api/generated/model'
 import { usePlaygroundStats } from './hooks'
 import { formatMs, formatTokens, SIN_DATO_LARGO } from './metrics'
-import { delta, previousRange } from './ranges'
+import { delta, previousRange } from '@/lib/date-range'
 
 const column = listColumns<PlaygroundStatsToolsItem>()
 

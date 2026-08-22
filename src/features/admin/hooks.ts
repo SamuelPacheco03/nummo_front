@@ -19,6 +19,11 @@ import {
   usePostApiV1AdminWhatsappInboundEventsIdRetry,
   usePostApiV1AdminWhatsappInboundEventsRetry,
   usePostApiV1AdminWhatsappTemplatesSync,
+  useGetApiV1AdminWhatsappStatus,
+  usePostApiV1AdminWhatsappTestMessage,
+  useGetApiV1AdminMarketingOverview,
+  useGetApiV1AdminMarketingFunnel,
+  useGetApiV1AdminMarketingSources,
 } from '@/api/generated/endpoints/platform-admin/platform-admin'
 import { getGetApiV1PlansQueryKey } from '@/api/generated/endpoints/platform/platform'
 import type {
@@ -28,7 +33,11 @@ import type {
   GetApiV1AdminOrganizationsParams,
   GetApiV1AdminWhatsappInboundEventsParams,
   InboundQueueHealth,
+  MarketingFunnel,
+  MarketingOverview,
+  MarketingSources,
   PlanDto,
+  WhatsAppStatusOutput,
   WhatsAppTemplate,
 } from '@/api/generated/model'
 import { asArray } from '@/lib/list-result'
@@ -218,4 +227,58 @@ export function useSyncPlatformTemplates() {
       },
     },
   })
+}
+
+/**
+ * **Qué piezas del canal están configuradas en este despliegue.**
+ *
+ * Es la primera pregunta de quien abre esta pantalla y no se podía contestar: la cola de
+ * entrantes vacía y el catálogo de plantillas vacío se ven exactamente igual con el canal
+ * apagado que con el canal encendido y sin tráfico. Sin esto, «no llega nada» era un
+ * diagnóstico imposible.
+ */
+export function usePlatformWhatsAppStatus() {
+  const query = useGetApiV1AdminWhatsappStatus()
+  return { ...query, status: query.data?.data as WhatsAppStatusOutput | undefined }
+}
+
+/**
+ * Manda un mensaje de prueba con la cuenta de plataforma.
+ *
+ * **Responde 202, no 200**: Meta lo aceptó para entregarlo, que no es lo mismo que
+ * entregado. Quien lo use tiene que contarlo así o promete algo que no puede cumplir.
+ */
+export function useSendPlatformTestMessage() {
+  return usePostApiV1AdminWhatsappTestMessage()
+}
+
+/* ---------- La consola de marketing ---------- */
+
+/**
+ * Las tres lecturas del embudo público, que comparten ventana.
+ *
+ * Van con `keepPreviousData` porque las tres cuelgan del mismo par de fechas: al mover un
+ * día, sin esto las cifras parpadean a vacío y la pantalla entera se siente rota por un
+ * cambio que el usuario percibe como mínimo.
+ *
+ * **Miden la portada, que es la única superficie sin sesión.** Lo que alimentan estas
+ * pantallas lo escribe `POST /public/signals` desde `src/marketing/` (§97.7): si el
+ * catálogo de secciones del backend y las secciones reales se separan, aquí se ve como un
+ * `reach` en cero de algo que sí se está mirando.
+ */
+const VENTANA = { query: { placeholderData: keepPreviousData } } as const
+
+export function useMarketingOverview(params: { from: string; to: string }) {
+  const query = useGetApiV1AdminMarketingOverview(params, VENTANA)
+  return { ...query, overview: query.data?.data as MarketingOverview | undefined }
+}
+
+export function useMarketingFunnel(params: { from: string; to: string }) {
+  const query = useGetApiV1AdminMarketingFunnel(params, VENTANA)
+  return { ...query, funnel: query.data?.data as MarketingFunnel | undefined }
+}
+
+export function useMarketingSources(params: { from: string; to: string }) {
+  const query = useGetApiV1AdminMarketingSources(params, VENTANA)
+  return { ...query, sources: query.data?.data as MarketingSources | undefined }
 }

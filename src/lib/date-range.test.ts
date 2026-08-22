@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { defaultRange, delta, previousRange, rangeDays } from './ranges'
+import { defaultRange, delta, previousRange, rangeDays } from './date-range'
 
 test('una ventana cuenta sus dos extremos', () => {
   expect(rangeDays('2026-08-01', '2026-08-01')).toBe(1)
