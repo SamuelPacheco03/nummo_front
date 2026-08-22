@@ -12,7 +12,6 @@ import { InlineError } from '@/components/ui/error-state'
 import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
 import { AuthLayout } from './auth-layout'
-import { PageLoader } from '@/components/ui/loader'
 import { useAuth, useLogin } from './hooks'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -39,7 +38,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as { from?: string; email?: string } | null
-  const { isAuthenticated, isLoading: checkingSession } = useAuth()
+  const { isAuthenticated } = useAuth()
   const login = useLogin()
   const [showPassword, setShowPassword] = useState(false)
 
@@ -62,7 +61,17 @@ export function LoginPage() {
     El mismo loader que usa `ProtectedRoute`, para que las dos caras de la puerta
     esperen igual.
   */
-  if (checkingSession) return <PageLoader label="Verificando sesión…" />
+  /*
+    **No se espera a saber si hay sesión para pintar el formulario.**
+
+    Antes esta pantalla se quedaba en «Verificando sesión…» hasta que `/auth/me` contestaba,
+    y eso castiga al caso normal —quien llega aquí no tiene sesión— para cubrir el raro.
+    Encima el parpadeo se repetía al saltar de login a registro.
+
+    La comprobación sigue: es lo que impide que alguien con sesión se quede en esta pantalla.
+    Lo que cambia es que ya no bloquea. Quien tenga sesión ve el formulario un instante antes
+    de que lo redirijan, que es un precio mucho menor que un cargador para todos los demás.
+  */
   if (isAuthenticated) return <Navigate to="/" replace />
 
   const onSubmit = handleSubmit(async (values) => {

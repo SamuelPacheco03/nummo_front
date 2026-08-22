@@ -23,6 +23,18 @@ export function useAuth() {
       retry: false,
       staleTime: 5 * 60_000,
       refetchOnWindowFocus: true,
+      /*
+        **«No hay sesión» es una respuesta, no un fallo que reintentar.**
+
+        El 401 de `/auth/me` deja la query en estado de error, y por defecto una query
+        errada se vuelve a lanzar en cada montaje — así que ir de login a registro pedía
+        otra vez lo mismo para recibir otra vez lo mismo. Con esto, la respuesta vale lo que
+        dure `staleTime`.
+
+        Lo que sí puede cambiarla sigue cubierto: `useLogin` invalida todo al entrar, y
+        `refetchOnWindowFocus` recoge una sesión abierta en otra pestaña.
+      */
+      retryOnMount: false,
     },
   })
 
