@@ -1,7 +1,6 @@
-import { ArrowRight, ArrowUpRight, BellRing, CheckCircle2, Play, ReceiptText, Sparkles } from 'lucide-react'
-import { RowIconBadge, type RowIconTone } from '@/components/ui/row-icon'
+import { ArrowRight, Play } from 'lucide-react'
+import { AppPreview, NumiNotice } from './app-preview'
 import { cn } from '@/lib/utils'
-import { formatMoney } from '@/lib/format'
 import { SERIF_STACK } from './type'
 import { rutasApp } from './links'
 
@@ -24,20 +23,6 @@ import { rutasApp } from './links'
  * Un solo gesto en movimiento: la entrada escalonada. El panel entra con inclinación
  * mínima y el aviso de Numi con retardo.
  */
-
-/** Una fila de «Actividad reciente» del panel de muestra. */
-interface Actividad {
-  Icon: typeof ReceiptText
-  tone: RowIconTone
-  titulo: string
-  detalle: string
-}
-
-const ACTIVIDAD: readonly Actividad[] = [
-  { Icon: ReceiptText, tone: 'success', titulo: 'Cobro creado', detalle: 'Cliente · Mensualidad' },
-  { Icon: BellRing, tone: 'brand', titulo: 'Recordatorio enviado', detalle: 'Automático · hace 2 min' },
-  { Icon: CheckCircle2, tone: 'success', titulo: 'Pago confirmado', detalle: 'Banco conectado' },
-]
 
 /** Las tres iniciales de la prueba social. No son personas reales: no hay clientes que citar. */
 const CARAS = ['J', 'M', 'A'] as const
@@ -137,67 +122,7 @@ export function Hero({ className }: { className?: string }) {
           apoyada y no como una tarjeta más. Más grados y empieza a parecer una plantilla.
         */}
         <div className="animate-hero-panel relative" style={paso(180)}>
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            {/* Cromo de ventana: es lo que dice «esto es la app» sin escribirlo. */}
-            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-              <span className="flex gap-1.5" aria-hidden>
-                <span className="size-2 rounded-full bg-muted-foreground/25" />
-                <span className="size-2 rounded-full bg-muted-foreground/25" />
-                <span className="size-2 rounded-full bg-muted-foreground/25" />
-              </span>
-              <span className="text-xs text-muted-foreground">Mi operación · Hoy</span>
-            </div>
-
-            {/* El `pb` extra no es aire: es donde se apoya el aviso de Numi sin tapar una fila. */}
-            <div className="p-5 pb-16">
-              <p className="text-xs text-muted-foreground">Resumen financiero</p>
-              <p className="mt-1 flex items-center gap-1.5 text-lg font-semibold tracking-tight text-foreground">
-                Buen día, Andrea
-                <Sparkles className="size-4 text-primary" aria-hidden />
-              </p>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="min-w-0 rounded-xl bg-success/15 p-4">
-                  <p className="text-[0.6875rem] text-muted-foreground">Disponible</p>
-                  <p className="mt-1 text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                    {formatMoney('24680000.00')}
-                  </p>
-                  <p className="mt-1 text-[0.6875rem] text-success-strong">↗ 12,8% este mes</p>
-                </div>
-                <div className="min-w-0 rounded-xl border border-border p-4">
-                  <p className="text-[0.6875rem] text-muted-foreground">Por cobrar</p>
-                  <p className="mt-1 text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                    {formatMoney('8420000.00')}
-                  </p>
-                  <p className="mt-1 text-[0.6875rem] text-warning-strong">6 pendientes</p>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-baseline justify-between">
-                <p className="text-xs text-muted-foreground">Actividad reciente</p>
-                <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
-                  Ver todo
-                  <ArrowUpRight className="size-3" aria-hidden />
-                </span>
-              </div>
-
-              <ul className="mt-3 space-y-3">
-                {ACTIVIDAD.map((a) => (
-                  <li key={a.titulo} className="flex items-center gap-3">
-                    {/* La pastilla de la consola, no una imitación (§94). */}
-                    <RowIconBadge Icon={a.Icon} tone={a.tone} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-foreground">
-                        {a.titulo}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">{a.detalle}</span>
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">Hoy</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <AppPreview huecoParaAviso />
 
           {/*
             El aviso de Numi llega el último, y por eso se nota.
@@ -206,18 +131,10 @@ export function Hero({ className }: { className?: string }) {
             DOS modos. Sobre una página clara resalta sola; sobre una oscura se fundía con el
             fondo y el aviso desaparecía. El borde es lo que le devuelve el filo.
           */}
-          <div
-            className="animate-hero-in absolute -bottom-6 -left-3 flex max-w-[19rem] items-start gap-2.5 rounded-xl bg-sidebar px-4 py-3 shadow-sm ring-1 ring-border sm:-left-8"
+          <NumiNotice
+            className="animate-hero-in absolute -bottom-6 -left-3 sm:-left-8"
             style={paso(620)}
-          >
-            <Sparkles className="mt-0.5 size-4 shrink-0 text-sidebar-primary" aria-hidden />
-            <span className="min-w-0">
-              <span className="block text-[0.6875rem] text-sidebar-muted-foreground">Numi dice</span>
-              <span className="block text-sm leading-snug text-sidebar-foreground">
-                Tu flujo está 18% más saludable que el mes pasado.
-              </span>
-            </span>
-          </div>
+          />
         </div>
       </div>
     </section>

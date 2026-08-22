@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { Field } from '@/components/ui/field'
@@ -122,29 +122,36 @@ export function LoginPage() {
           <InlineError>{getErrorMessage(login.error, 'Credenciales inválidas')}</InlineError>
         )}
 
-        <Button type="submit" className="w-full" disabled={busy}>
+        <Button type="submit" className="w-full bg-cta text-cta-foreground hover:bg-cta hover:opacity-90" disabled={busy}>
           {busy && <Loader size="sm" />}
           Entrar
         </Button>
       </form>
 
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          ¿No tienes cuenta?{' '}
-          <Link to="/register" className="font-medium text-brand hover:underline">
-            Regístrate
-          </Link>
-        </p>
-        {DEMO_LOGIN && (
+      {/*
+        La demo **es una acción**, no una nota al pie: rellena el formulario. Como texto
+        subrayado y en gris se leía como letra pequeña legal, que es justo lo contrario de
+        lo que hace. Va separada por una línea porque tampoco es parte del formulario.
+      */}
+      {DEMO_LOGIN && (
+        <div className="mt-6 border-t border-border pt-6">
           <button
             type="button"
             onClick={fillDemo}
-            className="block text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
-            Usar credenciales demo (demo@nummo.app)
+            <Sparkles aria-hidden className="size-4 text-brand" />
+            Probar con la cuenta demo
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        ¿No tienes cuenta?{' '}
+        <Link to="/register" className="font-medium text-brand hover:underline">
+          Regístrate
+        </Link>
+      </p>
     </AuthLayout>
   )
 }

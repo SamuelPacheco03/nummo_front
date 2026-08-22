@@ -121,24 +121,27 @@ export function RegisterPage() {
           <InlineError>{getErrorMessage(signup.error, 'No se pudo crear la cuenta')}</InlineError>
         )}
 
-        <Button type="submit" className="w-full" disabled={busy}>
+        <Button type="submit" className="w-full bg-cta text-cta-foreground hover:bg-cta hover:opacity-90" disabled={busy}>
           {busy && <Loader size="sm" />}
           Crear cuenta
         </Button>
       </form>
 
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="font-medium text-brand hover:underline">
-            Inicia sesión
-          </Link>
-        </p>
-        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          Tras registrarte, pídele a un administrador que te agregue a su organización con tu email. Hasta
-          entonces no verás datos.
-        </p>
-      </div>
+      {/*
+        Lo que pasa DESPUÉS de registrarse va pegado al formulario y antes del enlace: es
+        parte de lo que hay que saber para decidir pulsar, no una nota al margen.
+      */}
+      <p className="mt-6 rounded-lg border border-border bg-muted/40 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
+        Tras registrarte, pídele a un administrador que te agregue a su organización con tu email.
+        Hasta entonces no verás datos.
+      </p>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        ¿Ya tienes cuenta?{' '}
+        <Link to="/login" className="font-medium text-brand hover:underline">
+          Inicia sesión
+        </Link>
+      </p>
     </AuthLayout>
   )
 }

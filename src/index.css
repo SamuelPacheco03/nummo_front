@@ -352,22 +352,6 @@
     );
   }
 
-  /*
-    Superficie de marca. La base va azul → índigo porque encima hay texto
-    blanco (5.2:1 y 6.3:1); el teal y el cian del isotipo entran como resplandor
-    en la esquina inferior derecha, donde no cae ningún texto.
-  */
-  .bg-brand-gradient {
-    background-color: var(--logo-blue);
-    background-image:
-      radial-gradient(
-        75% 60% at 100% 100%,
-        color-mix(in oklab, var(--logo-teal) 75%, transparent) 0%,
-        color-mix(in oklab, var(--logo-cyan) 35%, transparent) 35%,
-        transparent 70%
-      ),
-      linear-gradient(150deg, var(--logo-blue) 0%, var(--logo-indigo) 100%);
-  }
 
   /* Cifras alineadas para columnas numéricas (montos, saldos). */
   .nums {
