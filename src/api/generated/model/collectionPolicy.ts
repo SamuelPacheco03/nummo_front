@@ -8,9 +8,12 @@
 
 export interface CollectionPolicy {
   enabled: boolean;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   quietStart: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   quietEnd: string;
   dueSoonTemplateKey: string | null;
   overdueTemplateKey: string | null;
+  overdueSummaryTemplateKey: string | null;
   updatedAt: string | null;
 }
