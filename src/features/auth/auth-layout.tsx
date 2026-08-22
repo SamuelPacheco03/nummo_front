@@ -1,8 +1,6 @@
 import { type ReactNode } from 'react'
 import { BrandLockup } from '@/components/brand-mark'
-import { cn } from '@/lib/utils'
-import { CicloArt, IsotipoArt, OrdenArt } from './auth-art'
-import { FIGURAS, type FiguraId } from './figuras'
+import { OrdenArt } from './auth-art'
 
 /**
  * El marco de las pantallas de acceso: panel de marca a la izquierda, formulario a la
@@ -17,28 +15,6 @@ import { FIGURAS, type FiguraId } from './figuras'
  * formulario flotando suelto sobre el fondo, sin superficie ni borde. Eso era lo plano.
  */
 
-/** La figura por defecto del panel. Cambiarla es cambiar esta línea. */
-const FIGURA_POR_DEFECTO: FiguraId = 'orden'
-
-/**
- * La figura que pide la URL —`?figura=ciclo`—, solo en desarrollo.
- *
- * Existe para elegir mirando y no leyendo, igual que se eligió la paleta. Cuando haya una
- * decidida, esto y las dos figuras que sobren se borran.
- */
-function figuraDeEstaCarga(): FiguraId {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return FIGURA_POR_DEFECTO
-  const pedida = new URLSearchParams(window.location.search).get('figura')
-  return FIGURAS.some((f) => f.id === pedida) ? (pedida as FiguraId) : FIGURA_POR_DEFECTO
-}
-
-function Figura({ id }: { id: FiguraId }) {
-  const clase = 'h-56 w-64'
-  if (id === 'ciclo') return <CicloArt className={clase} />
-  if (id === 'isotipo') return <IsotipoArt className={clase} />
-  return <OrdenArt className={clase} />
-}
-
 export function AuthLayout({
   title,
   subtitle,
@@ -48,8 +24,6 @@ export function AuthLayout({
   subtitle: string
   children: ReactNode
 }) {
-  const figura = figuraDeEstaCarga()
-
   return (
     <div className="grid min-h-dvh bg-background lg:grid-cols-[1fr_1fr]">
       {/*
@@ -84,7 +58,7 @@ export function AuthLayout({
           </p>
 
           <div className="mt-10">
-            <Figura id={figura} />
+            <OrdenArt className="h-56 w-64" />
           </div>
         </div>
 
@@ -104,41 +78,8 @@ export function AuthLayout({
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
           <div className="mt-8">{children}</div>
-
-          {import.meta.env.DEV && <ConmutadorDeFigura activa={figura} />}
         </div>
       </div>
-    </div>
-  )
-}
-
-/**
- * Conmutador de figura. **Solo en desarrollo**, y se borra con las figuras descartadas.
- *
- * Cambia recargando y no con estado: así lo que se ve es exactamente lo que vería alguien
- * entrando con esa figura configurada.
- */
-function ConmutadorDeFigura({ activa }: { activa: FiguraId }) {
-  return (
-    <div className="mt-10 flex flex-wrap items-center gap-1.5 border-t border-border pt-4">
-      <span className="text-[0.625rem] font-medium uppercase tracking-wider text-muted-foreground">
-        Figura
-      </span>
-      {FIGURAS.map((f) => (
-        <a
-          key={f.id}
-          href={`?figura=${f.id}`}
-          title={f.nota}
-          className={cn(
-            'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-            f.id === activa
-              ? 'bg-foreground text-background'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-          )}
-        >
-          {f.nombre}
-        </a>
-      ))}
     </div>
   )
 }
