@@ -217,6 +217,44 @@ export function templateStatus(template: WhatsAppTemplate): { label: string; ton
 }
 
 /**
+ * ¿Esta plantilla le dice al deudor **dónde pagar**?
+ *
+ * Se mira `parameterNames` y no el nombre de la clave, y la diferencia importa:
+ * `parameterNames` lo deriva el backend del texto de la plantilla, así que
+ * responde por lo que el mensaje **hace**. El sufijo `_v2` solo dice cómo se
+ * llama, y una plantilla propia con datos de pago no se llamaría así.
+ */
+export function saysWherePay(template: WhatsAppTemplate): boolean {
+  return template.parameterNames.includes('como_pagar')
+}
+
+/**
+ * La versión con datos de pago de la plantilla que está puesta, si existe y ya
+ * se puede enviar.
+ *
+ * **El emparejado sí va por la clave**, que es lo único que relaciona
+ * `cobro_vencido` con `cobro_vencido_v2`: el contrato no publica «esta sustituye
+ * a aquella». Es una heurística acotada y falla hacia el silencio — sin pareja
+ * no se sugiere nada, que es exactamente lo que debe pasar con una plantilla
+ * propia.
+ *
+ * Y **solo cuenta si `canSend`**: mientras Meta la esté revisando no hay nada
+ * que hacer, y sugerir el cambio ahí dejaría la cobranza muda.
+ */
+export function paymentAwareUpgrade(
+  currentKey: string,
+  templates: WhatsAppTemplate[],
+): WhatsAppTemplate | null {
+  if (!currentKey || currentKey.endsWith('_v2')) return null
+  const current = templates.find((t) => t.templateKey === currentKey)
+  // Si la que está puesta ya dice dónde pagar, no hay nada que sugerir.
+  if (current && saysWherePay(current)) return null
+
+  const upgrade = templates.find((t) => t.templateKey === `${currentKey}_v2`)
+  return upgrade && upgrade.canSend && saysWherePay(upgrade) ? upgrade : null
+}
+
+/**
  * Una plantilla de la plataforma sirve a todas las organizaciones; una propia es
  * de esta. `organizationId` en `null` es lo primero.
  */

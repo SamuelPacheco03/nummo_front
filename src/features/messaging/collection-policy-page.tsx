@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { useHydrateOnce } from '@/lib/use-hydrate-once'
 import type { CollectionPolicy, WhatsAppTemplate } from '@/api/generated/model'
 import { usePaymentInstructions } from '@/features/finances/hooks'
+import { paymentAwareUpgrade, saysWherePay } from './labels'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
 import { describeQuietWindow } from './quiet-hours'
 import { RunNowPanel } from './run-now-panel'
@@ -373,6 +374,14 @@ function TemplateField({
   onChange: (value: string) => void
 }) {
   const chosen = templates.find((t) => t.templateKey === value)
+  const conDatos = templates.filter(saysWherePay)
+  const sinDatos = templates.filter((t) => !saysWherePay(t))
+  /*
+    Solo cuando ya está aprobada: mientras Meta la revisa no hay nada que hacer y
+    el aviso sería ruido durante horas. El repunte es un acto del usuario —el
+    backend no cambia la política solo— y hasta ahora nadie se lo iba a explicar.
+  */
+  const repunte = paymentAwareUpgrade(value, templates)
   // La clave guardada puede no estar en el catálogo: una plantilla borrada, o el
   // permiso de leerlas que no se tiene. No se pierde el valor por eso.
   const unknown = value !== '' && templates.length > 0 && !chosen
@@ -387,13 +396,46 @@ function TemplateField({
       >
         <option value="">Sin plantilla — no se envía este aviso</option>
         {unknown && <option value={value}>{value} (no está en el catálogo)</option>}
-        {templates.map((template) => (
-          <option key={template.templateKey} value={template.templateKey}>
-            {template.name}
-            {template.canSend ? '' : ' — todavía no se puede enviar'}
-          </option>
-        ))}
+        {/*
+          Dos generaciones agrupadas, no seis opciones en fila. Las nuevas
+          conviven con las viejas en vez de reemplazarlas porque cambiar el texto
+          de una plantilla obliga a crearla de nuevo en Meta, y pisar la clave
+          existente dejaría la cobranza muda durante las horas de la revisión.
+          Sin agrupar, el desplegable se llena y nada dice qué las distingue.
+        */}
+        {conDatos.length > 0 && (
+          <optgroup label="Dicen dónde pagar">
+            {conDatos.map((template) => (
+              <TemplateOption key={template.templateKey} template={template} />
+            ))}
+          </optgroup>
+        )}
+        {sinDatos.length > 0 && (
+          <optgroup label="Sin datos de pago">
+            {sinDatos.map((template) => (
+              <TemplateOption key={template.templateKey} template={template} />
+            ))}
+          </optgroup>
+        )}
       </NativeSelect>
+
+      {/*
+        El repunte es un acto del usuario: el backend no cambia la política solo.
+        Sin esto, quien tenga la vieja puesta se encontraría seis opciones en el
+        desplegable y ninguna pista de que hay una mejor ya lista.
+      */}
+      {repunte && (
+        <p className="text-xs">
+          <button
+            type="button"
+            className="text-brand underline"
+            disabled={disabled}
+            onClick={() => onChange(repunte.templateKey)}
+          >
+            Hay una versión que dice dónde pagar, y ya está aprobada. Usarla
+          </button>
+        </p>
+      )}
 
       {value === '' ? (
         <p
@@ -418,5 +460,16 @@ function TemplateField({
         </div>
       ) : null}
     </Field>
+  )
+}
+
+/** Una plantilla en el desplegable, con lo único que impide elegirla bien. */
+function TemplateOption({ template }: { template: WhatsAppTemplate }) {
+  return (
+    <option value={template.templateKey}>
+      {template.name}
+      {/* `canSend` viene calculado: no se deduce del `status`. */}
+      {template.canSend ? '' : ' — todavía no se puede enviar'}
+    </option>
   )
 }

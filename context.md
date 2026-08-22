@@ -1605,6 +1605,32 @@ Tres cosas que se hacen mal solas:
 3. **Encola, no envía.** El worker despacha después, así que el texto dice *encolados* y
    remite al historial.
 
+### Dos generaciones de plantilla, y el repunte lo hace el usuario
+
+Las plantillas que dicen dónde pagar **conviven** con las anteriores en vez de reemplazarlas,
+y no por indecisión: cambiar el texto de una plantilla obliga a crearla de nuevo en Meta, y
+pisar la clave existente dejaría la cobranza de **todos** los clientes muda durante las horas
+de la revisión. Con claves nuevas, las viejas siguen enviando mientras las nuevas esperan.
+
+Eso deja el desplegable con seis opciones y una decisión que **el backend no toma solo**: la
+política se repunta a mano cuando las nuevas están aprobadas. La pantalla hace tres cosas:
+
+1. **Agrupa en dos generaciones** —«Dicen dónde pagar» y «Sin datos de pago»—. Seis opciones
+   en fila no dicen qué las distingue.
+2. **Ofrece el repunte** cuando hay una versión aprobada y la política sigue en la vieja.
+3. **Y se calla mientras Meta la revisa**: repuntar a una que no puede enviar dejaría la
+   cobranza muda, así que ahí no hay nada que ofrecer.
+
+**Lo que clasifica es `parameterNames`, no el nombre.** Una plantilla dice dónde pagar si su
+texto usa `{{como_pagar}}`, y eso lo deriva el backend del cuerpo: responde por lo que el
+mensaje **hace**. El sufijo `_v2` solo dice cómo se llama, y una plantilla propia con datos
+de pago no se llamaría así.
+
+**El sufijo sí empareja**, porque es lo único que relaciona `cobro_vencido` con su versión
+nueva — el contrato no publica «esta sustituye a aquella». Es una heurística acotada y
+**falla hacia el silencio**: sin pareja no se sugiere nada, que es justo lo que debe pasar
+con una plantilla propia.
+
 ### Dónde puede pagar quien debe
 
 El recordatorio ya no dice solo cuánto se debe: dice **dónde pagarlo**. Ese renglón sale
@@ -5333,6 +5359,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `PaymentInstructionsPage` | `features/finances/payment-instructions-page.tsx` | **Dónde puede pagar quien debe** (§11.1.16) |
 | `PaymentInstructionDialog` | `features/finances/payment-instruction-dialog.tsx` | El alta, con los campos que cambian según el `kind` |
 | `instructionKind` · `MAX_IN_REMINDERS` | `features/finances/payment-instruction-labels.ts` | Las cinco formas en palabras, y cuántas caben en un mensaje |
+| `saysWherePay` · `paymentAwareUpgrade` | `features/messaging/labels.ts` | Las dos generaciones de plantilla: se clasifican por variable, se emparejan por clave |
 | `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: estado, entrantes y plantillas (§47.6, §97.26) |
 | `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |
 | `WhatsAppStatusTab` | `features/admin/whatsapp-status-tab.tsx` | Si el canal está configurado, y una prueba para saberlo de verdad (§97.26) |
