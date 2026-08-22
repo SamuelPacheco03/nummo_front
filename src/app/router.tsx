@@ -496,6 +496,13 @@ export const router = createBrowserRouter(
                 }),
               },
               {
+                path: 'config/formas-de-pago',
+                lazy: async () => ({
+                  Component: (await import('@/features/finances/payment-instructions-page'))
+                    .PaymentInstructionsPage,
+                }),
+              },
+              {
                 path: 'config/whatsapp',
                 lazy: async () => ({
                   Component: (await import('@/features/messaging/whatsapp-account-page'))

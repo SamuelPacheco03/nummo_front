@@ -19,6 +19,7 @@ import {
   Tags,
   UserCog,
   Wallet,
+  Wallet2,
 } from 'lucide-react'
 import type { SectionGroup } from '@/components/ui/sectioned-layout'
 
@@ -67,6 +68,10 @@ export const GROUPS: SectionGroup[] = [
       // La política es un ajuste que se toca una vez; el historial de lo que se
       // le escribió al deudor es trabajo diario y vive en el sidebar (§14).
       { to: '/config/cobranza', label: 'Cobranza por WhatsApp', Icon: MessageSquareText },
+      // Dónde puede pagar el deudor. Va en Cartera y no en Catálogos porque no
+      // es una lista base que se toca al montar: es lo que sale en cada
+      // recordatorio, y cambiarla cambia a qué cuenta llega la plata.
+      { to: '/config/formas-de-pago', label: 'Formas de pago', Icon: Wallet2 },
       { to: '/config/plantillas', label: 'Plantillas de WhatsApp', Icon: MessageSquareQuote },
       // Desde qué número sale: es otra pregunta que «¿puedo cobrar por
       // WhatsApp?», y por eso tiene pantalla propia (§11.1.16).

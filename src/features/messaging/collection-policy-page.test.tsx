@@ -12,10 +12,14 @@ const m = vi.hoisted(() => ({
   feature: true,
   permisos: new Set<string>(),
   correr: vi.fn(),
+  formasDePago: [] as { showInReminders: boolean }[],
 }))
 
 vi.mock('sonner', () => ({
   toast: { success: (t: string) => m.avisos.push(t), error: (t: string) => m.avisos.push(t) },
+}))
+vi.mock('@/features/finances/hooks', () => ({
+  usePaymentInstructions: () => ({ instructions: m.formasDePago }),
 }))
 vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' } }),
@@ -95,7 +99,9 @@ beforeEach(() => {
     'messaging.settings.manage',
     'messaging.send',
     'whatsapp.templates.read',
+    'payment_instructions.read',
   ])
+  m.formasDePago = [{ showInReminders: true }]
   m.correr = vi.fn().mockResolvedValue({
     data: { dueSoon: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0 },
   })
@@ -241,4 +247,109 @@ test('sin `messaging.send` la política se guarda igual, pero no se dispara', ()
 
   expect(screen.getByRole('button', { name: /Guardar política/ })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Enviar ahora/ })).not.toBeInTheDocument()
+})
+
+test('sin formas de pago publicadas se avisa: el recordatorio no dice dónde pagar', () => {
+  /*
+    El mensaje no se queda en blanco —una variable vacía haría que Meta rechazara
+    el envío entero—, pero dice «comunícate con nosotros». Desde esta pantalla no
+    había forma de enterarse.
+  */
+  m.formasDePago = [{ showInReminders: false }]
+  pintar()
+
+  expect(screen.getByText(/Los recordatorios no dicen dónde pagar/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Añadir una' })).toHaveAttribute(
+    'href',
+    '/config/formas-de-pago',
+  )
+})
+
+test('con al menos una publicada el aviso no sale', () => {
+  m.formasDePago = [{ showInReminders: true }]
+  pintar()
+  expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).not.toBeInTheDocument()
+})
+
+test('con la cobranza apagada el aviso sobra, aunque no haya formas de pago', () => {
+  // Apagada no hay mensaje que salga mal: el aviso sería ruido.
+  m.formasDePago = []
+  m.politica = politica({ enabled: false })
+  pintar()
+
+  expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).not.toBeInTheDocument()
+})
+
+/* ---------- Las dos generaciones de plantilla ---------- */
+
+/** Una que dice dónde pagar se reconoce por su variable, no por su nombre. */
+function conDatosDePago(over: Partial<WhatsAppTemplate> = {}): WhatsAppTemplate {
+  return plantilla({
+    id: 'v2',
+    templateKey: 'cobro_vencido_v2',
+    name: 'Cobro vencido (con datos de pago)',
+    parameterNames: ['nombre', 'empresa', 'concepto', 'monto', 'fecha', 'como_pagar'],
+    ...over,
+  })
+}
+
+test('las dos generaciones van agrupadas, no seis opciones en fila', () => {
+  m.plantillas = [plantilla(), conDatosDePago()]
+  pintar()
+
+  const select = screen.getByLabelText(/cuando debe una sola factura/)
+  const grupos = [...select.querySelectorAll('optgroup')].map((g) => g.label)
+  expect(grupos).toEqual(['Dicen dónde pagar', 'Sin datos de pago'])
+})
+
+test('con una aprobada que dice dónde pagar, se ofrece repuntar', () => {
+  /*
+    El repunte es un acto del usuario: el backend no cambia la política solo. Sin
+    el aviso, quien tenga la vieja puesta no tendría cómo enterarse.
+  */
+  m.plantillas = [plantilla(), conDatosDePago()]
+  pintar()
+
+  expect(
+    screen.getByRole('button', { name: /Hay una versión que dice dónde pagar/ }),
+  ).toBeInTheDocument()
+})
+
+test('pulsarlo cambia la plantilla elegida', async () => {
+  m.plantillas = [plantilla(), conDatosDePago()]
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Hay una versión/ }))
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ overdueTemplateKey: 'cobro_vencido_v2' }),
+  })
+})
+
+test('mientras Meta la revisa NO se ofrece: no hay nada que hacer todavía', () => {
+  // Repuntar a una que no puede enviar dejaría la cobranza muda.
+  m.plantillas = [plantilla(), conDatosDePago({ status: 'PENDING', canSend: false })]
+  pintar()
+
+  expect(screen.queryByRole('button', { name: /Hay una versión/ })).not.toBeInTheDocument()
+})
+
+test('si la puesta ya dice dónde pagar, no se sugiere nada', () => {
+  m.politica = politica({ overdueTemplateKey: 'cobro_vencido_v2' })
+  m.plantillas = [plantilla(), conDatosDePago()]
+  pintar()
+
+  expect(screen.queryByRole('button', { name: /Hay una versión/ })).not.toBeInTheDocument()
+})
+
+test('sin pareja no se sugiere: una plantilla propia no se llama `_v2`', () => {
+  /*
+    El emparejado va por la clave, que es lo único que relaciona las dos. Es una
+    heurística acotada, y falla hacia el silencio.
+  */
+  m.plantillas = [plantilla(), conDatosDePago({ templateKey: 'mi_plantilla_propia' })]
+  pintar()
+
+  expect(screen.queryByRole('button', { name: /Hay una versión/ })).not.toBeInTheDocument()
 })
