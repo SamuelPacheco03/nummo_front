@@ -57,6 +57,16 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   treasury: { label: 'Caja y transferencias', area: 'Caja' },
   financial_accounts: { label: 'Cuentas de dinero', area: 'Catálogos' },
   payment_methods: { label: 'Métodos de pago', area: 'Catálogos' },
+  /*
+    No es lo mismo que `payment_methods`, y la etiqueta tiene que dejarlo claro:
+    aquel es **cómo se registró** un pago que ya entró; éste es **dónde puede
+    pagar** quien todavía debe, y viaja dentro del recordatorio.
+
+    Va con permiso propio a propósito —no cuelga de `financial_accounts.manage`—
+    porque decide a qué cuenta le llega la plata de los cobros que salen, y el
+    deudor no tiene forma de notar un cambio.
+  */
+  payment_instructions: { label: 'Dónde pagar (formas de pago)', area: 'Cobranza' },
   billing_concepts: { label: 'Conceptos de cobro', area: 'Catálogos' },
   expense_categories: { label: 'Categorías de gasto', area: 'Catálogos' },
   reports: { label: 'Informes', area: 'Informes' },

@@ -48,3 +48,29 @@ test('el catálogo que se ofrece es el del contrato, no una lista escrita aquí'
   expect(ALL_PERMISSIONS).toContain('organization.roles.manage')
   expect(ALL_PERMISSIONS.length).toBeGreaterThan(50)
 })
+
+test('ningún permiso del contrato acaba en «Otros» con su clave cruda', () => {
+  /*
+    `tsc` no puede cazar esto: los permisos se **componen** de dos tablas, así que
+    una clave nueva sale traducida a medias —«payment_instructions · Gestionar»— y
+    agrupada bajo «Otros» sin romper nada. Pasó con los seis de cobranza y con los
+    dos de las formas de pago.
+
+    `ALL_PERMISSIONS` sale del enum generado, así que esta prueba crece sola con
+    el contrato.
+  */
+  const todos = ALL_PERMISSIONS
+  const huerfanos = groupPermissions(todos)
+    .filter((g) => g.area === 'Otros')
+    .flatMap((g) => g.resources.map((r) => r.resource))
+
+  expect(huerfanos).toEqual([])
+})
+
+test('y ninguno se queda sin verbo', () => {
+  const todos = ALL_PERMISSIONS
+  for (const permiso of todos) {
+    const verbo = permiso.split('.').at(-1)!
+    expect(permissionAction(permiso), `«${permiso}» sale con el verbo crudo`).not.toBe(verbo)
+  }
+})
