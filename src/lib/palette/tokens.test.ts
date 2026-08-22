@@ -1,133 +1,152 @@
 import { readFileSync } from 'node:fs'
-import { expect, test } from 'vitest'
-import { derive } from './tokens'
-import { PALETTES, paletteById, type PaletteMode } from './palettes'
+import { describe, expect, test } from 'vitest'
+import { AA_LARGE, AA_TEXT, contrast } from './contrast'
 
 /**
- * Estos tests defienden lo único que puede romper la capa de paletas sin que se note:
- * que emita **menos** tokens de los que declara `index.css`. Un token que falta no
- * falla, cae al valor de la app — y la muestra enseña una mezcla de dos paletas
- * mientras alguien decide mirándola.
+ * La compuerta de contraste del sistema visual, **medida sobre `index.css`**.
+ *
+ * Existe porque el propio documento registra que el teal daba 2.4:1 como texto y que por
+ * eso nacieron `--success-strong` y `--warning-strong` (§3.2): hallazgos así no pueden
+ * seguir dependiendo de que alguien se acuerde de comprobarlos a mano.
+ *
+ * Lee el CSS de verdad y no un modelo suyo. Hubo una capa de paletas en TypeScript que
+ * describía estos tokens para poder comparar tres candidatas; elegida una, describir el CSS
+ * en otro sitio solo añadía una copia que podía desviarse. Esto mide lo que se pinta.
  */
 
 /*
-  Se lee del disco, no se importa: Vitest corre con `css: false` y deja en blanco los
-  imports que resuelven a un `.css` (también con `?raw`). La ruta es relativa a la raíz
-  del proyecto, que es desde donde Vitest arranca. El porqué de la declaración de tipos
-  está en `node-shims.d.ts`.
+  Se lee del disco: Vitest corre con `css: false` y deja en blanco los imports que resuelven
+  a un `.css`, también con `?raw`. La ruta es relativa a la raíz del proyecto, que es desde
+  donde Vitest arranca. El porqué de la declaración de tipos está en `node-shims.d.ts`.
 */
 const css = readFileSync('src/index.css', 'utf8')
 
-/** Saca los `--token: valor` de un bloque de `index.css`, sin comentarios. */
-function declaredIn(selector: string): Map<string, string> {
-  const block = new RegExp(`^${selector} \\{\\n([\\s\\S]*?)^\\}`, 'm').exec(css)
-  if (!block) throw new Error(`No encontré el bloque \`${selector}\` en index.css`)
-  const body = block[1].replace(/\/\*[\s\S]*?\*\//g, '')
-  const out = new Map<string, string>()
-  for (const [, name, value] of body.matchAll(/^\s*(--[\w-]+):\s*([^;]+);/gm)) {
-    out.set(name, value.trim())
+/** Los `--token: valor` de un bloque de `index.css`, sin comentarios. */
+function tokensDe(selector: string): Record<string, string> {
+  const bloque = new RegExp(`^${selector} \\{\\n([\\s\\S]*?)^\\}`, 'm').exec(css)
+  if (!bloque) throw new Error(`No encontré el bloque \`${selector}\` en index.css`)
+  const cuerpo = bloque[1].replace(/\/\*[\s\S]*?\*\//g, '')
+  const salida: Record<string, string> = {}
+  for (const [, nombre, valor] of cuerpo.matchAll(/^\s*(--[\w-]+):\s*([^;]+);/gm)) {
+    salida[nombre] = valor.trim()
   }
-  return out
+  return salida
 }
 
-/*
-  Lo que la capa NO emite, a propósito (documentado en `palettes.ts`):
-  - `--radius` no es un color.
-  - `--chart-*` conserva el orden razonado de las series y se re-derivará cuando haya
-    una paleta elegida.
-*/
-const FUERA_DE_LA_CAPA = new Set([
-  '--radius',
-  '--chart-1',
-  '--chart-2',
-  '--chart-3',
-  '--chart-4',
-  '--chart-5',
-])
+/** En oscuro solo se redeclara lo que cambia; el resto se hereda de `:root`. */
+const MODOS = {
+  claro: tokensDe(':root'),
+  oscuro: { ...tokensDe(':root'), ...tokensDe('\\.dark') },
+} as const
 
-/*
-  Las divergencias conocidas entre la capa y `index.css`. Van por modo —y no en un
-  comentario suelto— para que una regresión en claro no pueda esconderse detrás de una
-  excepción de oscuro, y para que reaparezcan en la revisión el día que la paleta
-  elegida aterrice en el CSS.
-
-  `--input` y `--scrim` están explicadas en `tokens.ts`. Las tres de oscuro son extremos
-  que el CSS matizó a mano y la capa resuelve al polo puro de la candidata: un blanco
-  azulado para la burbuja, `#f8fafc` en vez de blanco sobre el azul del sidebar, y
-  `#0f172a` en vez del fondo para el ámbar. Comprobado que en las tres **la capa
-  contrasta más que el CSS** (11.4 vs 10.0 · 3.7 vs 3.5 · 8.7 vs 8.3): la diferencia es
-  de gusto, no de accesibilidad, y matizarla por paleta es trabajo de cuando haya una
-  elegida.
-*/
-const DIVERGENCIAS_CONOCIDAS: Record<PaletteMode, ReadonlySet<string>> = {
-  light: new Set(['--input', '--scrim']),
-  dark: new Set([
-    '--input',
-    '--scrim',
-    '--chat-bubble-foreground',
-    '--sidebar-primary-foreground',
-    '--warning-foreground',
-  ]),
+interface Par {
+  /** Qué se está mirando, en el idioma de la pantalla y no en el de los tokens. */
+  que: string
+  frente: string
+  sobre: string
+  minimo: number
 }
 
-test('la capa emite todos los tokens de color que declara :root', () => {
-  const emitidos = new Set(Object.keys(derive(paletteById('azul'), 'light')))
-  const faltan = [...declaredIn(':root').keys()].filter(
-    (t) => !FUERA_DE_LA_CAPA.has(t) && !emitidos.has(t),
-  )
-  expect(faltan).toEqual([])
-})
+const PARES: readonly Par[] = [
+  { que: 'texto sobre el fondo', frente: '--foreground', sobre: '--background', minimo: AA_TEXT },
+  { que: 'texto en tarjeta', frente: '--foreground', sobre: '--card', minimo: AA_TEXT },
+  { que: 'texto en superficie sutil', frente: '--foreground', sobre: '--secondary', minimo: AA_TEXT },
+  { que: 'texto secundario sobre el fondo', frente: '--muted-foreground', sobre: '--background', minimo: AA_TEXT },
+  { que: 'texto secundario en tarjeta', frente: '--muted-foreground', sobre: '--card', minimo: AA_TEXT },
 
-test('la capa emite todos los tokens de color que declara .dark', () => {
-  const emitidos = new Set(Object.keys(derive(paletteById('azul'), 'dark')))
-  const faltan = [...declaredIn('\\.dark').keys()].filter(
-    (t) => !FUERA_DE_LA_CAPA.has(t) && !emitidos.has(t),
-  )
-  expect(faltan).toEqual([])
-})
+  /*
+    La segunda línea de un titular a dos tonos (§97.6). Va a 3:1 y no a 4.5 porque es
+    SIEMPRE texto grande —48 px para arriba—, que es el criterio de la norma. Usar este
+    token para un párrafo es el error que su comentario en `index.css` existe para evitar.
+  */
+  { que: 'segunda línea del titular', frente: '--heading-muted', sobre: '--background', minimo: AA_LARGE },
+
+  { que: 'texto del botón primario', frente: '--primary-foreground', sobre: '--primary', minimo: AA_TEXT },
+  { que: 'texto del botón primario en hover', frente: '--primary-foreground', sobre: '--primary-hover', minimo: AA_TEXT },
+  { que: 'texto de la llamada a la acción', frente: '--cta-foreground', sobre: '--cta', minimo: AA_TEXT },
+  /*
+    Que el botón de la portada se distinga de la página, **con un mínimo que no sale de la
+    norma**. La 1.4.11 pide 3:1 al contorno que hace falta para *identificar* un control, no
+    al relleno de un botón que ya se identifica por su forma y su texto. Lo que hay que
+    atrapar es el caso real: un navy sobre página oscura da 1.15:1 y ahí el botón desaparece.
+  */
+  { que: 'la llamada a la acción se distingue del fondo', frente: '--cta', sobre: '--background', minimo: 1.5 },
+
+  { que: 'enlace sobre el fondo', frente: '--brand', sobre: '--background', minimo: AA_TEXT },
+  { que: 'enlace en tarjeta', frente: '--brand', sobre: '--card', minimo: AA_TEXT },
+
+  // Estados como TEXTO — el caso que originó los `*-strong`.
+  { que: 'cifra en positivo en tarjeta', frente: '--success-strong', sobre: '--card', minimo: AA_TEXT },
+  { que: 'aviso en ámbar en tarjeta', frente: '--warning-strong', sobre: '--card', minimo: AA_TEXT },
+  { que: 'texto de error en tarjeta', frente: '--destructive-strong', sobre: '--card', minimo: AA_TEXT },
+
+  // Estados como RELLENO: la tinta de encima tiene que sostenerse.
+  { que: 'texto sobre el relleno de éxito', frente: '--success-foreground', sobre: '--success', minimo: AA_TEXT },
+  { que: 'texto sobre el relleno de aviso', frente: '--warning-foreground', sobre: '--warning', minimo: AA_TEXT },
+  { que: 'texto sobre el relleno de peligro', frente: '--destructive-foreground', sobre: '--destructive', minimo: AA_TEXT },
+  { que: 'texto en la burbuja de Numi', frente: '--chat-bubble-foreground', sobre: '--chat-bubble', minimo: AA_TEXT },
+
+  // El sidebar, que va oscuro en los dos modos.
+  { que: 'navegación en el sidebar', frente: '--sidebar-foreground', sobre: '--sidebar', minimo: AA_TEXT },
+  { que: 'grupo del sidebar', frente: '--sidebar-muted-foreground', sobre: '--sidebar', minimo: AA_TEXT },
+  { que: 'fila activa del sidebar', frente: '--sidebar-accent-foreground', sobre: '--sidebar-accent', minimo: AA_TEXT },
+
+  /*
+    No textuales, a 3:1. **`--border` no está en la tabla, y es deliberado.** La 1.4.11 pide
+    ese 3:1 a lo que identifica un control, no al separador entre una tarjeta y su fondo: el
+    borde de hoy da 1.18:1 y es un borde perfectamente normal.
+  */
+  { que: 'anillo de foco sobre el fondo', frente: '--ring', sobre: '--background', minimo: AA_LARGE },
+  { que: 'acento del sidebar', frente: '--sidebar-primary', sobre: '--sidebar', minimo: AA_LARGE },
+]
 
 /*
-  El test que justifica que `azul` exista como candidata: si las 21 ranuras reproducen
-  la consola tal y como está hoy, el derivador no está inventando un sistema paralelo
-  — está describiendo el que ya hay. El día que deje de cuadrar, o cambió `index.css`
-  sin pasar por la capa, o la capa se desvió.
+  Deuda conocida, anotada en vez de silenciada.
+
+  El rojo de peligro en oscuro (`#ef4444`, el rojo 500 de Tailwind) con letra blanca encima
+  da 3.76:1: por debajo de AA para texto normal, y es lo que hoy lleva un botón «Eliminar».
+  En claro el mismo rol usa `#dc2626` y da 4.83:1, así que la salida, cuando se decida, es
+  bajar el de oscuro a ese entorno.
+
+  La lista no puede pudrirse: el último test exige que lo anotado siga fallando de verdad.
 */
-test.each<PaletteMode>(['light', 'dark'])(
-  'la candidata «azul» reproduce %s de index.css valor por valor',
-  (mode) => {
-    const derivados = derive(paletteById('azul'), mode)
-    const declarados = declaredIn(mode === 'light' ? ':root' : '\\.dark')
+const DEUDA_CONOCIDA: Record<string, readonly string[]> = {
+  oscuro: ['texto sobre el relleno de peligro'],
+}
 
-    const diferencias: Record<string, { css: string; capa: string }> = {}
-    for (const [token, valorCss] of declarados) {
-      if (FUERA_DE_LA_CAPA.has(token) || DIVERGENCIAS_CONOCIDAS[mode].has(token)) continue
-      const valorCapa = derivados[token]
-      if (valorCapa?.toLowerCase() !== valorCss.toLowerCase()) {
-        diferencias[token] = { css: valorCss, capa: valorCapa ?? '(no emitido)' }
-      }
-    }
-    expect(diferencias).toEqual({})
-  },
-)
+function fallos(modo: keyof typeof MODOS, incluirDeuda = false): string[] {
+  const tokens = MODOS[modo]
+  const perdonados = new Set(incluirDeuda ? [] : (DEUDA_CONOCIDA[modo] ?? []))
 
-test('las tres candidatas rellenan las 21 ranuras en los dos modos', () => {
-  for (const palette of PALETTES) {
-    for (const mode of ['light', 'dark'] as const) {
-      const slots = palette[mode]
-      const vacias = Object.entries(slots)
-        .filter(([, v]) => !/^#[0-9a-f]{6}$/i.test(v))
-        .map(([k]) => k)
-      expect(vacias, `${palette.id}/${mode}`).toEqual([])
-      expect(Object.keys(slots), `${palette.id}/${mode}`).toHaveLength(21)
-    }
-  }
+  return PARES.filter((par) => !perdonados.has(par.que))
+    .map((par) => {
+      const frente = tokens[par.frente]
+      const sobre = tokens[par.sobre]
+      if (!frente || !sobre) throw new Error(`Falta un token del par «${par.que}» en ${modo}`)
+      return { ...par, razon: contrast(frente, sobre) }
+    })
+    .filter((r) => r.razon < r.minimo)
+    .map((r) => `${r.que}: ${r.razon.toFixed(2)}:1 (mínimo ${r.minimo}:1)`)
+}
+
+describe('los tokens de index.css', () => {
+  /*
+    Se recogen TODOS los fallos antes de romper. Un `expect` por par diría solo el primero,
+    y ajustar colores a ciegas de uno en uno es como se pierde una tarde.
+  */
+  test.each(['claro', 'oscuro'] as const)('pasan AA en %s', (modo) => {
+    expect(fallos(modo)).toEqual([])
+  })
 })
 
-test('ninguna candidata deja un token sin emitir', () => {
-  const referencia = Object.keys(derive(paletteById('azul'), 'light')).sort()
-  for (const palette of PALETTES) {
-    for (const mode of ['light', 'dark'] as const) {
-      expect(Object.keys(derive(palette, mode)).sort(), `${palette.id}/${mode}`).toEqual(referencia)
+test('la deuda anotada sigue siendo deuda', () => {
+  for (const [modo, pares] of Object.entries(DEUDA_CONOCIDA)) {
+    const sinPerdonar = fallos(modo as keyof typeof MODOS, true)
+    for (const par of pares) {
+      expect(
+        sinPerdonar.some((f) => f.startsWith(`${par}:`)),
+        `«${par}» ya no falla en ${modo}: quita la excepción de DEUDA_CONOCIDA`,
+      ).toBe(true)
     }
   }
 })
