@@ -25,9 +25,6 @@ import type { Cola } from './signals'
  * mínima y el aviso de Numi con retardo.
  */
 
-/** Las tres iniciales de la prueba social. No son personas reales: no hay clientes que citar. */
-const CARAS = ['J', 'M', 'A'] as const
-
 /**
  * El retardo de cada pieza en la entrada escalonada.
  *
@@ -53,27 +50,31 @@ export function Hero({ className, cola }: { className?: string; cola?: Cola | nu
             style={paso(0)}
           >
             <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-            La claridad que mueve tu negocio
+            {/*
+              El rótulo lista los módulos, y ese es su trabajo: responde «¿qué es esto?»
+              en cuatro palabras, que es lo que «La claridad que mueve tu negocio» no
+              hacía. Además crece — cuando entre un módulo nuevo, entra aquí.
+            */}
+            Cobros · Gastos · Cuentas · Numi
           </p>
 
           <h1
             className="animate-hero-in mt-6 text-balance text-[2.75rem] font-semibold leading-[1.02] tracking-tight text-foreground sm:text-6xl"
             style={paso(90)}
           >
-            Tus finanzas,{' '}
+            Alguien tiene que estar mirando tus números.{' '}
             {/* `em` ya va en cursiva: aquí solo cambian la familia y el tono. */}
             <em className="font-normal text-heading-muted" style={{ fontFamily: SERIF_STACK }}>
-              por fin
-            </em>{' '}
-            en orden.
+              Que no seas tú.
+            </em>
           </h1>
 
           <p
             className="animate-hero-in mt-6 max-w-md text-lg leading-relaxed text-muted-foreground"
             style={paso(160)}
           >
-            Nummo reúne cobros, pagos y movimientos en una sola experiencia. Menos dispersión.
-            Más control para decidir mejor.
+            Cobros, gastos, cuentas y deudas en un solo lugar. Numi los lee por ti y te dice qué
+            necesita tu atención hoy.
           </p>
 
           <div
@@ -107,24 +108,17 @@ export function Hero({ className, cola }: { className?: string; cola?: Cola | nu
             </a>
           </div>
 
-          <div className="animate-hero-in mt-12 flex items-center gap-3" style={paso(300)}>
-            <span className="flex -space-x-2" aria-hidden>
-              {CARAS.map((letra, i) => (
-                <span
-                  key={letra}
-                  className={cn(
-                    'grid size-7 place-items-center rounded-full border-2 border-background text-[0.625rem] font-semibold',
-                    ['bg-success text-success-foreground', 'bg-chat-bubble text-chat-bubble-foreground', 'bg-primary text-primary-foreground'][i],
-                  )}
-                >
-                  {letra}
-                </span>
-              ))}
-            </span>
-            <p className="text-sm text-muted-foreground">
-              Creado para quienes hacen que las cosas pasen
-            </p>
-          </div>
+          {/*
+            Aquí había tres avatares con iniciales inventadas y «Creado para quienes hacen
+            que las cosas pasen». Eso IMITA un «1.200 negocios ya lo usan» sin decirlo, y
+            quien lo mire dos veces se da cuenta: prueba social de la que no hay prueba.
+
+            Lo sustituye algo que sí es verdad y además separa: ninguna herramienta de
+            fuera te causa la mora ni te cobra por WhatsApp.
+          */}
+          <p className="animate-hero-in mt-12 text-sm text-muted-foreground" style={paso(300)}>
+            Pensado para cómo se mueve la plata en Colombia: pesos, mora y WhatsApp.
+          </p>
         </div>
 
         {/*

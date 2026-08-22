@@ -6797,3 +6797,79 @@ misma sección: aquello es una secuencia en el tiempo, esto son tres capacidades
 2. **La acción de la tarjeta pasó de «Ver y recordar» a «Enviar recordatorio».** Nombra la
    acción y no la pantalla: es «Actúa» ocurriendo dentro del panel, y hay que verlo.
 
+## 97.22. La portada deja de vender atmósfera
+
+Las dos auditorías anteriores arreglaron lo que la portada decía **de más** (§97.18) y lo que
+decía **fuera de sí misma** (§97.20). Quedaba el problema de fondo: el texto no vendía.
+
+Estaba escrito en **atmósfera**. Tapa el logo y lee los titulares seguidos —«Tus finanzas, por
+fin en orden» · «Tu dinero tiene un ritmo» · «Del movimiento a la acción» · «Un sistema que se
+adapta a ti»— y podría ser un banco, un ERP o una hoja de cálculo. Todas las palabras clave
+eran estados de ánimo: orden, ritmo, claridad, movimiento, dispersión.
+
+### La promesa no está en ningún módulo
+
+Los primeros intentos de arreglarlo cayeron todos en el mismo sitio: vender **cobranza**. Es
+comprensible —es el único sitio donde Nummo dice algo que nadie más dice— y estaba mal, porque
+cobranza es un módulo entre varios y de ~130 rutas de organización la mensajería de cobro son
+**ocho**. Entra dinero ≈24 rutas, sale ≈19, cuentas 7, reportes 13, Numi 15.
+
+La promesa está en lo que pasa cuando están todos juntos: **saber cómo vas**. De ahí el
+titular, que no nombra ningún módulo y sigue teniendo filo porque el filo lo pone Numi:
+
+> Alguien tiene que estar mirando tus números. *Que no seas tú.*
+
+Y de ahí el orden de la página: **el hero vende la categoría, la cobranza es la primera
+prueba.** Así pega con toda su fuerza en su sección sin secuestrar la portada. El rótulo
+—`Cobros · Gastos · Cuentas · Numi`— responde «¿qué es esto?» en cuatro palabras y crece: el
+día que entre un módulo nuevo, entra ahí.
+
+**Hay un costo y conviene tenerlo escrito:** un hero amplio convierte peor que uno estrecho.
+«Que te paguen» vende más que «sabe cómo vas», casi siempre. Se cambia conversión por sitio
+donde crecer, a sabiendas.
+
+### Describir no es vender
+
+El segundo error fue más sutil y venía de las auditorías: después de cazar dos tandas de
+promesas falsas, el texto salía con freno de mano — «hasta manda el recordatorio por WhatsApp
+**si hace falta**». Eso es un ingeniero cubriéndose. Un texto puede ser exacto y afirmar a la
+vez; lo que sobra son las muletillas, no la exactitud.
+
+De ahí las dos reglas que gobiernan el texto de la portada:
+
+1. **Nummo es el sujeto y hace cosas por ti.** Sin «puede», «hasta», «si hace falta».
+2. **Cada bloque termina en el premio, no en la función.** «Tú solo revisas» vende; «Nummo
+   genera, calcula y manda» describe.
+
+### «Para quién» era la sección más vacía
+
+«Negocios que crecen — más visión para tomar decisiones cuando todo empieza a moverse más
+rápido»: catorce palabras, ninguna información. Y «Tu vida, más simple — también para ordenar
+lo tuyo» sonaba a que nadie sabía para qué servía.
+
+Los tres casos de ahora salen del producto y no de un buyer persona: la cuenta del mes que se
+repite (`billing-agreements` + `receivables/generate` + `interest-policies` — para lo que
+Nummo está construido antes que nada, la semilla de demo del backend es un jardín infantil);
+el negocio que mira los dos lados; y **lo personal**, que es `expense-schedules` en
+`AUTO_RECORD` — la función que el handoff de la fase 10 explica con el ejemplo de Netflix
+debitando la tarjeta, y que no mencionaba nadie.
+
+Cayó «ya no cabes en una hoja de cálculo»: es una *etapa*, no una audiencia.
+
+### La prueba social era humo
+
+Bajo el hero había tres avatares con iniciales inventadas y «Creado para quienes hacen que las
+cosas pasen». Eso tiene **la forma** de un «1.200 negocios ya lo usan» sin el respaldo, y quien
+lo mire dos veces se da cuenta. No hay clientes que citar todavía, así que no se insinúan. Lo
+sustituye algo verdadero que además separa: *«Pensado para cómo se mueve la plata en Colombia:
+pesos, mora y WhatsApp.»* Ninguna herramienta de fuera te causa la mora ni te cobra por
+WhatsApp.
+
+`hero.test.tsx` vigila que no vuelva.
+
+### El `<title>` y la descripción van con el titular
+
+Son lo que sale en Google y en la vista previa de WhatsApp: si el hero cambia de promesa y
+ellos no, la portada promete dos cosas distintas según por dónde se llegue. Van en el mismo
+commit, siempre.
+

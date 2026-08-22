@@ -15,9 +15,9 @@ afterEach(cleanup)
 test('el titular es un h1 y lleva el destacado en serif', () => {
   render(<Hero />)
   const titular = screen.getByRole('heading', { level: 1 })
-  expect(titular).toHaveTextContent('Tus finanzas, por fin en orden.')
+  expect(titular).toHaveTextContent('Alguien tiene que estar mirando tus números. Que no seas tú.')
   // El destacado va en su propio `em`: es lo que la serif cursiva necesita para existir.
-  expect(titular.querySelector('em')).toHaveTextContent('por fin')
+  expect(titular.querySelector('em')).toHaveTextContent('Que no seas tú.')
 })
 
 test('las dos llamadas a la acción son enlaces', () => {
@@ -62,4 +62,15 @@ test('la acción principal confía el color de su tinta al token', () => {
   expect(cta.className).toContain('bg-cta')
   expect(cta.className).toContain('text-cta-foreground')
   expect(cta.className).not.toMatch(/text-white|text-black/)
+})
+
+/*
+  La prueba social eran tres avatares con iniciales inventadas bajo «Creado para quienes
+  hacen que las cosas pasen»: la forma de un «1.200 negocios ya lo usan» sin el respaldo.
+  No hay clientes que citar todavía, así que no se insinúan.
+*/
+test('el hero no insinúa clientes que no existen', () => {
+  const { container } = render(<Hero />)
+  expect(container.textContent).not.toMatch(/creado para quienes hacen que las cosas pasen/i)
+  expect(container.textContent).toContain('Pensado para cómo se mueve la plata en Colombia')
 })

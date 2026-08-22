@@ -6,7 +6,30 @@ import { useReveal } from './use-reveal'
 import { useSectionViewed } from './use-section-viewed'
 
 /**
- * «Un sistema que se adapta a ti»: tres formas de usarlo.
+ * «Si algo de esto te suena, es para ti»: los tres casos reales.
+ *
+ * Era la sección más vacía de la portada. Decía «Negocios que crecen — más visión para
+ * tomar decisiones cuando todo empieza a moverse más rápido»: catorce palabras y ninguna
+ * información. Y «Tu vida, más simple — también para ordenar lo tuyo» sonaba a que nadie
+ * sabía para qué servía ese tercer caso.
+ *
+ * Ahora cada tarjeta **abre nombrando a quién** —para que el lector se reconozca en dos
+ * segundos— y **cierra en el premio**, no enumerando lo que hace el sistema. Ese es el
+ * cambio de patrón: «tú solo revisas» vende, «Nummo genera, calcula y manda» describe.
+ *
+ * Los tres salen del producto, no de un buyer persona:
+ *
+ * 1. `billing-agreements` + `receivables/generate` + `interest-policies` — la cuenta del
+ *    mes que se repite, con su mora. Es para lo que está construido antes que nada: la
+ *    semilla de demo del backend es un jardín infantil.
+ * 2. Cartera y egresos a la vez, que son ~24 y ~19 rutas del contrato. El negocio que
+ *    mira los dos lados.
+ * 3. `expense-schedules` en `AUTO_RECORD`, que el handoff de la fase 10 explica con el
+ *    ejemplo de Netflix debitando la tarjeta. Es la función más «finanzas personales» que
+ *    tiene Nummo y no la mencionaba nadie.
+ *
+ * El que se cayó fue «ya no cabes en una hoja de cálculo»: es una **etapa**, no una
+ * audiencia, y se solapaba con las otras dos.
  *
  * Único gesto: las tarjetas se revelan escalonadas y la activa levanta. **Una sola** va
  * rellena — si las tres destacaran, ninguna destacaría (§11.1 (4)).
@@ -15,20 +38,23 @@ import { useSectionViewed } from './use-section-viewed'
 const CASOS = [
   {
     n: '01',
-    titulo: ['Negocios', 'que crecen.'],
-    cuerpo: 'Más visión para tomar decisiones cuando todo empieza a moverse más rápido.',
+    titulo: ['Cobras lo mismo', 'cada mes.'],
+    cuerpo:
+      'Colegios, gimnasios, arriendos. Las cuentas del mes se generan solas, la mora se calcula sola y los recordatorios salen solos. Tú solo revisas.',
     activo: true,
   },
   {
     n: '02',
-    titulo: ['Servicios', 'con ritmo.'],
-    cuerpo: 'Cobra a tiempo y cuida cada relación.',
+    titulo: ['Llevas un negocio', 'y sus cuentas.'],
+    cuerpo:
+      'Agencias, tiendas, consultorios. Sabes quién te debe, qué te toca pagar y cuánto te queda de verdad. Sin abrir cinco archivos.',
     activo: false,
   },
   {
     n: '03',
-    titulo: ['Tu vida,', 'más simple.'],
-    cuerpo: 'También para ordenar lo tuyo.',
+    titulo: ['Es lo tuyo,', 'no un negocio.'],
+    cuerpo:
+      'Netflix, el arriendo y la cuota del carro se registran solos. Tú ves a dónde se te fue el mes — y si te deben, también aparece.',
     activo: false,
   },
 ] as const
@@ -41,9 +67,9 @@ export function UseCasesSection({ cola }: { cola: Cola | null }) {
     <section ref={refSeccion} id="para-quien" className="bg-background px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
-          rotulo="Hecho para tu forma de moverte"
-          principal="Un sistema que"
-          secundaria="se adapta a ti."
+          rotulo="Para quién es"
+          principal="Si algo de esto te suena,"
+          secundaria="es para ti."
         />
 
         <div ref={refTarjetas} className="mt-14 grid gap-5 md:grid-cols-3">
