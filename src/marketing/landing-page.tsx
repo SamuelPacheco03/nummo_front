@@ -16,7 +16,7 @@ import { RhythmSection } from './rhythm-section'
 import { Ticker } from './ticker'
 import { UseCasesSection } from './use-cases-section'
 import { iniciarSenales, utmDesde, type Cola } from './signals'
-import { paletaDeEstaCarga } from './theme'
+import { modoDeEstaCarga, paletaDeEstaCarga } from './theme'
 import { useSectionViewed } from './use-section-viewed'
 
 /*
@@ -42,9 +42,27 @@ import '@fontsource-variable/archivo'
 
 
 export function LandingPage() {
-  const dark = useResolvedDark()
+  const delSistema = useResolvedDark()
   /* En desarrollo, `?paleta=bruma` repinta la portada entera. En producción es una sola. */
   const paleta = paletaDeEstaCarga()
+  /* Y `?modo=claro` fuerza el tema, para no tener que cambiar el del sistema operativo. */
+  const forzado = modoDeEstaCarga()
+  const dark = forzado ? forzado === 'dark' : delSistema
+
+  /*
+    Si se fuerza el modo, `<html>` tiene que enterarse. La portada se pinta con sus tokens
+    en línea, pero las pocas utilidades `dark:` de las primitivas miran a un ancestro con
+    la clase — y sin esto, forzar claro dejaba esas dentro en su versión oscura.
+  */
+  useEffect(() => {
+    if (!forzado) return
+    const html = document.documentElement
+    const teniaDark = html.classList.contains('dark')
+    html.classList.toggle('dark', forzado === 'dark')
+    return () => {
+      html.classList.toggle('dark', teniaDark)
+    }
+  }, [forzado])
   const [cola, setCola] = useState<Cola | null>(null)
 
   /*

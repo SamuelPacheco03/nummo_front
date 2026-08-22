@@ -43,3 +43,25 @@ export function paletaDeEstaCarga(): PaletteId {
 
 /** Las candidatas, para ofrecerlas en el conmutador de desarrollo. */
 export const CANDIDATAS = PALETTES.map((p) => ({ id: p.id, name: p.name, note: p.note }))
+
+export type ModoForzado = 'light' | 'dark'
+
+/**
+ * El modo que pide la URL —`?modo=claro`— o `null` si manda el sistema.
+ *
+ * La portada no tiene interruptor de tema: sigue al del sistema, como la consola. Eso está
+ * bien para quien la visita y es un estorbo para quien la está diseñando, porque para ver
+ * el otro modo hay que cambiar el tema del sistema operativo entero.
+ *
+ * **Solo en desarrollo**, por lo mismo que la paleta: en producción la portada no lleva un
+ * selector de tema. Si algún día se decide que sí, eso es una decisión de producto y va en
+ * la barra, no en un parámetro.
+ */
+export function modoDeEstaCarga(): ModoForzado | null {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return null
+
+  const pedido = new URLSearchParams(window.location.search).get('modo')
+  if (pedido === 'claro' || pedido === 'light') return 'light'
+  if (pedido === 'oscuro' || pedido === 'dark') return 'dark'
+  return null
+}
