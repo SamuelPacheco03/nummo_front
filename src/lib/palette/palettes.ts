@@ -1,10 +1,10 @@
 /**
- * La capa de paletas: **20 ranuras crudas por modo**, de las que sale el juego
+ * La capa de paletas: **21 ranuras crudas por modo**, de las que sale el juego
  * completo de tokens semánticos (`tokens.ts`).
  *
  * Sin esta capa cada candidata serían las ~77 declaraciones de `index.css` × 2 modos,
  * escritas a mano, y el test de contraste leería una copia en vez de lo que se pinta.
- * Con ella una candidata son 40 valores y **una sola** fuente: el test, las muestras
+ * Con ella una candidata son 42 valores y **una sola** fuente: el test, las muestras
  * del laboratorio y el hero leen exactamente el mismo objeto.
  *
  * Lo que NO entra en las ranuras, a propósito:
@@ -17,7 +17,7 @@
  */
 
 /**
- * Las 20 ranuras. Cada candidata las rellena dos veces, una por modo.
+ * Las 21 ranuras. Cada candidata las rellena dos veces, una por modo.
  *
  * `accentLink` existe aparte de `accent` porque no son el mismo trabajo: el relleno de
  * un botón puede ser oscuro, pero un enlace sobre el fondo tiene que leerse como texto,
@@ -85,6 +85,20 @@ export interface PaletteSlots {
    */
   dangerText: string
 
+  /**
+   * El relleno de la **llamada a la acción de la portada**.
+   *
+   * Existe aparte de `accent` porque no es la misma pregunta. `accent` es «el color de
+   * acción de este sistema»; esto es «con qué se pinta el botón que queremos que pulsen»,
+   * y la respuesta cambia por paleta: en la de marca es el azul profundo casi negro, y en
+   * la de los mockups es el durazno.
+   *
+   * Y **cambia con el modo**, que es lo que obliga a que sea una ranura y no una regla: un
+   * navy sobre una página clara resalta, y ese mismo navy sobre una página oscura es un
+   * botón invisible. Cada candidata dice qué usa en cada modo.
+   */
+  ctaFill: string
+
   /* Shell */
   /** El sidebar de la consola, que va oscuro en los DOS modos (§3.2). */
   shell: string
@@ -135,6 +149,7 @@ const azul: Palette = {
     cautionText: '#b45309',
     danger: '#dc2626',
     dangerText: '#dc2626',
+    ctaFill: '#0f172a',
     shell: '#0f172a',
     shellRaised: '#1e293b',
   },
@@ -157,6 +172,7 @@ const azul: Palette = {
     cautionText: '#fbbf24',
     danger: '#ef4444',
     dangerText: '#ef4444',
+    ctaFill: '#2563eb',
     shell: '#070d17',
     shellRaised: '#16202f',
   },
@@ -213,6 +229,7 @@ const bosque: Palette = {
     cautionText: '#9c4c18',
     danger: '#b3392c',
     dangerText: '#b3392c',
+    ctaFill: '#f5a97c',
     shell: '#14231b',
     shellRaised: '#1f3227',
   },
@@ -241,6 +258,7 @@ const bosque: Palette = {
     cautionText: '#f3bb94',
     danger: '#bd4236',
     dangerText: '#e2695c',
+    ctaFill: '#f5a97c',
     shell: '#0a110d',
     shellRaised: '#1b2a21',
   },
@@ -276,6 +294,7 @@ const bruma: Palette = {
     cautionText: '#8e5a19',
     danger: '#bc3a2f',
     dangerText: '#bc3a2f',
+    ctaFill: '#0f766e',
     shell: '#1b1916',
     shellRaised: '#2d2822',
   },
@@ -299,6 +318,7 @@ const bruma: Palette = {
     cautionText: '#f0c07a',
     danger: '#be3e34',
     dangerText: '#e2645a',
+    ctaFill: '#128073',
     shell: '#0c0a08',
     shellRaised: '#231e19',
   },

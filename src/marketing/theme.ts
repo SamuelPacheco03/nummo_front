@@ -7,7 +7,7 @@ import { PALETTES, paletteById, type PaletteId } from '@/lib/palette/palettes'
  * constantes rompe el refresco rápido de Vite: al tocar el componente, la constante se
  * reevalúa y el módulo entero se recarga.
  */
-export const PALETA_PORTADA = 'bosque' as const
+export const PALETA_PORTADA = 'azul' as const
 
 /**
  * El color de la barra del navegador, sacado de la paleta y no escrito a mano.

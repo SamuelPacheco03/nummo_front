@@ -87,7 +87,7 @@ test('la capa emite todos los tokens de color que declara .dark', () => {
 })
 
 /*
-  El test que justifica que `azul` exista como candidata: si las 20 ranuras reproducen
+  El test que justifica que `azul` exista como candidata: si las 21 ranuras reproducen
   la consola tal y como está hoy, el derivador no está inventando un sistema paralelo
   — está describiendo el que ya hay. El día que deje de cuadrar, o cambió `index.css`
   sin pasar por la capa, o la capa se desvió.
@@ -110,7 +110,7 @@ test.each<PaletteMode>(['light', 'dark'])(
   },
 )
 
-test('las tres candidatas rellenan las 20 ranuras en los dos modos', () => {
+test('las tres candidatas rellenan las 21 ranuras en los dos modos', () => {
   for (const palette of PALETTES) {
     for (const mode of ['light', 'dark'] as const) {
       const slots = palette[mode]
@@ -118,7 +118,7 @@ test('las tres candidatas rellenan las 20 ranuras en los dos modos', () => {
         .filter(([, v]) => !/^#[0-9a-f]{6}$/i.test(v))
         .map(([k]) => k)
       expect(vacias, `${palette.id}/${mode}`).toEqual([])
-      expect(Object.keys(slots), `${palette.id}/${mode}`).toHaveLength(20)
+      expect(Object.keys(slots), `${palette.id}/${mode}`).toHaveLength(21)
     }
   }
 })

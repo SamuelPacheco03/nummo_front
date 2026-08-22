@@ -6465,3 +6465,46 @@ leer y no protege nada.
 
 El aviso decide **después de montar**, no durante el render: si no, acabaría incrustado en
 el HTML prerenderizado, y esa decisión es de cada visitante.
+
+## 97.14. El botón que queremos que pulsen tiene su propio color
+
+`--cta` **no es `--primary`**, y la diferencia no es de nombre. `--primary` es «el color de
+acción de este sistema» —el que la consola usa en todos sus botones y que ahí no puede
+moverse—; `--cta` es «con qué se pinta el botón que queremos que pulsen en la portada», y
+la respuesta cambia por paleta: en la de marca es el azul profundo casi negro (`#0F172A`,
+el `--nummo-dark` de §3.1), y en la de los mockups es el durazno.
+
+**Y cambia con el modo**, que es lo que obliga a que sea una ranura de la paleta y no una
+regla derivada: un navy sobre una página clara resalta, y ese mismo navy sobre una página
+oscura es un botón invisible. Cada candidata declara qué usa en cada modo — `azul` pasa al
+azul de acción en oscuro.
+
+La tinta de encima **no se declara nunca**: la elige `inkOnFill`. Sale blanca sobre el navy
+y oscura sobre el durazno, donde el blanco daría 1.9:1.
+
+> El mismo error aparece en cualquier superficie que use el tono del shell, que es oscuro en
+> **los dos** modos: sobre una página clara resalta sola y sobre una oscura se funde. El
+> aviso de Numi del hero lleva un `ring` por eso — el borde es lo que le devuelve el filo.
+
+### El suelo de visibilidad del botón no es AA
+
+`palettes.test.ts` comprueba que `--cta` se distingue del fondo, **con un mínimo de 1.5 que
+no sale de la norma**. La 1.4.11 pide 3:1 al contorno que hace falta para *identificar* un
+control, no al relleno de un botón que ya se identifica por su forma y su texto: exigirle
+3:1 tumbaría el durazno de los mockups sobre el crema, que da 1.71:1 y se ve perfectamente.
+
+La razón de contraste solo mide **luminancia** y no sabe nada del salto de tono. Lo que hay
+que atrapar es el caso real —un navy sobre página oscura, 1.15:1— y el suelo se pone entre
+los dos.
+
+## 97.15. El tema lo elige quien visita
+
+La portada lleva el **mismo `ThemeToggle` que la consola**, leyendo el mismo store. Es una
+preferencia de la persona, no de la página: quien tiene la app en oscuro no espera que la
+portada le dé un fogonazo blanco, ni al revés.
+
+Es distinto del `?modo=` de desarrollo (§97.2), que fuerza un modo para mirar sin tocar el
+tema del sistema y **no llega a producción**. Este sí, y va en la barra.
+
+La paleta por defecto de la portada es **`azul`**, la de marca. Se cambia en una línea:
+`PALETA_PORTADA`, en `marketing/theme.ts`.

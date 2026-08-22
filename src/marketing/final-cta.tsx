@@ -76,7 +76,7 @@ export function FinalCta({ cola }: { cola: Cola | null }) {
             onClick={() =>
               cola?.encolar({ name: 'cta_clicked', section: 'final_cta', action: 'signup' })
             }
-            className="mt-8 inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="mt-8 inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-full bg-cta px-7 text-sm font-semibold text-cta-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             Probar Nummo
             <ArrowRight className="size-4" aria-hidden />

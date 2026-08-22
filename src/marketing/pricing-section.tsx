@@ -118,7 +118,7 @@ function TarjetaPlan({
         className={cn(
           'mt-6 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
           destacado
-            ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
+            ? 'bg-cta text-cta-foreground hover:opacity-90'
             : 'border border-border text-foreground hover:bg-accent',
         )}
       >

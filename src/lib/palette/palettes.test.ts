@@ -77,6 +77,23 @@ const PARES: readonly Par[] = [
     sobre: '--primary-hover',
     minimo: AA_TEXT,
   },
+  {
+    que: 'texto de la llamada a la acción',
+    frente: '--cta-foreground',
+    sobre: '--cta',
+    minimo: AA_TEXT,
+  },
+  /*
+    Que el botón no se confunda con la página. **No es AA y el número no es de la norma**:
+    la 1.4.11 pide 3:1 al contorno que hace falta para *identificar* un control, no al
+    relleno de un botón que ya se identifica por su forma y su texto. Exigirle 3:1 aquí
+    tumbaría el durazno de los mockups sobre el crema, que da 1.71:1 y se ve perfectamente
+    — la razón de contraste solo mide luminancia y no sabe nada del salto de tono.
+
+    Lo que sí hay que atrapar es el caso real: un navy sobre una página oscura da 1.15:1 y
+    ahí sí desaparece el botón. El suelo se pone entre los dos.
+  */
+  { que: 'la llamada a la acción se distingue del fondo', frente: '--cta', sobre: '--background', minimo: 1.5 },
   { que: 'enlace sobre el fondo', frente: '--brand', sobre: '--background', minimo: AA_TEXT },
   { que: 'enlace en tarjeta', frente: '--brand', sobre: '--card', minimo: AA_TEXT },
 

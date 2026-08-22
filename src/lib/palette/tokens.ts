@@ -2,7 +2,7 @@ import { inkOnFill, luminance, rgbTriplet } from './contrast'
 import type { Palette, PaletteMode, PaletteSlots } from './palettes'
 
 /**
- * Expande las 20 ranuras de una candidata al juego completo de tokens semánticos que
+ * Expande las 21 ranuras de una candidata al juego completo de tokens semánticos que
  * consume `components/ui/`.
  *
  * **La regla que hay que entender antes de tocar esto:** el resultado se aplica como
@@ -125,6 +125,15 @@ export function derive(palette: Palette, mode: PaletteMode): Record<string, stri
       el laboratorio.
     */
     '--destructive-strong': s.dangerText,
+
+    /*
+      La llamada a la acción de la portada. No es `--primary`: en la paleta de marca el
+      botón que queremos que pulsen va en el azul profundo casi negro, y `--primary` es el
+      azul de acción de la consola, que ahí no puede moverse. Y cambia con el modo, porque
+      un navy sobre página oscura es un botón invisible.
+    */
+    '--cta': s.ctaFill,
+    '--cta-foreground': inkOnFill(s.ctaFill, inks),
 
     '--border': s.line,
     /*

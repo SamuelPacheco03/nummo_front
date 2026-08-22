@@ -138,7 +138,7 @@ export function NumiSection({ cola }: { cola: Cola | null }) {
             <a
               href={rutasApp.registro}
               onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'numi', action: 'signup' })}
-              className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-cta px-5 text-sm font-semibold text-cta-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               Crear cuenta y seguir preguntando
               <ArrowRight className="size-4" aria-hidden />

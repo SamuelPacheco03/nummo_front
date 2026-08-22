@@ -13,9 +13,13 @@ import { rutasApp } from './links'
  * Ese token existe aparte de `--muted-foreground` porque vive en el umbral de texto grande
  * (§97.6); usarlo para un párrafo lo deja por debajo de AA.
  *
- * La acción principal va en durazno (`--primary`) con tinta oscura encima. La tinta no se
- * declara: `inkOnFill` la elige, y sobre el durazno elige la oscura porque el blanco daría
- * 1.9:1. Ponerle `text-white` a mano es exactamente el error que la capa evita.
+ * La acción principal va en `--cta`, que no es `--primary`: `--primary` es el color de
+ * acción del sistema —el que la consola no puede mover— y esto es «con qué se pinta el
+ * botón que queremos que pulsen», que cambia por paleta y por modo (§97.14).
+ *
+ * La tinta de encima **no se declara**: `inkOnFill` la elige. Sobre el navy sale blanca;
+ * sobre el durazno de los mockups sale oscura, porque el blanco ahí daría 1.9:1. Ponerle
+ * `text-white` a mano es exactamente el error que la capa evita.
  *
  * Un solo gesto en movimiento: la entrada escalonada. El panel entra con inclinación
  * mínima y el aviso de Numi con retardo.
@@ -92,7 +96,7 @@ export function Hero({ className }: { className?: string }) {
           >
             <a
               href={rutasApp.registro}
-              className="inline-flex h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className="inline-flex h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-cta px-6 text-sm font-semibold text-cta-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               Empezar ahora
               <ArrowRight className="size-4" aria-hidden />
@@ -195,9 +199,15 @@ export function Hero({ className }: { className?: string }) {
             </div>
           </div>
 
-          {/* El aviso de Numi llega el último, y por eso se nota. */}
+          {/*
+            El aviso de Numi llega el último, y por eso se nota.
+
+            El anillo no es adorno: la tarjeta va en el tono del shell, que es oscuro en los
+            DOS modos. Sobre una página clara resalta sola; sobre una oscura se fundía con el
+            fondo y el aviso desaparecía. El borde es lo que le devuelve el filo.
+          */}
           <div
-            className="animate-hero-in absolute -bottom-6 -left-3 flex max-w-[19rem] items-start gap-2.5 rounded-xl bg-sidebar px-4 py-3 shadow-sm sm:-left-8"
+            className="animate-hero-in absolute -bottom-6 -left-3 flex max-w-[19rem] items-start gap-2.5 rounded-xl bg-sidebar px-4 py-3 shadow-sm ring-1 ring-border sm:-left-8"
             style={paso(620)}
           >
             <Sparkles className="mt-0.5 size-4 shrink-0 text-sidebar-primary" aria-hidden />

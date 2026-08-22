@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 import { Wordmark } from './brand'
 import type { Cola } from './signals'
@@ -14,6 +15,10 @@ import { rutasApp } from './links'
  * El único gesto de esta sección: al bajar se vuelve translúcida con desenfoque. Arriba
  * del todo va limpia, sin borde ni fondo, para que el hero empiece en el borde de la
  * ventana y no debajo de una barra.
+ *
+ * **El selector de tema es el mismo componente que usa la consola**, y lee el mismo store:
+ * quien tiene la app en oscuro no espera que la portada le dé un fogonazo blanco, ni al
+ * revés. Es una preferencia de la persona, no de la página.
  */
 
 const ENLACES = [
@@ -58,7 +63,9 @@ export function Nav({ cola }: { cola?: Cola | null }) {
           ))}
         </ul>
 
-        <div className="ml-auto flex items-center gap-4 md:ml-0">
+        <div className="ml-auto flex items-center gap-3 md:ml-0 sm:gap-4">
+          {/* Hereda su superficie (§11.2): la barra es clara u oscura según el tema. */}
+          <ThemeToggle className="hidden border-border bg-transparent sm:inline-flex" />
           <a
             href={rutasApp.ingreso}
             onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'login' })}
@@ -67,14 +74,15 @@ export function Nav({ cola }: { cola?: Cola | null }) {
             Iniciar sesión
           </a>
           {/*
-            La acción de la barra va en la tinta oscura, no en el durazno: el durazno es
-            del hero, y dos rellenos del mismo color compitiendo en la misma pantalla se
-            anulan. Aquí la jerarquía la da el contraste, no el color.
+            El mismo relleno que el resto de llamadas a la acción. Estuvo en `bg-sidebar`
+            —la tinta oscura— hasta que se vio el problema: el shell va oscuro en los DOS
+            modos, así que sobre una página oscura el botón desaparecía. `--cta` cambia con
+            el modo y es la única de las dos que se ve siempre.
           */}
           <a
             href={rutasApp.registro}
             onClick={() => cola?.encolar({ name: 'cta_clicked', section: 'hero', action: 'signup' })}
-            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-sidebar px-5 text-sm font-semibold text-sidebar-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-cta px-5 text-sm font-semibold text-cta-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             Probar Nummo
           </a>

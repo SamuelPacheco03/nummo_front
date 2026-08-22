@@ -96,6 +96,11 @@
      trabajo aparte, y hasta entonces esto lo usa la portada. */
   --destructive-strong: #dc2626;
 
+  /* La llamada a la acción de la portada: el azul profundo de marca (§97.14). En oscuro
+     cambia al azul de acción, porque un navy sobre fondo oscuro no se ve. */
+  --cta: #0f172a;
+  --cta-foreground: #ffffff;
+
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #2563eb;
@@ -188,6 +193,9 @@
      blanca (3.76:1, por debajo de AA) y el que se lee como texto son incompatibles. */
   --destructive-strong: #ef4444;
 
+  --cta: #2563eb;
+  --cta-foreground: #ffffff;
+
   --border: #1f2937;
   --input: #273244;
   --ring: #3b82f6;
@@ -247,6 +255,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-strong: var(--destructive-strong);
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

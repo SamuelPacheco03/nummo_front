@@ -33,12 +33,14 @@ test('las cifras se pintan con el formato de la app, no a mano', () => {
 })
 
 /*
-  El durazno de la acción solo sostiene tinta oscura. La clase tiene que seguir siendo el
-  token —que `inkOnFill` resuelve— y no un `text-white` escrito a mano, que daría 1.9:1.
+  La tinta del botón la resuelve `inkOnFill` según el relleno de cada paleta: blanca sobre
+  el navy, oscura sobre el durazno de los mockups —donde el blanco daría 1.9:1—. Escribirla
+  a mano es el error que la capa existe para evitar, y aquí se vigila.
 */
 test('la acción principal confía el color de su tinta al token', () => {
   render(<Hero />)
   const cta = screen.getByRole('link', { name: /empezar ahora/i })
-  expect(cta.className).toContain('text-primary-foreground')
+  expect(cta.className).toContain('bg-cta')
+  expect(cta.className).toContain('text-cta-foreground')
   expect(cta.className).not.toMatch(/text-white|text-black/)
 })
