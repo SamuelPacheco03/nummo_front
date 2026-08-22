@@ -9,13 +9,14 @@ import { ConsentBanner } from './consent-banner'
 import { DisorderSection } from './disorder-section'
 import { FinalCta } from './final-cta'
 import { Nav } from './nav'
+import { PaletteSwitcher } from './palette-switcher'
 import { NumiSection } from './numi-section'
 import { PricingSection } from './pricing-section'
 import { RhythmSection } from './rhythm-section'
 import { Ticker } from './ticker'
 import { UseCasesSection } from './use-cases-section'
 import { iniciarSenales, utmDesde, type Cola } from './signals'
-import { PALETA_PORTADA } from './theme'
+import { paletaDeEstaCarga } from './theme'
 import { useSectionViewed } from './use-section-viewed'
 
 /*
@@ -42,6 +43,8 @@ import '@fontsource-variable/archivo'
 
 export function LandingPage() {
   const dark = useResolvedDark()
+  /* En desarrollo, `?paleta=bruma` repinta la portada entera. En producción es una sola. */
+  const paleta = paletaDeEstaCarga()
   const [cola, setCola] = useState<Cola | null>(null)
 
   /*
@@ -71,7 +74,7 @@ export function LandingPage() {
     */
     <div
       className={dark ? 'dark' : undefined}
-      style={paletteStyle(paletteById(PALETA_PORTADA), dark ? 'dark' : 'light')}
+      style={paletteStyle(paletteById(paleta), dark ? 'dark' : 'light')}
     >
       <div className="min-h-dvh bg-background font-sans text-foreground">
         <Nav cola={cola} />
@@ -90,6 +93,7 @@ export function LandingPage() {
         </main>
         <Footer />
         <ConsentBanner />
+        <PaletteSwitcher />
       </div>
     </div>
   )

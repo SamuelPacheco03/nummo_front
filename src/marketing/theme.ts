@@ -1,4 +1,4 @@
-import { paletteById } from '@/lib/palette/palettes'
+import { PALETTES, paletteById, type PaletteId } from '@/lib/palette/palettes'
 
 /**
  * La candidata con la que se pinta la portada. Cambiarla es cambiar esta línea.
@@ -20,3 +20,26 @@ export const TEMA_PORTADA = {
   light: paletteById(PALETA_PORTADA).light.surface,
   dark: paletteById(PALETA_PORTADA).dark.surface,
 } as const
+
+/**
+ * La paleta con la que pintar **esta** carga de la portada.
+ *
+ * En desarrollo se puede pedir otra por la URL —`?paleta=bruma`— y así se compara la
+ * portada **entera** en otra candidata sin tocar código ni reconstruir. El laboratorio
+ * enseña las tres a la vez, pero solo sobre el hero y unas superficies de consola; hay
+ * decisiones —cómo cae el crema tras la banda oscura, si el durazno cansa después de
+ * bajar cinco secciones— que solo se ven en la página de verdad.
+ *
+ * **Solo en desarrollo.** En producción la portada tiene una paleta, no un selector: un
+ * parámetro que repinta el sitio es una herramienta, y las herramientas no se publican.
+ */
+export function paletaDeEstaCarga(): PaletteId {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return PALETA_PORTADA
+
+  const pedida = new URLSearchParams(window.location.search).get('paleta')
+  const existe = PALETTES.some((p) => p.id === pedida)
+  return existe ? (pedida as PaletteId) : PALETA_PORTADA
+}
+
+/** Las candidatas, para ofrecerlas en el conmutador de desarrollo. */
+export const CANDIDATAS = PALETTES.map((p) => ({ id: p.id, name: p.name, note: p.note }))
