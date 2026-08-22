@@ -23,7 +23,7 @@ import {
   MESSAGE_STATUSES,
   lastEvent,
   messageStatus,
-  relatedAccountPath,
+  relatedEntity,
   skipReasonLabel,
   skipReasonOffersPlan,
 } from './labels'
@@ -235,7 +235,7 @@ export function MessagesTab({
  * explicación. `FAILED` sí lo lleva, que ahí se intentó y se rompió algo.
  */
 function Outcome({ message }: { message: OutboundMessage }) {
-  const account = relatedAccountPath(message)
+  const entity = relatedEntity(message)
 
   if (message.status === 'SKIPPED') {
     return (
@@ -261,7 +261,7 @@ function Outcome({ message }: { message: OutboundMessage }) {
             </Link>
           </p>
         )}
-        {account && <AccountLink to={account} />}
+        {entity && <EntityLink entity={entity} />}
       </div>
     )
   }
@@ -270,18 +270,23 @@ function Outcome({ message }: { message: OutboundMessage }) {
     return (
       <div className="min-w-0 space-y-0.5">
         <p className="text-destructive text-xs">{message.lastError ?? 'No se pudo enviar.'}</p>
-        {account && <AccountLink to={account} />}
+        {entity && <EntityLink entity={entity} />}
       </div>
     )
   }
 
-  return account ? <AccountLink to={account} /> : <span className="text-muted-foreground">—</span>
+  return entity ? <EntityLink entity={entity} /> : <span className="text-muted-foreground">—</span>
 }
 
-function AccountLink({ to }: { to: string }) {
+/**
+ * El destino cambia con la fila: un aviso de mora agrupado apunta al contacto y
+ * no a una cuenta, así que el rótulo también cambia — «Ver la cuenta» sobre un
+ * enlace a un contacto sería una promesa que el destino no cumple.
+ */
+function EntityLink({ entity }: { entity: { to: string; label: string } }) {
   return (
-    <Link to={to} className="text-brand block text-xs underline">
-      Ver la cuenta
+    <Link to={entity.to} className="text-brand block text-xs underline">
+      {entity.label}
     </Link>
   )
 }
