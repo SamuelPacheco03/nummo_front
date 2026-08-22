@@ -1415,6 +1415,7 @@ solo comparten la palabra «aviso».
 | `/config/cobranza` | La política: si se escribe, a qué horas y con qué **tres** plantillas | `messaging.read` · `messaging.settings.manage` |
 | `/config/plantillas` | Las plantillas y su estado en Meta | `whatsapp.templates.read` |
 | `/config/whatsapp` | Desde qué número sale: la cuenta de Meta del negocio | `whatsapp.settings.read` · `whatsapp.settings.manage` |
+| `/plataforma/whatsapp` | **La otra mitad**: lo que Nummo ve del canal (§47.6) | superadmin |
 | `/cartera/cobranza` | Lo enviado, a quién no se le escribe y el cupo, en dos pestañas | `messaging.read` |
 | Ficha de un acuerdo | El tri-estado de *ese* cobro | `agreements.manage` |
 
@@ -1581,6 +1582,27 @@ silenciara los avisos de cobranza se perdería justo el que dice que la cobranza
 La pantalla de preferencias no hizo falta tocarla — se dibuja desde el contrato y agrupa
 sobre `NOTIFICATION_CATEGORIES` (§11.1.10), así que la sección apareció sola al añadir la
 clave. Su `deepLink` es `/configuracion/plan`, que traduce el puente de §95.16.
+
+### «Enviar ahora», porque el automático sale una vez al día
+
+El escaneo corre **una sola vez al día**, a la hora local de la organización. Activar la
+cobranza a las once significa que el primer aviso sale mañana, y eso se siente roto — de
+ahí el botón, detrás de `messaging.send` y solo con la política **guardada** como activa
+(apagada, el endpoint responde 409).
+
+Tres cosas que se hacen mal solas:
+
+1. **No se deshabilita tras pulsarlo ni avisa de que ya se pulsó.** Repetir no duplica
+   nada: lo garantiza la clave de deduplicación de cada mensaje, no un bloqueo del
+   cliente. La segunda pulsación devuelve `overdue: 1, queued: 0`, y eso **no es un
+   error** — hay que decirlo con palabras, porque un «0 en cola» junto a un vencido se lee
+   como avería.
+2. **El resultado no va en un aviso.** Son seis cifras que se leen y se comparan, y §40
+   reserva el toast para lo que no se estudia. `withoutPhone` y `overdueDeferred` son la
+   respuesta a «pedí avisar a treinta y salieron doce», así que llevan su explicación
+   pegada — y solo cuando no son cero, que ahí sobra.
+3. **Encola, no envía.** El worker despacha después, así que el texto dice *encolados* y
+   remite al historial.
 
 ### Lo que no se construye, a propósito
 
@@ -3770,6 +3792,59 @@ cuatro pantallas de prueba. Es lo que hace que «volver a correrla» desde un pu
 consola con la pregunta y la organización ya puestas, y que saltar de la consola al ejecutor no
 obligue a reelegir.
 
+## 47.6. El canal de WhatsApp, visto por Nummo
+
+La tercera superficie de plataforma (§47.2), y la otra mitad de §11.1.16: allí está lo que
+una organización ve de **su** cobranza; aquí, lo que no es de nadie. Vive en
+`/plataforma/whatsapp`, fuera de `requireTenant` — no hay `orgId` porque estas dos cosas no
+pertenecen a ninguna organización.
+
+**Dos pestañas y no dos destinos**, porque comparten el patrón que las hace necesarias: **el
+fallo pasa en un sitio y el síntoma aparece en otro.**
+
+### La cola de entrantes
+
+Es la única tabla del canal **sin dueño** —cuando Meta entrega algo todavía no se sabe de
+qué organización es—, así que solo se puede mirar desde aquí. Si Meta cambia de versión o el
+gateway se cae, se llena de fallos mientras lo que el cliente ve es «mis mensajes se quedan
+en enviado». Nadie ata una cosa con la otra.
+
+- **Los tres estados se pintan siempre, aunque estén en cero.** Un «FAILED: —» hace dudar de
+  si no hay o no se pudo contar, y la pantalla existe para quitar esa duda. Pulsar uno filtra
+  la lista: el conteo y el listado son la misma pregunta a dos escalas.
+- **`FAILED` creciendo es *la* alarma**, no una columna más.
+- **`shape` en vez del cuerpo, y no es un olvido.** El payload crudo lleva teléfonos de
+  deudores, gente que ni siquiera usa Nummo. `shape.fields` responde «¿qué clase de evento
+  dejó de parsear?» sin regalar datos de un tercero, y sirve de diagnóstico: si todos los
+  fallidos son del mismo campo, el problema está en ese camino y no en el canal. **No pidas
+  el payload; no va a existir.**
+- **Reencolar reinicia los intentos a cero**, y la UI lo dice: un `attempts: 5` que pasa a
+  `0` sin explicación parece pérdida de información. Solo se ofrece en lo `FAILED` —sobre lo
+  procesado responde 404— y **devuelve a la cola, no procesa**: de eso se encarga el worker.
+
+### Las plantillas de la plataforma
+
+Son de Nummo y las comparten todos los clientes, así que **si Meta pausa una se cae la
+cobranza de todos a la vez** — y la única señal eran los mensajes saltados repartidos por el
+historial de cada uno.
+
+Se traducen con la **misma tabla** que la pantalla del inquilino (`messaging/labels`): son
+las mismas plantillas mirando desde el otro lado, y dos tablas del mismo enum se separan a
+la primera corrección.
+
+**El sync es idempotente y hay que decirlo**, porque el instinto es no tocar un botón que
+habla con Meta: lo que ya existe se refleja en vez de recrearse — recrear gastaría cupo de
+creación (100/hora por WABA) para recibir un rechazo por nombre duplicado. `created` **no**
+es «lista para usar»: queda en revisión hasta que Meta la mire. Y `failed` se pinta aunque
+casi siempre esté vacío, porque una plantilla que falla no detiene a las demás y sin
+enseñarlo el fallo pasa desapercibido entre los éxitos.
+
+### Lo que no hay, y no conviene diseñar
+
+Ver el contenido de los mensajes de un cliente, la calificación de calidad del número (no
+existe: es trabajo en tres repos), una vista global de la cola de salientes, y borrar
+entregas.
+
 ---
 
 # 48. Seguridad UX
@@ -4703,7 +4778,7 @@ listeners, `matchMedia`), nunca como mecanismo de flujo de datos.
 
 ## 88.1. Origen de la verdad
 
-- El contrato vive en `contract/openapi.json` (v1.0.0, **160 paths / 226 esquemas**) y en vivo en
+- El contrato vive en `contract/openapi.json` (v1.0.0, **167 paths / 231 esquemas**) y en vivo en
   `http://localhost:4010/openapi.json`.
 - Los handoffs por área están en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`, más los
   temáticos (`HANDOFF-whatsapp-cobranza.md`, `HANDOFF-buscador.md`, …), y el resumen en
@@ -5212,6 +5287,9 @@ Todos son parte del sistema y deben reutilizarse:
 | `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
 | `QuotaStrip` | `features/messaging/quota-strip.tsx` | El cupo mensual de cobranza, y cuándo deja de significar algo |
+| `RunNowPanel` | `features/messaging/run-now-panel.tsx` | «Enviar ahora» y el desglose de la pasada, sin prometer envío |
+| `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: entrantes y plantillas (§47.6) |
+| `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
 
 ---
