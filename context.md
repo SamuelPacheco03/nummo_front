@@ -6601,3 +6601,60 @@ Dos cosas que el guion **no** puede ser:
    contenido. Es el mismo criterio que el trazo de `plan-art` (§97.16).
 2. **No es una promesa de cifras.** Los números del hilo son de ejemplo, como los del panel
    del hero: nombre inventado, monto inventado. Nada de lo que se ve ahí sale del API.
+
+## 97.18. Lo que la portada promete tiene que existir
+
+Una portada es la única superficie de Nummo donde se puede afirmar algo que el producto no
+hace, y no lo va a atrapar ningún test de tipos: el texto de un mockup compila igual de bien
+diga la verdad o no. Se auditó el texto visible contra `contract/openapi.json` y los
+handoffs, y salieron **tres** cosas.
+
+### «Banco conectado» — falso, y en dos sitios
+
+Lo decían el panel del hero y el paso 03 de «Del movimiento a la acción». No hay integración
+bancaria: **cero rutas** de banco, conciliación u open finance en las 161 del contrato. Y no
+es que falte, es que es una decisión tomada — `HANDOFF-fase-10.md`:
+
+> **Nummo no mueve dinero real, registra.** […] Las cuentas financieras son un libro mayor,
+> no un banco.
+
+`BANK_TRANSFER` es un **método de pago** —«me pagaron por transferencia», anotado a mano— y
+una cuenta llamada «Banco Principal» es una fila del libro mayor. Ninguna de las dos es una
+conexión con nada.
+
+Ahora dice **«Pago registrado · Aplicado a la factura»**, que es literalmente lo que pasa:
+`POST /payments` y sus `allocations`. La palabra «registrado» además hace el mismo trabajo
+que `AUTO_RECORD` hace en el backend — nombrar que esto anota, no cobra.
+
+### «4 acciones sugeridas por Numi» — sin nada detrás
+
+No existe endpoint de sugerencias ni de insights: Numi razona en la conversación
+(`/assistant/chat`), no publica una lista de acciones. Y la rejilla de acciones rápidas del
+Panel **se quitó** (fase 4). Lo que el Panel sí tiene es «Necesita tu atención» con contexto,
+así que el panel de la portada dice ahora **«4 cuentas necesitan tu atención»**.
+
+Que Numi *actúe* sí es cierto y se queda: sus herramientas incluyen `receivables.create` y
+`messaging.send`, que es exactamente «prepara el cobro, redacta el recordatorio y lo manda».
+
+### `#demo` no existía
+
+«Ver cómo funciona» apuntaba a un ancla que ninguna sección declaraba. El enlace estaba, el
+test del hero lo comprobaba, y pulsarlo no hacía nada — un fallo que no lanza, no avisa y no
+se ve. El ancla vive ahora en la sección del gráfico, que es la que la analítica llama
+`product_demo`.
+
+### La compuerta
+
+`landing-page.test.tsx` monta la portada entera y comprueba que **todo `href="#…"` llegue a
+un `id` que existe**. Un test de componente no puede: el enlace está bien, lo que falta está
+en otro archivo. Y vigila por texto que no vuelva la promesa bancaria, porque el riesgo no es
+que alguien la reescriba a propósito — es que vuelva copiada del mockup, que es de donde
+salió.
+
+### Lo que se miró y aguanta
+
+«Pago sin conciliar» describe el **antes**, y conciliar es justo lo que hacen las
+`allocations`. «Recordatorio enviado · Automático» tiene detrás la política de cobranza y su
+corrida diaria. «Numi dice: tu flujo está…» es el insight del Panel, calculado solo con
+cifras del API (§35). «Disponible» y «Por cobrar» son dos de los cuatro KPIs reales.
+

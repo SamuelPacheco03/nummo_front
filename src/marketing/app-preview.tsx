@@ -24,7 +24,7 @@ interface Actividad {
 const ACTIVIDAD: readonly Actividad[] = [
   { Icon: ReceiptText, tone: 'success', titulo: 'Cobro creado', detalle: 'Cliente · Mensualidad' },
   { Icon: BellRing, tone: 'brand', titulo: 'Recordatorio enviado', detalle: 'Automático · hace 2 min' },
-  { Icon: CheckCircle2, tone: 'success', titulo: 'Pago confirmado', detalle: 'Banco conectado' },
+  { Icon: CheckCircle2, tone: 'success', titulo: 'Pago registrado', detalle: 'Aplicado a la factura' },
 ]
 
 export function AppPreview({

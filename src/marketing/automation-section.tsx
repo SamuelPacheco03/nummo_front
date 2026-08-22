@@ -22,7 +22,7 @@ import { useSectionViewed } from './use-section-viewed'
 const PASOS = [
   { n: '01', Icon: ReceiptText, tono: 'bg-success/20 text-success', titulo: 'Cobro creado', pie: 'Cliente · Mensualidad' },
   { n: '02', Icon: BellRing, tono: 'bg-success/20 text-success', titulo: 'Recordatorio enviado', pie: 'Automático · hace 2 min' },
-  { n: '03', Icon: CheckCircle2, tono: 'bg-primary/25 text-primary', titulo: 'Pago confirmado', pie: 'Banco conectado' },
+  { n: '03', Icon: CheckCircle2, tono: 'bg-primary/25 text-primary', titulo: 'Pago registrado', pie: 'Aplicado a la factura' },
 ] as const
 
 export function AutomationSection({ cola }: { cola: Cola | null }) {

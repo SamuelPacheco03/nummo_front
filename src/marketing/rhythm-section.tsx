@@ -48,6 +48,12 @@ export function RhythmSection({ cola }: { cola: Cola | null }) {
 
   const { linea, area, largo } = trazar(activa.serie, ANCHO, ALTO)
 
+  /*
+    `id="demo"` es el destino de «Ver cómo funciona» del hero. Va aquí y no en `producto`
+    porque esta es la sección que la analítica llama `product_demo`: enseñar el gráfico es
+    lo que ese enlace promete.
+  */
+
   function elegir(vista: Vista) {
     setActiva(vista)
     if (vista.tab) cola?.encolar({ name: 'demo_tab_selected', tab: vista.tab })
@@ -55,7 +61,7 @@ export function RhythmSection({ cola }: { cola: Cola | null }) {
 
   return (
     /* La banda salvia: la superficie hundida de la candidata, no un gris inventado. */
-    <section ref={refSeccion} className="bg-secondary px-6 py-24">
+    <section id="demo" ref={refSeccion} className="bg-secondary px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="gap-10 lg:flex lg:items-end lg:justify-between">
           <SectionHeading

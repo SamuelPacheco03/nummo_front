@@ -88,7 +88,7 @@ export function DisorderSection() {
                   Todo bajo control
                 </span>
                 <span className="block text-xs text-sidebar-muted-foreground">
-                  4 acciones sugeridas por Numi
+                  4 cuentas necesitan tu atención
                 </span>
               </span>
             </div>
