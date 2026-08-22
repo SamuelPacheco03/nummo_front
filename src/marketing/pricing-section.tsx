@@ -105,6 +105,7 @@ function Planes({ planes, cola }: { planes: PricingPlan[]; cola: Cola | null }) 
           <PlanCard
             key={plan.code}
             nombre={plan.name}
+            codigo={plan.code}
             precio={consultar ? null : { monto: texto, porMes: Boolean(plan.price && Number(plan.price.amount) > 0) }}
             descripcion={plan.description}
             topes={plan.limits.map((l) => ({ key: l.key, label: l.label, valor: leerTope(l) }))}

@@ -628,3 +628,67 @@
     transform: translateX(-50%);
   }
 }
+
+@layer utilities {
+  /*
+    El movimiento de las ilustraciones de los planes. Va en clases y no en `style` en línea
+    para que `prefers-reduced-motion` pueda apagarlo de una vez, que con estilos en línea
+    no se puede sin JavaScript.
+  */
+  .plan-art-draw {
+    stroke-dasharray: 120;
+    animation: plan-art-draw 1.7s ease forwards;
+  }
+  .plan-art-float {
+    animation: plan-art-float 5s ease-in-out infinite;
+  }
+  .plan-art-float-slow {
+    animation: plan-art-float 7s ease-in-out infinite;
+  }
+  .plan-art-orbit {
+    animation: plan-art-orbit 26s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /*
+      Sin movimiento el trazo tiene que quedar DIBUJADO, no a medias: `plan-art-draw`
+      arranca con el camino oculto, así que quitarle la animación a secas dejaría la
+      ilustración incompleta.
+    */
+    .plan-art-draw {
+      stroke-dasharray: none;
+      animation: none;
+    }
+    .plan-art-float,
+    .plan-art-float-slow,
+    .plan-art-orbit {
+      animation: none;
+    }
+  }
+}
+
+@keyframes plan-art-draw {
+  from {
+    stroke-dashoffset: 120;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes plan-art-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes plan-art-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

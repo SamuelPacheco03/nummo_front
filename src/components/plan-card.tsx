@@ -1,15 +1,18 @@
 import { useId, type ReactNode } from 'react'
 import {
+  BadgeCheck,
   Check,
+  KeyRound,
   MapPin,
   MessageCircle,
   MessageSquareText,
   Mic,
-  Minus,
+  ShieldCheck,
   UserCog,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { BasicoArt, FreeArt, ProArt } from './plan-art'
 import { cn } from '@/lib/utils'
 
 /**
@@ -31,6 +34,13 @@ import { cn } from '@/lib/utils'
  * un dato: se toma en `pricing-section.tsx` y se lee ahí.
  */
 
+/** La ilustración de cada plan, por su código del contrato. */
+const ARTE_DE_PLAN: Record<string, (p: { className?: string }) => React.ReactElement> = {
+  FREE: FreeArt,
+  BASIC: BasicoArt,
+  PRO: ProArt,
+}
+
 /** El icono de cada tope, por la clave del catálogo del backend. */
 const ICONO_DE_TOPE: Record<string, LucideIcon> = {
   max_contacts: Users,
@@ -49,6 +59,13 @@ export interface TopeDePlan {
   valor: string
 }
 
+/** El icono de cada función, por la clave del catálogo del backend. */
+const ICONO_DE_FUNCION: Record<string, LucideIcon> = {
+  ai_byok: KeyRound,
+  custom_roles: ShieldCheck,
+  approvals: BadgeCheck,
+}
+
 export interface FuncionDePlan {
   key: string
   label: string
@@ -57,6 +74,8 @@ export interface FuncionDePlan {
 
 export interface PlanCardProps {
   nombre: string
+  /** El código del contrato (`FREE`, `BASIC`, `PRO`): elige la ilustración. */
+  codigo?: string
   /**
    * El precio ya resuelto.
    *
@@ -78,6 +97,7 @@ export interface PlanCardProps {
 
 export function PlanCard({
   nombre,
+  codigo,
   precio,
   descripcion,
   topes,
@@ -88,6 +108,7 @@ export function PlanCard({
   className,
 }: PlanCardProps) {
   const titleId = useId()
+  const Arte = codigo ? ARTE_DE_PLAN[codigo] : undefined
 
   return (
     /*
@@ -99,13 +120,22 @@ export function PlanCard({
       aria-labelledby={titleId}
       className={cn(
         'relative flex min-w-0 flex-col rounded-2xl border p-6 transition-[transform,box-shadow] duration-300',
+        'hover:-translate-y-1',
         destacado
-          ? 'border-brand/50 bg-brand/[0.03] shadow-sm'
-          : 'border-border bg-card hover:-translate-y-0.5 hover:shadow-sm',
+          ? 'border-brand/40 bg-card shadow-[0_20px_50px_-24px_var(--brand)] hover:shadow-[0_28px_60px_-24px_var(--brand)]'
+          : 'border-border bg-card hover:border-brand/30 hover:shadow-sm',
         className,
       )}
     >
       {/* Montada sobre el borde: señala la tarjeta sin robarle una línea al contenido. */}
+      {/* Un velo de marca, no un fondo: tiñe sin cambiar la superficie de la tarjeta. */}
+      {destacado && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-brand/[0.05] to-transparent"
+        />
+      )}
+
       {insignia && (
         <span
           className={cn(
@@ -124,11 +154,14 @@ export function PlanCard({
         </span>
       )}
 
-      <p id={titleId} className="font-display text-lg font-semibold text-foreground">
-        {nombre}
-      </p>
+      <div className="relative flex items-start justify-between gap-4">
+        <p id={titleId} className="font-display text-lg font-semibold text-foreground">
+          {nombre}
+        </p>
+        {Arte && <Arte className="-mt-2 h-20 w-24 shrink-0" />}
+      </div>
 
-      <div className="mt-5">
+      <div className="relative mt-5">
         {precio ? (
           <p className="flex items-baseline gap-1.5">
             <span className="font-display text-4xl font-semibold tracking-tight text-foreground tabular-nums">
@@ -147,17 +180,24 @@ export function PlanCard({
       </div>
 
       {descripcion && (
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{descripcion}</p>
+        <p className="relative mt-4 text-sm leading-relaxed text-muted-foreground">{descripcion}</p>
       )}
 
       {topes.length > 0 && (
-        <ul className="mt-6 space-y-3 border-t border-border pt-6 text-sm">
+        <ul className="relative mt-6 space-y-3 border-t border-border pt-6 text-sm">
           {topes.map((tope) => {
             const Icon = ICONO_DE_TOPE[tope.key]
             return (
               <li key={tope.key} className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2.5 text-muted-foreground">
-                  {Icon && <Icon aria-hidden className="size-4 shrink-0" />}
+                  {Icon && (
+                    <span
+                      aria-hidden
+                      className="grid size-7 shrink-0 place-items-center rounded-lg bg-secondary text-brand"
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                  )}
                   <span className="min-w-0 truncate">{tope.label}</span>
                 </span>
                 <span className="shrink-0 font-medium text-foreground tabular-nums">
@@ -170,7 +210,7 @@ export function PlanCard({
       )}
 
       {funciones.length > 0 && (
-        <ul className="mt-6 space-y-3 border-t border-border pt-6 text-sm">
+        <ul className="relative mt-6 space-y-3 border-t border-border pt-6 text-sm">
           {funciones.map((f) => (
             <li
               key={f.key}
@@ -194,12 +234,17 @@ export function PlanCard({
               ) : (
                 <span
                   aria-hidden
-                  className="grid size-5 shrink-0 place-items-center rounded-full border border-border"
+                  className="grid size-5 shrink-0 place-items-center rounded-full border border-border bg-secondary"
                 >
-                  <Minus className="size-3 opacity-60" />
+                  <span className="h-1 w-1.5 rounded-full bg-current opacity-60" />
                 </span>
               )}
-              <span className="min-w-0">{f.label}</span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                {ICONO_DE_FUNCION[f.key] && (
+                  <IconoFuncion Icon={ICONO_DE_FUNCION[f.key]} incluida={f.included} />
+                )}
+                {f.label}
+              </span>
               <span className="sr-only">{f.included ? 'incluido' : 'no incluido'}</span>
             </li>
           ))}
@@ -207,7 +252,12 @@ export function PlanCard({
       )}
 
       {/* `mt-auto`: los pies quedan alineados aunque las descripciones midan distinto. */}
-      <div className="mt-auto pt-6">{accion}</div>
+      <div className="relative mt-auto pt-6">{accion}</div>
     </div>
   )
+}
+
+/** El icono de una función, apagado cuando el plan no la incluye. */
+function IconoFuncion({ Icon, incluida }: { Icon: LucideIcon; incluida: boolean }) {
+  return <Icon aria-hidden className={cn('size-3.5 shrink-0', incluida ? 'text-brand' : 'opacity-50')} />
 }

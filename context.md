@@ -6508,3 +6508,49 @@ tema del sistema y **no llega a producción**. Este sí, y va en la barra.
 
 La paleta por defecto de la portada es **`azul`**, la de marca. Se cambia en una línea:
 `PALETA_PORTADA`, en `marketing/theme.ts`.
+
+## 97.16. La tarjeta de un plan, y las dos reglas que acota
+
+La tarjeta vive en `components/plan-card.tsx` y **la comparten la portada y «Plan y consumo»
+de la consola**. Se parecían tanto que copiarla era lo más rápido, y en dos semanas habrían
+contado historias distintas sobre los mismos planes.
+
+Las ilustraciones (`plan-art.tsx`) son geométricas y de marca: los colores salen de
+`--logo-*`, los cuatro del isotipo, que **no se re-tematizan** (§3.2) — así se ven igual en
+claro y en oscuro. Los grises sí siguen al tema. Los `id` de los degradados se generan con
+`useId` porque son globales al documento: dos tarjetas con el mismo `id` harían que la
+segunda pintara con el degradado de la primera.
+
+**El movimiento va en clases, no en `style` en línea.** Un estilo en línea no se puede
+apagar desde `prefers-reduced-motion` sin JavaScript. Y sin movimiento el trazo tiene que
+quedar **dibujado**, no a medias: `plan-art-draw` arranca con el camino oculto, así que
+quitarle la animación a secas dejaría la ilustración incompleta.
+
+### Dos acotaciones, dichas y no calladas
+
+1. **El icono del tope va en pastilla tintada**, que es lo que §11.1 (2) llama «el patrón de
+   plantilla por excelencia» y que la consola respetaba hasta ahora — su propio comentario
+   decía «al tamaño del texto y sin pastilla detrás». Entra porque el diseño aprobado lo
+   pide y porque aquí no es *cada fila de una lista*: son cinco filas dentro de una tarjeta
+   que ya es un objeto cerrado. Queda escrito para poder revertirlo si se decide que no.
+2. **El «Recomendado» solo va en la portada.** El API no publica esa señal, así que ponerla
+   dentro de la consola sería escribir una decisión de precio en el front (§70). En una
+   portada elegir a qué plan se empuja es marketing. Se destaca **el último**, el más capaz:
+   destacar el del medio ponía la insignia sobre el único plan sin tarifa publicada.
+
+### En la consola el catálogo se abre, no se incrusta
+
+En escritorio, «Plan y consumo» ofrece **«Ver planes»** y el catálogo sale en un diálogo
+ancho. Incrustadas en el panel las tres tarjetas se quedaban en unos 300 px y todo se partía
+en dos líneas — los nombres de los topes truncados, el precio en dos renglones.
+
+En móvil van **apiladas y a la vista**: ahí el problema del ancho no existe, y un modal
+ocuparía la pantalla entera para enseñar lo mismo añadiendo un paso.
+
+Pedir un plan desde el catálogo **cierra el catálogo antes de abrir la consulta**: dos
+diálogos apilados dejan al segundo bajo el velo del primero y `esc` cierra el equivocado.
+
+> **Lo que no se hizo:** el conmutador **Mensual / Anual** de la referencia. El contrato
+> tiene un solo importe por plan —no hay precio anual en ninguna parte— así que ese
+> conmutador sería decoración que no cambia nada, o peor, insinuaría una tarifa que nadie ha
+> fijado.

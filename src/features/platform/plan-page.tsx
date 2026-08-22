@@ -190,6 +190,7 @@ function PlanDelCatalogo({
   return (
     <PlanCard
       nombre={plan.name}
+      codigo={plan.code}
       precio={price.per ? { monto: price.amount, porMes: true } : null}
       descripcion={plan.description}
       topes={LIMIT_KEYS.map((key) => ({
@@ -232,6 +233,7 @@ export function PlanPage() {
   const { limits, period } = useLimitUsage()
   const { plans, isLoading: plansLoading, isError: plansError, error } = usePlans()
   const [consulting, setConsulting] = useState<PublicPlan | null>(null)
+  const [catalogo, setCatalogo] = useState(false)
 
   // Las cuatro features que ningún plan incluye todavía existen como clave y se
   // encenderán cuando se construyan; anunciarlas hoy como «✗» en las cuatro
@@ -303,20 +305,71 @@ export function PlanPage() {
           ) : plansError ? (
             <ErrorState error={error} fallback="No se pudieron cargar los planes." />
           ) : (
-            <div className="grid items-stretch gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <PlanDelCatalogo
-                  key={plan.code}
-                  plan={plan}
-                  features={features}
-                  isCurrent={plan.code === capabilities?.planCode}
-                  onUpgrade={() => setConsulting(plan)}
-                />
-              ))}
-            </div>
+            <>
+              {/*
+                **En escritorio el catálogo se abre, no se incrusta.** Dentro del panel las
+                tres tarjetas se quedaban en unos 300 px y todo se partía en dos líneas: los
+                nombres de los topes truncados, el precio en dos renglones. El diálogo les da
+                el ancho que necesitan para leerse de un vistazo, que es justo lo que una
+                comparación de planes tiene que permitir.
+              */}
+              <div className="hidden lg:block">
+                <Button variant="outline" onClick={() => setCatalogo(true)}>
+                  Ver planes
+                  <ArrowRight aria-hidden className="size-4" />
+                </Button>
+              </div>
+
+              {/*
+                En móvil van apilados y a la vista. Un modal en un teléfono ocupa la pantalla
+                entera y añade un paso para ver lo mismo: ahí el problema del ancho no existe,
+                porque las tarjetas ya van una debajo de otra.
+              */}
+              <div className="grid items-stretch gap-4 pt-1 sm:grid-cols-2 lg:hidden">
+                {plans.map((plan) => (
+                  <PlanDelCatalogo
+                    key={plan.code}
+                    plan={plan}
+                    features={features}
+                    isCurrent={plan.code === capabilities?.planCode}
+                    onUpgrade={() => setConsulting(plan)}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </Panel>
+
+      <Dialog open={catalogo} onOpenChange={setCatalogo}>
+        <DialogContent className="sm:max-w-6xl">
+          <DialogHeader>
+            <DialogTitle>Planes</DialogTitle>
+            <DialogDescription>
+              Lo que cambia entre planes es cuánta cartera, cuánto equipo y cuánta IA caben. El
+              ciclo completo —cobrar, pagar, mora y reportes— está en todos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid items-stretch gap-5 pt-2 lg:grid-cols-3">
+            {plans.map((plan) => (
+              <PlanDelCatalogo
+                key={plan.code}
+                plan={plan}
+                features={features}
+                isCurrent={plan.code === capabilities?.planCode}
+                /*
+                  Cierra el catálogo antes de abrir la consulta: dos diálogos apilados dejan
+                  al segundo bajo el velo del primero y la tecla `esc` cierra el equivocado.
+                */
+                onUpgrade={() => {
+                  setCatalogo(false)
+                  setConsulting(plan)
+                }}
+              />
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {consulting && (
         <UpgradeDialog
