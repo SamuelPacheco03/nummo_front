@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { AA_LARGE, AA_TEXT, contrast } from './contrast'
+import { tokensDe } from './css-tokens'
 
 /**
  * La compuerta de contraste del sistema visual, **medida sobre `index.css`**.
@@ -13,25 +13,6 @@ import { AA_LARGE, AA_TEXT, contrast } from './contrast'
  * describía estos tokens para poder comparar tres candidatas; elegida una, describir el CSS
  * en otro sitio solo añadía una copia que podía desviarse. Esto mide lo que se pinta.
  */
-
-/*
-  Se lee del disco: Vitest corre con `css: false` y deja en blanco los imports que resuelven
-  a un `.css`, también con `?raw`. La ruta es relativa a la raíz del proyecto, que es desde
-  donde Vitest arranca. El porqué de la declaración de tipos está en `node-shims.d.ts`.
-*/
-const css = readFileSync('src/index.css', 'utf8')
-
-/** Los `--token: valor` de un bloque de `index.css`, sin comentarios. */
-function tokensDe(selector: string): Record<string, string> {
-  const bloque = new RegExp(`^${selector} \\{\\n([\\s\\S]*?)^\\}`, 'm').exec(css)
-  if (!bloque) throw new Error(`No encontré el bloque \`${selector}\` en index.css`)
-  const cuerpo = bloque[1].replace(/\/\*[\s\S]*?\*\//g, '')
-  const salida: Record<string, string> = {}
-  for (const [, nombre, valor] of cuerpo.matchAll(/^\s*(--[\w-]+):\s*([^;]+);/gm)) {
-    salida[nombre] = valor.trim()
-  }
-  return salida
-}
 
 /** En oscuro solo se redeclara lo que cambia; el resto se hereda de `:root`. */
 const MODOS = {

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
+import { tokensDe } from '@/lib/palette/css-tokens'
 import { TEMA_PORTADA } from './theme'
 
 /**
@@ -13,20 +14,18 @@ import { TEMA_PORTADA } from './theme'
  * «bosque», borrada al elegir el azul— pintando la barra del móvil en crema sobre una
  * página azul hasta que React llegaba a corregirlo.
  *
- * Se leen del disco por lo mismo que `tokens.test.ts`: Vitest corre con `css: false` y deja
- * en blanco cualquier import que resuelva a un `.css`, también con `?raw`.
+ * `index.html` se lee del disco porque es el que pinta antes de que corra nada; los tokens
+ * del CSS los sirve `tokensDe`, que documenta ahí por qué esa hoja también se lee en vez
+ * de importarse.
  */
 
 const html = readFileSync('index.html', 'utf8')
-const css = readFileSync('src/index.css', 'utf8')
 
 /** El `--background` del bloque pedido, sin comentarios de por medio. */
 function fondoDe(selector: string): string {
-  const bloque = new RegExp(`^${selector} \\{\\n([\\s\\S]*?)^\\}`, 'm').exec(css)
-  if (!bloque) throw new Error(`No encontré el bloque \`${selector}\` en index.css`)
-  const valor = /^\s*--background:\s*([^;]+);/m.exec(bloque[1].replace(/\/\*[\s\S]*?\*\//g, ''))
+  const valor = tokensDe(selector)['--background']
   if (!valor) throw new Error(`\`${selector}\` no declara --background`)
-  return valor[1].trim()
+  return valor
 }
 
 /** El `content` del `<meta name="theme-color">` de ese esquema. */
