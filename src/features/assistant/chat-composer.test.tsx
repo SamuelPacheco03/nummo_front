@@ -1,4 +1,14 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+
+const avisos = vi.hoisted(() => ({ errores: [] as string[] }))
+/* `toast` se usa suelto —«Mantén pulsado el micrófono»— y también con `.error`, así
+   que el doble tiene que ser una función con métodos, no un objeto. */
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), {
+    error: (t: string) => avisos.errores.push(t),
+    success: vi.fn(),
+  }),
+}))
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ChatComposer } from './chat-composer'
 import { TOUCH_GRACE } from './hold-to-record'
@@ -386,4 +396,77 @@ test('sin quien reciba la imagen, pegar una no hace nada', () => {
 
   expect(pegar([new File(['x'], 'imagen.png', { type: 'image/png' })])).toBe(true)
   expect(screen.queryByText('imagen.png')).not.toBeInTheDocument()
+})
+
+/** Arrastrar algo sobre la caja. `types` es lo que mira el compositor. */
+function arrastrar(tipo: 'dragEnter' | 'dragOver' | 'drop', files: File[] = []) {
+  const caja = screen.getByLabelText('Mensaje para Numi').closest('form')!
+  return fireEvent[tipo](caja, {
+    dataTransfer: { files, types: ['Files'], items: [] },
+  })
+}
+
+test('arrastrar un archivo encima dice dónde soltarlo', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={vi.fn()} />)
+
+  expect(screen.queryByText('Suelta la imagen para adjuntarla')).not.toBeInTheDocument()
+  arrastrar('dragEnter')
+  expect(screen.getByText('Suelta la imagen para adjuntarla')).toBeInTheDocument()
+})
+
+test('cruzar de un hijo a otro no apaga el aviso', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={vi.fn()} />)
+
+  // Entrar en la caja y después en el textarea: dos entradas, una salida.
+  arrastrar('dragEnter')
+  arrastrar('dragEnter')
+  fireEvent.dragLeave(screen.getByLabelText('Mensaje para Numi').closest('form')!)
+
+  expect(screen.getByText('Suelta la imagen para adjuntarla')).toBeInTheDocument()
+})
+
+test('soltar una imagen la deja lista para enviar', async () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  const onSendImage = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={onSendImage} />)
+
+  const foto = new File(['x'], 'comprobante.jpg', { type: 'image/jpeg' })
+  arrastrar('dragEnter')
+  arrastrar('drop', [foto])
+
+  expect(await screen.findByText('comprobante.jpg')).toBeInTheDocument()
+  // Y el aviso se retira: ya no hay nada encima.
+  expect(screen.queryByText('Suelta la imagen para adjuntarla')).not.toBeInTheDocument()
+
+  screen.getByRole('button', { name: 'Enviar mensaje' }).click()
+  await waitFor(() => expect(onSendImage).toHaveBeenCalledWith(foto, ''))
+})
+
+test('soltar un PDF lo dice, en vez de no hacer nada', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  avisos.errores.length = 0
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={vi.fn()} />)
+
+  arrastrar('dragEnter')
+  arrastrar('drop', [new File(['x'], 'factura.pdf', { type: 'application/pdf' })])
+
+  // Un gesto que no produce nada se lee como que la app falló.
+  expect(avisos.errores).toEqual(['Numi lee JPEG, PNG, WebP y GIF. Un PDF todavía no.'])
+  expect(screen.queryByText('factura.pdf')).not.toBeInTheDocument()
+})
+
+test('sin quien reciba la imagen, arrastrar no promete nada', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  arrastrar('dragEnter')
+
+  expect(screen.queryByText('Suelta la imagen para adjuntarla')).not.toBeInTheDocument()
 })

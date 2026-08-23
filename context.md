@@ -3046,6 +3046,14 @@ estaba en la mano. Solo se queda con lo que el backend sabe leer —los cuatro t
 imagen—, y solo entonces corta el pegado: pegar una frase en la caja tiene que seguir
 pegando una frase.
 
+**Y se suelta encima**, que es el mismo viaje cuando la imagen viene de una carpeta abierta
+al lado. El compositor se resalta mientras hay algo encima y lo dice con palabras, porque el
+borde de color solo no distingue «suéltala aquí» de «esta caja tiene el foco».
+
+Aquí sí se avisa cuando lo soltado no sirve, al revés que al pegar: **un pegado que no se
+toma tiene su salida natural** —pega texto y ya—, pero soltar un PDF sobre el compositor no
+produce absolutamente nada, y un gesto que no produce nada se lee como que la app falló.
+
 **No transmite, y eso cambia la espera.** El chat de texto tiene `/chat/stream` y éste no: la
 respuesta llega entera y tarda, porque antes hay que leer la imagen. Por eso la espera se
 marca como la de una nota de voz —`pending`, «Numi está escribiendo…»— y no con el cursor que

@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type DragEvent,
   type PointerEvent as ReactPointerEvent,
   type Ref,
 } from 'react'
@@ -147,6 +148,14 @@ export function ChatComposer({
   */
   const [picked, setPicked] = useState<{ file: File; url: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  /** Hay un archivo encima del compositor, esperando a que lo suelten. */
+  const [dragging, setDragging] = useState(false)
+  /*
+    `dragenter` y `dragleave` saltan también al cruzar de un hijo a otro dentro de la
+    caja, así que un booleano se apagaba al pasar por encima del clip o del textarea y
+    el resaltado parpadeaba. Se cuentan las entradas y solo la última salida apaga.
+  */
+  const dragDepth = useRef(0)
 
   /*
     El gesto de mantener pulsado: `hold` es el desplazamiento del dedo desde
@@ -236,6 +245,11 @@ export function ChatComposer({
     return () => el.removeEventListener('touchstart', noLongPress)
   }, [hasText, busy, onStop])
 
+  /** Solo los cuatro tipos que el backend sabe leer. No hay PDF. */
+  const isImage = (file: File) => IMAGE_TYPES.split(',').includes(file.type)
+  /** ¿Hay dónde mandar una imagen ahora mismo? El mismo portero para el clip, pegar y soltar. */
+  const canAttach = Boolean(onSendImage) && !busy
+
   /** Deja una imagen lista para enviar, suelte el blob de la anterior si la había. */
   const pick = (file: File) => {
     if (picked) URL.revokeObjectURL(picked.url)
@@ -254,10 +268,55 @@ export function ChatComposer({
    * de texto normal.
    */
   const onPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
-    if (!onSendImage || busy) return
-    const file = [...event.clipboardData.files].find((f) => IMAGE_TYPES.split(',').includes(f.type))
+    if (!canAttach) return
+    const file = [...event.clipboardData.files].find(isImage)
     if (!file) return
     event.preventDefault()
+    pick(file)
+  }
+
+  /*
+    Arrastrar y soltar, que es el otro camino sin pasar por el disco: la imagen viene de
+    otra pestaña o de una carpeta abierta al lado.
+
+    Solo reacciona a archivos —`types` trae `'Files'` cuando lo arrastrado lo es—, y no a
+    arrastrar texto seleccionado dentro de la propia caja, que es un gesto distinto y ya
+    funciona solo.
+  */
+  const carriesFiles = (event: DragEvent) => event.dataTransfer.types.includes('Files')
+
+  const onDragEnter = (event: DragEvent<HTMLFormElement>) => {
+    if (!canAttach || !carriesFiles(event)) return
+    dragDepth.current += 1
+    setDragging(true)
+  }
+
+  const onDragOver = (event: DragEvent<HTMLFormElement>) => {
+    // Sin esto el navegador abre el archivo en una pestaña y no llega el `drop`.
+    if (canAttach && carriesFiles(event)) event.preventDefault()
+  }
+
+  const onDragLeave = () => {
+    if (dragDepth.current === 0) return
+    dragDepth.current -= 1
+    if (dragDepth.current === 0) setDragging(false)
+  }
+
+  const onDrop = (event: DragEvent<HTMLFormElement>) => {
+    if (!canAttach) return
+    event.preventDefault()
+    dragDepth.current = 0
+    setDragging(false)
+    const file = [...event.dataTransfer.files].find(isImage)
+    /*
+      Aquí sí se dice que no, al revés que al pegar: un pegado que no sirve tiene su
+      salida natural —pega texto y ya—, pero soltar un PDF sobre el compositor no hace
+      absolutamente nada, y un gesto que no produce nada se lee como que la app falló.
+    */
+    if (!file) {
+      toast.error('Numi lee JPEG, PNG, WebP y GIF. Un PDF todavía no.')
+      return
+    }
     pick(file)
   }
 
@@ -505,6 +564,10 @@ export function ChatComposer({
         e.preventDefault()
         submit()
       }}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       className="bg-card border-t px-3 py-2.5"
     >
       {quoted && (
@@ -564,10 +627,22 @@ export function ChatComposer({
 
       <div
         className={cn(
-          'border-input bg-background flex items-end gap-1 rounded-2xl border py-1.5 pr-1.5 pl-2 transition-[color,box-shadow]',
+          'border-input bg-background relative flex items-end gap-1 rounded-2xl border py-1.5 pr-1.5 pl-2 transition-[color,box-shadow]',
           'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
+          dragging && 'border-brand ring-brand/40 ring-[3px]',
         )}
       >
+        {/*
+          Tapa la caja entera mientras hay algo encima: el aviso tiene que salir aunque
+          ya haya texto escrito, y ahí no cabe en el hueco del marcador de posición.
+          `pointer-events-none` es lo que evita que entrar en el propio aviso cuente
+          como salir de la caja.
+        */}
+        {dragging && (
+          <div className="bg-background/95 text-brand pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-2xl text-sm font-medium">
+            Suelta la imagen para adjuntarla
+          </div>
+        )}
         {!textOnly && (
           <>
             {/*
