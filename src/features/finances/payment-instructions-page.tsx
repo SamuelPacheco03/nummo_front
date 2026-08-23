@@ -58,7 +58,7 @@ export function PaymentInstructionsPage() {
   if (!canRead) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Formas de pago" />
+        <PageHeader title="Dónde te pagan" />
         <EmptyState
           Icon={Lock}
           title="No puedes ver esto"
@@ -105,8 +105,8 @@ export function PaymentInstructionsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Formas de pago"
-        description="Dónde puede pagarte quien te debe. Sale dentro del recordatorio de cobranza."
+        title="Dónde te pagan"
+        description="Las cuentas y los enlaces que salen dentro del recordatorio de cobranza."
       >
         {canManage && (
           <Button onClick={() => abrir(null)}>
@@ -180,7 +180,7 @@ export function PaymentInstructionsPage() {
           <p className="text-muted-foreground text-xs">
             Estas formas de pago salen en la{' '}
             <Link to="/config/cobranza" className="text-brand underline">
-              cobranza por WhatsApp
+              cobranza automática
             </Link>
             .
           </p>

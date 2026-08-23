@@ -112,12 +112,32 @@ export function SectionedLayout({
         `top-24` y no `top-8`: la cabecera de escritorio es `sticky` y mide 64 px,
         así que una columna pegada a 32 px se metía por debajo al desplazar y
         parecía que se movía sola. 64 de cabecera + 32 de respiro.
+
+        **Y desplaza lo suyo.** `sticky` solo pega mientras el elemento cabe en la
+        ventana: con veintiún destinos la columna medía más que ella, el rango de
+        pegado era cero y llegar al último grupo obligaba a mover la página entera
+        —perdiendo de vista el formulario que se estaba mirando— para volver a
+        subir después. Con alto máximo y `overflow-y-auto` se comporta como lo que
+        es, un segundo carril de navegación: se queda quieta y el que desplaza es
+        ella.
+
+        El borde va en el elemento de fuera, el que no desplaza, para que sea un
+        separador y no una línea que se mueve; y el `pr-4` de dentro es lo que
+        impide que `overflow-y-auto` recorte el anillo de foco de los enlaces.
+
+        La barra fina y el desvanecido de los bordes son los mismos del sidebar
+        principal (`scrollbar-slim` + `scroll-fade-y`, `index.css`): una
+        navegación que desplaza ya tiene su lenguaje en esta app, y el
+        desvanecido es lo que hace que un enlace cortado se lea como «hay más
+        abajo» y no como un fallo de render.
       */}
       <nav
         aria-label={label}
-        className="sticky top-24 hidden w-52 shrink-0 flex-col gap-5 self-start lg:flex"
+        className="border-border/70 sticky top-24 hidden w-60 shrink-0 self-start border-r lg:block"
       >
-        <Groups groups={groups} />
+        <div className="scrollbar-slim scroll-fade-y flex max-h-[calc(100dvh-7rem)] flex-col gap-5 overflow-y-auto pr-4 pb-2">
+          <Groups groups={groups} />
+        </div>
       </nav>
 
       <div className={cn('lg:hidden', console ? 'mb-2 flex-none' : 'mb-6')}>

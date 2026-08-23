@@ -87,7 +87,7 @@ export function CollectionPolicyPage() {
   if (!canRead) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Cobranza por WhatsApp" />
+        <PageHeader title="Cobranza automática" />
         <EmptyState
           Icon={Lock}
           title="No puedes ver esto"
@@ -134,7 +134,7 @@ export function CollectionPolicyPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Cobranza por WhatsApp"
+        title="Cobranza automática"
         description="Cuándo y con qué mensaje le escribe Nummo a quien te debe."
       />
 

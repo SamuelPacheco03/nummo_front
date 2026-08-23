@@ -843,6 +843,18 @@ igual que en escritorio.
 
 La regla que deja: **una navegación larga no se aplana en horizontal; se mete en el cajón.**
 
+**Y en escritorio, la columna desplaza lo suyo.** `sticky` solo pega mientras el elemento cabe en
+la ventana: con los veintiún destinos de Configuración la columna medía más que ella, así que el
+rango de pegado era cero y llegar al último grupo obligaba a mover la página entera —perdiendo de
+vista el formulario que se estaba mirando— y volver a subir después. Hoy es un carril de verdad:
+alto máximo (`calc(100dvh-7rem)`), `overflow-y-auto` propio y un borde que lo separa del
+contenido. Dos detalles que no son adorno: el borde va en el elemento que **no** desplaza —si no,
+la línea se mueve con la lista— y el `pr-4` de dentro es lo que impide que el recorte se coma el
+anillo de foco de los enlaces.
+
+La segunda regla: **si la lista puede crecer más que la pantalla, el carril lleva su propio
+scroll.**
+
 ## 11.1.3b. La tarjeta de una fila en móvil
 
 En escritorio todas las columnas valen lo mismo: son columnas. En una tarjeta de 360 px no, y
@@ -1188,9 +1200,9 @@ un compañero. Apagar los avisos de una empresa entera es una decisión, no un a
 eso tiene su propio permiso (`notifications.settings.manage`) — que ni un administrador tiene por
 defecto en otra organización.
 
-Va en **Configuración › Organización**, no en Preferencias, por lo mismo que la aprobación de
-egresos vive en Gastos y no en Empresa (§47.4): es una política, tiene endpoint propio y se audita
-aparte.
+Va en **Configuración › Reglas**, no en Mi cuenta: es una política, tiene endpoint propio y se
+audita aparte (§47.4), y por eso comparte grupo con las políticas de interés y con la aprobación
+de egresos en vez de con el tema de tu pantalla.
 
 **Se lee con `notifications.read` y se enseña a cualquiera**; lo que desaparece sin el permiso de
 escritura es el botón. Esconder la pantalla entera diría lo contrario de lo que hace el backend,
@@ -5362,7 +5374,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `InfoHint` | `components/ui/info-hint.tsx` | Ayuda contextual breve |
 | `Skeleton` | `components/ui/skeleton.tsx` | Esqueletos de carga |
 | `MasterCrud` | `features/masters/master-crud.tsx` | Listado CRUD de un maestro |
-| `SectionedLayout` | `components/ui/sectioned-layout.tsx` | Sección con navegación propia: columna en escritorio, `Drawer` bajo `lg` |
+| `SectionedLayout` | `components/ui/sectioned-layout.tsx` | Sección con navegación propia: carril con scroll propio en escritorio, `Drawer` bajo `lg` |
 | `SettingsLayout` · `HelpLayout` | `features/config/`, `features/help/` | Los dos usos de `SectionedLayout` |
 | `FormDialog` | `components/ui/form-dialog.tsx` | Formulario corto en diálogo centrado (Configuración) |
 | `AccountFormDrawer` | `components/account-form-drawer.tsx` | Cuenta nueva a mano, de cobro o de pago (las dos caras, un componente) |
@@ -5498,6 +5510,30 @@ cara al usuario, también en la guía.
 **Las URLs no cambiaron.** `/maestros/…` y `/cartera/interes` siguen resolviendo: lo que se
 movió es dónde vive cada pantalla en la navegación, no su dirección. Así ningún enlace
 guardado ni el historial se rompen, y no hizo falta una sola redirección.
+
+**Y reagrupada después.** Los cuatro grupos habían vuelto a amontonarse: «Organización» era un
+cajón de siete que mezclaba la identidad de la empresa, su gente, la factura, una política y
+**tus** sesiones; «Preferencias» ponía juntos el tema de tu pantalla y las credenciales de los
+proveedores de IA; y WhatsApp estaba partido en tres entradas sueltas dentro de Cartera. Ahora el
+eje es **a quién afecta el ajuste**, en seis grupos y ninguno de más de cinco destinos —lo
+comprueba un test—:
+
+| Grupo | Destinos |
+| --- | --- |
+| Mi cuenta | Apariencia · Notificaciones · Sesiones · Aplicación |
+| Organización | Empresa · Sedes · Miembros · Roles · Plan y consumo |
+| Catálogos | Conceptos de cobro · Categorías de gasto · Métodos de pago · Cuentas |
+| Reglas | Política de avisos · Políticas de interés · Aprobación de egresos |
+| WhatsApp | Número · Plantillas · Cobranza automática · Dónde te pagan |
+| Numi | Asistente |
+
+Con dos renombres que el reagrupamiento dejó a la vista, y que valen también para el `<h1>` de
+cada pantalla: **«Formas de pago» → «Dónde te pagan»**, porque sonaba igual que los «Métodos de
+pago» del catálogo siendo otra cosa; y **«Cobranza por WhatsApp» → «Cobranza automática»** para la
+política de `/config/cobranza`, que se titulaba **exactamente igual** que el historial de
+`/cartera/cobranza` —dos pantallas distintas con el mismo encabezado—. Dentro del grupo WhatsApp,
+«Número» y «Plantillas» tampoco repiten la palabra: en la paleta de comandos el grupo viaja como
+pista («Configuración · WhatsApp») y es también lo que se busca.
 
 ### 95.2. Navegación mobile — ✅ **cerrada (fase 3)**
 

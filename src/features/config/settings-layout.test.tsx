@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { createMemoryRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 import { SettingsLayout } from './settings-layout'
-import { SETTINGS_PATHS, isSettingsPath } from './settings-nav'
+import { GROUPS, SETTINGS_PATHS, isSettingsPath } from './settings-nav'
 
 afterEach(cleanup)
 
@@ -28,11 +28,28 @@ test('agrupa los ajustes bajo títulos de usuario, no de backend', () => {
 
   // Hay dos <nav> (escritorio y móvil); basta con mirar el de escritorio.
   const nav = screen.getAllByRole('navigation', { name: 'Configuración' })[0]
-  expect(within(nav).getByText('Organización')).toBeInTheDocument()
-  expect(within(nav).getByText('Preferencias')).toBeInTheDocument()
-  expect(within(nav).getByText('Catálogos')).toBeInTheDocument()
+  for (const title of ['Mi cuenta', 'Organización', 'Catálogos', 'Reglas', 'WhatsApp', 'Numi']) {
+    expect(within(nav).getByText(title)).toBeInTheDocument()
+  }
   // "Maestros" era jerga de backend y no debe volver.
   expect(within(nav).queryByText('Maestros')).not.toBeInTheDocument()
+})
+
+test('lo que solo te afecta a ti no cuelga de la organización', () => {
+  const mias = GROUPS.find((g) => g.title === 'Mi cuenta')?.items.map((i) => i.label)
+  expect(mias).toContain('Sesiones')
+  expect(mias).toContain('Apariencia')
+
+  const organizacion = GROUPS.find((g) => g.title === 'Organización')?.items.map((i) => i.label)
+  expect(organizacion).not.toContain('Sesiones')
+})
+
+test('ningún grupo se amontona: cinco destinos como mucho', () => {
+  // El límite es lo que evita que «Organización» vuelva a ser el cajón de siete
+  // que fue: pasado ese número, un grupo deja de leerse de un vistazo.
+  for (const group of GROUPS) {
+    expect(group.items.length, group.title).toBeLessThanOrEqual(5)
+  }
 })
 
 test('los catálogos y las políticas de interés viven aquí, no en el sidebar', () => {
@@ -44,6 +61,7 @@ test('los catálogos y las políticas de interés viven aquí, no en el sidebar'
     'Categorías de gasto',
     'Métodos de pago',
     'Políticas de interés',
+    'Dónde te pagan',
   ]) {
     expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument()
   }
