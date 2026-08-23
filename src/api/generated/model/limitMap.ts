@@ -10,10 +10,18 @@
  * null significa sin tope.
  */
 export interface LimitMap {
+  /** Contactos activos que puede tener la organización. */
   max_contacts: number | null;
+  /** Miembros activos de la organización. */
   max_users: number | null;
+  /** Sedes de la organización. */
   max_branches: number | null;
+  /** Mensajes a Numi al mes. Solo cuentan los que corren con la credencial de la plataforma: con llave propia (BYOK) la organización compra sus tokens y no consume cuota. */
   ai_messages_monthly: number | null;
+  /** Minutos de audio transcritos al mes, medidos sobre la duración que reporta el proveedor. Mismo trato del BYOK. */
   voice_minutes_monthly: number | null;
+  /** Documentos que Numi lee al mes. Volver a subir el mismo archivo no vuelve a contar: la lectura queda cacheada por contenido. Archivar un documento no se gatea nunca — lo que se mide es leerlo. Mismo trato del BYOK. */
+  vision_documents_monthly: number | null;
+  /** Mensajes enviados a los clientes de la organización al mes. Con cuenta de Meta propia no consume cuota. */
   whatsapp_messages_monthly: number | null;
 }

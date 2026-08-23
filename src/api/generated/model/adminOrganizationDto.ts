@@ -27,5 +27,5 @@ export interface AdminOrganizationDto {
      */
   contacts: number;
   period: string;
-  usage: Partial<Record<'ai_messages_monthly' | 'voice_minutes_monthly' | 'whatsapp_messages_monthly', number>>;
+  usage: Partial<Record<'ai_messages_monthly' | 'voice_minutes_monthly' | 'vision_documents_monthly' | 'whatsapp_messages_monthly', number>>;
 }

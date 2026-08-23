@@ -1183,6 +1183,55 @@
         "x-required-feature": "custom_roles"
       }
     },
+    "/api/v1/organizations/{orgId}/roles/catalog": {
+      "get": {
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "Todo lo necesario para pintar un editor de roles (requiere organization.roles.read)",
+        "description": "El catálogo cerrado de permisos, cada uno diciendo si un rol propio puede llevarlo, más lo que hace cada uno de los cinco roles predefinidos. Los tres reservados al propietario —`organization.delete`, `organization.transfer_ownership` y `subscription.manage`— salen con `assignable: false`: mandarlos en un rol es un 422, así que el editor debe deshabilitarlos en vez de dejar armar algo que el servidor va a rechazar. No los escribas a mano en el cliente; pídelos aquí, que es donde no se pueden separar de la regla real. Es un catálogo derivado de constantes, idéntico para toda organización y estable entre despliegues: cachéalo.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catálogo de permisos y roles predefinidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleCatalog"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el permiso organization.roles.read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "organization.roles.read"
+      }
+    },
     "/api/v1/organizations/{orgId}/roles/{roleId}": {
       "get": {
         "tags": [
@@ -11393,7 +11442,7 @@
           "Assistant"
         ],
         "summary": "AI assistant settings: configured providers (masked), active provider and model catalog (requiere assistant.settings.read)",
-        "description": "Devuelve la configuración del LLM de chat en la raíz y la de transcripción de voz en el bloque `voice`. Cada bloque tiene su proveedor activo independiente.",
+        "description": "Tres credenciales independientes, cada una con su proveedor activo y su catálogo: el LLM de chat en la raíz, la transcripción de voz en `voice` y el lector de documentos en `vision`. Son independientes a propósito — qué modelo transcribe un audio, qué modelo lee un recibo y qué modelo razona sobre ambos son tres decisiones, y atarlas obligaría a mudar el asistente entero para cambiar una. Leer esto no exige el plan; guardar una llave propia sí (`ai_byok`).",
         "security": [
           {
             "cookieAuth": []
@@ -11793,6 +11842,197 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiVoiceProviderCredential"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/vision/providers/{provider}": {
+      "put": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Set/replace the API key + model of a document-reading provider (requiere assistant.settings.manage)",
+        "description": "Configura el modelo que lee las imágenes que se le suban a Numi. `provider` es deepseek|google|anthropic|openai y `model` es su id (p. ej. `deepseek-v4-flash-vision-exp`, `gemini-3.7-flash`, `claude-haiku-4-5`). La API key se guarda cifrada y nunca se devuelve. El primer proveedor de visión configurado queda activo automáticamente; usa `activate:true` para cambiar a otro. Es independiente del proveedor de chat y del de voz: qué modelo lee un recibo y qué modelo razona sobre él son dos decisiones.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "deepseek",
+                "anthropic",
+                "openai",
+                "google"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAiProviderCredential"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved vision credential (masked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiVisionProviderCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
+      },
+      "delete": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Remove a document-reading provider credential (requiere assistant.settings.manage)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "deepseek",
+                "anthropic",
+                "openai",
+                "google"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "Not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "assistant.settings.manage",
+        "x-required-feature": "ai_byok"
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/vision/providers/{provider}/activate": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Make a configured document-reading provider the active one (requiere assistant.settings.manage)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "deepseek",
+                "anthropic",
+                "openai",
+                "google"
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activated vision credential (masked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiVisionProviderCredential"
                 }
               }
             }
@@ -12536,6 +12776,426 @@
           }
         },
         "x-required-permission": "assistant.use"
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/read-document": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Lee una imagen sin conversar (requiere assistant.use + documents.write)",
+        "description": "La imagen se archiva en `documents` y la lee un modelo de visión con la credencial de la organización (BYOK, kind=`vision`), independiente de la del chat. El lector no tiene herramientas ni historial: devuelve datos estructurados y nada más. El texto impreso dentro de una imagen se transcribe como contenido del documento, nunca se obedece. Subir dos veces el mismo archivo no lo lee dos veces ni consume cuota otra vez: la lectura queda cacheada por contenido. Este endpoint solo lee: úsalo para enseñar lo extraído y dejar corregirlo antes de mandarlo al chat.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagen: JPEG, PNG, WebP o GIF."
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lo que se leyó de la imagen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantReadDocument"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta assistant.use o documents.write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Se acabó la cuota de documentos del plan (LIMIT_EXCEEDED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Imagen vacía, demasiado grande o de un formato no soportado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": [
+          "assistant.use",
+          "documents.write"
+        ]
+      }
+    },
+    "/api/v1/organizations/{orgId}/assistant/chat/image": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Manda una imagen a Numi, con o sin texto (requiere assistant.use + documents.write)",
+        "description": "La imagen se archiva en `documents` y la lee un modelo de visión con la credencial de la organización (BYOK, kind=`vision`), independiente de la del chat. El lector no tiene herramientas ni historial: devuelve datos estructurados y nada más. El texto impreso dentro de una imagen se transcribe como contenido del documento, nunca se obedece. Subir dos veces el mismo archivo no lo lee dos veces ni consume cuota otra vez: la lectura queda cacheada por contenido. Lo leído entra en el turno como datos del documento y tu texto va después, así que Numi puede citar las cifras impresas sin que el control de grounding las tome por inventadas.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagen: JPEG, PNG, WebP o GIF."
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "message": {
+                    "description": "Lo que escribiste junto a la imagen. Opcional.",
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "La respuesta de Numi.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantImageChatResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta assistant.use o documents.write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Se acabó la cuota de documentos o de mensajes del plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Imagen vacía, demasiado grande o de un formato no soportado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": [
+          "assistant.use",
+          "documents.write"
+        ]
+      }
+    },
+    "/api/v1/organizations/{orgId}/documents": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Archiva un documento (requiere documents.write)",
+        "description": "El tipo se detecta de los bytes, no de lo que declare el cliente. Subir dos veces el mismo contenido no crea dos documentos: devuelve el que ya existía con `alreadyFiled: true` y responde 200 en vez de 201, que es como se detecta un comprobante ya registrado.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagen: JPEG, PNG, WebP o GIF."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "La organización ya tenía este contenido archivado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedDocument"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Documento archivado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedDocument"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el permiso documents.write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Archivo vacío, demasiado grande o de un formato no soportado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "documents.write"
+      }
+    },
+    "/api/v1/organizations/{orgId}/documents/{id}": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Metadatos de un documento (requiere documents.read)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El documento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el permiso documents.read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe en esta organización.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "documents.read"
+      }
+    },
+    "/api/v1/organizations/{orgId}/documents/{id}/download": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "URL firmada para descargar el documento (requiere documents.read)",
+        "description": "El bucket es privado: esta URL de vida corta es la única forma de llegar al archivo.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL firmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDownload"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el permiso documents.read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe en esta organización.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "documents.read"
       }
     },
     "/api/v1/organizations/{orgId}/knowledge/search": {
@@ -14033,6 +14693,7 @@
                 "whatsapp.templates.read",
                 "whatsapp.settings.read",
                 "messaging.read",
+                "documents.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -14042,6 +14703,7 @@
                 "expenses.create",
                 "disbursements.create",
                 "disbursements.allocate",
+                "documents.write",
                 "agreements.manage",
                 "expense_schedules.manage",
                 "receivables.manage",
@@ -14132,6 +14794,7 @@
                 "whatsapp.templates.read",
                 "whatsapp.settings.read",
                 "messaging.read",
+                "documents.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -14141,6 +14804,7 @@
                 "expenses.create",
                 "disbursements.create",
                 "disbursements.allocate",
+                "documents.write",
                 "agreements.manage",
                 "expense_schedules.manage",
                 "receivables.manage",
@@ -14300,6 +14964,7 @@
             "max_branches",
             "ai_messages_monthly",
             "voice_minutes_monthly",
+            "vision_documents_monthly",
             "whatsapp_messages_monthly"
           ]
         },
@@ -19065,6 +19730,7 @@
                 "whatsapp.templates.read",
                 "whatsapp.settings.read",
                 "messaging.read",
+                "documents.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -19074,6 +19740,7 @@
                 "expenses.create",
                 "disbursements.create",
                 "disbursements.allocate",
+                "documents.write",
                 "agreements.manage",
                 "expense_schedules.manage",
                 "receivables.manage",
@@ -19131,6 +19798,210 @@
           "membersCount",
           "createdAt",
           "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "RoleCatalog": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionCatalogEntry"
+            }
+          },
+          "predefinedRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PredefinedRole"
+            }
+          }
+        },
+        "required": [
+          "permissions",
+          "predefinedRoles"
+        ],
+        "additionalProperties": false
+      },
+      "PermissionCatalogEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "organization.read",
+              "organization.branches.read",
+              "organization.members.read",
+              "contacts.read",
+              "billing_concepts.read",
+              "interest_policies.read",
+              "agreements.read",
+              "receivables.read",
+              "payments.read",
+              "expense_categories.read",
+              "expense_schedules.read",
+              "expenses.read",
+              "disbursements.read",
+              "payment_methods.read",
+              "payment_instructions.read",
+              "financial_accounts.read",
+              "treasury.read",
+              "reports.read",
+              "search.read",
+              "knowledge.read",
+              "subscription.read",
+              "assistant.use",
+              "notifications.read",
+              "notifications.manage",
+              "whatsapp.templates.read",
+              "whatsapp.settings.read",
+              "messaging.read",
+              "documents.read",
+              "contacts.write",
+              "contacts.archive",
+              "receivables.create",
+              "receivables.adjust",
+              "payments.create",
+              "payments.allocate",
+              "expenses.create",
+              "disbursements.create",
+              "disbursements.allocate",
+              "documents.write",
+              "agreements.manage",
+              "expense_schedules.manage",
+              "receivables.manage",
+              "payments.reverse",
+              "expenses.manage",
+              "disbursements.approve",
+              "disbursements.reverse",
+              "treasury.transfer",
+              "payment_instructions.manage",
+              "organization.manage",
+              "organization.branches.manage",
+              "organization.members.manage",
+              "organization.roles.read",
+              "organization.roles.manage",
+              "billing_concepts.manage",
+              "interest_policies.manage",
+              "expense_categories.manage",
+              "payment_methods.manage",
+              "financial_accounts.manage",
+              "assistant.settings.read",
+              "assistant.settings.manage",
+              "notifications.settings.manage",
+              "whatsapp.templates.manage",
+              "whatsapp.settings.manage",
+              "messaging.send",
+              "messaging.settings.manage",
+              "notifications.team_activity",
+              "organization.transfer_ownership",
+              "organization.delete",
+              "subscription.manage"
+            ]
+          },
+          "assignable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "assignable"
+        ],
+        "additionalProperties": false
+      },
+      "PredefinedRole": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "ACCOUNTANT",
+              "OPERATOR",
+              "VIEWER"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organization.read",
+                "organization.branches.read",
+                "organization.members.read",
+                "contacts.read",
+                "billing_concepts.read",
+                "interest_policies.read",
+                "agreements.read",
+                "receivables.read",
+                "payments.read",
+                "expense_categories.read",
+                "expense_schedules.read",
+                "expenses.read",
+                "disbursements.read",
+                "payment_methods.read",
+                "payment_instructions.read",
+                "financial_accounts.read",
+                "treasury.read",
+                "reports.read",
+                "search.read",
+                "knowledge.read",
+                "subscription.read",
+                "assistant.use",
+                "notifications.read",
+                "notifications.manage",
+                "whatsapp.templates.read",
+                "whatsapp.settings.read",
+                "messaging.read",
+                "documents.read",
+                "contacts.write",
+                "contacts.archive",
+                "receivables.create",
+                "receivables.adjust",
+                "payments.create",
+                "payments.allocate",
+                "expenses.create",
+                "disbursements.create",
+                "disbursements.allocate",
+                "documents.write",
+                "agreements.manage",
+                "expense_schedules.manage",
+                "receivables.manage",
+                "payments.reverse",
+                "expenses.manage",
+                "disbursements.approve",
+                "disbursements.reverse",
+                "treasury.transfer",
+                "payment_instructions.manage",
+                "organization.manage",
+                "organization.branches.manage",
+                "organization.members.manage",
+                "organization.roles.read",
+                "organization.roles.manage",
+                "billing_concepts.manage",
+                "interest_policies.manage",
+                "expense_categories.manage",
+                "payment_methods.manage",
+                "financial_accounts.manage",
+                "assistant.settings.read",
+                "assistant.settings.manage",
+                "notifications.settings.manage",
+                "whatsapp.templates.manage",
+                "whatsapp.settings.manage",
+                "messaging.send",
+                "messaging.settings.manage",
+                "notifications.team_activity",
+                "organization.transfer_ownership",
+                "organization.delete",
+                "subscription.manage"
+              ]
+            }
+          }
+        },
+        "required": [
+          "role",
+          "permissions"
         ],
         "additionalProperties": false
       },
@@ -19259,6 +20130,7 @@
                 "whatsapp.templates.read",
                 "whatsapp.settings.read",
                 "messaging.read",
+                "documents.read",
                 "contacts.write",
                 "contacts.archive",
                 "receivables.create",
@@ -19268,6 +20140,7 @@
                 "expenses.create",
                 "disbursements.create",
                 "disbursements.allocate",
+                "documents.write",
                 "agreements.manage",
                 "expense_schedules.manage",
                 "receivables.manage",
@@ -19396,7 +20269,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Contactos activos que puede tener la organización."
           },
           "max_users": {
             "anyOf": [
@@ -19408,7 +20282,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Miembros activos de la organización."
           },
           "max_branches": {
             "anyOf": [
@@ -19420,7 +20295,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Sedes de la organización."
           },
           "ai_messages_monthly": {
             "anyOf": [
@@ -19432,7 +20308,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Mensajes a Numi al mes. Solo cuentan los que corren con la credencial de la plataforma: con llave propia (BYOK) la organización compra sus tokens y no consume cuota."
           },
           "voice_minutes_monthly": {
             "anyOf": [
@@ -19444,7 +20321,21 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Minutos de audio transcritos al mes, medidos sobre la duración que reporta el proveedor. Mismo trato del BYOK."
+          },
+          "vision_documents_monthly": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Documentos que Numi lee al mes. Volver a subir el mismo archivo no vuelve a contar: la lectura queda cacheada por contenido. Archivar un documento no se gatea nunca — lo que se mide es leerlo. Mismo trato del BYOK."
           },
           "whatsapp_messages_monthly": {
             "anyOf": [
@@ -19456,7 +20347,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Mensajes enviados a los clientes de la organización al mes. Con cuenta de Meta propia no consume cuota."
           }
         },
         "required": [
@@ -19465,6 +20357,7 @@
           "max_branches",
           "ai_messages_monthly",
           "voice_minutes_monthly",
+          "vision_documents_monthly",
           "whatsapp_messages_monthly"
         ],
         "additionalProperties": false,
@@ -19483,6 +20376,11 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "vision_documents_monthly": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "whatsapp_messages_monthly": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -19492,6 +20390,7 @@
         "required": [
           "ai_messages_monthly",
           "voice_minutes_monthly",
+          "vision_documents_monthly",
           "whatsapp_messages_monthly"
         ],
         "additionalProperties": false
@@ -19676,6 +20575,7 @@
               "enum": [
                 "ai_messages_monthly",
                 "voice_minutes_monthly",
+                "vision_documents_monthly",
                 "whatsapp_messages_monthly"
               ]
             },
@@ -19687,6 +20587,7 @@
             "required": [
               "ai_messages_monthly",
               "voice_minutes_monthly",
+              "vision_documents_monthly",
               "whatsapp_messages_monthly"
             ]
           }
@@ -19759,6 +20660,7 @@
               "enum": [
                 "ai_messages_monthly",
                 "voice_minutes_monthly",
+                "vision_documents_monthly",
                 "whatsapp_messages_monthly"
               ]
             },
@@ -19770,6 +20672,7 @@
             "required": [
               "ai_messages_monthly",
               "voice_minutes_monthly",
+              "vision_documents_monthly",
               "whatsapp_messages_monthly"
             ]
           },
@@ -19816,6 +20719,7 @@
                 "max_branches",
                 "ai_messages_monthly",
                 "voice_minutes_monthly",
+                "vision_documents_monthly",
                 "whatsapp_messages_monthly"
               ]
             },
@@ -19837,6 +20741,7 @@
               "max_branches",
               "ai_messages_monthly",
               "voice_minutes_monthly",
+              "vision_documents_monthly",
               "whatsapp_messages_monthly"
             ]
           },
@@ -19934,6 +20839,7 @@
                 "max_branches",
                 "ai_messages_monthly",
                 "voice_minutes_monthly",
+                "vision_documents_monthly",
                 "whatsapp_messages_monthly"
               ]
             },
@@ -19955,6 +20861,7 @@
               "max_branches",
               "ai_messages_monthly",
               "voice_minutes_monthly",
+              "vision_documents_monthly",
               "whatsapp_messages_monthly"
             ]
           }
@@ -20558,6 +21465,26 @@
           "name": {
             "type": "string"
           },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "language": {
             "type": "string"
           },
@@ -20614,6 +21541,8 @@
           "organizationId",
           "templateKey",
           "name",
+          "displayName",
+          "purpose",
           "language",
           "category",
           "status",
@@ -20658,12 +21587,19 @@
               ],
               "additionalProperties": false
             }
+          },
+          "orphaned": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "created",
           "alreadyThere",
-          "failed"
+          "failed",
+          "orphaned"
         ],
         "additionalProperties": false
       },
@@ -21233,6 +22169,7 @@
                       "whatsapp.templates.read",
                       "whatsapp.settings.read",
                       "messaging.read",
+                      "documents.read",
                       "contacts.write",
                       "contacts.archive",
                       "receivables.create",
@@ -21242,6 +22179,7 @@
                       "expenses.create",
                       "disbursements.create",
                       "disbursements.allocate",
+                      "documents.write",
                       "agreements.manage",
                       "expense_schedules.manage",
                       "receivables.manage",
@@ -21418,6 +22356,7 @@
                   "whatsapp.templates.read",
                   "whatsapp.settings.read",
                   "messaging.read",
+                  "documents.read",
                   "contacts.write",
                   "contacts.archive",
                   "receivables.create",
@@ -21427,6 +22366,7 @@
                   "expenses.create",
                   "disbursements.create",
                   "disbursements.allocate",
+                  "documents.write",
                   "agreements.manage",
                   "expense_schedules.manage",
                   "receivables.manage",
@@ -26472,13 +27412,17 @@
           },
           "voice": {
             "$ref": "#/components/schemas/AssistantVoiceSettings"
+          },
+          "vision": {
+            "$ref": "#/components/schemas/AssistantVisionSettings"
           }
         },
         "required": [
           "activeProvider",
           "providers",
           "catalog",
-          "voice"
+          "voice",
+          "vision"
         ],
         "additionalProperties": false
       },
@@ -26638,6 +27582,116 @@
             "enum": [
               "deepgram",
               "elevenlabs"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "suggestedModels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "provider",
+          "label",
+          "suggestedModels"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantVisionSettings": {
+        "type": "object",
+        "properties": {
+          "activeProvider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "deepseek",
+                  "anthropic",
+                  "openai",
+                  "google"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiVisionProviderCredential"
+            }
+          },
+          "catalog": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiVisionProviderCatalogEntry"
+            }
+          }
+        },
+        "required": [
+          "activeProvider",
+          "providers",
+          "catalog"
+        ],
+        "additionalProperties": false
+      },
+      "AiVisionProviderCredential": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "deepseek",
+              "anthropic",
+              "openai",
+              "google"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "apiKeyLast4": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "apiKeyLast4",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AiVisionProviderCatalogEntry": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "deepseek",
+              "anthropic",
+              "openai",
+              "google"
             ]
           },
           "label": {
@@ -26878,7 +27932,8 @@
             "type": "string",
             "enum": [
               "text",
-              "audio"
+              "audio",
+              "image"
             ]
           },
           "hasAudio": {
@@ -26901,6 +27956,21 @@
             "anyOf": [
               {
                 "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documentIds": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
               },
               {
                 "type": "null"
@@ -26935,6 +28005,7 @@
           "hasAudio",
           "waveform",
           "audioSeconds",
+          "documentIds",
           "feedback",
           "createdAt"
         ],
@@ -27032,6 +28103,353 @@
           "reply",
           "userMessageId",
           "assistantMessageId"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantReadDocument": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "extraction": {
+            "$ref": "#/components/schemas/DocumentExtraction"
+          },
+          "alreadyFiled": {
+            "type": "boolean"
+          },
+          "cached": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "documentId",
+          "extraction",
+          "alreadyFiled",
+          "cached"
+        ],
+        "additionalProperties": false
+      },
+      "DocumentExtraction": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "receipt",
+              "invoice",
+              "bank_transfer",
+              "chart",
+              "screenshot",
+              "handwritten_note",
+              "document",
+              "photo",
+              "other"
+            ]
+          },
+          "transcription": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "financial": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "issuer": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "taxId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "documentNumber": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "date": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "currency": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "totalAmount": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "paymentMethod": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "description",
+                        "amount"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "issuer",
+                  "taxId",
+                  "documentNumber",
+                  "date",
+                  "currency",
+                  "totalAmount",
+                  "paymentMethod",
+                  "lineItems"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unreadable": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "suspiciousInstructions": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "transcription",
+          "description",
+          "financial",
+          "unreadable",
+          "confidence",
+          "suspiciousInstructions"
+        ],
+        "additionalProperties": false
+      },
+      "AssistantImageChatResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "documentId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "alreadyFiled": {
+            "type": "boolean"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "userMessageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assistantMessageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sessionId",
+          "documentId",
+          "alreadyFiled",
+          "reply",
+          "userMessageId",
+          "assistantMessageId"
+        ],
+        "additionalProperties": false
+      },
+      "UploadedDocument": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/Document"
+          },
+          "alreadyFiled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "document",
+          "alreadyFiled"
+        ],
+        "additionalProperties": false
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/gif"
+            ]
+          },
+          "byteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sha256": {
+            "type": "string",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "uploadedBy": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "extractedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "mediaType",
+          "byteSize",
+          "sha256",
+          "uploadedBy",
+          "createdAt",
+          "extractedAt"
+        ],
+        "additionalProperties": false
+      },
+      "DocumentDownload": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "url",
+          "expiresIn"
         ],
         "additionalProperties": false
       },

@@ -19,6 +19,7 @@ const TOPES: Record<keyof LimitMap, true> = {
   max_branches: true,
   ai_messages_monthly: true,
   voice_minutes_monthly: true,
+  vision_documents_monthly: true,
   whatsapp_messages_monthly: true,
 }
 

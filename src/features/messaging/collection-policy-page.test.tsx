@@ -56,6 +56,8 @@ function plantilla(over: Partial<WhatsAppTemplate> = {}): WhatsAppTemplate {
     organizationId: null,
     templateKey: 'cobro_vencido',
     name: 'Cobro vencido',
+    displayName: 'Vencida — solo recordatorio',
+    purpose: 'Se envía cuando el deudor tiene una sola factura vencida.',
     language: 'es',
     category: 'UTILITY',
     status: 'APPROVED',

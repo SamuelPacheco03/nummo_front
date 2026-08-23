@@ -5,6 +5,7 @@ import {
   MessageCircle,
   MessageSquareText,
   Mic,
+  ScanEye,
   UserCog,
   Users,
 } from 'lucide-react'
@@ -73,6 +74,7 @@ const LIMIT_ICONS: Record<keyof LimitMap, LucideIcon> = {
   max_branches: MapPin,
   ai_messages_monthly: MessageCircle,
   voice_minutes_monthly: Mic,
+  vision_documents_monthly: ScanEye,
   whatsapp_messages_monthly: MessageSquareText,
 }
 

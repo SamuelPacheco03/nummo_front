@@ -26,11 +26,14 @@ import type {
 
 import type {
   AiProviderCredential,
+  AiVisionProviderCredential,
   AiVoiceProviderCredential,
   AssistantAudioChatForm,
   AssistantAudioChatResponse,
   AssistantChatInput,
   AssistantChatResponse,
+  AssistantImageChatResponse,
+  AssistantReadDocument,
   AssistantSettings,
   AssistantTranscribeForm,
   AssistantTranscription,
@@ -44,6 +47,8 @@ import type {
   GetApiV1OrganizationsOrgIdAssistantConversationsSearchParams,
   MessageList,
   MessageSearch,
+  PostApiV1OrganizationsOrgIdAssistantChatImageBody,
+  PostApiV1OrganizationsOrgIdAssistantReadDocumentBody,
   RenameConversationInput,
   SetFeedbackInput,
   UpsertAiProviderCredential,
@@ -407,7 +412,7 @@ export const getGetApiV1OrganizationsOrgIdAssistantSettingsUrl = (orgId: string,
 }
 
 /**
- * Devuelve la configuración del LLM de chat en la raíz y la de transcripción de voz en el bloque `voice`. Cada bloque tiene su proveedor activo independiente.
+ * Tres credenciales independientes, cada una con su proveedor activo y su catálogo: el LLM de chat en la raíz, la transcripción de voz en `voice` y el lector de documentos en `vision`. Son independientes a propósito — qué modelo transcribe un audio, qué modelo lee un recibo y qué modelo razona sobre ambos son tres decisiones, y atarlas obligaría a mudar el asistente entero para cambiar una. Leer esto no exige el plan; guardar una llave propia sí (`ai_byok`).
  * @summary AI assistant settings: configured providers (masked), active provider and model catalog (requiere assistant.settings.read)
  */
 export const getApiV1OrganizationsOrgIdAssistantSettings = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdAssistantSettingsResponse> => {
@@ -1048,6 +1053,281 @@ export const usePostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActiva
         TContext
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivateMutationOptions(options), queryClient);
+    }
+    export type putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse200 = {
+  data: AiVisionProviderCredential
+  status: 200
+}
+
+export type putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseSuccess = (putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse200) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseError = (putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse = (putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseSuccess | putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseError)
+
+export const getPutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderUrl = (orgId: string,
+    provider: 'deepseek' | 'anthropic' | 'openai' | 'google',) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/vision/providers/${provider}`
+}
+
+/**
+ * Configura el modelo que lee las imágenes que se le suban a Numi. `provider` es deepseek|google|anthropic|openai y `model` es su id (p. ej. `deepseek-v4-flash-vision-exp`, `gemini-3.7-flash`, `claude-haiku-4-5`). La API key se guarda cifrada y nunca se devuelve. El primer proveedor de visión configurado queda activo automáticamente; usa `activate:true` para cambiar a otro. Es independiente del proveedor de chat y del de voz: qué modelo lee un recibo y qué modelo razona sobre él son dos decisiones.
+ * @summary Set/replace the API key + model of a document-reading provider (requiere assistant.settings.manage)
+ */
+export const putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider = async (orgId: string,
+    provider: 'deepseek' | 'anthropic' | 'openai' | 'google',
+    upsertAiProviderCredential: UpsertAiProviderCredential, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse>(getPutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderUrl(orgId,provider),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(upsertAiProviderCredential)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google';data: UpsertAiProviderCredential}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google';data: UpsertAiProviderCredential}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, {orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google';data: UpsertAiProviderCredential}> = (props) => {
+          const {orgId,provider,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider(orgId,provider,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>>
+    export type PutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationBody = UpsertAiProviderCredential
+    export type PutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationError = ErrorResponse
+
+    /**
+ * @summary Set/replace the API key + model of a document-reading provider (requiere assistant.settings.manage)
+ */
+export const usePutApiV1OrganizationsOrgIdAssistantVisionProvidersProvider = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google';data: UpsertAiProviderCredential}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>,
+        TError,
+        {orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google';data: UpsertAiProviderCredential},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationOptions(options), queryClient);
+    }
+    export type deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseSuccess = (deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse204) & {
+  headers: Headers;
+};
+export type deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseError = (deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse404) & {
+  headers: Headers;
+};
+
+export type deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse = (deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseSuccess | deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponseError)
+
+export const getDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderUrl = (orgId: string,
+    provider: 'deepseek' | 'anthropic' | 'openai' | 'google',) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/vision/providers/${provider}`
+}
+
+/**
+ * @summary Remove a document-reading provider credential (requiere assistant.settings.manage)
+ */
+export const deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider = async (orgId: string,
+    provider: 'deepseek' | 'anthropic' | 'openai' | 'google', options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse> => {
+
+  return customFetch<deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderResponse>(getDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderUrl(orgId,provider),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}, TContext> => {
+
+const mutationKey = ['deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, {orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}> = (props) => {
+          const {orgId,provider} = props ?? {};
+
+          return  deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider(orgId,provider,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>>
+
+    export type DeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationError = ErrorResponse
+
+    /**
+ * @summary Remove a document-reading provider credential (requiere assistant.settings.manage)
+ */
+export const useDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider>>,
+        TError,
+        {orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'},
+        TContext
+      > => {
+      return useMutation(getDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProviderMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse200 = {
+  data: AiVisionProviderCredential
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponseSuccess = (postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponseError = (postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse404) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse = (postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponseSuccess | postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateUrl = (orgId: string,
+    provider: 'deepseek' | 'anthropic' | 'openai' | 'google',) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/vision/providers/${provider}/activate`
+}
+
+/**
+ * @summary Make a configured document-reading provider the active one (requiere assistant.settings.manage)
+ */
+export const postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate = async (orgId: string,
+    provider: 'deepseek' | 'anthropic' | 'openai' | 'google', options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateResponse>(getPostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateUrl(orgId,provider),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate>>, {orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}> = (props) => {
+          const {orgId,provider} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate(orgId,provider,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate>>>
+
+    export type PostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateMutationError = ErrorResponse
+
+    /**
+ * @summary Make a configured document-reading provider the active one (requiere assistant.settings.manage)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate>>, TError,{orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate>>,
+        TError,
+        {orgId: string;provider: 'deepseek' | 'anthropic' | 'openai' | 'google'},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivateMutationOptions(options), queryClient);
     }
     export type postApiV1OrganizationsOrgIdAssistantChatResponse200 = {
   data: AssistantChatResponse
@@ -2253,4 +2533,216 @@ export const usePostApiV1OrganizationsOrgIdAssistantChatAudio = <TError = ErrorR
         TContext
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatAudioMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponse200 = {
+  data: AssistantReadDocument
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponse422 = {
+  data: ErrorResponse
+  status: 422
+}
+
+export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponseSuccess = (postApiV1OrganizationsOrgIdAssistantReadDocumentResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponseError = (postApiV1OrganizationsOrgIdAssistantReadDocumentResponse403 | postApiV1OrganizationsOrgIdAssistantReadDocumentResponse409 | postApiV1OrganizationsOrgIdAssistantReadDocumentResponse422) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantReadDocumentResponse = (postApiV1OrganizationsOrgIdAssistantReadDocumentResponseSuccess | postApiV1OrganizationsOrgIdAssistantReadDocumentResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantReadDocumentUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/read-document`
+}
+
+/**
+ * La imagen se archiva en `documents` y la lee un modelo de visión con la credencial de la organización (BYOK, kind=`vision`), independiente de la del chat. El lector no tiene herramientas ni historial: devuelve datos estructurados y nada más. El texto impreso dentro de una imagen se transcribe como contenido del documento, nunca se obedece. Subir dos veces el mismo archivo no lo lee dos veces ni consume cuota otra vez: la lectura queda cacheada por contenido. Este endpoint solo lee: úsalo para enseñar lo extraído y dejar corregirlo antes de mandarlo al chat.
+ * @summary Lee una imagen sin conversar (requiere assistant.use + documents.write)
+ */
+export const postApiV1OrganizationsOrgIdAssistantReadDocument = async (orgId: string,
+    postApiV1OrganizationsOrgIdAssistantReadDocumentBody: PostApiV1OrganizationsOrgIdAssistantReadDocumentBody, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantReadDocumentResponse> => {
+    const formData = new FormData();
+formData.append(`image`, postApiV1OrganizationsOrgIdAssistantReadDocumentBody.image);
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantReadDocumentResponse>(getPostApiV1OrganizationsOrgIdAssistantReadDocumentUrl(orgId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantReadDocumentMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantReadDocument>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantReadDocumentBody}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantReadDocument>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantReadDocumentBody}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantReadDocument'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantReadDocument>>, {orgId: string;data: PostApiV1OrganizationsOrgIdAssistantReadDocumentBody}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantReadDocument(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantReadDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantReadDocument>>>
+    export type PostApiV1OrganizationsOrgIdAssistantReadDocumentMutationBody = PostApiV1OrganizationsOrgIdAssistantReadDocumentBody
+    export type PostApiV1OrganizationsOrgIdAssistantReadDocumentMutationError = ErrorResponse
+
+    /**
+ * @summary Lee una imagen sin conversar (requiere assistant.use + documents.write)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantReadDocument = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantReadDocument>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantReadDocumentBody}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantReadDocument>>,
+        TError,
+        {orgId: string;data: PostApiV1OrganizationsOrgIdAssistantReadDocumentBody},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantReadDocumentMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantChatImageResponse200 = {
+  data: AssistantImageChatResponse
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageResponse422 = {
+  data: ErrorResponse
+  status: 422
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageResponseSuccess = (postApiV1OrganizationsOrgIdAssistantChatImageResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantChatImageResponseError = (postApiV1OrganizationsOrgIdAssistantChatImageResponse403 | postApiV1OrganizationsOrgIdAssistantChatImageResponse409 | postApiV1OrganizationsOrgIdAssistantChatImageResponse422) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageResponse = (postApiV1OrganizationsOrgIdAssistantChatImageResponseSuccess | postApiV1OrganizationsOrgIdAssistantChatImageResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatImageUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/chat/image`
+}
+
+/**
+ * La imagen se archiva en `documents` y la lee un modelo de visión con la credencial de la organización (BYOK, kind=`vision`), independiente de la del chat. El lector no tiene herramientas ni historial: devuelve datos estructurados y nada más. El texto impreso dentro de una imagen se transcribe como contenido del documento, nunca se obedece. Subir dos veces el mismo archivo no lo lee dos veces ni consume cuota otra vez: la lectura queda cacheada por contenido. Lo leído entra en el turno como datos del documento y tu texto va después, así que Numi puede citar las cifras impresas sin que el control de grounding las tome por inventadas.
+ * @summary Manda una imagen a Numi, con o sin texto (requiere assistant.use + documents.write)
+ */
+export const postApiV1OrganizationsOrgIdAssistantChatImage = async (orgId: string,
+    postApiV1OrganizationsOrgIdAssistantChatImageBody: PostApiV1OrganizationsOrgIdAssistantChatImageBody, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantChatImageResponse> => {
+    const formData = new FormData();
+formData.append(`image`, postApiV1OrganizationsOrgIdAssistantChatImageBody.image);
+if(postApiV1OrganizationsOrgIdAssistantChatImageBody.sessionId !== undefined) {
+ formData.append(`sessionId`, postApiV1OrganizationsOrgIdAssistantChatImageBody.sessionId);
+ }
+if(postApiV1OrganizationsOrgIdAssistantChatImageBody.message !== undefined) {
+ formData.append(`message`, postApiV1OrganizationsOrgIdAssistantChatImageBody.message);
+ }
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantChatImageResponse>(getPostApiV1OrganizationsOrgIdAssistantChatImageUrl(orgId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatImageMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImage>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageBody}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImage>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageBody}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantChatImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImage>>, {orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageBody}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantChatImage(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantChatImageMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImage>>>
+    export type PostApiV1OrganizationsOrgIdAssistantChatImageMutationBody = PostApiV1OrganizationsOrgIdAssistantChatImageBody
+    export type PostApiV1OrganizationsOrgIdAssistantChatImageMutationError = ErrorResponse
+
+    /**
+ * @summary Manda una imagen a Numi, con o sin texto (requiere assistant.use + documents.write)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantChatImage = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImage>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageBody}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImage>>,
+        TError,
+        {orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageBody},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatImageMutationOptions(options), queryClient);
     }

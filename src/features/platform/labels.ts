@@ -39,6 +39,7 @@ export const LIMIT_KEYS: (keyof LimitMap)[] = [
   'max_branches',
   'ai_messages_monthly',
   'voice_minutes_monthly',
+  'vision_documents_monthly',
   'whatsapp_messages_monthly',
 ]
 
@@ -81,6 +82,7 @@ const LIMIT_LABELS: Record<keyof LimitMap | 'free_organizations', string> = {
   max_branches: 'sedes',
   ai_messages_monthly: 'mensajes de Numi',
   voice_minutes_monthly: 'minutos de voz',
+  vision_documents_monthly: 'documentos que lee Numi',
   whatsapp_messages_monthly: 'mensajes de cobranza',
   free_organizations: 'organizaciones gratuitas',
 }
@@ -97,6 +99,7 @@ export function limitLabel(key: string): string {
 const PERIODIC_LIMITS = new Set<string>([
   'ai_messages_monthly',
   'voice_minutes_monthly',
+  'vision_documents_monthly',
   // El cupo de cobranza es mensual: chocar con él se arregla esperando al
   // siguiente período, no archivando nada. Es lo que hace que un mensaje
   // saltado por `quota_exceeded` no sea un callejón sin salida.

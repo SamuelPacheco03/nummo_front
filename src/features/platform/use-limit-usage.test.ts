@@ -50,12 +50,14 @@ function capacidades(): CapabilitiesDto {
       max_branches: 5,
       ai_messages_monthly: 1500,
       voice_minutes_monthly: 150,
+      vision_documents_monthly: 600,
       whatsapp_messages_monthly: 1000,
     },
     period: '2026-08',
     usage: {
       ai_messages_monthly: 0,
       voice_minutes_monthly: 0,
+      vision_documents_monthly: 0,
       whatsapp_messages_monthly: 37,
     },
   }

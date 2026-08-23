@@ -12,4 +12,5 @@ export type ChatMessageSource = typeof ChatMessageSource[keyof typeof ChatMessag
 export const ChatMessageSource = {
   text: 'text',
   audio: 'audio',
+  image: 'image',
 } as const;

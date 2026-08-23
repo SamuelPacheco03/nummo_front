@@ -5,11 +5,13 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { PlatformTemplateSyncFailedItem } from './platformTemplateSyncFailedItem';
 
-export interface PlatformTemplateSync {
-  created: string[];
-  alreadyThere: string[];
-  failed: PlatformTemplateSyncFailedItem[];
-  orphaned: string[];
-}
+export type DocumentMediaType = typeof DocumentMediaType[keyof typeof DocumentMediaType];
+
+
+export const DocumentMediaType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/gif': 'image/gif',
+} as const;

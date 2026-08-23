@@ -81,6 +81,8 @@ function plantilla(over: Partial<WhatsAppTemplate> = {}): WhatsAppTemplate {
     organizationId: null,
     templateKey: 'cobro_vencido',
     name: 'Cobro vencido',
+    displayName: 'Vencida — solo recordatorio',
+    purpose: 'Se envía cuando el deudor tiene una sola factura vencida.',
     language: 'es',
     category: 'UTILITY',
     status: 'APPROVED',
@@ -121,7 +123,12 @@ beforeEach(() => {
   m.reencolarUna = vi.fn().mockResolvedValue({})
   m.reencolarTodas = vi.fn().mockResolvedValue({ data: { requeued: 3 } })
   m.sincronizar = vi.fn().mockResolvedValue({
-    data: { created: [], alreadyThere: ['cobro_vencido'], failed: [] } as PlatformTemplateSync,
+    data: {
+      created: [],
+      alreadyThere: ['cobro_vencido'],
+      failed: [],
+      orphaned: [],
+    } as PlatformTemplateSync,
   })
   m.estado = {
     gatewayConfigured: true,
