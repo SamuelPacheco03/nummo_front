@@ -3645,12 +3645,13 @@ rellena de nuevo — **lo escrito desaparece sin decir nada**. Y si el hook reco
 en cada render, el efecto entra en bucle: es literalmente cómo se descubrió, previsualizando el
 editor de roles.
 
-**`useHydrateOnce` (`lib/use-hydrate-once.ts`) es la forma de hacerlo**, y lo usan las siete
-pantallas que editan algo cargado: contacto, acuerdo, gasto recurrente, empresa, rol, umbral de
-aprobación y el tema por defecto. La clave la pone quien llama —no todo lo que se edita tiene
-`id`; los ajustes van por `organizationId`— y es ella, no la identidad del objeto, la que decide.
+**`useHydrateOnce` (`lib/use-hydrate-once.ts`) es la forma de hacerlo**, y lo usan todas las
+pantallas que editan algo cargado del servidor: contacto, acuerdo, gasto recurrente, empresa, rol,
+umbral de aprobación, el tema por defecto, la política de avisos, las preferencias de notificación
+y la política de cobranza. La clave la pone quien llama —no todo lo que se edita tiene `id`; los
+ajustes van por `organizationId`— y es ella, no la identidad del objeto, la que decide.
 
-Dos consecuencias que hay que tener presentes:
+Tres consecuencias que hay que tener presentes:
 
 1. **Si la pantalla se queda tras guardar**, hay que marcarla limpia a mano con lo que se guardó
    (`reset(values)`): ya no va a refrescarse sola. Los cajones que navegan al detalle no lo
@@ -3658,6 +3659,15 @@ Dos consecuencias que hay que tener presentes:
 2. **Un diálogo que debe abrir siempre con lo de hoy se monta solo mientras está abierto**
    (`{abierto && <Dialog … />}`), y entonces el estado de partida lo ponen los inicializadores y
    no hace falta efecto. Es lo que hacen el editor de planes y el de condiciones negociadas.
+3. **La clave puede estar lista antes que el registro**, y es el caso normal cuando va por
+   `organizationId`: el id ya se conoce mientras la consulta que trae los ajustes va en camino —de
+   hecho no arranca hasta tenerlo—. El hook lo contempla: lo que abre la puerta es la clave **y**
+   que el registro ya haya llegado. Antes solo miraba la clave, así que el efecto se gastaba su
+   único disparo en vacío y no volvía a correr nunca: la pantalla enseñaba sus valores por defecto
+   como si nadie hubiera configurado nada, y volver a guardar escribía ese vacío encima. Se comió
+   así la política de cobranza entera, y ningún test lo vio porque todos entregaban los datos ya
+   cargados en el primer render — **un test de formulario que nunca pasa por «cargando» no prueba
+   que se rellene**.
 
 Lo que **no** entra aquí: los diálogos que se rellenan desde estado local (`editing` de un
 catálogo) ni los que resetean a vacío al abrirse. Ahí la dependencia no la mueve el servidor.

@@ -8,6 +8,7 @@ const m = vi.hoisted(() => ({
   guardar: vi.fn(),
   avisos: [] as string[],
   politica: null as CollectionPolicy | null,
+  cargando: false,
   plantillas: [] as WhatsAppTemplate[],
   feature: true,
   permisos: new Set<string>(),
@@ -31,7 +32,7 @@ vi.mock('@/features/platform/permissions', () => ({
 vi.mock('./hooks', () => ({
   useCollectionPolicy: () => ({
     policy: m.politica ?? undefined,
-    isPending: false,
+    isPending: m.cargando,
     isError: false,
     error: null,
     refetch: vi.fn(),
@@ -94,6 +95,7 @@ beforeEach(() => {
   m.guardar = vi.fn().mockResolvedValue({ data: politica() })
   m.avisos = []
   m.politica = politica()
+  m.cargando = false
   m.plantillas = [plantilla(), plantilla({ id: 't2', templateKey: 'cobro_por_vencer', name: 'Por vencer' })]
   m.feature = true
   m.permisos = new Set([
@@ -109,6 +111,38 @@ beforeEach(() => {
   })
 })
 afterEach(cleanup)
+
+test('lo guardado se pinta aunque la política llegue después del primer render', () => {
+  /*
+    Regresión, y es el caso **normal** y no el raro: la pantalla monta con
+    `orgId` ya resuelto —sale de la caché de organizaciones— y la política
+    todavía en vuelo, porque su consulta ni siquiera arranca hasta tener ese id.
+    Así que los datos NUNCA llegan en el primer render.
+
+    Si la clave de hidratación no cambia al llegar, el efecto ya corrió en vacío
+    y no vuelve a correr: el formulario se queda con sus valores por defecto y lo
+    que hay guardado se lee como si nadie lo hubiera configurado. Peor todavía,
+    volver a pulsar «Guardar» escribiría esos valores por defecto encima.
+
+    El resto de tests de este archivo entregan la política ya cargada en el
+    primer render, que es justo el único camino en el que esto funcionaba.
+  */
+  m.cargando = true
+  m.politica = null
+  const { rerender } = pintar()
+  expect(screen.queryByRole('checkbox')).toBeNull()
+
+  m.cargando = false
+  m.politica = politica({ enabled: true, overdueTemplateKey: 'cobro_vencido' })
+  rerender(
+    <MemoryRouter>
+      <CollectionPolicyPage />
+    </MemoryRouter>,
+  )
+
+  expect(screen.getByRole('checkbox')).toBeChecked()
+  expect(screen.getByLabelText(/cuando debe una sola factura/)).toHaveValue('cobro_vencido')
+})
 
 test('la ventana que cruza medianoche se dice entera, con el día siguiente', () => {
   // `22:00 → 07:00` es el caso normal, no el raro: dos campos de hora sueltos no
