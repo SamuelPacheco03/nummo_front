@@ -335,3 +335,55 @@ test('sin quien reciba la imagen, el clip no promete nada', () => {
 
   expect(screen.getByRole('button', { name: 'Adjuntar una imagen' })).toBeDisabled()
 })
+
+/** Un Ctrl+V con lo que sea que traiga el portapapeles. */
+function pegar(files: File[]) {
+  return fireEvent.paste(screen.getByLabelText('Mensaje para Numi'), {
+    clipboardData: { files, getData: () => '' },
+  })
+}
+
+test('una captura pegada se adjunta sin pasar por el disco', async () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  const onSendImage = vi.fn()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={onSendImage} />)
+
+  const captura = new File(['x'], 'imagen.png', { type: 'image/png' })
+  pegar([captura])
+
+  expect(await screen.findByText('imagen.png')).toBeInTheDocument()
+  screen.getByRole('button', { name: 'Enviar mensaje' }).click()
+
+  await waitFor(() => expect(onSendImage).toHaveBeenCalledWith(captura, ''))
+})
+
+test('pegar texto sigue pegando texto', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={vi.fn()} />)
+
+  // `fireEvent` devuelve false si alguien llamó a `preventDefault`: aquí nadie debe,
+  // o pegar una frase en la caja dejaría de funcionar.
+  expect(pegar([])).toBe(true)
+  expect(screen.queryByRole('button', { name: 'Quitar la imagen' })).not.toBeInTheDocument()
+})
+
+test('un PDF pegado no se cuela: el backend solo lee imágenes', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={vi.fn()} />)
+
+  pegar([new File(['x'], 'factura.pdf', { type: 'application/pdf' })])
+
+  expect(screen.queryByText('factura.pdf')).not.toBeInTheDocument()
+})
+
+test('sin quien reciba la imagen, pegar una no hace nada', () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  expect(pegar([new File(['x'], 'imagen.png', { type: 'image/png' })])).toBe(true)
+  expect(screen.queryByText('imagen.png')).not.toBeInTheDocument()
+})

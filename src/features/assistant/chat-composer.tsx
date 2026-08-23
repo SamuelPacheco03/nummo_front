@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ClipboardEvent,
   type PointerEvent as ReactPointerEvent,
   type Ref,
 } from 'react'
@@ -234,6 +235,31 @@ export function ChatComposer({
     el.addEventListener('touchstart', noLongPress, { passive: false })
     return () => el.removeEventListener('touchstart', noLongPress)
   }, [hasText, busy, onStop])
+
+  /** Deja una imagen lista para enviar, suelte el blob de la anterior si la había. */
+  const pick = (file: File) => {
+    if (picked) URL.revokeObjectURL(picked.url)
+    setPicked({ file, url: URL.createObjectURL(file) })
+  }
+
+  /**
+   * Pegar una imagen (Ctrl+V), que es como llega la mitad de las capturas.
+   *
+   * Sin esto había que guardar la captura en el escritorio para volver a buscarla en
+   * el diálogo de archivos — tres pasos para algo que ya estaba en el portapapeles.
+   *
+   * Solo se queda con lo que sabe leer: pegar un fragmento de texto, o un archivo que
+   * no sea de los cuatro tipos que acepta el backend, sigue haciendo lo de siempre.
+   * Y `preventDefault` únicamente cuando se toma la imagen, para no comerse un pegado
+   * de texto normal.
+   */
+  const onPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!onSendImage || busy) return
+    const file = [...event.clipboardData.files].find((f) => IMAGE_TYPES.split(',').includes(f.type))
+    if (!file) return
+    event.preventDefault()
+    pick(file)
+  }
 
   const clearPicked = () => {
     if (picked) URL.revokeObjectURL(picked.url)
@@ -557,9 +583,7 @@ export function ChatComposer({
               className="hidden"
               onChange={(event) => {
                 const file = event.target.files?.[0]
-                if (!file) return
-                if (picked) URL.revokeObjectURL(picked.url)
-                setPicked({ file, url: URL.createObjectURL(file) })
+                if (file) pick(file)
               }}
             />
             <ComposerAction
@@ -585,6 +609,7 @@ export function ChatComposer({
             rows={1}
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onPaste={onPaste}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()

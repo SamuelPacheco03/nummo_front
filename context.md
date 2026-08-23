@@ -3039,6 +3039,13 @@ propio turno, contra `POST /assistant/chat/image` (multipart), y el campo es **u
 tres fotos son tres mensajes. Lo que se escriba al lado viaja con ella, que es casi siempre
 la pregunta.
 
+**Se pega, además de elegirse.** Un `Ctrl+V` en la caja adjunta la imagen del
+portapapeles, que es como llega la mitad de las capturas: sin esto había que guardarla en
+el escritorio para volver a buscarla en el diálogo de archivos, tres pasos para algo que ya
+estaba en la mano. Solo se queda con lo que el backend sabe leer —los cuatro tipos de
+imagen—, y solo entonces corta el pegado: pegar una frase en la caja tiene que seguir
+pegando una frase.
+
 **No transmite, y eso cambia la espera.** El chat de texto tiene `/chat/stream` y éste no: la
 respuesta llega entera y tarda, porque antes hay que leer la imagen. Por eso la espera se
 marca como la de una nota de voz —`pending`, «Numi está escribiendo…»— y no con el cursor que
