@@ -15478,6 +15478,10 @@
               }
             ]
           },
+          "sendAt": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
           "daysBefore": {
             "anyOf": [
               {
@@ -22092,6 +22096,10 @@
               }
             ]
           },
+          "sendAt": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
           "daysBefore": {
             "anyOf": [
               {
@@ -22194,6 +22202,31 @@
                 "type": "integer",
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
+              },
+              "sendableRange": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "earliest": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "latest": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    },
+                    "required": [
+                      "earliest",
+                      "latest"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
@@ -22201,7 +22234,8 @@
               "legalReference",
               "week",
               "excludesHolidays",
-              "maxRemindersPerReceivable"
+              "maxRemindersPerReceivable",
+              "sendableRange"
             ],
             "additionalProperties": false
           },
@@ -22225,6 +22259,7 @@
           "dueSoonTemplateKey",
           "dueSoonSummaryTemplateKey",
           "overdueTemplateKey",
+          "sendAt",
           "daysBefore",
           "remindOnDueDate",
           "daysAfter",

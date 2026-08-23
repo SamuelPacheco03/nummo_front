@@ -16,6 +16,8 @@ export interface CollectionPolicy {
   dueSoonTemplateKey: string | null;
   dueSoonSummaryTemplateKey: string | null;
   overdueTemplateKey: string | null;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
+  sendAt: string;
   daysBefore: number | null;
   remindOnDueDate: boolean;
   daysAfter: number | null;

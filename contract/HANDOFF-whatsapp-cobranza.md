@@ -99,7 +99,8 @@ Lo que hay que pintar viene resuelto en **`schedule`**:
     "7": null                                     // domingo: no se contacta
   },
   "excludesHolidays": true,
-  "maxRemindersPerReceivable": 3
+  "maxRemindersPerReceivable": 3,
+  "sendableRange": { "earliest": "08:00", "latest": "14:59" }
 }
 ```
 
@@ -141,6 +142,34 @@ error, pero la vista previa debería reflejarlo.
 
 Estos campos **sí** son editables. Los que no lo son siguen siendo los del horario
 (`quietStart`, `quietEnd`, `sendDays`, `skipHolidays`) — ver arriba.
+
+#### La hora de envío: una sola, y acotada
+
+`sendAt` es la hora local a la que salen los avisos. **Por defecto las 12:00.** Es una
+hora, no una ventana — la ventana la pone la ley y dentro de ella solo queda elegir el
+momento.
+
+Y tiene que caer dentro de la franja **todos los días**, no solo hoy. En Colombia entre
+semana se puede hasta las siete de la tarde pero el sábado cierra a las tres, así que el
+rango real es **08:00–14:59**. Ese rango viene en la respuesta y hay que usarlo para
+acotar el selector:
+
+```jsonc
+"schedule": {
+  "sendableRange": { "earliest": "08:00", "latest": "14:59" },
+  // …
+}
+```
+
+`null` significa que no hay restricción que imponer. Fuera de rango, el `PUT` responde
+**422** `SEND_TIME_OUT_OF_RANGE` con `earliest` y `latest` en `details`.
+
+Ojo con las 15:00 en punto: **no** son válidas. La franja es `[inicio, fin)`, así que el
+último minuto en que aún se envía es el 14:59. Si el selector va de hora en hora, el
+último valor ofrecible es las 14:00.
+
+Y no confundir con `reminderLocalTime` de los ajustes de notificaciones: aquél sigue
+existiendo y sigue rigiendo los **avisos internos al equipo**. La cobranza ya no lo usa.
 
 #### Qué pasa si el aviso cae en día no hábil
 

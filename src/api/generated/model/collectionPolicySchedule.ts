@@ -5,6 +5,7 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { CollectionPolicyScheduleSendableRange } from './collectionPolicyScheduleSendableRange';
 import type { CollectionPolicyScheduleWeek } from './collectionPolicyScheduleWeek';
 
 export type CollectionPolicySchedule = {
@@ -17,4 +18,5 @@ export type CollectionPolicySchedule = {
      * @maximum 9007199254740991
      */
   maxRemindersPerReceivable: number;
+  sendableRange: CollectionPolicyScheduleSendableRange;
 };

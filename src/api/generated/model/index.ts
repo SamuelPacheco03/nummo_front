@@ -86,6 +86,7 @@ export * from './chatMessageRole';
 export * from './chatMessageSource';
 export * from './collectionPolicy';
 export * from './collectionPolicySchedule';
+export * from './collectionPolicyScheduleSendableRange';
 export * from './collectionPolicyScheduleWeek';
 export * from './collectionRemindersRun';
 export * from './connectWhatsAppAccountInput';
