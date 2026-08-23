@@ -847,10 +847,15 @@ La regla que deja: **una navegación larga no se aplana en horizontal; se mete e
 la ventana: con los veintiún destinos de Configuración la columna medía más que ella, así que el
 rango de pegado era cero y llegar al último grupo obligaba a mover la página entera —perdiendo de
 vista el formulario que se estaba mirando— y volver a subir después. Hoy es un carril de verdad:
-alto máximo (`calc(100dvh-7rem)`), `overflow-y-auto` propio y un borde que lo separa del
-contenido. Dos detalles que no son adorno: el borde va en el elemento que **no** desplaza —si no,
-la línea se mueve con la lista— y el `pr-4` de dentro es lo que impide que el recorte se coma el
-anillo de foco de los enlaces.
+alto máximo (`calc(100dvh-8rem)`), `overflow-y-auto` propio y un borde que lo separa del
+contenido. Tres detalles que no son adorno: el borde va en el elemento que **no** desplaza —si no,
+la línea se mueve con la lista—; el `pr-4` de dentro es lo que impide que el recorte se coma el
+anillo de foco de los enlaces; y ese `8rem` **es el que evita que el carril se mueva al final del
+scroll**. `sticky` solo pega dentro de su contenedor, y al llegar al pie de la página el
+contenedor se acaba antes que la pantalla: el carril se despega y sube exactamente la diferencia
+entre lo que deja libre abajo y el `py-8` de `main`. Con `7rem` esa diferencia era de 16 px y se
+veía como un saltito; con `8rem` —96 arriba, 32 abajo, los mismos 32 del layout— es cero, y da
+igual que haya banner de solo lectura encima.
 
 La segunda regla: **si la lista puede crecer más que la pantalla, el carril lleva su propio
 scroll.**

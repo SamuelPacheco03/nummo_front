@@ -125,6 +125,14 @@ export function SectionedLayout({
         separador y no una línea que se mueve; y el `pr-4` de dentro es lo que
         impide que `overflow-y-auto` recorte el anillo de foco de los enlaces.
 
+        **El `8rem` del alto no es un respiro elegido a ojo: es lo que impide que
+        el carril se mueva al final del scroll.** `sticky` solo pega dentro de su
+        contenedor, y cuando la página llega abajo el contenedor se acaba antes que
+        la pantalla: el carril se despega y sube justo lo que le sobre. Lo que le
+        sobra es la diferencia entre lo que él deja libre abajo y el `py-8` de
+        `main`, así que valen los dos treinta y dos: 96 de cabecera más respiro
+        arriba, 32 abajo. Con `7rem` sobraban 16 px y el carril daba ese saltito.
+
         La barra fina y el desvanecido de los bordes son los mismos del sidebar
         principal (`scrollbar-slim` + `scroll-fade-y`, `index.css`): una
         navegación que desplaza ya tiene su lenguaje en esta app, y el
@@ -135,7 +143,7 @@ export function SectionedLayout({
         aria-label={label}
         className="border-border/70 sticky top-24 hidden w-60 shrink-0 self-start border-r lg:block"
       >
-        <div className="scrollbar-slim scroll-fade-y flex max-h-[calc(100dvh-7rem)] flex-col gap-5 overflow-y-auto pr-4 pb-2">
+        <div className="scrollbar-slim scroll-fade-y flex max-h-[calc(100dvh-8rem)] flex-col gap-5 overflow-y-auto pr-4 pb-2">
           <Groups groups={groups} />
         </div>
       </nav>
