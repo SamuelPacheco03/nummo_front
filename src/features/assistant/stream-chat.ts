@@ -17,10 +17,26 @@ export interface StreamChatInput {
   orgId: string
   message: string
   sessionId?: string
+  /**
+   * Con foto el turno sale por `/chat/image/stream`, que es la misma puerta contada de
+   * otra forma: misma conversación, mismos eventos y multipart en vez de JSON.
+   *
+   * Va aquí y no en una función aparte porque lo único que cambia es la ruta y el
+   * cuerpo; el resto —qué eventos entiende un turno, qué significa detenerlo, cómo se
+   * cuenta una conexión caída— es idéntico, y duplicarlo era garantizar que se
+   * arreglara en uno de los dos.
+   */
+  image?: File
   /** Abortarla es el botón de detener. Lo ya escrito se queda. */
   signal: AbortSignal
-  /** La conversación del turno, antes de que el modelo escriba nada. */
-  onStart?: (sessionId: string) => void
+  /**
+   * **La primera señal de vida del servidor**, y por eso no lleva argumentos: lo que
+   * dice es «ya lo tengo», no qué tiene. Es lo que marca el mensaje como entregado.
+   *
+   * Con foto sale en cuanto la imagen está archivada, sin esperar a que el modelo de
+   * visión la lea — que es la parte larga.
+   */
+  onStart?: () => void
   onChunk: (text: string) => void
 }
 
@@ -36,6 +52,11 @@ export interface StreamChatResult {
    */
   userMessageId: string | null
   assistantMessageId: string | null
+  /**
+   * El documento con el que quedó archivada la foto, si el turno llevaba una. Es lo que
+   * deja repintar la miniatura al volver, cuando el `blob:` de esta página ya no está.
+   */
+  documentId: string | null
 }
 
 export async function streamChat(input: StreamChatInput): Promise<StreamChatResult> {
@@ -44,25 +65,47 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
   let done = false
   let userMessageId: string | null = null
   let assistantMessageId: string | null = null
+  let documentId: string | null = null
   const partial = (stopped: boolean): StreamChatResult => ({
     sessionId,
     reply,
     stopped,
     userMessageId,
     assistantMessageId,
+    documentId,
   })
+
+  /*
+    Con foto, multipart; sin ella, el JSON de siempre. El transporte mira el tipo del
+    cuerpo y elige la cabecera, así que aquí solo hay que decidir qué se manda.
+  */
+  const form = input.image && new FormData()
+  if (form && input.image) {
+    form.append('image', input.image)
+    if (input.sessionId) form.append('sessionId', input.sessionId)
+    if (input.message !== '') form.append('message', input.message)
+  }
 
   let status = 200
   try {
     status = await postEventStream({
-      path: `/api/v1/organizations/${input.orgId}/assistant/chat/stream`,
-      body: { message: input.message, sessionId: input.sessionId },
+      path: form
+        ? `/api/v1/organizations/${input.orgId}/assistant/chat/image/stream`
+        : `/api/v1/organizations/${input.orgId}/assistant/chat/stream`,
+      body: form ?? { message: input.message, sessionId: input.sessionId },
       signal: input.signal,
       onEvent: (event, data) => {
         const payload = asRecord(data)
-        if (event === 'start' && typeof payload.sessionId === 'string') {
-          sessionId = payload.sessionId
-          input.onStart?.(sessionId)
+        if (event === 'start') {
+          /*
+            El aviso sale con el evento, no con lo que traiga: en un turno con foto
+            `sessionId` puede venir `null` —la conversación nace del turno de chat, que
+            es posterior a la lectura— y esperar a tenerlo dejaría el mensaje sin marcar
+            como entregado justo en el turno que más tarda. `done` trae el definitivo.
+          */
+          if (typeof payload.sessionId === 'string') sessionId = payload.sessionId
+          if (typeof payload.documentId === 'string') documentId = payload.documentId
+          input.onStart?.()
         } else if (event === 'chunk' && typeof payload.text === 'string') {
           reply += payload.text
           input.onChunk(payload.text)
@@ -78,6 +121,7 @@ export async function streamChat(input: StreamChatInput): Promise<StreamChatResu
           if (typeof payload.assistantMessageId === 'string') {
             assistantMessageId = payload.assistantMessageId
           }
+          if (typeof payload.documentId === 'string') documentId = payload.documentId
           // El servidor manda la respuesta entera: es la que manda, por si algún
           // trozo se perdió por el camino.
           if (typeof payload.reply === 'string') reply = payload.reply

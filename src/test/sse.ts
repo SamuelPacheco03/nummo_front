@@ -9,10 +9,17 @@
 export interface SseChannel {
   /** La respuesta que devuelve el `fetch` mockeado. */
   response: Response
-  /** La conversación del turno, antes de la primera palabra. */
-  start(sessionId: string): void
+  /**
+   * La conversación del turno, antes de la primera palabra.
+   *
+   * `sessionId` admite `null` porque un turno con foto lo trae así cuando la
+   * conversación nace de esa misma imagen: el id lo crea el turno de chat, que va
+   * después de la lectura. `extra` es lo que ese turno añade —`documentId`,
+   * `alreadyFiled`— sin obligar a un segundo canal de mentira.
+   */
+  start(sessionId: string | null, extra?: Record<string, unknown>): void
   chunk(text: string): void
-  done(sessionId: string, reply: string, stopped?: boolean): void
+  done(sessionId: string, reply: string, stopped?: boolean, extra?: Record<string, unknown>): void
   /**
    * `done` sin cerrar el cuerpo: el servidor ya dijo todo lo que tenía que decir y la
    * conexión todavía tarda en irse (un proxy, su keep-alive). Es el caso que dejaba el
@@ -52,11 +59,11 @@ export function sseChannel(): SseChannel {
       status: 200,
       headers: { 'content-type': 'text/event-stream' },
     }),
-    start: (sessionId) => push('start', { sessionId }),
+    start: (sessionId, extra) => push('start', { sessionId, ...extra }),
     chunk: (text) => push('chunk', { text }),
     trace: (value) => push('trace', value),
-    done: (sessionId, reply, stopped = false) => {
-      push('done', { sessionId, reply, stopped })
+    done: (sessionId, reply, stopped = false, extra) => {
+      push('done', { sessionId, reply, stopped, ...extra })
       controller.close()
     },
     doneWithoutClosing: (sessionId, reply) => push('done', { sessionId, reply, stopped: false }),

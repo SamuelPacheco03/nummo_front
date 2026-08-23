@@ -3041,8 +3041,8 @@ La imagen queda archivada como documento.
 
 **Adjuntar no es un campo del mensaje.** `AssistantChatInput` no acepta `documentIds`: no hay
 forma de subir una foto y referenciarla en la pregunta siguiente. Cada imagen entra por su
-propio turno, contra `POST /assistant/chat/image` (multipart), y el campo es **uno solo** —
-tres fotos son tres mensajes. Lo que se escriba al lado viaja con ella, que es casi siempre
+propio turno, contra `POST /assistant/chat/image/stream` (multipart), y el campo es **uno
+solo** — tres fotos son tres mensajes. Lo que se escriba al lado viaja con ella, que es casi siempre
 la pregunta.
 
 **Se pega, además de elegirse.** Un `Ctrl+V` en la caja adjunta la imagen del
@@ -3060,22 +3060,34 @@ Aquí sí se avisa cuando lo soltado no sirve, al revés que al pegar: **un pega
 toma tiene su salida natural** —pega texto y ya—, pero soltar un PDF sobre el compositor no
 produce absolutamente nada, y un gesto que no produce nada se lee como que la app falló.
 
-**No transmite, y eso cambia la espera.** El chat de texto tiene `/chat/stream` y éste no: la
-respuesta llega entera y tarda, porque antes hay que leer la imagen. Por eso la espera se
-marca como la de una nota de voz —`pending`, «Numi está escribiendo…»— y no con el cursor que
-va escribiendo palabra a palabra: un cursor parado medio minuto se lee como algo roto.
+**Un turno con foto es un turno como los demás.** El endpoint con stream habla **el mismo
+idioma de eventos** que `/chat/stream`, y esa fue la petición al backend precisamente para
+esto: un cliente que ya sabe leer ese formato no necesita otro lector. Así que la foto entra
+por `streamChat`, la misma función que un mensaje de texto, con `image` en vez de nada. Lo
+único que cambia es la ruta y que el cuerpo es multipart; el transporte de `lib/sse.ts` mira
+el tipo del cuerpo y elige la cabecera —el `Content-Type` del multipart lo pone el navegador,
+porque tiene que llevar el `boundary`—.
 
-**Y las palomitas se ganan al subir, no al contestar.** Un mensaje de texto marca entregado
-con la **primera señal de vida** del servidor (§32.6), no cuando termina: lo contrario deja
-«Enviando» puesto debajo de la pregunta con la respuesta ya a media página. Una imagen no
-tiene esa señal —una petición, un único evento— así que la señal se fabrica midiendo la
-propia subida: `postMultipart` avisa en `upload.load`, que es el instante en que el último
-byte salió, y ahí caen las dos palomitas.
+Existe todavía `POST /assistant/chat/image` sin stream, con una petición y una respuesta. No
+se usa: la respuesta de una imagen tarda, y verla caer de golpe después de medio minuto de
+puntos es la peor versión de la misma espera.
 
-Es lo que hace la diferencia entre «esto no salió» y «esto ya está allá y lo están mirando».
-`fetch` no expone el progreso de subida y por eso este envío no pasa por el cliente
-generado, por la razón contraria a `sse.ts`: allí hay que leer la respuesta mientras se
-escribe, y aquí hay que saber cuándo se acabó de escribir la petición.
+**Las palomitas se ganan con `start`, no con `done`.** Un mensaje marca entregado con la
+**primera señal de vida** del servidor (§32.6), no cuando termina: lo contrario deja
+«Enviando» puesto debajo de la pregunta con la respuesta ya a media página. En un turno con
+foto ese `start` sale **en cuanto la imagen queda archivada**, sin esperar a que el modelo de
+visión la lea, que es la parte larga.
+
+Y el aviso se dispara con el evento, no con lo que traiga: `sessionId` puede venir `null`
+—la conversación nace de este mismo turno y el id lo crea el chat, que va después de la
+lectura—, y esperar a tenerlo dejaría sin marcar justo el turno que más tarda. `done` trae el
+definitivo.
+
+**Detener corta de verdad.** Cerrar el flujo detiene la generación en el servidor y deja de
+gastar tokens, igual que en un turno de texto, y lo que Numi alcanzó a escribir se archiva.
+Con foto hay una raya más: **sin `start` la imagen no llegó a archivarse**, así que ahí el
+mensaje se marca como no enviado —es lo único cierto— y la burbuja vacía se retira. Después
+de `start`, la foto está allá y media respuesta es media respuesta, no un fallo.
 
 **La burbuja se pinta antes de subir nada.** La foto está en la mano y no cuesta una
 petición; esperar al servidor dejaría el hilo en blanco todo ese rato. El `blob:` local muere
@@ -5479,7 +5491,6 @@ Todos son parte del sistema y deben reutilizarse:
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
 | `MessageImage` | `features/assistant/chat-message-item.tsx` | La foto de un mensaje: el blob recién enviado o la archivada, firmada (§32.8) |
 | `useDocumentImageUrl` | `features/assistant/use-numi-history.ts` | La URL firmada de un documento, para repintar la miniatura al volver (§32.8) |
-| `postMultipart` | `lib/upload.ts` | Subir un archivo **sabiendo cuándo terminó de subir** — lo que `fetch` no dice (§32.8) |
 | `ImageViewer` | `components/ui/image-viewer.tsx` | Una imagen a tamaño de mirarla: diálogo sin caja, con su única salida encima (§32.8) |
 
 ---

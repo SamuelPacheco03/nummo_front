@@ -79,6 +79,9 @@ function politica(over: Partial<CollectionPolicy> = {}): CollectionPolicy {
     dueSoonTemplateKey: 'cobro_por_vencer',
     overdueTemplateKey: 'cobro_vencido',
     overdueSummaryTemplateKey: 'cobro_vencido_resumen',
+    // Días ISO: 1 es lunes y 7 domingo. Lunes a sábado es el defecto del backend.
+    sendDays: [1, 2, 3, 4, 5, 6],
+    skipHolidays: true,
     updatedAt: '2026-08-01T10:00:00Z',
     ...over,
   }

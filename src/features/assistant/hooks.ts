@@ -2,14 +2,10 @@ import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
-import type {
-  AssistantAudioChatResponse,
-  AssistantImageChatResponse,
-} from '@/api/generated/model'
+import type { AssistantAudioChatResponse } from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { classifyNumiError } from './numi-error'
 import { streamChat } from './stream-chat'
-import { postMultipart } from '@/lib/upload'
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_MESSAGE_LENGTH } from './constants'
 import { isServerId, useNumiStore } from './numi-store'
 import { useNumiEvents, type NumiEvent } from './numi-events'
@@ -406,60 +402,93 @@ export function useNumiChat() {
       store.appendImage({ imageUrl: URL.createObjectURL(file), content: message })
       const id = useNumiStore.getState().messages.at(-1)?.id
 
+      /*
+        El turno va al mismo sitio que el de un mensaje de texto, así que el botón de
+        detener —que ya aborta `turn`— funciona igual con una foto sin tocar nada del
+        compositor.
+      */
+      const stop = new AbortController()
+      useNumiStore.getState().setTurn(stop)
+      // La burbuja se abre antes de la primera palabra, igual que en un turno de texto.
+      const bubble = useNumiStore.getState().beginReply()
+
+      /*
+        **Entregado es cuando el servidor da señales de vida**, no cuando termina.
+
+        Con foto esa señal es el evento `start`, que sale en cuanto la imagen queda
+        archivada y sin esperar a que el modelo de visión la lea — que es la parte larga.
+        Sin él, el mensaje se quedaba con una sola palomita todo ese rato, y una sola
+        palomita junto a una foto se lee como que no salió.
+      */
+      let delivered = false
+      const markDelivered = () => {
+        if (delivered) return
+        delivered = true
+        if (id) useNumiStore.getState().setMessageStatus(id, 'sent')
+      }
+
       try {
         const { sessionId } = useNumiStore.getState()
-        const form = new FormData()
-        form.append('image', file)
-        if (sessionId) form.append('sessionId', sessionId)
-        if (message !== '') form.append('message', message)
-        const res = await postMultipart<AssistantImageChatResponse>({
-          path: `/api/v1/organizations/${orgId}/assistant/chat/image`,
-          body: form,
-          /*
-            **La foto se entrega cuando sus bytes están arriba**, no cuando Numi
-            termina de mirarla. Las dos palomitas caen aquí y la espera la cuenta
-            «Numi está escribiendo…», igual que en un mensaje de texto — que marca
-            entregado con la primera señal de vida del servidor y no al terminar.
-
-            Sin esto el mensaje se quedaba con una sola palomita los treinta
-            segundos de la lectura, y una sola palomita junto a una foto se lee
-            como que no salió.
-          */
-          onUploaded: () => {
-            if (id) useNumiStore.getState().setMessageStatus(id, 'sent')
-          },
-        })
         /*
-          `alreadyFiled` no se enseña. Dice que esa misma imagen ya estaba
-          archivada —se compara por hash— y no se guardó otra vez; no es un error
-          ni cambia la respuesta, así que contarlo sería ruido sobre algo que el
-          usuario no pidió y no puede hacer nada al respecto.
+          `alreadyFiled` no se lee. Dice que esa misma imagen ya estaba archivada —se
+          compara por hash— y no se guardó otra vez; no es un error ni cambia la
+          respuesta, así que contarlo sería ruido sobre algo que el usuario no pidió y
+          no puede hacer nada al respecto.
         */
         const {
           sessionId: nextSessionId,
           reply,
+          stopped,
           documentId,
           userMessageId,
           assistantMessageId,
-        } = res
+        } = await streamChat({
+          orgId,
+          message,
+          sessionId,
+          image: file,
+          signal: stop.signal,
+          onStart: markDelivered,
+          onChunk: (text) => {
+            markDelivered()
+            useNumiStore.getState().appendToReply(bubble, text)
+          },
+        })
+
         const s = useNumiStore.getState()
+        /*
+          **Detener antes de que la foto llegue no es lo mismo que detener después.**
+
+          Sin `start` la imagen no llegó a archivarse, así que el mensaje se marca como
+          no enviado: es lo único cierto. Con `start`, la foto está allá y lo que se
+          detuvo fue la respuesta — cerrar el flujo corta la generación en el servidor y
+          deja de gastar tokens, y lo que Numi alcanzó a escribir se queda archivado
+          igual, exactamente como en un turno de texto.
+        */
+        if (stopped && !delivered) {
+          if (id) s.setMessageStatus(id, 'failed')
+          s.discardReply(bubble)
+          return
+        }
         if (id) {
-          // Con el documento atado, al volver se repinta la miniatura: el blob
-          // de la burbuja muere con la página y esto no.
-          s.setDocuments(id, [documentId])
+          s.setMessageStatus(id, 'sent')
+          // Con el documento atado, al volver se repinta la miniatura: el blob de la
+          // burbuja muere con la página y esto no.
+          if (documentId) s.setDocuments(id, [documentId])
           if (userMessageId) s.adoptServerId(id, userMessageId)
         }
-        s.appendReply(nextSessionId, reply)
-        const bubble = useNumiStore.getState().messages.at(-1)?.id
-        if (bubble && assistantMessageId) {
+        s.finishReply(bubble, nextSessionId)
+        if (assistantMessageId) {
           useNumiStore.getState().adoptServerId(bubble, assistantMessageId)
         }
         if (shouldRefreshData(message, reply)) void queryClient.invalidateQueries()
       } catch (err) {
         const s = useNumiStore.getState()
+        s.discardReply(bubble)
         if (id) s.setMessageStatus(id, 'failed')
         s.setError(classifyNumiError(err, 'No se pudo enviar la imagen. Inténtalo de nuevo.'))
       } finally {
+        useNumiStore.getState().setTurn(null)
         useNumiStore.getState().setPending(false)
       }
     },

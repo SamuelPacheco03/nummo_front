@@ -582,7 +582,11 @@ export const getPutApiV1OrganizationsOrgIdMessagingCollectionPolicyUrl = (orgId:
 /**
  * Endpoint propio y no un campo de los ajustes generales, como la política de aprobaciones: encender o apagar los recordatorios de una empresa entera tiene que ser un acto deliberado.
  *
- * Sin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora. Las horas de silencio **aplazan, no cancelan**: un recordatorio nocturno sale a la mañana siguiente.
+ * Sin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora.
+ *
+ * **Las horas de silencio aplazan; los días no hábiles saltan.** Un recordatorio nocturno sale a la mañana siguiente, pero un domingo o un festivo **no se escanea**, y eso es deliberado: aplazarlo duplicaría el aviso, porque la clave de deduplicación lleva la fecha del escaneo.
+ *
+ * `sendDays` son días ISO —1 lunes, 7 domingo— y por defecto es lunes a sábado. `skipHolidays` usa los festivos del país de la organización, deducido de su `locale`: hoy solo hay calendario de Colombia, y un país sin calendario envía todos los días.
  * @summary Activa o ajusta los recordatorios de cobro
  */
 export const putApiV1OrganizationsOrgIdMessagingCollectionPolicy = async (orgId: string,
@@ -678,6 +682,8 @@ export const getPostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunUrl = 
  * **Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.
  *
  * Sigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.
+ *
+ * **No mira `sendDays` ni `skipHolidays`.** Esos dicen si el trabajo corre solo hoy; esto lo pidió una persona, un domingo, a sabiendas. Bloquearlo lo dejaría sin hacer nada en silencio.
  *
  * Exige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.
  * @summary Manda los recordatorios de cobro ahora, sin esperar a la hora
