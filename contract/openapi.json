@@ -3463,7 +3463,7 @@
           "Mensajería"
         ],
         "summary": "Activa o ajusta los recordatorios de cobro",
-        "description": "Endpoint propio y no un campo de los ajustes generales, como la política de aprobaciones: encender o apagar los recordatorios de una empresa entera tiene que ser un acto deliberado.\n\nSin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora. Las horas de silencio **aplazan, no cancelan**: un recordatorio nocturno sale a la mañana siguiente.",
+        "description": "Endpoint propio y no un campo de los ajustes generales, como la política de aprobaciones: encender o apagar los recordatorios de una empresa entera tiene que ser un acto deliberado.\n\nSin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora.\n\n**Las horas de silencio aplazan; los días no hábiles saltan.** Un recordatorio nocturno sale a la mañana siguiente, pero un domingo o un festivo **no se escanea**, y eso es deliberado: aplazarlo duplicaría el aviso, porque la clave de deduplicación lleva la fecha del escaneo.\n\n`sendDays` son días ISO —1 lunes, 7 domingo— y por defecto es lunes a sábado. `skipHolidays` usa los festivos del país de la organización, deducido de su `locale`: hoy solo hay calendario de Colombia, y un país sin calendario envía todos los días.",
         "security": [
           {
             "cookieAuth": []
@@ -3523,7 +3523,7 @@
           "Mensajería"
         ],
         "summary": "Manda los recordatorios de cobro ahora, sin esperar a la hora",
-        "description": "El escaneo automático corre a la hora local de la organización y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.\n\n**Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.\n\nSigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.\n\nExige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.",
+        "description": "El escaneo automático corre a la hora local de la organización y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.\n\n**Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.\n\nSigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.\n\n**No mira `sendDays` ni `skipHolidays`.** Esos dicen si el trabajo corre solo hoy; esto lo pidió una persona, un domingo, a sabiendas. Bloquearlo lo dejaría sin hacer nada en silencio.\n\nExige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.",
         "security": [
           {
             "cookieAuth": []
@@ -12972,6 +12972,108 @@
         ]
       }
     },
+    "/api/v1/organizations/{orgId}/assistant/chat/image/stream": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Lo mismo que `/chat/image`, contado mientras pasa (requiere assistant.use + documents.write)",
+        "description": "La imagen se archiva en `documents` y la lee un modelo de visión con la credencial de la organización (BYOK, kind=`vision`), independiente de la del chat. El lector no tiene herramientas ni historial: devuelve datos estructurados y nada más. El texto impreso dentro de una imagen se transcribe como contenido del documento, nunca se obedece. Subir dos veces el mismo archivo no lo lee dos veces ni consume cuota otra vez: la lectura queda cacheada por contenido.\nPetición idéntica a `/chat/image` y mismos guards, tope y errores; lo que cambia es la respuesta: `text/event-stream` con **los mismos eventos que `/assistant/chat/stream`**, para que un cliente que ya lee ese formato no necesite otro lector.\n\n- `start` → `{ sessionId, documentId, alreadyFiled }`. Sale **en cuanto la imagen está archivada**, sin esperar a que el modelo de visión la lea: es el momento «ya lo tengo». `sessionId` viene null cuando la conversación nace de esta misma foto —el id lo crea el turno de chat, después de la lectura— y `done` siempre trae el definitivo.\n- `chunk` → `{ text }`. La respuesta de Numi según se escribe. La lectura de la imagen no se transmite (el proveedor la devuelve entera), pero la respuesta sí, que es la parte larga.\n- `done` → `{ sessionId, documentId, alreadyFiled, cached, reply, userMessageId, assistantMessageId, stopped }`.\n- `error` → `{ error: { code, message, details? } }`, con el mismo cuerpo que daría la variante sin stream.\n\nCerrar la conexión detiene la generación y deja de gastar tokens; lo ya escrito se archiva igual. Un fallo anterior al primer byte se responde con su status normal (409 del tope, 422 sin proveedor) en vez de por el stream.\n`/chat/image` no se va a ninguna parte: quien no quiera stream sigue teniendo una petición y una respuesta.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagen: JPEG, PNG, WebP o GIF."
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "message": {
+                    "description": "Lo que escribiste junto a la imagen. Opcional.",
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Flujo de eventos con la respuesta de Numi.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta assistant.use o documents.write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Se acabó la cuota de documentos o de mensajes del plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Imagen vacía, demasiado grande o de un formato no soportado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": [
+          "assistant.use",
+          "documents.write"
+        ]
+      }
+    },
     "/api/v1/organizations/{orgId}/documents": {
       "post": {
         "tags": [
@@ -15364,6 +15466,18 @@
                 "type": "null"
               }
             ]
+          },
+          "sendDays": {
+            "maxItems": 7,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            }
+          },
+          "skipHolidays": {
+            "type": "boolean"
           },
           "overdueSummaryTemplateKey": {
             "anyOf": [
@@ -21930,6 +22044,17 @@
               }
             ]
           },
+          "sendDays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            }
+          },
+          "skipHolidays": {
+            "type": "boolean"
+          },
           "overdueSummaryTemplateKey": {
             "anyOf": [
               {
@@ -21959,6 +22084,8 @@
           "quietEnd",
           "dueSoonTemplateKey",
           "overdueTemplateKey",
+          "sendDays",
+          "skipHolidays",
           "overdueSummaryTemplateKey",
           "updatedAt"
         ],
@@ -28319,6 +28446,9 @@
           "alreadyFiled": {
             "type": "boolean"
           },
+          "cached": {
+            "type": "boolean"
+          },
           "reply": {
             "type": "string"
           },
@@ -28351,6 +28481,7 @@
           "sessionId",
           "documentId",
           "alreadyFiled",
+          "cached",
           "reply",
           "userMessageId",
           "assistantMessageId"

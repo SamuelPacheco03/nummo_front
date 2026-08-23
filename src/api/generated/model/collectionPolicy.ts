@@ -14,6 +14,12 @@ export interface CollectionPolicy {
   quietEnd: string;
   dueSoonTemplateKey: string | null;
   overdueTemplateKey: string | null;
+  /**
+     * @items.minimum 1
+     * @items.maximum 7
+     */
+  sendDays: number[];
+  skipHolidays: boolean;
   overdueSummaryTemplateKey: string | null;
   updatedAt: string | null;
 }

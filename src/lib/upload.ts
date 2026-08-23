@@ -24,15 +24,31 @@ export async function postMultipart<T>({
   path,
   body,
   onUploaded,
+  signal,
 }: {
   path: string
   body: FormData
   /** El último byte de la petición ya salió. Lo que queda es esperar respuesta. */
   onUploaded?: () => void
+  /**
+   * Cortar la petición. Es el botón de detener del chat.
+   *
+   * Rechaza con un `AbortError`, como haría `fetch`, para que quien llama distinga
+   * «lo paré yo» de «se cayó»: son la misma excepción para el código y dos cosas muy
+   * distintas para quien mira la pantalla.
+   */
+  signal?: AbortSignal
 }): Promise<T> {
   const token = await ensureCsrfToken()
 
   return new Promise<T>((resolve, reject) => {
+    const abortado = () => reject(new DOMException('Subida cancelada', 'AbortError'))
+    // Pudo abortarse mientras se pedía el CSRF, que es una espera de verdad.
+    if (signal?.aborted) {
+      abortado()
+      return
+    }
+
     const xhr = new XMLHttpRequest()
     xhr.open('POST', apiUrl(path))
     // Las cookies HttpOnly de sesión y CSRF, como en `customFetch`.
@@ -59,7 +75,9 @@ export async function postMultipart<T>({
 
     xhr.addEventListener('error', () => reject(new Error('No se pudo conectar con el servidor.')))
     xhr.addEventListener('timeout', () => reject(new Error('La subida tardó demasiado.')))
+    xhr.addEventListener('abort', abortado)
 
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true })
     xhr.send(body)
   })
 }

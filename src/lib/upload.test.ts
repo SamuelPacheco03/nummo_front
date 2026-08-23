@@ -56,6 +56,12 @@ class FakeXhr {
   falla() {
     this.propios.error?.()
   }
+  /** Lo que hace el navegador cuando alguien llama a `xhr.abort()`. */
+  abort() {
+    this.abortada = true
+    this.propios.abort?.()
+  }
+  abortada = false
 }
 
 function stubXhr() {
@@ -125,4 +131,32 @@ test('una red caída no se confunde con una respuesta vacía', async () => {
   FakeXhr.ultimo.falla()
 
   await expect(promesa).rejects.toThrow(/No se pudo conectar/)
+})
+
+test('detener corta la petición y se distingue de una caída', async () => {
+  stubXhr()
+  const corte = new AbortController()
+  const promesa = postMultipart({
+    path: '/api/v1/algo',
+    body: new FormData(),
+    signal: corte.signal,
+  })
+  await vi.waitFor(() => expect(FakeXhr.ultimo?.cuerpo).not.toBeNull())
+
+  corte.abort()
+
+  expect(FakeXhr.ultimo.abortada).toBe(true)
+  // `AbortError` es lo que deja a quien llama decir «lo paré yo» en vez de «se cayó»:
+  // para el código son la misma excepción y para quien mira son dos cosas distintas.
+  await expect(promesa).rejects.toMatchObject({ name: 'AbortError' })
+})
+
+test('abortar mientras se pide el CSRF no deja la promesa colgando', async () => {
+  stubXhr()
+  const corte = new AbortController()
+  corte.abort()
+
+  await expect(
+    postMultipart({ path: '/api/v1/algo', body: new FormData(), signal: corte.signal }),
+  ).rejects.toMatchObject({ name: 'AbortError' })
 })

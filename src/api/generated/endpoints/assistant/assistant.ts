@@ -48,6 +48,7 @@ import type {
   MessageList,
   MessageSearch,
   PostApiV1OrganizationsOrgIdAssistantChatImageBody,
+  PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody,
   PostApiV1OrganizationsOrgIdAssistantReadDocumentBody,
   RenameConversationInput,
   SetFeedbackInput,
@@ -2745,4 +2746,122 @@ export const usePostApiV1OrganizationsOrgIdAssistantChatImage = <TError = ErrorR
         TContext
       > => {
       return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatImageMutationOptions(options), queryClient);
+    }
+    export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse200 = {
+  data: string
+  status: 200
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse422 = {
+  data: ErrorResponse
+  status: 422
+}
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponseSuccess = (postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse200) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponseError = (postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse403 | postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse409 | postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse422) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse = (postApiV1OrganizationsOrgIdAssistantChatImageStreamResponseSuccess | postApiV1OrganizationsOrgIdAssistantChatImageStreamResponseError)
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatImageStreamUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/assistant/chat/image/stream`
+}
+
+/**
+ * La imagen se archiva en `documents` y la lee un modelo de visión con la credencial de la organización (BYOK, kind=`vision`), independiente de la del chat. El lector no tiene herramientas ni historial: devuelve datos estructurados y nada más. El texto impreso dentro de una imagen se transcribe como contenido del documento, nunca se obedece. Subir dos veces el mismo archivo no lo lee dos veces ni consume cuota otra vez: la lectura queda cacheada por contenido.
+ * Petición idéntica a `/chat/image` y mismos guards, tope y errores; lo que cambia es la respuesta: `text/event-stream` con **los mismos eventos que `/assistant/chat/stream`**, para que un cliente que ya lee ese formato no necesite otro lector.
+ *
+ * - `start` → `{ sessionId, documentId, alreadyFiled }`. Sale **en cuanto la imagen está archivada**, sin esperar a que el modelo de visión la lea: es el momento «ya lo tengo». `sessionId` viene null cuando la conversación nace de esta misma foto —el id lo crea el turno de chat, después de la lectura— y `done` siempre trae el definitivo.
+ * - `chunk` → `{ text }`. La respuesta de Numi según se escribe. La lectura de la imagen no se transmite (el proveedor la devuelve entera), pero la respuesta sí, que es la parte larga.
+ * - `done` → `{ sessionId, documentId, alreadyFiled, cached, reply, userMessageId, assistantMessageId, stopped }`.
+ * - `error` → `{ error: { code, message, details? } }`, con el mismo cuerpo que daría la variante sin stream.
+ *
+ * Cerrar la conexión detiene la generación y deja de gastar tokens; lo ya escrito se archiva igual. Un fallo anterior al primer byte se responde con su status normal (409 del tope, 422 sin proveedor) en vez de por el stream.
+ * `/chat/image` no se va a ninguna parte: quien no quiera stream sigue teniendo una petición y una respuesta.
+ * @summary Lo mismo que `/chat/image`, contado mientras pasa (requiere assistant.use + documents.write)
+ */
+export const postApiV1OrganizationsOrgIdAssistantChatImageStream = async (orgId: string,
+    postApiV1OrganizationsOrgIdAssistantChatImageStreamBody: PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse> => {
+    const formData = new FormData();
+formData.append(`image`, postApiV1OrganizationsOrgIdAssistantChatImageStreamBody.image);
+if(postApiV1OrganizationsOrgIdAssistantChatImageStreamBody.sessionId !== undefined) {
+ formData.append(`sessionId`, postApiV1OrganizationsOrgIdAssistantChatImageStreamBody.sessionId);
+ }
+if(postApiV1OrganizationsOrgIdAssistantChatImageStreamBody.message !== undefined) {
+ formData.append(`message`, postApiV1OrganizationsOrgIdAssistantChatImageStreamBody.message);
+ }
+
+  return customFetch<postApiV1OrganizationsOrgIdAssistantChatImageStreamResponse>(getPostApiV1OrganizationsOrgIdAssistantChatImageStreamUrl(orgId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdAssistantChatImageStreamMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImageStream>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImageStream>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdAssistantChatImageStream'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImageStream>>, {orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdAssistantChatImageStream(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdAssistantChatImageStreamMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImageStream>>>
+    export type PostApiV1OrganizationsOrgIdAssistantChatImageStreamMutationBody = PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody
+    export type PostApiV1OrganizationsOrgIdAssistantChatImageStreamMutationError = ErrorResponse
+
+    /**
+ * @summary Lo mismo que `/chat/image`, contado mientras pasa (requiere assistant.use + documents.write)
+ */
+export const usePostApiV1OrganizationsOrgIdAssistantChatImageStream = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImageStream>>, TError,{orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdAssistantChatImageStream>>,
+        TError,
+        {orgId: string;data: PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdAssistantChatImageStreamMutationOptions(options), queryClient);
     }

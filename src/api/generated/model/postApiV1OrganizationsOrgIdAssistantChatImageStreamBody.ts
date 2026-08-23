@@ -6,14 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface AssistantImageChatResponse {
+export type PostApiV1OrganizationsOrgIdAssistantChatImageStreamBody = {
+  /** Imagen: JPEG, PNG, WebP o GIF. */
+  image: Blob;
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  sessionId: string;
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  documentId: string;
-  alreadyFiled: boolean;
-  cached: boolean;
-  reply: string;
-  userMessageId: string | null;
-  assistantMessageId: string | null;
-}
+  sessionId?: string;
+  /**
+     * Lo que escribiste junto a la imagen. Opcional.
+     * @maxLength 4000
+     */
+  message?: string;
+};

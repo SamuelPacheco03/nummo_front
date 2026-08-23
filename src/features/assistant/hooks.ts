@@ -406,6 +406,16 @@ export function useNumiChat() {
       store.appendImage({ imageUrl: URL.createObjectURL(file), content: message })
       const id = useNumiStore.getState().messages.at(-1)?.id
 
+      /*
+        El turno va al mismo sitio que el de un mensaje de texto, así que el botón de
+        detener —que ya aborta `turn`— funciona igual con una foto sin tocar nada del
+        compositor. Antes ese botón salía durante la subida y no hacía nada.
+      */
+      const stop = new AbortController()
+      useNumiStore.getState().setTurn(stop)
+      /* Detener antes o después de que la foto llegue no significan lo mismo. */
+      let uploaded = false
+
       try {
         const { sessionId } = useNumiStore.getState()
         const form = new FormData()
@@ -426,8 +436,10 @@ export function useNumiChat() {
             como que no salió.
           */
           onUploaded: () => {
+            uploaded = true
             if (id) useNumiStore.getState().setMessageStatus(id, 'sent')
           },
+          signal: stop.signal,
         })
         /*
           `alreadyFiled` no se enseña. Dice que esa misma imagen ya estaba
@@ -457,9 +469,26 @@ export function useNumiChat() {
         if (shouldRefreshData(message, reply)) void queryClient.invalidateQueries()
       } catch (err) {
         const s = useNumiStore.getState()
+        /*
+          **Detener no es fallar**, y con una foto hay dos formas de detener.
+
+          Si se corta **antes** de que termine la subida, la imagen no llegó a ninguna
+          parte: el mensaje se marca como no enviado, que es lo único cierto.
+
+          Si se corta **después**, la foto ya está allá y el backend la va a archivar y a
+          contestar aunque nadie escuche — un POST no se entera de que colgaron, al revés
+          que el flujo del chat de texto. Así que el mensaje se queda entregado y lo que
+          se detiene es la espera: si la respuesta llega, entra sola por el flujo de
+          novedades (`useLiveSync`), como la que se escribió en otro dispositivo.
+        */
+        if (stop.signal.aborted) {
+          if (id && !uploaded) s.setMessageStatus(id, 'failed')
+          return
+        }
         if (id) s.setMessageStatus(id, 'failed')
         s.setError(classifyNumiError(err, 'No se pudo enviar la imagen. Inténtalo de nuevo.'))
       } finally {
+        useNumiStore.getState().setTurn(null)
         useNumiStore.getState().setPending(false)
       }
     },

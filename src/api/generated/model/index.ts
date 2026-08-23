@@ -476,6 +476,7 @@ export * from './playgroundUpdateCaseInput';
 export * from './playgroundUpdateCaseInputRole';
 export * from './playgroundWrite';
 export * from './postApiV1OrganizationsOrgIdAssistantChatImageBody';
+export * from './postApiV1OrganizationsOrgIdAssistantChatImageStreamBody';
 export * from './postApiV1OrganizationsOrgIdAssistantReadDocumentBody';
 export * from './postApiV1OrganizationsOrgIdDocumentsBody';
 export * from './predefinedRole';

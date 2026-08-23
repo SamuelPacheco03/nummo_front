@@ -25,7 +25,7 @@ consentimiento, horas de silencio y cuota por plan.
 identidad visual de las maestras. Este documento cubre la cobranza entera —no solo lo
 último— más las tres cosas que se ajustaron después de revisarla.
 
-Regenera el cliente antes de nada: el contrato pasó a **160 paths**.
+Regenera el cliente antes de nada: el contrato pasó a **160 paths** (hoy va por **178**).
 
 ---
 
@@ -60,10 +60,44 @@ Todos bajo `/api/v1/organizations/{orgId}`. La columna «feature» es lo que dev
 | `POST` | `/messaging/collection-reminders/run` | `messaging.send` | `whatsapp_outbound` |
 
 `CollectionPolicy`: `enabled`, `quietStart`, `quietEnd`, `dueSoonTemplateKey`,
-`overdueTemplateKey`, `overdueSummaryTemplateKey`, `updatedAt`.
+`overdueTemplateKey`, `overdueSummaryTemplateKey`, `sendDays`, `skipHolidays`, `updatedAt`.
 
 Las horas de silencio son de la organización y en su zona horaria: fuera de esa ventana
 no se le escribe a nadie. Es un requisito de decencia y de Meta, no una preferencia.
+
+#### Qué días se cobra — **nuevo**
+
+Dos campos más, al lado de las horas de silencio:
+
+| Campo | Tipo | Por defecto | Qué es |
+| --- | --- | --- | --- |
+| `sendDays` | `number[]` | `[1,2,3,4,5,6]` | Días **ISO** en que se escribe. **1 es lunes y 7 es domingo** |
+| `skipHolidays` | `boolean` | `true` | Saltarse los festivos del país de la organización |
+
+**Ojo con el 1 = lunes.** `Date.getDay()` de JavaScript cuenta desde el domingo con el 0,
+así que pintar los checkboxes con ese índice desplaza la semana entera y nadie lo nota
+hasta que un cliente pregunta por qué le escribieron el domingo. El backend rechaza `0` y
+`8` con **422**, que es la red — no el diseño.
+
+El sábado viene marcado por defecto porque cobrar el sábado por la mañana es normal aquí;
+el domingo no. Ambos son editables.
+
+**Dos comportamientos distintos, y la UI tiene que decirlo.** Las horas de silencio
+**aplazan**: un aviso de las once de la noche sale a la mañana siguiente. Los días no
+hábiles **saltan**: un domingo no se aplaza el aviso, no se manda. No es una
+inconsistencia — aplazarlo duplicaría el mensaje, porque la clave que impide el duplicado
+lleva la fecha del escaneo.
+
+Conviene decir qué se pierde, porque es poco y suena a mucho: la **mora** no pierde nada,
+se reevalúa cada día y lo del domingo sale el lunes. Los avisos **por vencer** pueden
+perder uno de sus pasos —con avisos a 3 y 1 días, la cuenta que tocaba el domingo se queda
+sin el de tres—, pero recibe el de un día. Nunca se queda muda.
+
+**Los festivos se calculan, no se configuran.** No hay endpoint de calendario ni lista que
+mostrar: salen del `locale` de la organización. Hoy **solo hay calendario de Colombia**;
+una organización con otro `locale` envía todos los días aunque tenga `skipHolidays` en
+`true`. Si la pantalla ofrece la casilla a alguien fuera de Colombia, conviene que el texto
+de ayuda lo diga en vez de prometer algo que no pasa.
 
 **Dos plantillas para la mora, y la pantalla tiene que explicar por qué.** Un deudor
 recibe **un solo aviso** con todo lo que debe, no uno por factura. `overdueTemplateKey` es
@@ -101,6 +135,11 @@ Tres cosas que cambian cómo se pinta:
 
 Responde **409** `COLLECTION_POLICY_DISABLED` si la cobranza está apagada: el botón solo
 tiene sentido con la política activada.
+
+**El botón no mira `sendDays` ni `skipHolidays`.** Esos dicen si el trabajo automático
+corre hoy; el botón lo pulsa una persona que sabe que hoy es domingo. Funciona igual y no
+hay que deshabilitarlo un festivo — pero si la pantalla muestra el calendario cerca, vale
+la pena que el texto lo aclare, porque lo contrario es lo que se supone.
 
 ### Consentimiento
 
