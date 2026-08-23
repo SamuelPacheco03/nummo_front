@@ -288,6 +288,22 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /*
+      **El hueco de la barra de scroll se reserva siempre.**
+
+      El contenido va centrado (`mx-auto max-w-6xl`), así que aparecer y
+      desaparecer la barra cambia el ancho útil y mueve la página media barra
+      —unos 7 px— hacia un lado. Se nota justo al cambiar de pantalla dentro de
+      una sección: una página larga trae barra, la siguiente cabe sin ella, y el
+      carril de navegación que debería estar quieto da un salto lateral.
+
+      Reservado el hueco, el ancho no depende de lo alto que sea lo que se está
+      mirando. En móvil no cuesta nada: ahí la barra se dibuja encima y el hueco
+      es cero.
+    */
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     /* Mobile-first: evita scroll horizontal accidental en 360px */

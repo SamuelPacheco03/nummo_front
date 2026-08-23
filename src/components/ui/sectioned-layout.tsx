@@ -138,12 +138,20 @@ export function SectionedLayout({
         navegación que desplaza ya tiene su lenguaje en esta app, y el
         desvanecido es lo que hace que un enlace cortado se lea como «hay más
         abajo» y no como un fallo de render.
+
+        **Y por eso el `py-5`, que vale exactamente el `--fade`.** La máscara
+        difumina 1.25 rem por arriba y por abajo pase lo que pase, así que sin esa
+        banda el primer título del carril nace medio borrado —parece un defecto,
+        no una señal— y el último enlace se apaga al llegar al fondo. Con el
+        relleno dentro del contenedor que desplaza, en reposo la máscara cae sobre
+        hueco vacío y solo tiñe lo que de verdad se está cortando. El sidebar
+        principal resuelve lo mismo con el `py-4` de su lista.
       */}
       <nav
         aria-label={label}
         className="border-border/70 sticky top-24 hidden w-60 shrink-0 self-start border-r lg:block"
       >
-        <div className="scrollbar-slim scroll-fade-y flex max-h-[calc(100dvh-8rem)] flex-col gap-5 overflow-y-auto pr-4 pb-2">
+        <div className="scrollbar-slim scroll-fade-y flex max-h-[calc(100dvh-8rem)] flex-col gap-5 overflow-y-auto py-5 pr-4">
           <Groups groups={groups} />
         </div>
       </nav>

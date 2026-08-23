@@ -4914,6 +4914,12 @@ La página no construye claves de query ni llama a `fetch`. El hook no renderiza
 ## 87.4. Composición del shell
 
 - **Escritorio (≥1024px):** sidebar fijo de 240px + área de contenido con `max-w-6xl`.
+- **El hueco de la barra de scroll se reserva siempre** (`scrollbar-gutter: stable` en `html`,
+  `index.css`). Con el contenido centrado, que la barra aparezca según lo largo que sea lo que se
+  mira cambia el ancho útil y desplaza la página unos 7 px a un lado: al saltar entre pantallas de
+  una misma sección —Configuración es donde más se nota, porque su carril debería estar quieto— se
+  ve como un tirón lateral. En móvil el hueco es cero, que es lo correcto: ahí la barra se
+  superpone.
 - **Móvil/tablet (<1024px):** header de 56px con menú hamburguesa que abre el sidebar
   completo en un `Sheet` lateral.
 - **Numi:** widget flotante montado en el shell, disponible en toda pantalla protegida.
