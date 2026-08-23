@@ -151,6 +151,8 @@ export interface ChatThreadProps {
   /** Devuelve a la cola el mensaje que no salió. */
   retryMessage: (id: string) => void
   loadAudio: (messageId: string, force?: boolean) => Promise<string>
+  /** De quién son los documentos: una imagen archivada se pide por organización. */
+  orgId: string | undefined
   onCopy: (text: string) => void
   /** Pulgar sobre una respuesta de Numi. */
   onRate: (messageId: string, feedback: ChatFeedback) => void
@@ -187,6 +189,7 @@ export function ChatThread({
   retryMessage,
   conversationId,
   loadAudio,
+  orgId,
   onCopy,
   onQuote,
   onRate,
@@ -295,6 +298,7 @@ export function ChatThread({
             <Fragment key={message.id}>
               {daySeparator && <DaySeparator label={daySeparator} />}
               <ChatMessageItem
+                orgId={orgId}
                 message={message}
                 loadAudio={loadAudio}
                 onRetry={canRetry ? () => retryMessage(message.id) : undefined}

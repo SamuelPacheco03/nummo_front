@@ -1,12 +1,18 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
-import type { AssistantAudioChatResponse } from '@/api/generated/model'
+import {
+  usePostApiV1OrganizationsOrgIdAssistantChatAudio,
+  usePostApiV1OrganizationsOrgIdAssistantChatImage,
+} from '@/api/generated/endpoints/assistant/assistant'
+import type {
+  AssistantAudioChatResponse,
+  AssistantImageChatResponse,
+} from '@/api/generated/model'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { classifyNumiError } from './numi-error'
 import { streamChat } from './stream-chat'
-import { MAX_MESSAGE_LENGTH } from './constants'
+import { IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_MESSAGE_LENGTH } from './constants'
 import { isServerId, useNumiStore } from './numi-store'
 import { useNumiEvents, type NumiEvent } from './numi-events'
 import type { ChatFeedback } from './types'
@@ -137,6 +143,7 @@ export function useNumiChat() {
   const switchOrg = useNumiStore((s) => s.switchOrg)
   const newConversation = useNumiStore((s) => s.newConversation)
   const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
+  const imageChat = usePostApiV1OrganizationsOrgIdAssistantChatImage()
   const hydrated = useNumiStore((s) => s.hydrated)
   /*
     «Escribiendo…» vive en el store, no en el hook de la mutación. El panel se
@@ -358,6 +365,94 @@ export function useNumiChat() {
     [audioChat, orgId, queryClient],
   )
 
+
+  /**
+   * Manda una imagen, con lo que se haya escrito al lado.
+   *
+   * **No es adjuntar a un mensaje.** `AssistantChatInput` no acepta
+   * `documentIds`, así que no hay forma de subir una foto y referenciarla en la
+   * pregunta siguiente: cada imagen es su propio turno. Y el campo es uno solo,
+   * así que tres fotos son tres mensajes.
+   *
+   * **No transmite.** El chat de texto tiene `/chat/stream` y éste no: la
+   * respuesta llega entera y tarda —hay que leer la imagen antes de contestar—.
+   * Por eso la espera se marca como la del audio, con `pending`, y no con el
+   * cursor que va escribiendo.
+   */
+  const sendImage = useCallback(
+    async (file: File, raw: string) => {
+      if (!orgId || useNumiStore.getState().pending) return
+      /*
+        El tope se comprueba aquí y no solo en el servidor: una foto de un móvil
+        moderno lo pasa sin esfuerzo, y enterarse después de subir diez megas por
+        la red del celular es la peor forma de enterarse.
+      */
+      if (file.size > MAX_IMAGE_BYTES) {
+        useNumiStore.getState().setError({
+          kind: 'generic',
+          message: `La imagen pesa más de ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} MB. Prueba con una más pequeña.`,
+        })
+        return
+      }
+      if (!IMAGE_TYPES.split(',').includes(file.type)) {
+        useNumiStore.getState().setError({
+          kind: 'generic',
+          message: 'Numi lee JPEG, PNG, WebP y GIF. Un PDF todavía no.',
+        })
+        return
+      }
+
+      const message = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
+      const store = useNumiStore.getState()
+      store.setError(null)
+      store.setPending(true)
+      store.appendImage({ imageUrl: URL.createObjectURL(file), content: message })
+      const id = useNumiStore.getState().messages.at(-1)?.id
+
+      try {
+        const { sessionId } = useNumiStore.getState()
+        const res = await imageChat.mutateAsync({
+          orgId,
+          data: { image: file, sessionId, message: message === '' ? undefined : message },
+        })
+        /*
+          `alreadyFiled` no se enseña. Dice que esa misma imagen ya estaba
+          archivada —se compara por hash— y no se guardó otra vez; no es un error
+          ni cambia la respuesta, así que contarlo sería ruido sobre algo que el
+          usuario no pidió y no puede hacer nada al respecto.
+        */
+        const {
+          sessionId: nextSessionId,
+          reply,
+          documentId,
+          userMessageId,
+          assistantMessageId,
+        } = res.data as AssistantImageChatResponse
+        const s = useNumiStore.getState()
+        if (id) {
+          s.setMessageStatus(id, 'sent')
+          // Con el documento atado, al volver se repinta la miniatura: el blob
+          // de la burbuja muere con la página y esto no.
+          s.setDocuments(id, [documentId])
+          if (userMessageId) s.adoptServerId(id, userMessageId)
+        }
+        s.appendReply(nextSessionId, reply)
+        const bubble = useNumiStore.getState().messages.at(-1)?.id
+        if (bubble && assistantMessageId) {
+          useNumiStore.getState().adoptServerId(bubble, assistantMessageId)
+        }
+        if (shouldRefreshData(message, reply)) void queryClient.invalidateQueries()
+      } catch (err) {
+        const s = useNumiStore.getState()
+        if (id) s.setMessageStatus(id, 'failed')
+        s.setError(classifyNumiError(err, 'No se pudo enviar la imagen. Inténtalo de nuevo.'))
+      } finally {
+        useNumiStore.getState().setPending(false)
+      }
+    },
+    [imageChat, orgId, queryClient],
+  )
+
 /**
    * Reintentar un mensaje que no salió: vuelve a la cola y el despachador lo recoge.
    * Los dictados no se reintentan — su audio era un blob de esta página y ya no está.
@@ -389,6 +484,8 @@ export function useNumiChat() {
     orgName: organization?.name,
     send,
     sendAudio,
+    /** Manda una foto y lo escrito al lado. Va en su propio turno, sin streaming. */
+    sendImage,
     /** Devuelve a la cola un mensaje que falló. */
     retryMessage,
     /** Pulgar sobre una respuesta de Numi; el mismo dos veces lo retira. */

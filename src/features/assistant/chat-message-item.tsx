@@ -17,10 +17,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Loader } from '@/components/ui/loader'
 import { useLongPress } from '@/lib/use-long-press'
 import { useTouchInput } from '@/lib/use-touch-input'
 import { cn } from '@/lib/utils'
 import { AudioPlayer } from './audio-player'
+import { useDocumentImageUrl } from './use-numi-history'
 import { NumiAvatar } from './numi-avatar'
 import { RichText } from './rich-text'
 import { TypingIndicator } from './typing-indicator'
@@ -280,9 +282,65 @@ const TIME_SLOT_WIDTH_TICKS = 'w-[4.4rem]'
  * su hueco con un espaciador al final del último bloque, así no baja una línea
  * entera por ella.
  */
+/**
+ * La imagen de un mensaje.
+ *
+ * Dos orígenes y un solo dibujo: la recién enviada trae su `blob:` en la mano y
+ * se ve al instante; la del historial ya no lo tiene —murió con la página— y se
+ * pide firmada al servidor por su `documentId`.
+ *
+ * La hora va debajo y no encima, al revés que en las burbujas de texto: sobre una
+ * foto cualquiera, un texto pequeño en una esquina puede caer sobre cualquier
+ * color y dejar de leerse.
+ */
+function MessageImage({
+  orgId,
+  message,
+  trailing,
+}: {
+  orgId: string | undefined
+  message: ChatMessage
+  trailing?: ReactNode
+}) {
+  const archivada = message.documentIds?.[0]
+  // El blob local gana: está aquí y no cuesta una petición.
+  const remoto = useDocumentImageUrl(
+    message.imageUrl ? undefined : orgId,
+    message.imageUrl ? undefined : archivada,
+  )
+  const src = message.imageUrl ?? remoto.url
+
+  return (
+    <div className="space-y-1">
+      {src ? (
+        <img
+          src={src}
+          alt="Imagen enviada a Numi"
+          className="max-h-64 w-full rounded-lg object-contain"
+        />
+      ) : (
+        <div className="bg-secondary/60 grid h-32 w-48 place-items-center rounded-lg">
+          {remoto.isError ? (
+            <span className="text-muted-foreground px-3 text-center text-xs">
+              No se pudo cargar la imagen
+            </span>
+          ) : (
+            <Loader size="sm" />
+          )}
+        </div>
+      )}
+      <span className="flex items-center justify-end gap-1 text-[0.6rem] tabular-nums opacity-70">
+        <time dateTime={message.at}>{formatTime(message.at)}</time>
+        {trailing}
+      </span>
+    </div>
+  )
+}
+
 export function ChatMessageItem({
   message,
   loadAudio,
+  orgId,
   onRetry,
   grouped = false,
   onCopy,
@@ -294,6 +352,8 @@ export function ChatMessageItem({
   message: ChatMessage
   /** Trae la URL firmada del audio archivado de este mensaje. */
   loadAudio?: (messageId: string, force?: boolean) => Promise<string>
+  /** De quién es el documento, para pedir la imagen archivada de este mensaje. */
+  orgId?: string
   /** Vuelve a poner en la cola este mensaje. Los dictados no se reintentan. */
   onRetry?: () => void
   /** Continúa la tanda anterior: no repite la cara de Numi. */
@@ -326,6 +386,12 @@ export function ChatMessageItem({
     salió.
   */
   const playable = Boolean(message.audioUrl) || Boolean(message.hasAudio && loadAudio)
+  /*
+    Con foto: la recién enviada (blob de esta página) o la archivada, que se pide
+    firmada. El texto que la acompañe se pinta debajo, si lo hay — el endpoint
+    admite mensaje junto a la imagen, y a menudo es la pregunta.
+  */
+  const withImage = Boolean(message.imageUrl) || Boolean(message.documentIds?.length)
 
   const bubble = (
     <ChatBubble role={message.role} className="animate-in fade-in-0 slide-in-from-bottom-1">
@@ -346,6 +412,18 @@ export function ChatMessageItem({
           at={message.at}
           trailing={isUser ? <DeliveryTicks status={message.status} /> : undefined}
         />
+      ) : withImage ? (
+        <>
+          <MessageImage
+            orgId={orgId}
+            message={message}
+            trailing={isUser ? <DeliveryTicks status={message.status} /> : undefined}
+          />
+          {quoted && <QuotedBlock author={quoted.author} quote={quoted.quote} />}
+          {message.content !== '' && (
+            <p className="whitespace-pre-wrap">{quoted ? quoted.text : message.content}</p>
+          )}
+        </>
       ) : isUser ? (
         <>
           {quoted && <QuotedBlock author={quoted.author} quote={quoted.quote} />}
@@ -365,7 +443,7 @@ export function ChatMessageItem({
       ) : (
         <RichText text={message.content} trailing={spacer} />
       )}
-      {!playable && message.content !== '' && (
+      {!playable && !withImage && message.content !== '' && (
         <span
           className={cn(
             'absolute right-3 bottom-1.5 flex items-center gap-1 text-[0.6rem] tabular-nums',
@@ -442,7 +520,7 @@ export function ChatMessageItem({
       <MessageStatus
         status={message.status}
         // Reenviar una nota de voz es imposible: su audio era un blob de esta página.
-        onRetry={message.dictated ? undefined : onRetry}
+        onRetry={message.dictated || withImage ? undefined : onRetry}
       />
     </div>
   )

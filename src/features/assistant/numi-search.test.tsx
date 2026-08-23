@@ -85,6 +85,10 @@ vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({
     isPending: false,
     mutateAsync: vi.fn(),
   }),
+  usePostApiV1OrganizationsOrgIdAssistantChatImage: () => ({
+    isPending: false,
+    mutateAsync: vi.fn(),
+  }),
 }))
 
 function pintar() {

@@ -9,7 +9,15 @@ import {
   usePatchApiV1OrganizationsOrgIdAssistantConversationsId,
   usePutApiV1OrganizationsOrgIdAssistantConversationsIdMessagesMessageIdFeedback,
 } from '@/api/generated/endpoints/assistant/assistant'
-import type { AudioUrl, Conversation, MessageHit, MessageList, MessageSearch } from '@/api/generated/model'
+import { getApiV1OrganizationsOrgIdDocumentsIdDownload } from '@/api/generated/endpoints/documents/documents'
+import type {
+  AudioUrl,
+  Conversation,
+  DocumentDownload,
+  MessageHit,
+  MessageList,
+  MessageSearch,
+} from '@/api/generated/model'
 import type { ChatFeedback, ChatMessage } from './types'
 import { sanitizePeaks } from './waveform'
 
@@ -38,6 +46,7 @@ export function toChatMessage(m: MessageList['items'][number]): ChatMessage {
     hasAudio: m.hasAudio,
     waveform: sanitizePeaks(m.waveform),
     audioSeconds: m.audioSeconds ?? undefined,
+    documentIds: m.documentIds ?? undefined,
     feedback: m.feedback ?? undefined,
   }
 }
@@ -49,6 +58,33 @@ export function toChatMessage(m: MessageList['items'][number]): ChatMessage {
  */
 export function flattenMessagePages(pages: MessageList[]): ChatMessage[] {
   return [...pages].reverse().flatMap((page) => [...page.items].reverse().map(toChatMessage))
+}
+
+/**
+ * La URL firmada de una imagen archivada, para pintarla en el hilo.
+ *
+ * Gemelo de `useMessageAudioLoader` y con la misma caducidad, pero **sí se pide
+ * al montar** y no al pulsar: una nota de voz sin reproducir sigue siendo un
+ * mensaje legible —queda su transcripción—, y una imagen sin cargar es un hueco.
+ * Lo que se pide es la URL, no los bytes; de bajarlos se encarga el `<img>`.
+ *
+ * No depende de la conversación: un documento es de la organización, así que la
+ * misma foto citada en dos hilos comparte entrada en caché.
+ */
+export function useDocumentImageUrl(orgId: string | undefined, documentId: string | undefined) {
+  const query = useQuery({
+    queryKey: ['numi', 'documento', orgId, documentId],
+    enabled: Boolean(orgId && documentId),
+    queryFn: async () => {
+      const res = await getApiV1OrganizationsOrgIdDocumentsIdDownload(orgId!, documentId!)
+      return (res.data as DocumentDownload).url
+    },
+    staleTime: AUDIO_URL_TTL,
+    gcTime: AUDIO_URL_TTL,
+    // Una miniatura que no carga no merece tres intentos y un rato de espera.
+    retry: false,
+  })
+  return { url: query.data, isPending: query.isPending, isError: query.isError }
 }
 
 /** The caller's Numi conversations (chat list), most recent first, with cursor paging. */

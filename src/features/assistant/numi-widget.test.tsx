@@ -129,14 +129,14 @@ test('sin proveedor de IA (422) manda a Configuración en vez de reintentar', as
   expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
 })
 
-test('deja los adjuntos como próximos, pero la nota de voz habilitada', async () => {
+test('la barra ofrece las tres formas de hablarle: escribir, adjuntar y grabar', async () => {
   stubApi(async () => replyStream('s3', 'hola'))
   const user = userEvent.setup()
   mount()
 
   await user.click(await screen.findByRole('button', { name: 'Abrir el chat con Numi' }))
 
-  expect(screen.getByRole('button', { name: /Adjuntar archivo/ })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Adjuntar una imagen' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Grabar nota de voz' })).toBeEnabled()
 })
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ChatComposer } from './chat-composer'
 import { TOUCH_GRACE } from './hold-to-record'
 
@@ -260,4 +260,78 @@ test('sostener el micrófono no cuenta como pulsación larga', () => {
     lo evita, y solo funciona con un escucha no pasivo puesto a mano.
   */
   expect(toque.defaultPrevented).toBe(true)
+})
+
+/** jsdom no crea `blob:`; la miniatura solo necesita que la URL exista. */
+function stubObjectUrl() {
+  URL.createObjectURL = vi.fn(() => 'blob:foto')
+  URL.revokeObjectURL = vi.fn()
+}
+
+/** Elige un archivo en el input oculto que dispara el clip. */
+function adjuntar(file: File) {
+  const input = document.querySelector('input[type="file"]')
+  if (!input) throw new Error('el composer no trae input de archivo')
+  fireEvent.change(input, { target: { files: [file] } })
+}
+
+test('una imagen sola es un mensaje: se puede enviar sin escribir nada', async () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  const onSend = vi.fn()
+  const onSendImage = vi.fn()
+  render(<ChatComposer onSend={onSend} onSendAudio={vi.fn()} onSendImage={onSendImage} />)
+
+  // Con la caja vacía manda el micrófono; la foto es lo que trae la flecha.
+  expect(screen.queryByRole('button', { name: 'Enviar mensaje' })).not.toBeInTheDocument()
+
+  const foto = new File(['x'], 'recibo.png', { type: 'image/png' })
+  adjuntar(foto)
+
+  expect(await screen.findByText('recibo.png')).toBeInTheDocument()
+  screen.getByRole('button', { name: 'Enviar mensaje' }).click()
+
+  await waitFor(() => expect(onSendImage).toHaveBeenCalledWith(foto, ''))
+  // Y no se va también por el camino del texto: son dos endpoints distintos.
+  expect(onSend).not.toHaveBeenCalled()
+})
+
+test('lo escrito viaja con la imagen, no por su cuenta', async () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  const onSend = vi.fn()
+  const onSendImage = vi.fn()
+  render(<ChatComposer onSend={onSend} onSendAudio={vi.fn()} onSendImage={onSendImage} />)
+
+  adjuntar(new File(['x'], 'factura.jpg', { type: 'image/jpeg' }))
+  fireEvent.change(screen.getByLabelText('Mensaje para Numi'), {
+    target: { value: '¿de cuánto es?' },
+  })
+  screen.getByRole('button', { name: 'Enviar mensaje' }).click()
+
+  await waitFor(() => expect(onSendImage).toHaveBeenCalledTimes(1))
+  expect(onSendImage.mock.calls[0]?.[1]).toBe('¿de cuánto es?')
+  expect(onSend).not.toHaveBeenCalled()
+})
+
+test('quitar la imagen devuelve la caja a como estaba', async () => {
+  stubPointer('fine')
+  stubObjectUrl()
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} onSendImage={vi.fn()} />)
+
+  adjuntar(new File(['x'], 'recibo.png', { type: 'image/png' }))
+  expect(await screen.findByText('recibo.png')).toBeInTheDocument()
+
+  screen.getByRole('button', { name: 'Quitar la imagen' }).click()
+
+  await waitFor(() => expect(screen.queryByText('recibo.png')).not.toBeInTheDocument())
+  // Sin nada que mandar vuelve a mandar el micrófono.
+  expect(screen.queryByRole('button', { name: 'Enviar mensaje' })).not.toBeInTheDocument()
+})
+
+test('sin quien reciba la imagen, el clip no promete nada', () => {
+  stubPointer('fine')
+  render(<ChatComposer onSend={vi.fn()} onSendAudio={vi.fn()} />)
+
+  expect(screen.getByRole('button', { name: 'Adjuntar una imagen' })).toBeDisabled()
 })

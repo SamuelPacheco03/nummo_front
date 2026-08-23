@@ -40,6 +40,20 @@ export interface ChatMessage {
   waveform?: number[]
   /** Duración en segundos, para enseñarla antes de reproducir nada. */
   audioSeconds?: number
+  /**
+   * Imagen recién enviada: URL local (blob), visible al instante y sin pedirle
+   * nada al servidor. Como `audioUrl`, muere con la página.
+   */
+  imageUrl?: string
+  /**
+   * Lo que viajó adjunto (`documentIds` del contrato). Es lo que deja repintar
+   * la miniatura al volver: el blob de arriba ya no está, pero el documento
+   * sigue archivado y se puede volver a pedir firmado.
+   *
+   * Hoy siempre es una imagen y siempre una sola — el endpoint acepta un campo,
+   * así que tres fotos son tres mensajes.
+   */
+  documentIds?: string[]
   /** Solo en los mensajes propios; los del historial llegan ya entregados. */
   status?: ChatMessageStatus
   /**

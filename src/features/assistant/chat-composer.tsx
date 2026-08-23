@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { useTouchInput } from '@/lib/use-touch-input'
 import { withQuote, type QuoteAuthor } from './quote'
 import { cn } from '@/lib/utils'
-import { COMPOSER_MAX_HEIGHT, MAX_MESSAGE_LENGTH } from './constants'
+import { COMPOSER_MAX_HEIGHT, IMAGE_TYPES, MAX_MESSAGE_LENGTH } from './constants'
 import {
   AXIS_MARGIN,
   CANCEL_AT,
@@ -80,6 +80,7 @@ function ComposerAction({
 export function ChatComposer({
   onSend,
   onSendAudio,
+  onSendImage,
   onStop,
   busy = false,
   quoted = null,
@@ -90,6 +91,14 @@ export function ChatComposer({
 }: {
   onSend: (text: string) => void
   onSendAudio?: (blob: Blob) => void
+  /**
+   * Manda una foto con lo que se haya escrito al lado.
+   *
+   * Va aparte de `onSend` porque el contrato no deja adjuntar a un mensaje de
+   * texto: `AssistantChatInput` no acepta `documentIds`, así que una imagen es
+   * su propio turno y no se puede referenciar en la pregunta siguiente.
+   */
+  onSendImage?: (file: File, text: string) => void
   /**
    * Corta la respuesta en curso. **Ocupa el sitio del micrófono** mientras Numi
    * escribe: es el mismo botón de la derecha diciendo qué se puede hacer ahora
@@ -114,9 +123,9 @@ export function ChatComposer({
    * Solo texto: sin adjuntar y sin nota de voz.
    *
    * Es lo que necesita el playground del superadmin, que escribe a Numi con las mismas
-   * teclas —Enter envía, Shift+Enter salta— pero no graba nada: un clip «próximamente» y
-   * un micrófono muerto en una consola de diagnóstico son dos controles que no llevan a
-   * ninguna parte.
+   * teclas —Enter envía, Shift+Enter salta— pero no graba nada: un clip y un micrófono
+   * muertos en una consola de diagnóstico son dos controles que no llevan a ninguna
+   * parte.
    */
   textOnly?: boolean
   /**
@@ -130,6 +139,13 @@ export function ChatComposer({
   const ref = useRef<HTMLTextAreaElement>(null)
   const recorder = useAudioRecorder()
   const touch = useTouchInput()
+  /*
+    La foto elegida, todavía sin mandar, y su `blob:` para la miniatura. El
+    `<input type="file">` va oculto y lo dispara el clip: el control nativo no se
+    puede vestir, y aquí el botón tiene que ser uno más de la barra.
+  */
+  const [picked, setPicked] = useState<{ file: File; url: string } | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   /*
     El gesto de mantener pulsado: `hold` es el desplazamiento del dedo desde
@@ -167,6 +183,9 @@ export function ChatComposer({
   // Si el panel se cierra a media grabación, los escuchas no se quedan sueltos.
   useEffect(() => () => detach.current?.(), [])
 
+  // Y la miniatura no deja su `blob:` colgando al desmontarse el composer.
+  useEffect(() => () => { if (picked) URL.revokeObjectURL(picked.url) }, [picked])
+
   /*
     El foco automático, **solo donde hay teclado de verdad**. En un móvil abre el
     teclado al entrar: tapa media conversación antes de que nadie haya pedido
@@ -189,7 +208,8 @@ export function ChatComposer({
   }, [value])
 
   const hasText = !!value.trim()
-  const canSend = hasText
+  // Con una foto elegida se puede enviar sin escribir nada: la imagen es el mensaje.
+  const canSend = hasText || !!picked
   const remaining = MAX_MESSAGE_LENGTH - value.length
   const canRecord = !!onSendAudio && !busy
 
@@ -215,12 +235,25 @@ export function ChatComposer({
     return () => el.removeEventListener('touchstart', noLongPress)
   }, [hasText, busy, onStop])
 
+  const clearPicked = () => {
+    if (picked) URL.revokeObjectURL(picked.url)
+    setPicked(null)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
   const submit = () => {
     if (!canSend) return
     const text = value.trim()
+    const full = quoted ? withQuote(quoted, text) : text
     setValue('')
     onClearQuote?.()
-    onSend(quoted ? withQuote(quoted, text) : text)
+    if (picked) {
+      const { file } = picked
+      clearPicked()
+      onSendImage?.(file, full)
+      return
+    }
+    onSend(full)
   }
 
   const startRecording = async () => {
@@ -470,6 +503,33 @@ export function ChatComposer({
         </div>
       )}
 
+      {picked && (
+        <div className="bg-secondary/60 mb-2 flex items-center gap-2 rounded-md px-2 py-1.5">
+          <img
+            src={picked.url}
+            alt=""
+            className="size-10 shrink-0 rounded object-cover"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium">{picked.file.name}</p>
+            <p className="text-muted-foreground text-xs">
+              Numi la lee y contesta sobre lo que vea.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              clearPicked()
+              ref.current?.focus()
+            }}
+            aria-label="Quitar la imagen"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 grid size-6 shrink-0 place-items-center rounded focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            <X aria-hidden className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       {remaining < 400 && (
         <p className="text-muted-foreground px-2 pb-1 text-right text-[0.65rem] tabular-nums">
           {remaining} caracteres
@@ -483,7 +543,32 @@ export function ChatComposer({
         )}
       >
         {!textOnly && (
-          <ComposerAction label="Adjuntar archivo (próximamente)" Icon={Paperclip} disabled />
+          <>
+            {/*
+              Oculto y disparado por el clip: el control nativo no se puede
+              vestir, y el botón tiene que ser uno más de la barra. `capture` no
+              se pone a propósito — forzaría la cámara en el móvil, y la mitad de
+              las veces lo que se manda es una captura que ya está en el carrete.
+            */}
+            <input
+              ref={fileRef}
+              type="file"
+              accept={IMAGE_TYPES}
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (!file) return
+                if (picked) URL.revokeObjectURL(picked.url)
+                setPicked({ file, url: URL.createObjectURL(file) })
+              }}
+            />
+            <ComposerAction
+              label={picked ? 'Cambiar la imagen' : 'Adjuntar una imagen'}
+              Icon={Paperclip}
+              disabled={!onSendImage || busy}
+              onClick={() => fileRef.current?.click()}
+            />
+          </>
         )}
 
         <div className="relative min-w-0 flex-1 self-center">
@@ -513,22 +598,22 @@ export function ChatComposer({
         </div>
 
         {/*
-          El orden decide qué botón manda: con algo escrito, enviar —lo que se escriba
-          mientras Numi contesta entra en la cola—; con la caja vacía y Numi escribiendo,
-          detener; y si no hay nota de voz que ofrecer (`textOnly`), enviar apagado, que
-          es lo único que esa caja sabe hacer.
+          El orden decide qué botón manda: con algo que enviar —texto escrito o una
+          imagen elegida—, enviar; lo que se escriba mientras Numi contesta entra en la
+          cola. Con la caja vacía y Numi escribiendo, detener; y si no hay nota de voz que
+          ofrecer (`textOnly`), enviar apagado, que es lo único que esa caja sabe hacer.
+
+          Una foto sola es un mensaje completo, así que también trae la flecha: sin esto,
+          adjuntar dejaba el micrófono en su sitio y no había con qué mandarla.
         */}
-        {hasText ? (
+        {canSend ? (
           <button
             type="submit"
-            disabled={!canSend}
             aria-label="Enviar mensaje"
             className={cn(
               'grid size-8 shrink-0 place-items-center rounded-full transition-all',
               'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
-              canSend
-                ? 'bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95'
-                : 'bg-secondary text-muted-foreground/70 cursor-not-allowed',
+              'bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95',
             )}
           >
             <ArrowUp className="size-4" />

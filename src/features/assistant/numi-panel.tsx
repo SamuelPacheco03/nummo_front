@@ -56,6 +56,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
     conversationId,
     send,
     sendAudio,
+    sendImage,
     retryMessage,
     rateMessage,
     stop,
@@ -196,6 +197,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
             send={(text) => void send(text)}
             retryMessage={retryMessage}
             loadAudio={loadAudio}
+            orgId={orgId}
             onCopy={copy}
             onQuote={quote}
             onRate={(id, feedback) => void rateMessage(id, feedback)}
@@ -207,6 +209,7 @@ export function NumiPanel({ onClose }: { onClose: () => void }) {
           <ChatComposer
             onSend={(text) => void send(text)}
             onSendAudio={(blob) => void sendAudio(blob)}
+            onSendImage={(file, text) => void sendImage(file, text)}
             // Detener vive dentro de la caja de escribir, en el sitio del micrófono
             // (§32.6): no hay barra que aparezca y desaparezca sobre el composer.
             onStop={stop}

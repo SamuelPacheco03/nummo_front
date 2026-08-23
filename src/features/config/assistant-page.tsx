@@ -16,15 +16,19 @@ import { getErrorMessage } from '@/lib/errors'
 import { toastApiError } from '@/features/platform/errors'
 import type {
   AiProviderCatalogEntryProvider,
+  AiVisionProviderCatalogEntryProvider,
   AiVoiceProviderCatalogEntryProvider,
 } from '@/api/generated/model'
 import {
   useActivateAiProvider,
+  useActivateVisionProvider,
   useActivateVoiceProvider,
   useAssistantSettings,
   useRemoveAiProvider,
+  useRemoveVisionProvider,
   useRemoveVoiceProvider,
   useUpsertAiProvider,
+  useUpsertVisionProvider,
   useUpsertVoiceProvider,
 } from './hooks'
 
@@ -46,6 +50,7 @@ type Credential<P extends string = string> = { provider: P; model: string; apiKe
 
 type ChatProvider = AiProviderCatalogEntryProvider
 type VoiceProvider = AiVoiceProviderCatalogEntryProvider
+type VisionProvider = AiVisionProviderCatalogEntryProvider
 
 /** Las tres mutaciones de un tipo de proveedor, ya atadas a su endpoint. */
 interface ProviderActions<P extends string> {
@@ -404,6 +409,45 @@ function VoiceSection({
   )
 }
 
+/** Proveedores de visión: leen las imágenes que se le mandan a Numi. Es opcional. */
+function VisionSection({
+  orgId,
+  catalog,
+  credentials,
+  activeProvider,
+  canManage,
+}: {
+  orgId: string
+  catalog: CatalogEntry<VisionProvider>[]
+  credentials: Credential<VisionProvider>[]
+  activeProvider: VisionProvider | null | undefined
+  canManage: boolean
+}) {
+  const upsert = useUpsertVisionProvider(orgId)
+  const activate = useActivateVisionProvider(orgId)
+  const remove = useRemoveVisionProvider(orgId)
+
+  return (
+    <ProviderSection
+      title="Visión (leer imágenes)"
+      description="El modelo que lee las fotos que se le mandan a Numi —un comprobante, una factura—. Es independiente del de chat; sin uno en uso, mandar una imagen falla y el chat dice que hay que configurarlo."
+      catalog={catalog}
+      credentials={credentials}
+      activeProvider={activeProvider}
+      canManage={canManage}
+      actions={{
+        save: (provider, model, apiKey) =>
+          upsert.mutateAsync({ orgId, provider, data: { model, apiKey } }),
+        activate: (provider) => activate.mutateAsync({ orgId, provider }),
+        remove: (provider) => remove.mutateAsync({ orgId, provider }),
+        saving: upsert.isPending,
+        activating: activate.isPending,
+        removing: remove.isPending,
+      }}
+    />
+  )
+}
+
 export function AssistantPage() {
   const { orgId } = useCurrentOrg()
   const can = useCan()
@@ -414,7 +458,7 @@ export function AssistantPage() {
     <div className="space-y-8">
       <PageHeader
         title="Asistente / IA"
-        description="Numi funciona con tu propia cuenta de IA (BYOK): conectas un proveedor de chat y, si quieres, uno de voz para los audios. Las API keys se guardan cifradas y nunca se muestran."
+        description="Numi funciona con tu propia cuenta de IA (BYOK): conectas un proveedor de chat y, si quieres, uno de voz para los audios y uno de visión para las imágenes. Las API keys se guardan cifradas y nunca se muestran."
       />
 
       {!canManage ? (
@@ -423,6 +467,7 @@ export function AssistantPage() {
         </p>
       ) : isPending ? (
         <div className="space-y-4">
+          <Skeleton className="h-52" />
           <Skeleton className="h-52" />
           <Skeleton className="h-52" />
         </div>
@@ -444,6 +489,13 @@ export function AssistantPage() {
             catalog={settings.voice.catalog}
             credentials={settings.voice.providers}
             activeProvider={settings.voice.activeProvider}
+            canManage={canManage}
+          />
+          <VisionSection
+            orgId={orgId ?? ''}
+            catalog={settings.vision.catalog}
+            credentials={settings.vision.providers}
+            activeProvider={settings.vision.activeProvider}
             canManage={canManage}
           />
         </>

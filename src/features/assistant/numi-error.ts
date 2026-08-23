@@ -5,13 +5,14 @@ import type { NumiError, NumiQuota } from './types'
 /**
  * Cómo se llama en cristiano cada tope que puede cortar una conversación.
  *
- * Son los dos que el chat puede gastar. Si mañana hay otro y no está aquí, el mensaje
+ * Son los tres que el chat puede gastar. Si mañana hay otro y no está aquí, el mensaje
  * cae al genérico —«se agotó una de las cuotas de tu plan»—, que es feo pero cierto;
  * nunca se enseña la clave cruda.
  */
 const QUOTA_LABELS: Record<string, string> = {
   ai_messages_monthly: 'mensajes con Numi',
   voice_minutes_monthly: 'minutos de nota de voz',
+  vision_documents_monthly: 'imágenes leídas por Numi',
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

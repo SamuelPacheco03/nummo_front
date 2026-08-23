@@ -74,6 +74,9 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   knowledge: { label: 'Base de conocimiento', area: 'Informes' },
   assistant: { label: 'Numi', area: 'Asistente' },
   'assistant.settings': { label: 'Ajustes de Numi', area: 'Asistente' },
+  // Va en Asistente porque hoy lo único que archiva documentos es Numi leyendo
+  // una foto. El día que haya una pantalla de documentos, será su propia área.
+  documents: { label: 'Documentos', area: 'Asistente' },
   notifications: { label: 'Notificaciones', area: 'Notificaciones' },
   'notifications.settings': { label: 'Política de avisos', area: 'Notificaciones' },
   // La cobranza por WhatsApp es su propia área y no un apartado de Cartera: el

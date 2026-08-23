@@ -29,11 +29,14 @@ import {
 import {
   getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey,
   useDeleteApiV1OrganizationsOrgIdAssistantProvidersProvider,
+  useDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider,
   useDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider,
   useGetApiV1OrganizationsOrgIdAssistantSettings,
   usePostApiV1OrganizationsOrgIdAssistantProvidersProviderActivate,
+  usePostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate,
   usePostApiV1OrganizationsOrgIdAssistantVoiceProvidersProviderActivate,
   usePutApiV1OrganizationsOrgIdAssistantProvidersProvider,
+  usePutApiV1OrganizationsOrgIdAssistantVisionProvidersProvider,
   usePutApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider,
 } from '@/api/generated/endpoints/assistant/assistant'
 import { getGetApiV1OrganizationsOrgIdMeCapabilitiesQueryKey } from '@/api/generated/endpoints/platform/platform'
@@ -315,6 +318,41 @@ export function useActivateVoiceProvider(orgId: string) {
 export function useRemoveVoiceProvider(orgId: string) {
   const qc = useQueryClient()
   return useDeleteApiV1OrganizationsOrgIdAssistantVoiceProvidersProvider({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/* --- Visión: lee imágenes. Mismo patrón, bloque `vision` de settings --- */
+
+/** Crea/reemplaza la credencial (modelo + API key) de un proveedor de visión. */
+export function useUpsertVisionProvider(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdAssistantVisionProvidersProvider({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/** Marca un proveedor de visión configurado como el activo. */
+export function useActivateVisionProvider(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdAssistantVisionProvidersProviderActivate({
+    mutation: {
+      onSuccess: () =>
+        void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),
+    },
+  })
+}
+
+/** Elimina la credencial de un proveedor de visión. */
+export function useRemoveVisionProvider(orgId: string) {
+  const qc = useQueryClient()
+  return useDeleteApiV1OrganizationsOrgIdAssistantVisionProvidersProvider({
     mutation: {
       onSuccess: () =>
         void qc.invalidateQueries({ queryKey: getGetApiV1OrganizationsOrgIdAssistantSettingsQueryKey(orgId) }),

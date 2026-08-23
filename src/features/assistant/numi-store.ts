@@ -121,12 +121,22 @@ interface NumiState {
   /** Añade una nota de voz del usuario (audio local); la transcripción llega luego. */
   appendAudio: (audio: { audioUrl: string; waveform?: number[]; audioSeconds?: number }) => void
   /**
+   * Añade una imagen del usuario, con lo que escribió al lado si escribió algo.
+   *
+   * Se pinta antes de subir nada: la foto ya está en la mano, y la lectura de una
+   * imagen no transmite —el endpoint no tiene versión en streaming—, así que
+   * esperar a que el servidor conteste dejaría el hilo en blanco un buen rato.
+   */
+  appendImage: (image: { imageUrl: string; content: string }) => void
+  /**
    * Añade historia por arriba: lo que el servidor tenía antes de lo que ya se ve.
    * Es la otra mitad del hilo — `hydrate` siembra el final y esto trae lo anterior.
    */
   prependOlder: (messages: ChatMessage[]) => void
   /** Rellena la transcripción de una nota de voz cuando el backend responde. */
   setTranscript: (id: string, transcript: string) => void
+  /** Ata el mensaje al documento que el backend archivó, para repintarlo al volver. */
+  setDocuments: (id: string, documentIds: string[]) => void
   /** Pinta la onda de una nota en cuanto se termina de decodificar. */
   setWaveform: (id: string, waveform: number[], audioSeconds?: number) => void
   /** Guarda la respuesta y el `sessionId` con el que continuar. */
@@ -170,13 +180,14 @@ interface NumiState {
 /**
  * Lo que se guarda de un mensaje.
  *
- * La `audioUrl` de una nota recién grabada es un `blob:` de esta página y muere
- * con ella, así que guardarla dejaría un reproductor que no suena. Se queda el
- * resto —la transcripción y la onda—, que es lo que hace que la nota siga
- * siendo legible al volver.
+ * La `audioUrl` de una nota recién grabada —y la `imageUrl` de una foto recién
+ * enviada— son `blob:` de esta página y mueren con ella, así que guardarlas
+ * dejaría un reproductor mudo y una imagen rota. Se queda el resto —la
+ * transcripción, la onda y `documentIds`—, que es lo que hace que la nota siga
+ * siendo legible y que la foto se pueda volver a pedir al servidor.
  */
 function storable(message: ChatMessage): ChatMessage {
-  const { audioUrl: _audioUrl, ...rest } = message
+  const { audioUrl: _audioUrl, imageUrl: _imageUrl, ...rest } = message
   // Un mensaje a medio enviar vuelve como fallido, no como «enviando»: el turno que
   // lo iba a mandar murió con la página, así que nadie iba a cumplir esa promesa.
   const status = rest.status === 'sent' || rest.status === undefined ? rest.status : 'failed'
@@ -256,6 +267,21 @@ export const useNumiStore = create<NumiState>()(
           ],
         })),
 
+      appendImage: ({ imageUrl, content }) =>
+        set((s) => ({
+          messages: [
+            ...s.messages,
+            {
+              id: nextId(),
+              role: 'user',
+              content,
+              at: new Date().toISOString(),
+              status: 'sending',
+              imageUrl,
+            },
+          ],
+        })),
+
       /*
         Se descarta lo que ya está por id, y si no queda nada nuevo se devuelve el
         estado tal cual: el efecto que llama a esto vuelve a correr cada vez que
@@ -277,6 +303,11 @@ export const useNumiStore = create<NumiState>()(
 
       setTranscript: (id, transcript) =>
         set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, content: transcript } : m)) })),
+
+      setDocuments: (id, documentIds) =>
+        set((s) => ({
+          messages: s.messages.map((m) => (m.id === id ? { ...m, documentIds } : m)),
+        })),
 
       setWaveform: (id, waveform, audioSeconds) =>
         set((s) => ({

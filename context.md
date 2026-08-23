@@ -3028,6 +3028,54 @@ mensajes es tan útil como volver sobre lo que Numi contestó.
 
 ---
 
+## 32.8. Una foto también es un mensaje
+
+Se le puede mandar a Numi un comprobante, una factura o un recibo y contesta sobre lo que ve.
+La imagen queda archivada como documento.
+
+**Adjuntar no es un campo del mensaje.** `AssistantChatInput` no acepta `documentIds`: no hay
+forma de subir una foto y referenciarla en la pregunta siguiente. Cada imagen entra por su
+propio turno, contra `POST /assistant/chat/image` (multipart), y el campo es **uno solo** —
+tres fotos son tres mensajes. Lo que se escriba al lado viaja con ella, que es casi siempre
+la pregunta.
+
+**No transmite, y eso cambia la espera.** El chat de texto tiene `/chat/stream` y éste no: la
+respuesta llega entera y tarda, porque antes hay que leer la imagen. Por eso la espera se
+marca como la de una nota de voz —`pending`, «Numi está escribiendo…»— y no con el cursor que
+va escribiendo palabra a palabra: un cursor parado medio minuto se lee como algo roto.
+
+**La burbuja se pinta antes de subir nada.** La foto está en la mano y no cuesta una
+petición; esperar al servidor dejaría el hilo en blanco todo ese rato. El `blob:` local muere
+con la página, igual que el de una nota de voz, así que **no se guarda**: lo que se guarda es
+`documentIds`, y al volver la miniatura se repinta pidiendo una URL firmada
+(`GET /documents/{id}/download`, `useDocumentImageUrl`).
+
+Y al revés que con el audio, **la imagen se pide al montar y no al pulsar**: una nota de voz
+sin reproducir sigue siendo un mensaje legible —queda su transcripción—, y una imagen sin
+cargar es un hueco.
+
+**El tope son 10 MB** (`DOCUMENTS_MAX_MB`) y se comprueba en el cliente: una foto de un móvil
+moderno se pasa sin esfuerzo, y enterarse después de subir diez megas por la red del celular
+es la peor forma de enterarse. Solo JPEG, PNG, WebP y GIF — **no hay PDF**.
+
+**`alreadyFiled` no se enseña.** Dice que esa misma imagen ya estaba archivada —se compara por
+hash— y no se guardó otra vez. No es un error, no cambia la respuesta y el usuario no puede
+hacer nada al respecto: contarlo sería ruido.
+
+**Y una imagen no se reintenta**, por lo mismo que un dictado: su blob era de esta página.
+
+Del lado del plan, `vision_documents_monthly` es un contador mensual más — sale en
+`capabilities`, lo pinta «Plan y consumo» sin tocar nada y agotarlo devuelve `LIMIT_EXCEEDED`,
+que `classifyNumiError` ya sabe convertir en «llevas N de M imágenes leídas este mes» con el
+plan a un clic. Con clave propia (`ai_byok`) no consume cuota.
+
+**El proveedor de visión es el tercero del BYOK**, junto al de chat y el de voz, y se conecta
+en la misma pantalla con la misma forma (`/config/asistente`). Sin uno en uso, mandar una
+imagen responde 422 y el chat manda a Configuración, que es exactamente lo que ya hacía el
+chat sin proveedor.
+
+---
+
 # 33. Cards dentro del chat
 
 Ejemplo:
@@ -5368,6 +5416,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `DateRangeFields` | `components/date-range-fields.tsx` | El par «Desde / Hasta», con el `max`/`min` cruzado que se olvida al copiar |
 | `defaultRange` · `previousRange` · `delta` | `lib/date-range.ts` | La ventana de un panel y la de antes. Vivía en el playground; la usan dos |
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
+| `MessageImage` | `features/assistant/chat-message-item.tsx` | La foto de un mensaje: el blob recién enviado o la archivada, firmada (§32.8) |
+| `useDocumentImageUrl` | `features/assistant/use-numi-history.ts` | La URL firmada de un documento, para repintar la miniatura al volver (§32.8) |
 
 ---
 

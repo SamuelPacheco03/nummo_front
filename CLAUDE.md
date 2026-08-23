@@ -120,9 +120,13 @@ pnpm icons:gen  # regenera favicons e iconos PWA desde brand/logo_nummo.png
 ## Contexto del repositorio
 
 - Frontend React que consume `nummo-api` mediante contrato OpenAPI congelado
-  (`contract/openapi.json`, v1.0.0, 147 paths / 182 operaciones).
-- Handoffs por área en `contract/HANDOFF-fase-0.md` … `HANDOFF-fase-11.md`; resumen en
-  `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva.**
+  (`contract/openapi.json`, v1.0.0, 177 paths / 220 operaciones / 246 esquemas).
+- Handoffs por área en `contract/`: numerados hasta `HANDOFF-fase-11.md`, y de ahí en
+  adelante con nombre —`whatsapp-cobranza`, `numi-imagenes`, `landing`,
+  `buscador`…—, porque la numeración de fases del backend **no** es la de `context.md`.
+  Resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva**, y
+  ten en cuenta que el resumen va por detrás: lo cerró en 159 rutas y el contrato ya trae
+  177.
 - **Dos entradas** (§97.11): `index.html` es la portada pública (`/`) y `app.html` la
   consola, que vive bajo `/app`. Al desplegar, el hosting tiene que servir `app.html` para
   `/app` y `/app/*`.
