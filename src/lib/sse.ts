@@ -57,6 +57,14 @@ function parseEvent(raw: string): { event: string; data: unknown } | null {
 export interface EventStreamInput {
   /** Ruta del API, sin la base (`/api/v1/...`). */
   path: string
+  /**
+   * Lo que se manda. Un objeto viaja como JSON; un `FormData` va tal cual, que es
+   * como se sube una imagen.
+   *
+   * El `Content-Type` del multipart lo pone el navegador, porque tiene que llevar el
+   * `boundary`: escribirlo aquí lo dejaría sin él y el servidor no sabría dónde
+   * empieza cada parte.
+   */
   body: unknown
   /** Abortarla es el botón de detener. Lo ya escrito se queda. */
   signal: AbortSignal
@@ -109,7 +117,9 @@ export function asRecord(value: unknown): Record<string, unknown> {
  */
 export async function postEventStream(input: EventStreamInput): Promise<number> {
   const token = await ensureCsrfToken()
-  const headers = new Headers({ 'Content-Type': 'application/json', Accept: 'text/event-stream' })
+  const form = input.body instanceof FormData ? input.body : null
+  const headers = new Headers({ Accept: 'text/event-stream' })
+  if (!form) headers.set('Content-Type', 'application/json')
   if (token) headers.set('x-csrf-token', token)
 
   const response = await fetch(apiUrl(input.path), {
@@ -117,7 +127,7 @@ export async function postEventStream(input: EventStreamInput): Promise<number> 
     headers,
     credentials: 'include',
     signal: input.signal,
-    body: JSON.stringify(input.body),
+    body: form ?? JSON.stringify(input.body),
   })
 
   const isStream = (response.headers.get('content-type') ?? '').includes('text/event-stream')
