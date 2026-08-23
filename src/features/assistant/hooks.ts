@@ -1,10 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import {
-  usePostApiV1OrganizationsOrgIdAssistantChatAudio,
-  usePostApiV1OrganizationsOrgIdAssistantChatImage,
-} from '@/api/generated/endpoints/assistant/assistant'
+import { usePostApiV1OrganizationsOrgIdAssistantChatAudio } from '@/api/generated/endpoints/assistant/assistant'
 import type {
   AssistantAudioChatResponse,
   AssistantImageChatResponse,
@@ -12,6 +9,7 @@ import type {
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { classifyNumiError } from './numi-error'
 import { streamChat } from './stream-chat'
+import { postMultipart } from '@/lib/upload'
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_MESSAGE_LENGTH } from './constants'
 import { isServerId, useNumiStore } from './numi-store'
 import { useNumiEvents, type NumiEvent } from './numi-events'
@@ -143,7 +141,6 @@ export function useNumiChat() {
   const switchOrg = useNumiStore((s) => s.switchOrg)
   const newConversation = useNumiStore((s) => s.newConversation)
   const audioChat = usePostApiV1OrganizationsOrgIdAssistantChatAudio()
-  const imageChat = usePostApiV1OrganizationsOrgIdAssistantChatImage()
   const hydrated = useNumiStore((s) => s.hydrated)
   /*
     «Escribiendo…» vive en el store, no en el hook de la mutación. El panel se
@@ -411,9 +408,26 @@ export function useNumiChat() {
 
       try {
         const { sessionId } = useNumiStore.getState()
-        const res = await imageChat.mutateAsync({
-          orgId,
-          data: { image: file, sessionId, message: message === '' ? undefined : message },
+        const form = new FormData()
+        form.append('image', file)
+        if (sessionId) form.append('sessionId', sessionId)
+        if (message !== '') form.append('message', message)
+        const res = await postMultipart<AssistantImageChatResponse>({
+          path: `/api/v1/organizations/${orgId}/assistant/chat/image`,
+          body: form,
+          /*
+            **La foto se entrega cuando sus bytes están arriba**, no cuando Numi
+            termina de mirarla. Las dos palomitas caen aquí y la espera la cuenta
+            «Numi está escribiendo…», igual que en un mensaje de texto — que marca
+            entregado con la primera señal de vida del servidor y no al terminar.
+
+            Sin esto el mensaje se quedaba con una sola palomita los treinta
+            segundos de la lectura, y una sola palomita junto a una foto se lee
+            como que no salió.
+          */
+          onUploaded: () => {
+            if (id) useNumiStore.getState().setMessageStatus(id, 'sent')
+          },
         })
         /*
           `alreadyFiled` no se enseña. Dice que esa misma imagen ya estaba
@@ -427,10 +441,9 @@ export function useNumiChat() {
           documentId,
           userMessageId,
           assistantMessageId,
-        } = res.data as AssistantImageChatResponse
+        } = res
         const s = useNumiStore.getState()
         if (id) {
-          s.setMessageStatus(id, 'sent')
           // Con el documento atado, al volver se repinta la miniatura: el blob
           // de la burbuja muere con la página y esto no.
           s.setDocuments(id, [documentId])
@@ -450,7 +463,7 @@ export function useNumiChat() {
         useNumiStore.getState().setPending(false)
       }
     },
-    [imageChat, orgId, queryClient],
+    [orgId, queryClient],
   )
 
 /**

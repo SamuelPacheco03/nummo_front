@@ -58,7 +58,6 @@ vi.mock('@/api/generated/endpoints/assistant/assistant', () => ({
   }),
   usePostApiV1OrganizationsOrgIdAssistantChat: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePostApiV1OrganizationsOrgIdAssistantChatAudio: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  usePostApiV1OrganizationsOrgIdAssistantChatImage: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }))
 
 function pintar() {

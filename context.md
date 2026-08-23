@@ -3044,6 +3044,18 @@ respuesta llega entera y tarda, porque antes hay que leer la imagen. Por eso la 
 marca como la de una nota de voz —`pending`, «Numi está escribiendo…»— y no con el cursor que
 va escribiendo palabra a palabra: un cursor parado medio minuto se lee como algo roto.
 
+**Y las palomitas se ganan al subir, no al contestar.** Un mensaje de texto marca entregado
+con la **primera señal de vida** del servidor (§32.6), no cuando termina: lo contrario deja
+«Enviando» puesto debajo de la pregunta con la respuesta ya a media página. Una imagen no
+tiene esa señal —una petición, un único evento— así que la señal se fabrica midiendo la
+propia subida: `postMultipart` avisa en `upload.load`, que es el instante en que el último
+byte salió, y ahí caen las dos palomitas.
+
+Es lo que hace la diferencia entre «esto no salió» y «esto ya está allá y lo están mirando».
+`fetch` no expone el progreso de subida y por eso este envío no pasa por el cliente
+generado, por la razón contraria a `sse.ts`: allí hay que leer la respuesta mientras se
+escribe, y aquí hay que saber cuándo se acabó de escribir la petición.
+
 **La burbuja se pinta antes de subir nada.** La foto está en la mano y no cuesta una
 petición; esperar al servidor dejaría el hilo en blanco todo ese rato. El `blob:` local muere
 con la página, igual que el de una nota de voz, así que **no se guarda**: lo que se guarda es
@@ -5418,6 +5430,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `messageStatus` · `skipReasonLabel` · `consentStatus` | `features/messaging/labels.ts` | Los dos caminos de un mensaje, el porqué de un `SKIPPED` y el efecto de un consentimiento |
 | `MessageImage` | `features/assistant/chat-message-item.tsx` | La foto de un mensaje: el blob recién enviado o la archivada, firmada (§32.8) |
 | `useDocumentImageUrl` | `features/assistant/use-numi-history.ts` | La URL firmada de un documento, para repintar la miniatura al volver (§32.8) |
+| `postMultipart` | `lib/upload.ts` | Subir un archivo **sabiendo cuándo terminó de subir** — lo que `fetch` no dice (§32.8) |
 
 ---
 
