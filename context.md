@@ -3066,6 +3066,25 @@ Y al revés que con el audio, **la imagen se pide al montar y no al pulsar**: un
 sin reproducir sigue siendo un mensaje legible —queda su transcripción—, y una imagen sin
 cargar es un hueco.
 
+**La foto ocupa la burbuja entera.** Sin relleno alrededor, recortada por las esquinas
+—la burbuja lleva `overflow-hidden` y la imagen sube con márgenes negativos— y la hora
+con sus palomitas **encima**, no debajo. Con relleno se veía un marco de color alrededor
+de cada imagen: lo que se manda es la foto, no una tarjeta con una foto dentro.
+
+Esa hora encima es el único sitio de la app donde el color no puede salir de un token de
+tema: detrás no hay una superficie de Nummo, hay la imagen de alguien, que lo mismo es
+blanca que negra. Va sobre `bg-scrim` —el mismo oscurecido que usa el fondo de un
+diálogo— con `text-primary-foreground`, que es blanco en los dos temas.
+
+**Y con pie, la hora baja.** Una foto con texto termina de leerse en el texto, así que
+ahí la marca vuelve al renglón de siempre, detrás de la última palabra. Solo la foto sin
+pie la lleva flotando.
+
+**Tocarla la abre entera** (`ImageViewer`). Una miniatura sirve para reconocer la foto,
+no para leerla: un comprobante a 200 px de ancho es un rectángulo gris. El visor va sin
+caja —sin fondo, sin borde y sin relleno—, porque el marco de un diálogo alrededor de
+una foto solo la hace más pequeña.
+
 **El tope son 10 MB** (`DOCUMENTS_MAX_MB`) y se comprueba en el cliente: una foto de un móvil
 moderno se pasa sin esfuerzo, y enterarse después de subir diez megas por la red del celular
 es la peor forma de enterarse. Solo JPEG, PNG, WebP y GIF — **no hay PDF**.
@@ -5431,6 +5450,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `MessageImage` | `features/assistant/chat-message-item.tsx` | La foto de un mensaje: el blob recién enviado o la archivada, firmada (§32.8) |
 | `useDocumentImageUrl` | `features/assistant/use-numi-history.ts` | La URL firmada de un documento, para repintar la miniatura al volver (§32.8) |
 | `postMultipart` | `lib/upload.ts` | Subir un archivo **sabiendo cuándo terminó de subir** — lo que `fetch` no dice (§32.8) |
+| `ImageViewer` | `components/ui/image-viewer.tsx` | Una imagen a tamaño de mirarla: diálogo sin caja, con su única salida encima (§32.8) |
 
 ---
 

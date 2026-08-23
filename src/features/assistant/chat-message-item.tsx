@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   AlertCircle,
   Check,
@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ImageViewer } from '@/components/ui/image-viewer'
 import { Loader } from '@/components/ui/loader'
 import { useLongPress } from '@/lib/use-long-press'
 import { useTouchInput } from '@/lib/use-touch-input'
@@ -48,7 +49,7 @@ export function ChatBubble({
   return (
     <div
       className={cn(
-        'relative max-w-full rounded-xl px-3 py-2 text-sm leading-relaxed break-words',
+        'relative max-w-full overflow-hidden rounded-xl px-3 py-2 text-sm leading-relaxed break-words',
         isUser
           ? 'bg-chat-bubble text-chat-bubble-foreground'
           : 'bg-card text-card-foreground border shadow-sm',
@@ -293,15 +294,27 @@ const TIME_SLOT_WIDTH_TICKS = 'w-[4.4rem]'
  * foto cualquiera, un texto pequeño en una esquina puede caer sobre cualquier
  * color y dejar de leerse.
  */
+const IMAGE_ALT = 'Imagen enviada a Numi'
+
 function MessageImage({
   orgId,
   message,
   trailing,
+  className,
+  showTime = true,
 }: {
   orgId: string | undefined
   message: ChatMessage
   trailing?: ReactNode
+  /** Los márgenes negativos con los que la foto llega a los bordes de la burbuja. */
+  className?: string
+  /**
+   * La hora encima de la foto. Se apaga cuando hay pie: entonces va después del
+   * texto, que es donde termina de leerse la burbuja.
+   */
+  showTime?: boolean
 }) {
+  const [viewing, setViewing] = useState(false)
   const archivada = message.documentIds?.[0]
   // El blob local gana: está aquí y no cuesta una petición.
   const remoto = useDocumentImageUrl(
@@ -310,29 +323,54 @@ function MessageImage({
   )
   const src = message.imageUrl ?? remoto.url
 
+  if (!src) {
+    return (
+      <div className={cn('bg-secondary/60 grid h-32 w-48 place-items-center', className)}>
+        {remoto.isError ? (
+          <span className="text-muted-foreground px-3 text-center text-xs">
+            No se pudo cargar la imagen
+          </span>
+        ) : (
+          <Loader size="sm" />
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-1">
-      {src ? (
-        <img
-          src={src}
-          alt="Imagen enviada a Numi"
-          className="max-h-64 w-full rounded-lg object-contain"
-        />
-      ) : (
-        <div className="bg-secondary/60 grid h-32 w-48 place-items-center rounded-lg">
-          {remoto.isError ? (
-            <span className="text-muted-foreground px-3 text-center text-xs">
-              No se pudo cargar la imagen
-            </span>
-          ) : (
-            <Loader size="sm" />
-          )}
-        </div>
+    <div className={cn('relative', className)}>
+      {/*
+        La foto **ocupa la burbuja entera**: sin relleno alrededor y recortada por sus
+        esquinas (la burbuja lleva `overflow-hidden`). Con margen se veía un marco de
+        color alrededor de cada imagen, que es justo lo que un chat no hace — lo que se
+        manda es la foto, no una tarjeta con una foto dentro.
+      */}
+      <button
+        type="button"
+        onClick={() => setViewing(true)}
+        aria-label="Ver la imagen a tamaño completo"
+        className="focus-visible:ring-ring/50 block w-full cursor-zoom-in focus-visible:ring-[3px] focus-visible:outline-none"
+      >
+        <img src={src} alt={IMAGE_ALT} className="block max-h-80 w-full object-cover" />
+      </button>
+
+      {/*
+        La hora va **encima** de la foto, no debajo. Debajo obliga a reservarle una
+        franja y rompe el borde a borde; encima es donde se lee en cualquier chat.
+
+        `bg-scrim` es el mismo oscurecido que usa el fondo de un diálogo, y con
+        `text-primary-foreground` —blanco en los dos temas— se lee igual sobre una foto
+        clara que sobre una oscura. Un token de tema no serviría: lo que hay detrás no
+        es una superficie de la app, es la imagen de alguien.
+      */}
+      {showTime && (
+        <span className="bg-scrim text-primary-foreground pointer-events-none absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.6rem] tabular-nums backdrop-blur-sm">
+          <time dateTime={message.at}>{formatTime(message.at)}</time>
+          {trailing}
+        </span>
       )}
-      <span className="flex items-center justify-end gap-1 text-[0.6rem] tabular-nums opacity-70">
-        <time dateTime={message.at}>{formatTime(message.at)}</time>
-        {trailing}
-      </span>
+
+      <ImageViewer open={viewing} onOpenChange={setViewing} src={src} alt={IMAGE_ALT} />
     </div>
   )
 }
@@ -392,6 +430,8 @@ export function ChatMessageItem({
     admite mensaje junto a la imagen, y a menudo es la pregunta.
   */
   const withImage = Boolean(message.imageUrl) || Boolean(message.documentIds?.length)
+  /** Lo que se escribió junto a la foto, si se escribió algo. */
+  const hasCaption = withImage && message.content !== ''
 
   const bubble = (
     <ChatBubble role={message.role} className="animate-in fade-in-0 slide-in-from-bottom-1">
@@ -418,9 +458,13 @@ export function ChatMessageItem({
             orgId={orgId}
             message={message}
             trailing={isUser ? <DeliveryTicks status={message.status} /> : undefined}
+            /* Anula el relleno de la burbuja; abajo solo cuando no hay pie. */
+            className={cn('-mx-3 -mt-2', hasCaption ? 'mb-2' : '-mb-2')}
+            /* Con pie, la hora la pone el renglón de siempre, detrás del texto. */
+            showTime={!hasCaption}
           />
           {quoted && <QuotedBlock author={quoted.author} quote={quoted.quote} />}
-          {message.content !== '' && (
+          {hasCaption && (
             <p className="whitespace-pre-wrap">{quoted ? quoted.text : message.content}</p>
           )}
         </>
@@ -443,7 +487,7 @@ export function ChatMessageItem({
       ) : (
         <RichText text={message.content} trailing={spacer} />
       )}
-      {!playable && !withImage && message.content !== '' && (
+      {!playable && message.content !== '' && (
         <span
           className={cn(
             'absolute right-3 bottom-1.5 flex items-center gap-1 text-[0.6rem] tabular-nums',
