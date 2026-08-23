@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { BillingAgreementCollectionReminders, CollectionPolicy } from '@/api/generated/model'
+import { politicaDeCobranza as politica } from './policy-fixture'
 
 const m = vi.hoisted(() => ({
   politica: null as CollectionPolicy | null,
@@ -30,21 +31,6 @@ vi.mock('./hooks', () => ({
 
 const { CollectionRemindersSection } = await import('./collection-reminders-section')
 
-function politica(over: Partial<CollectionPolicy> = {}): CollectionPolicy {
-  return {
-    enabled: true,
-    quietStart: '22:00',
-    quietEnd: '07:00',
-    dueSoonTemplateKey: 'cobro_por_vencer',
-    overdueTemplateKey: 'cobro_vencido',
-    overdueSummaryTemplateKey: 'cobro_vencido_resumen',
-    // Días ISO: 1 es lunes y 7 domingo. Lunes a sábado es el defecto del backend.
-    sendDays: [1, 2, 3, 4, 5, 6],
-    skipHolidays: true,
-    updatedAt: '2026-08-01T10:00:00Z',
-    ...over,
-  }
-}
 
 const pintar = (
   value: BillingAgreementCollectionReminders = 'INHERIT',

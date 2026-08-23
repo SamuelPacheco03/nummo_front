@@ -1574,13 +1574,19 @@ Del alta hay dos decisiones que conviene no deshacer:
 
 ### El cupo, y cuándo significa algo
 
-`whatsapp_messages_monthly` sale de `me/capabilities` como los demás topes, y `QuotaStrip` lo
-pinta en la pantalla de cobranza. Tres cosas:
+`whatsapp_messages_monthly` sale de `me/capabilities` como los demás topes y **se lee en «Plan y
+consumo»**, con los otros seis. Tres cosas que siguen valiendo para cualquier sitio que lo pinte:
 
 1. **Un tope en `null` es «sin límite», nunca cero** (§45.6).
-2. **Con número propio conectado el consumo deja de subir.** Una barra que no se mueve y no
-   dice por qué parece un contador roto, así que ahí se sustituye por la frase.
+2. **Con número propio conectado el consumo deja de subir**, porque esos mensajes se los paga el
+   negocio a Meta. Una barra que no se mueve y no dice por qué parece un contador roto.
 3. **`period` es el mes de la organización**, en su zona horaria, no la del navegador.
+
+Hubo una tira de cupo (`QuotaStrip`) encabezando la pantalla de cobranza y **se quitó**: repetía
+lo que ya cuenta «Plan y consumo» sobre una pantalla a la que no se entra a mirar el plan, sino a
+saber por qué no le llegó un mensaje a alguien. Chocar con el tope se sigue explicando donde
+importa —en la fila que se saltó, con `quota_exceeded` y su enlace al plan (§45.5)—, que es
+cuando de verdad estorba.
 
 Agotado **no se pinta en rojo** y no ofrece reintentar: **no hay recargas de cupo**, así que
 lo único cierto es que no vuelve a salir hasta el próximo periodo. Las dos salidas reales son
@@ -3669,12 +3675,13 @@ rellena de nuevo — **lo escrito desaparece sin decir nada**. Y si el hook reco
 en cada render, el efecto entra en bucle: es literalmente cómo se descubrió, previsualizando el
 editor de roles.
 
-**`useHydrateOnce` (`lib/use-hydrate-once.ts`) es la forma de hacerlo**, y lo usan las siete
-pantallas que editan algo cargado: contacto, acuerdo, gasto recurrente, empresa, rol, umbral de
-aprobación y el tema por defecto. La clave la pone quien llama —no todo lo que se edita tiene
-`id`; los ajustes van por `organizationId`— y es ella, no la identidad del objeto, la que decide.
+**`useHydrateOnce` (`lib/use-hydrate-once.ts`) es la forma de hacerlo**, y lo usan todas las
+pantallas que editan algo cargado del servidor: contacto, acuerdo, gasto recurrente, empresa, rol,
+umbral de aprobación, el tema por defecto, la política de avisos, las preferencias de notificación
+y la política de cobranza. La clave la pone quien llama —no todo lo que se edita tiene `id`; los
+ajustes van por `organizationId`— y es ella, no la identidad del objeto, la que decide.
 
-Dos consecuencias que hay que tener presentes:
+Tres consecuencias que hay que tener presentes:
 
 1. **Si la pantalla se queda tras guardar**, hay que marcarla limpia a mano con lo que se guardó
    (`reset(values)`): ya no va a refrescarse sola. Los cajones que navegan al detalle no lo
@@ -3682,6 +3689,15 @@ Dos consecuencias que hay que tener presentes:
 2. **Un diálogo que debe abrir siempre con lo de hoy se monta solo mientras está abierto**
    (`{abierto && <Dialog … />}`), y entonces el estado de partida lo ponen los inicializadores y
    no hace falta efecto. Es lo que hacen el editor de planes y el de condiciones negociadas.
+3. **La clave puede estar lista antes que el registro**, y es el caso normal cuando va por
+   `organizationId`: el id ya se conoce mientras la consulta que trae los ajustes va en camino —de
+   hecho no arranca hasta tenerlo—. El hook lo contempla: lo que abre la puerta es la clave **y**
+   que el registro ya haya llegado. Antes solo miraba la clave, así que el efecto se gastaba su
+   único disparo en vacío y no volvía a correr nunca: la pantalla enseñaba sus valores por defecto
+   como si nadie hubiera configurado nada, y volver a guardar escribía ese vacío encima. Se comió
+   así la política de cobranza entera, y ningún test lo vio porque todos entregaban los datos ya
+   cargados en el primer render — **un test de formulario que nunca pasa por «cargando» no prueba
+   que se rellene**.
 
 Lo que **no** entra aquí: los diálogos que se rellenan desde estado local (`editing` de un
 catálogo) ni los que resetean a vacío al abrirse. Ahí la dependencia no la mueve el servidor.
@@ -5472,7 +5488,6 @@ Todos son parte del sistema y deben reutilizarse:
 | `WhatsAppAccountPage` | `features/messaging/whatsapp-account-page.tsx` | La cuenta de Meta del negocio: conectar, reemplazar y desconectar (§11.1.16) |
 | `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
-| `QuotaStrip` | `features/messaging/quota-strip.tsx` | El cupo mensual de cobranza, y cuándo deja de significar algo |
 | `RunNowPanel` | `features/messaging/run-now-panel.tsx` | «Enviar ahora» y el desglose de la pasada, sin prometer envío |
 | `PaymentInstructionsPage` | `features/finances/payment-instructions-page.tsx` | **Dónde puede pagar quien debe** (§11.1.16) |
 | `PaymentInstructionDialog` | `features/finances/payment-instruction-dialog.tsx` | El alta, con los campos que cambian según el `kind` |
@@ -6428,8 +6443,8 @@ cupo.
 2. **Crear y borrar plantillas propias**, detrás de tener número propio. Los ejemplos que Meta
    pide se derivan del texto (`template-variables.ts`, con pruebas) en vez de escribirse
    aparte.
-3. **`QuotaStrip`** en la pantalla de cobranza: el cupo del mes, con `null` como «sin límite» y
-   la frase que sustituye a la barra cuando hay número propio y el consumo deja de subir.
+3. **El cupo del mes**, con `null` como «sin límite», se lee en «Plan y consumo». Llegó a tener
+   tira propia en la pantalla de cobranza y se retiró por duplicar lo que ya se cuenta allí.
 4. **La categoría `ACCOUNT`** y sus dos avisos de cuota. La pantalla de preferencias no se
    tocó: agrupa desde el contrato, así que la sección apareció sola al añadir la clave — que
    es exactamente lo que §11.1.10 prometía.
