@@ -15,6 +15,9 @@ export interface UpdateCollectionPolicyInput {
   dueSoonTemplateKey?: string | null;
   dueSoonSummaryTemplateKey?: string | null;
   overdueTemplateKey?: string | null;
+  daysBefore?: number | null;
+  remindOnDueDate?: boolean;
+  daysAfter?: number | null;
   /**
      * @maxItems 7
      * @items.minimum 1

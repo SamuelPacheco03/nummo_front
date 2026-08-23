@@ -99,9 +99,7 @@ Lo que hay que pintar viene resuelto en **`schedule`**:
     "7": null                                     // domingo: no se contacta
   },
   "excludesHolidays": true,
-  "maxContactsPerWindow": 2,
-  "windowDays": 7,
-  "minDaysBetweenContacts": 3
+  "maxRemindersPerReceivable": 3
 }
 ```
 
@@ -112,35 +110,46 @@ recordatorio no salió el domingo.
 Los festivos se calculan del `locale`, no se listan: no hay endpoint de calendario ni nada
 que configurar. Hoy solo hay calendario de Colombia.
 
-#### Cada cuánto se le insiste a un deudor
+#### ROMPE — tres recordatorios por cuenta por cobrar, y ni uno más
 
-Los tres números salen en `schedule` para que no los codifiques a mano:
+Esto sustituye al tope de «dos por semana» que estuvo un rato en el contrato. **Bórralo de
+la cabeza**: ya no hay contador ni ventana deslizante.
 
-| Regla | Valor | De dónde sale |
-| --- | --- | --- |
-| Máximo por día | 1 | Ley 2300, art. 3 |
-| Máximo en 7 días corridos | 2 | Decisión de producto |
-| Separación mínima | 3 días | Decisión de producto |
+Cada cuenta por cobrar pasa como mucho por tres etapas, **una sola vez cada una en toda su
+vida**. Son tres campos nuevos y editables:
 
-**El tope semanal no es de la ley**, y conviene no escribirlo como si lo fuera en ningún
-texto de la interfaz. La ley permite uno al día; dos por semana es una decisión nuestra,
-más estricta, para no quemar el número. La cadencia que sale es día 1, día 4, día 8.
+| Etapa | Cuándo | Campo | Cómo se apaga |
+| --- | --- | --- | --- |
+| Antes | N días antes del vencimiento | `daysBefore` (1–90) | `null` |
+| El día | El día que vence | `remindOnDueDate` | `false` |
+| Vencida | M días después | `daysAfter` (0–90) | `null` |
 
-#### ROMPE — un solo aviso por deudor y por día
+**Se configura el cuándo, nunca el cuántos.** No hay campo para pedir un cuarto aviso, y no
+lo va a haber: no es un número que el backend comprueba, es que no existen más etapas.
+`schedule.maxRemindersPerReceivable` viene en la respuesta y siempre vale `3` — úsalo para
+el texto en vez de escribirlo a mano.
 
-Antes los avisos **por vencer** salían por cuenta por cobrar: un deudor con tres facturas
-próximas recibía tres mensajes el mismo día. Ahora se agrupan por contacto igual que la
-mora, y si alguien tiene mora **y** algo por vencer recibe **uno solo** — gana la mora.
+**El cambio que hay que explicar en pantalla:** antes el aviso de mora salía **cada día**
+mientras la deuda existiera. Ahora sale **una vez y nunca más**. Si el cliente no paga,
+Nummo se calla sobre esa cuenta. Es deliberado —la idea es recordar, no cobrar— pero es lo
+bastante distinto de lo que la gente espera como para que la interfaz lo diga: algo del
+tipo «un solo aviso de mora, X días después del vencimiento».
 
-Consecuencias para la interfaz:
+Ojo con el orden si pintas los tres juntos: con `daysAfter: 0` el aviso de mora sale el
+mismo día del vencimiento y **gana** al de «vence hoy», porque se mira primero. No es un
+error, pero la vista previa debería reflejarlo.
 
-- Hay un `dueSoonSummaryTemplateKey` nuevo, hermano del de mora: es la plantilla de «varias
-  por vencer». Son **cuatro** selectores de plantilla, no tres. Dejarlo vacío es válido —
-  cae a la singular con el total, que no miente porque el texto dice «saldo pendiente».
-- El resultado de «enviar ahora» trae dos contadores nuevos: **`sameDayDeferred`** (grupos
-  que cedieron el turno de hoy; no se pierden, vuelven después) y **`throttled`** (deudores
-  a los que ya se les escribió bastante esta semana). Los dos merecen mostrarse: son la
-  respuesta a «pedí avisar a treinta y salieron doce».
+Estos campos **sí** son editables. Los que no lo son siguen siendo los del horario
+(`quietStart`, `quietEnd`, `sendDays`, `skipHolidays`) — ver arriba.
+
+#### Qué pasa si el aviso cae en día no hábil
+
+Dos de las tres etapas se recuperan y una no, y conviene no prometer lo contrario:
+
+- **Antes** y **vencida** son ventanas abiertas: si el escaneo no corrió su día —domingo,
+  festivo, worker caído— el aviso sale el siguiente día hábil.
+- **El día que vence** no se recupera. Su texto dice «vence hoy» y mandarlo tarde sería
+  falso, así que se pierde y lo recoge el de mora.
 
 #### Las cuatro plantillas, y por qué son cuatro
 
@@ -169,25 +178,25 @@ que el primer aviso sale mañana, y eso se siente roto.
 `POST /messaging/collection-reminders/run` devuelve conteos:
 
 ```json
-{ "dueSoon": 0, "overdue": 1, "queued": 1, "skipped": 0,
-  "overdueDeferred": 0, "withoutPhone": 0,
-  "sameDayDeferred": 0, "throttled": 0 }
+{ "before": 0, "onDue": 0, "overdue": 1, "queued": 1, "skipped": 0,
+  "overdueDeferred": 0, "withoutPhone": 0, "sameDayDeferred": 0 }
 ```
 
 Cuatro cosas que cambian cómo se pinta:
 
-1. **Pulsarlo dos veces no duplica nada.** Lo garantiza la clave de deduplicación de cada
-   mensaje, no un bloqueo del cliente: no hace falta deshabilitar el botón «por si acaso»
-   ni avisar de que ya se pulsó. En la segunda pulsación verás `overdue: 1, queued: 0`, y
-   eso **no es un error** — significa «ya estaba dicho».
+1. **Pulsarlo dos veces no duplica nada.** No hace falta deshabilitar el botón «por si
+   acaso» ni avisar de que ya se pulsó. En la segunda pulsación verás **todo en cero** —el
+   aviso ya quedó registrado y la consulta ni lo devuelve— y eso **no es un error**:
+   significa «ya estaba dicho».
 2. **Encola, no envía.** El worker despacha después. El `200` no debe prometer «enviado»;
    la fila aparece en `QUEUED` y pasa a `SENT` en segundos.
-3. **`withoutPhone`, `overdueDeferred`, `sameDayDeferred` y `throttled` merecen mostrarse.**
-   Son la respuesta a «pedí avisar a treinta y salieron doce». Un cero sin explicación
-   parece un fallo del sistema.
-4. **No mira el calendario, pero sí la hora y la frecuencia.** El día lo eligió quien lo
+3. **`withoutPhone`, `overdueDeferred` y `sameDayDeferred` merecen mostrarse.** Son la
+   respuesta a «pedí avisar a treinta y salieron doce». Un cero sin explicación parece un
+   fallo del sistema. Los tres primeros conteos —`before`, `onDue`, `overdue`— son cuántos
+   se miraron en cada etapa, no cuántos salieron: eso es `queued`.
+4. **No mira el calendario, pero sí la hora y las etapas.** El día lo eligió quien lo
    pulsó, así que funciona un domingo. Un disparo a las nueve de la noche encola para la
-   mañana siguiente, y el botón adelanta el aviso de hoy — no añade uno más.
+   mañana siguiente, y el botón **adelanta** el aviso que ya tocaba — no añade uno más.
 
 Responde **409** `COLLECTION_POLICY_DISABLED` si la cobranza está apagada: el botón solo
 tiene sentido con la política activada.

@@ -16,6 +16,9 @@ export interface CollectionPolicy {
   dueSoonTemplateKey: string | null;
   dueSoonSummaryTemplateKey: string | null;
   overdueTemplateKey: string | null;
+  daysBefore: number | null;
+  remindOnDueDate: boolean;
+  daysAfter: number | null;
   /**
      * @items.minimum 1
      * @items.maximum 7

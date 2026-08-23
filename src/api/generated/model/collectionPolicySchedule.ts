@@ -16,15 +16,5 @@ export type CollectionPolicySchedule = {
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  maxContactsPerWindow: number;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  windowDays: number;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  minDaysBetweenContacts: number;
+  maxRemindersPerReceivable: number;
 };

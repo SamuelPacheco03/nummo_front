@@ -15478,6 +15478,33 @@
               }
             ]
           },
+          "daysBefore": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 90
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remindOnDueDate": {
+            "type": "boolean"
+          },
+          "daysAfter": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 90
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "sendDays": {
             "maxItems": 7,
             "type": "array",
@@ -22065,6 +22092,33 @@
               }
             ]
           },
+          "daysBefore": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remindOnDueDate": {
+            "type": "boolean"
+          },
+          "daysAfter": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "sendDays": {
             "type": "array",
             "items": {
@@ -22136,17 +22190,7 @@
               "excludesHolidays": {
                 "type": "boolean"
               },
-              "maxContactsPerWindow": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "windowDays": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "minDaysBetweenContacts": {
+              "maxRemindersPerReceivable": {
                 "type": "integer",
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
@@ -22157,9 +22201,7 @@
               "legalReference",
               "week",
               "excludesHolidays",
-              "maxContactsPerWindow",
-              "windowDays",
-              "minDaysBetweenContacts"
+              "maxRemindersPerReceivable"
             ],
             "additionalProperties": false
           },
@@ -22183,6 +22225,9 @@
           "dueSoonTemplateKey",
           "dueSoonSummaryTemplateKey",
           "overdueTemplateKey",
+          "daysBefore",
+          "remindOnDueDate",
+          "daysAfter",
           "sendDays",
           "skipHolidays",
           "overdueSummaryTemplateKey",
