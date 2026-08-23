@@ -10,7 +10,6 @@ import { ErrorState } from '@/components/ui/error-state'
 import { FilterField, FilterSheet } from '@/components/ui/filter-sheet'
 import { listColumns } from '@/components/ui/list-columns'
 import { ListToolbar } from '@/components/ui/list-toolbar'
-import { Note } from '@/components/ui/note'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDateHuman, plural } from '@/lib/format'
 import type {
@@ -193,14 +192,6 @@ export function MessagesTab({
           onPage={(next) => onFilter({ pagina: next > 1 ? String(next) : '' })}
         />
       )}
-
-      {/* Quedarse en «Enviado» **no es un fallo**: las marcas de entregado y
-          leído solo se llenan si el webhook de Meta está dado de alta. Sin
-          decirlo, una columna llena de «Enviado» se lee como media entrega. */}
-      <Note tone="info" title="«Enviado» puede ser el final del camino">
-        Que un mensaje pase a entregado o leído depende de que Meta nos avise, y ese aviso no está
-        activo en todos los despliegues. Un mensaje que se queda en enviado salió bien.
-      </Note>
 
       <FilterSheet
         open={sheetOpen}

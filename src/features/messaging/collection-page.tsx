@@ -5,12 +5,10 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { useCan, useFeature } from '@/features/platform/permissions'
+import { useCan } from '@/features/platform/permissions'
 import { useListFilters } from '@/lib/use-list-filters'
-import { useWhatsAppAccount } from './hooks'
 import { ConsentsTab } from './consents-tab'
 import { MessagesTab } from './messages-tab'
-import { QuotaStrip } from './quota-strip'
 
 /** Criterios que viven en la URL, en español como las rutas (§87.5). */
 const KEYS = ['vista', 'estado', 'contacto', 'pagina'] as const
@@ -46,13 +44,6 @@ export function CollectionPage() {
   const canRead = can('messaging.read')
   const canManage = can('messaging.settings.manage')
 
-  // El cupo solo significa algo si se envía por el número de Nummo.
-  const hasByo = useFeature('whatsapp_byo')
-  const { connected } = useWhatsAppAccount(
-    can('whatsapp.settings.read') ? orgId : undefined,
-    hasByo,
-  )
-
   const { values, set, clear } = useListFilters<Key>('nummo:cobranza:filtros', KEYS)
   const tab = (TABS.find((t) => t.value === values.vista)?.value ?? 'mensajes') as Tab
   const page = Number(values.pagina) || 1
@@ -83,8 +74,6 @@ export function CollectionPage() {
           </Link>
         </Button>
       </PageHeader>
-
-      <QuotaStrip ownNumber={connected} />
 
       <SegmentedControl
         aria-label="Qué se mira"
