@@ -15456,6 +15456,17 @@
               }
             ]
           },
+          "dueSoonSummaryTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "overdueTemplateKey": {
             "anyOf": [
               {
@@ -22034,6 +22045,16 @@
               }
             ]
           },
+          "dueSoonSummaryTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "overdueTemplateKey": {
             "anyOf": [
               {
@@ -22065,6 +22086,83 @@
               }
             ]
           },
+          "schedule": {
+            "type": "object",
+            "properties": {
+              "editable": {
+                "type": "boolean"
+              },
+              "legalReference": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "week": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "end": {
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "end"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "excludesHolidays": {
+                "type": "boolean"
+              },
+              "maxContactsPerWindow": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "windowDays": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "minDaysBetweenContacts": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "editable",
+              "legalReference",
+              "week",
+              "excludesHolidays",
+              "maxContactsPerWindow",
+              "windowDays",
+              "minDaysBetweenContacts"
+            ],
+            "additionalProperties": false
+          },
           "updatedAt": {
             "anyOf": [
               {
@@ -22083,10 +22181,12 @@
           "quietStart",
           "quietEnd",
           "dueSoonTemplateKey",
+          "dueSoonSummaryTemplateKey",
           "overdueTemplateKey",
           "sendDays",
           "skipHolidays",
           "overdueSummaryTemplateKey",
+          "schedule",
           "updatedAt"
         ],
         "additionalProperties": false

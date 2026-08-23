@@ -6,21 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface UpdateCollectionPolicyInput {
-  enabled?: boolean;
+export type CollectionPolicyScheduleWeek = {[key: string]: {
   /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
-  quietStart?: string;
+  start: string;
   /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
-  quietEnd?: string;
-  dueSoonTemplateKey?: string | null;
-  dueSoonSummaryTemplateKey?: string | null;
-  overdueTemplateKey?: string | null;
-  /**
-     * @maxItems 7
-     * @items.minimum 1
-     * @items.maximum 7
-     */
-  sendDays?: number[];
-  skipHolidays?: boolean;
-  overdueSummaryTemplateKey?: string | null;
-}
+  end: string;
+} | null};

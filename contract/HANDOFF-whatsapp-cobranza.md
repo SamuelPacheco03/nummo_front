@@ -65,50 +65,101 @@ Todos bajo `/api/v1/organizations/{orgId}`. La columna «feature» es lo que dev
 Las horas de silencio son de la organización y en su zona horaria: fuera de esa ventana
 no se le escribe a nadie. Es un requisito de decencia y de Meta, no una preferencia.
 
-#### Qué días se cobra — **nuevo**
+#### ROMPE — el horario ya no se configura, lo pone la ley
 
-Dos campos más, al lado de las horas de silencio:
+La **Ley 2300 de 2023, art. 3** fija el horario de cobranza en Colombia y obliga a todo el
+que adelante gestiones de cobro. No es una preferencia de la organización, así que dejó de
+ser editable:
 
-| Campo | Tipo | Por defecto | Qué es |
-| --- | --- | --- | --- |
-| `sendDays` | `number[]` | `[1,2,3,4,5,6]` | Días **ISO** en que se escribe. **1 es lunes y 7 es domingo** |
-| `skipHolidays` | `boolean` | `true` | Saltarse los festivos del país de la organización |
+| Día | Franja |
+| --- | --- |
+| Lunes a viernes | 07:00 – 19:00 |
+| Sábado | 08:00 – 15:00 |
+| Domingo y festivos | **Ningún contacto** |
 
-**Ojo con el 1 = lunes.** `Date.getDay()` de JavaScript cuenta desde el domingo con el 0,
-así que pintar los checkboxes con ese índice desplaza la semana entera y nadie lo nota
-hasta que un cliente pregunta por qué le escribieron el domingo. El backend rechaza `0` y
-`8` con **422**, que es la red — no el diseño.
+**`quietStart`, `quietEnd`, `sendDays` y `skipHolidays` ya no se pueden mandar en el PUT.**
+Responden **422** con `details.reason = "SCHEDULE_FIXED_BY_LAW"`, `details.reference` con la
+norma y `details.fields` con los campos rechazados. Ni para ampliar ni para **recortar**:
+que un cliente quiera ser más estricto tampoco se acepta, porque «no configurable» tiene
+que valer en las dos direcciones.
 
-El sábado viene marcado por defecto porque cobrar el sábado por la mañana es normal aquí;
-el domingo no. Ambos son editables.
+Si tu formulario los sigue mandando, el guardado entero falla. Los campos siguen en la
+respuesta del GET —son la preferencia, que solo manda en países sin horario legal— pero
+en Colombia no deciden nada.
 
-**Dos comportamientos distintos, y la UI tiene que decirlo.** Las horas de silencio
-**aplazan**: un aviso de las once de la noche sale a la mañana siguiente. Los días no
-hábiles **saltan**: un domingo no se aplaza el aviso, no se manda. No es una
-inconsistencia — aplazarlo duplicaría el mensaje, porque la clave que impide el duplicado
-lleva la fecha del escaneo.
+Lo que hay que pintar viene resuelto en **`schedule`**:
 
-Conviene decir qué se pierde, porque es poco y suena a mucho: la **mora** no pierde nada,
-se reevalúa cada día y lo del domingo sale el lunes. Los avisos **por vencer** pueden
-perder uno de sus pasos —con avisos a 3 y 1 días, la cuenta que tocaba el domingo se queda
-sin el de tres—, pero recibe el de un día. Nunca se queda muda.
+```jsonc
+"schedule": {
+  "editable": false,
+  "legalReference": "Ley 2300 de 2023, art. 3",
+  "week": {
+    "1": { "start": "07:00", "end": "19:00" },   // … 2..5 igual
+    "6": { "start": "08:00", "end": "15:00" },
+    "7": null                                     // domingo: no se contacta
+  },
+  "excludesHolidays": true,
+  "maxContactsPerWindow": 2,
+  "windowDays": 7,
+  "minDaysBetweenContacts": 3
+}
+```
 
-**Los festivos se calculan, no se configuran.** No hay endpoint de calendario ni lista que
-mostrar: salen del `locale` de la organización. Hoy **solo hay calendario de Colombia**;
-una organización con otro `locale` envía todos los días aunque tenga `skipHolidays` en
-`true`. Si la pantalla ofrece la casilla a alguien fuera de Colombia, conviene que el texto
-de ayuda lo diga en vez de prometer algo que no pasa.
+Con `editable: false`, la pantalla enseña la semana como **información** —no como
+controles— y cita `legalReference`. Es mejor mostrarla que esconderla: explica por qué un
+recordatorio no salió el domingo.
 
-**Dos plantillas para la mora, y la pantalla tiene que explicar por qué.** Un deudor
-recibe **un solo aviso** con todo lo que debe, no uno por factura. `overdueTemplateKey` es
-la que sale cuando debe una sola; `overdueSummaryTemplateKey`, cuando debe varias. Están
-separadas porque Meta no pluraliza y «tienes 1 facturas vencidas» saldría tal cual.
+Los festivos se calculan del `locale`, no se listan: no hay endpoint de calendario ni nada
+que configurar. Hoy solo hay calendario de Colombia.
 
-Dejar vacía la de resumen es válido: se cae a la singular con el total. No es un error que
-haya que forzar a corregir, pero sí conviene decir en la UI qué implica —el aviso pierde el
-conteo—, porque la de resumen es la que se quiere en el caso normal.
+#### Cada cuánto se le insiste a un deudor
 
-#### «Enviar ahora» — **nuevo**
+Los tres números salen en `schedule` para que no los codifiques a mano:
+
+| Regla | Valor | De dónde sale |
+| --- | --- | --- |
+| Máximo por día | 1 | Ley 2300, art. 3 |
+| Máximo en 7 días corridos | 2 | Decisión de producto |
+| Separación mínima | 3 días | Decisión de producto |
+
+**El tope semanal no es de la ley**, y conviene no escribirlo como si lo fuera en ningún
+texto de la interfaz. La ley permite uno al día; dos por semana es una decisión nuestra,
+más estricta, para no quemar el número. La cadencia que sale es día 1, día 4, día 8.
+
+#### ROMPE — un solo aviso por deudor y por día
+
+Antes los avisos **por vencer** salían por cuenta por cobrar: un deudor con tres facturas
+próximas recibía tres mensajes el mismo día. Ahora se agrupan por contacto igual que la
+mora, y si alguien tiene mora **y** algo por vencer recibe **uno solo** — gana la mora.
+
+Consecuencias para la interfaz:
+
+- Hay un `dueSoonSummaryTemplateKey` nuevo, hermano del de mora: es la plantilla de «varias
+  por vencer». Son **cuatro** selectores de plantilla, no tres. Dejarlo vacío es válido —
+  cae a la singular con el total, que no miente porque el texto dice «saldo pendiente».
+- El resultado de «enviar ahora» trae dos contadores nuevos: **`sameDayDeferred`** (grupos
+  que cedieron el turno de hoy; no se pierden, vuelven después) y **`throttled`** (deudores
+  a los que ya se les escribió bastante esta semana). Los dos merecen mostrarse: son la
+  respuesta a «pedí avisar a treinta y salieron doce».
+
+#### Las cuatro plantillas, y por qué son cuatro
+
+Un deudor recibe **un solo aviso** con todo lo que debe, no uno por factura. Como Meta no
+pluraliza —«tienes 1 facturas vencidas» saldría tal cual— cada momento tiene su singular y
+su plural:
+
+| Campo | Cuándo sale |
+| --- | --- |
+| `dueSoonTemplateKey` | Una sola cuenta por vencer |
+| `dueSoonSummaryTemplateKey` | Varias por vencer — **nuevo** |
+| `overdueTemplateKey` | Una sola vencida |
+| `overdueSummaryTemplateKey` | Varias vencidas |
+
+Dejar vacía una de resumen es válido: cae a la singular con el total, y no miente porque
+el texto dice «saldo pendiente» y no «tu factura». No es un error que haya que forzar a
+corregir, pero sí conviene decir en la UI qué implica — el aviso pierde el conteo.
+
+#### «Enviar ahora»
 
 Los recordatorios salen solos a la **hora local de la organización** y **una sola vez al
 día** (`reminderLocalTime` de los ajustes de notificaciones, por defecto `08:00`, el mismo
@@ -119,10 +170,11 @@ que el primer aviso sale mañana, y eso se siente roto.
 
 ```json
 { "dueSoon": 0, "overdue": 1, "queued": 1, "skipped": 0,
-  "overdueDeferred": 0, "withoutPhone": 0 }
+  "overdueDeferred": 0, "withoutPhone": 0,
+  "sameDayDeferred": 0, "throttled": 0 }
 ```
 
-Tres cosas que cambian cómo se pinta:
+Cuatro cosas que cambian cómo se pinta:
 
 1. **Pulsarlo dos veces no duplica nada.** Lo garantiza la clave de deduplicación de cada
    mensaje, no un bloqueo del cliente: no hace falta deshabilitar el botón «por si acaso»
@@ -130,16 +182,15 @@ Tres cosas que cambian cómo se pinta:
    eso **no es un error** — significa «ya estaba dicho».
 2. **Encola, no envía.** El worker despacha después. El `200` no debe prometer «enviado»;
    la fila aparece en `QUEUED` y pasa a `SENT` en segundos.
-3. **`withoutPhone` y `overdueDeferred` merecen mostrarse.** Son la respuesta a «pedí
-   avisar a treinta y salieron doce». Un cero sin explicación parece un fallo del sistema.
+3. **`withoutPhone`, `overdueDeferred`, `sameDayDeferred` y `throttled` merecen mostrarse.**
+   Son la respuesta a «pedí avisar a treinta y salieron doce». Un cero sin explicación
+   parece un fallo del sistema.
+4. **No mira el calendario, pero sí la hora y la frecuencia.** El día lo eligió quien lo
+   pulsó, así que funciona un domingo. Un disparo a las nueve de la noche encola para la
+   mañana siguiente, y el botón adelanta el aviso de hoy — no añade uno más.
 
 Responde **409** `COLLECTION_POLICY_DISABLED` si la cobranza está apagada: el botón solo
 tiene sentido con la política activada.
-
-**El botón no mira `sendDays` ni `skipHolidays`.** Esos dicen si el trabajo automático
-corre hoy; el botón lo pulsa una persona que sabe que hoy es domingo. Funciona igual y no
-hay que deshabilitarlo un festivo — pero si la pantalla muestra el calendario cerca, vale
-la pena que el texto lo aclare, porque lo contrario es lo que se supone.
 
 ### Consentimiento
 

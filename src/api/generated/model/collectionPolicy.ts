@@ -5,6 +5,7 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { CollectionPolicySchedule } from './collectionPolicySchedule';
 
 export interface CollectionPolicy {
   enabled: boolean;
@@ -13,6 +14,7 @@ export interface CollectionPolicy {
   /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   quietEnd: string;
   dueSoonTemplateKey: string | null;
+  dueSoonSummaryTemplateKey: string | null;
   overdueTemplateKey: string | null;
   /**
      * @items.minimum 1
@@ -21,5 +23,6 @@ export interface CollectionPolicy {
   sendDays: number[];
   skipHolidays: boolean;
   overdueSummaryTemplateKey: string | null;
+  schedule: CollectionPolicySchedule;
   updatedAt: string | null;
 }
