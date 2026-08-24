@@ -19,7 +19,6 @@ import {
   Tags,
   UserCog,
   Wallet,
-  Wallet2,
 } from 'lucide-react'
 import type { SectionGroup } from '@/components/ui/sectioned-layout'
 
@@ -101,7 +100,6 @@ export const GROUPS: SectionGroup[] = [
       // Dónde puede pagar el deudor. Se llamaba «Formas de pago» y sonaba igual
       // que los «Métodos de pago» del catálogo, siendo otra cosa: esto es lo que
       // sale en cada recordatorio, y cambiarlo cambia a qué cuenta llega la plata.
-      { to: '/config/formas-de-pago', label: 'Dónde te pagan', Icon: Wallet2 },
     ],
   },
   {

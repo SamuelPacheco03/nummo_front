@@ -20,7 +20,7 @@ import type { MasterParams } from './hooks'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(100),
-  methodType: z.enum(['CASH', 'BANK_TRANSFER', 'CARD', 'DIGITAL_WALLET', 'OTHER']),
+  methodType: z.enum(['CASH', 'BANK_TRANSFER', 'CARD', 'OTHER']),
   isActive: z.boolean().optional(),
 })
 type Values = z.infer<typeof schema>

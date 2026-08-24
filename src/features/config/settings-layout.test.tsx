@@ -61,7 +61,6 @@ test('los catálogos y las políticas de interés viven aquí, no en el sidebar'
     'Categorías de gasto',
     'Métodos de pago',
     'Políticas de interés',
-    'Dónde te pagan',
   ]) {
     expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument()
   }

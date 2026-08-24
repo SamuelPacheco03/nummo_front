@@ -57,16 +57,6 @@ const RESOURCES: Record<string, { label: string; area: Area }> = {
   treasury: { label: 'Caja y transferencias', area: 'Caja' },
   financial_accounts: { label: 'Cuentas de dinero', area: 'Catálogos' },
   payment_methods: { label: 'Métodos de pago', area: 'Catálogos' },
-  /*
-    No es lo mismo que `payment_methods`, y la etiqueta tiene que dejarlo claro:
-    aquel es **cómo se registró** un pago que ya entró; éste es **dónde puede
-    pagar** quien todavía debe, y viaja dentro del recordatorio.
-
-    Va con permiso propio a propósito —no cuelga de `financial_accounts.manage`—
-    porque decide a qué cuenta le llega la plata de los cobros que salen, y el
-    deudor no tiene forma de notar un cambio.
-  */
-  payment_instructions: { label: 'Dónde pagar (formas de pago)', area: 'Cobranza' },
   billing_concepts: { label: 'Conceptos de cobro', area: 'Catálogos' },
   expense_categories: { label: 'Categorías de gasto', area: 'Catálogos' },
   reports: { label: 'Informes', area: 'Informes' },
@@ -105,6 +95,12 @@ const ACTIONS: Record<string, string> = {
   adjust: 'Ajustar',
   allocate: 'Repartir anticipos',
   manage: 'Gestionar',
+  /*
+    **Un permiso aparte de `manage`**, y con razón: decide a qué número consignan
+    los clientes de la organización, y el deudor no tiene forma de notar un
+    cambio. Quien puede crear una cuenta no puede por eso publicarla.
+  */
+  publish: 'Publicar a los deudores',
   reverse: 'Reversar',
   approve: 'Aprobar',
   transfer: 'Transferir',

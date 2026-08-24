@@ -1431,7 +1431,6 @@ solo comparten la palabra «aviso».
 | --- | --- | --- |
 | `/config/cobranza` | La política: si se escribe, a qué horas y con qué **tres** plantillas | `messaging.read` · `messaging.settings.manage` |
 | `/config/plantillas` | Las plantillas y su estado en Meta | `whatsapp.templates.read` |
-| `/config/formas-de-pago` | Dónde puede pagar el deudor; sale dentro del recordatorio | `payment_instructions.read` · `.manage` |
 | `/config/whatsapp` | Desde qué número sale: la cuenta de Meta del negocio | `whatsapp.settings.read` · `whatsapp.settings.manage` |
 | `/plataforma/whatsapp` | **La otra mitad**: lo que Nummo ve del canal (§47.6) | superadmin |
 | `/cartera/cobranza` | Lo enviado, a quién no se le escribe y el cupo, en dos pestañas | `messaging.read` |
@@ -1690,44 +1689,63 @@ con una plantilla propia.
 
 ### Dónde puede pagar quien debe
 
-El recordatorio ya no dice solo cuánto se debe: dice **dónde pagarlo**. Ese renglón sale
-de `/config/formas-de-pago`, un catálogo de la organización.
+El recordatorio ya no dice solo cuánto se debe: dice **dónde pagarlo**. Y ese renglón sale
+de **las cuentas de dinero** (`/maestros/cuentas`), no de un catálogo aparte.
 
-**No es `payment_methods`**, y la etiqueta del permiso lo dice: aquel es *cómo se registró*
-un pago que ya entró; éste es *dónde puede pagar* quien todavía debe. Tiene permiso propio
-—`payment_instructions.manage`— porque decide **a qué cuenta le llega la plata** de los
-cobros que salen, y el deudor no tiene forma de notar un cambio.
+**Llegó a haber uno** —`/config/formas-de-pago`, con su propio recurso `payment_instructions`—
+y se retiró: duplicaba `financial_accounts`. La misma cuenta de Bancolombia había que
+teclearla dos veces —una para cuadrar la caja, otra para publicársela al deudor— y las dos
+copias podían divergir hasta que alguien consignara al número viejo. Es el ejemplo caro de
+lo que «Nada por duplicado» previene: no eran dos pantallas parecidas, eran dos verdades
+sobre la misma cuenta.
 
-Va **por organización**, no por acuerdo ni por concepto: una cuenta por cobrar puede no
-tener acuerdo —las creadas a mano no lo tienen— y colgarlo de ahí habría dejado sin datos
-de pago justo a esos cobros.
-
-**Cinco formas y cada una con sus campos** (cuenta bancaria, llave/Transfiya, billetera,
-enlace de pago, otro). `details` es una unión discriminada por `kind`, así que el
-formulario cambia de campos al elegir. Cobrar en Colombia no tiene una sola forma, y un
-«banco + número + link» dejaría fuera la mitad de los casos reales.
+Así que la cuenta lleva ahora `paymentDetails`, `paymentPreview` y `publishInReminders`.
 
 Cuatro cosas que se hacen mal solas:
 
-1. **`preview` viene calculado: no se rearma.** Es exactamente el renglón que verá el
+1. **Crear no es publicar.** `publishInReminders` viene **apagado**: son dos decisiones, y
+   la segunda hay que pedirla. Una caja chica no puede salir en los mensajes a los deudores
+   porque alguien la creó.
+2. **`paymentPreview` viene calculado: no se rearma.** Es exactamente el renglón que verá el
    deudor. Componerlo en el front haría que la vista previa y el mensaje real acabaran
    diciendo cosas distintas de la misma cuenta.
-2. **Ningún campo es un `textarea`.** Estos textos van dentro de un parámetro de plantilla
+3. **Publicar pide `financial_accounts.publish`**, un permiso más que el de crear cuentas, y
+   solo lo piden `paymentDetails` y `publishInReminders`. Decide **a qué número consignan
+   los clientes** y el deudor no tiene forma de notar un cambio, así que quien no lo tenga
+   edita la cuenta igual con esos dos controles deshabilitados.
+4. **Ningún campo es un `textarea`.** Estos textos van dentro de un parámetro de plantilla
    de WhatsApp, y Meta rechaza el envío entero si lleva saltos de línea. El backend
    normaliza al entrar, pero una caja de varias líneas invita a escribir lo que no cabe.
-3. **En el recordatorio caben tres.** Con dos o tres el renglón se lee; con seis es un muro.
-   El backend se queda con las publicables por orden y **no tiene dónde avisarlo**, así que
-   lo dice la pantalla.
-4. **Archiva, no borra.** Un recordatorio que ya salió nombró esa cuenta, y quien lo mire
-   mañana tiene que poder saber a dónde se le pidió pagar.
 
-**Y `showInReminders` es un interruptor a la vista, no algo en un menú**: es lo único que
-decide si el deudor la ve. Sirve para la cuenta que solo usa un cliente grande.
+**Los datos solo se exigen al publicar.** Una cuenta de banco que solo sirve para cuadrar la
+caja no tiene por qué llevarlos, y exigírselos convertiría un maestro de contabilidad en un
+formulario de cobranza. Media cuenta a medio llenar viaja como `paymentDetails: null` y no
+como medio objeto: el contrato exige el juego entero en cuanto hay `kind`, así que lo otro
+sería un 422.
+
+**Dos formas, no cinco.** `paymentDetails` es una unión discriminada por `kind` —`BANK` o
+`WALLET`— que **casa con `accountType`**, así que el formulario cambia de campos al elegir
+el tipo de cuenta y una caja no enseña ninguno.
+
+Y dos cosas dejaron de ser destinos:
+
+- **La llave de transferencia** es un alias *a* una cuenta, no un sitio donde vive plata: son
+  dos campos suyos (`transferKeyKind`, `transferKeyValue`). Sueltos permitían que el alias y
+  la cuenta a la que apunta contaran cosas distintas.
+- **El enlace de pago** tampoco: el dinero no vive en una URL. Es `paymentLink` en la
+  política de cobranza, uno solo, y se exige `https` porque le pide dinero a alguien.
 
 **Mientras no haya ninguna publicada, el mensaje dice «Para pagar: comunícate con
 nosotros».** No se queda en blanco —una variable vacía haría que Meta rechazara el envío
 entero— pero el deudor no sabe a dónde pagar, y desde la política no había forma de
 enterarse: ahora lo avisa, y solo con la cobranza encendida.
+
+### «Billetera digital» no es un método de pago
+
+`METHOD_TYPES` son cuatro: `CASH`, `BANK_TRANSFER`, `CARD`, `OTHER`. **Pagar desde un Nequi
+es una transferencia.** La billetera es *dónde está* la plata —eso sigue siendo un
+`accountType`— y no *cómo se movió*. El rótulo se conserva en `METHOD_TYPE_LABELS` para no
+dejar sin nombre a un método histórico sin migrar: crudo se vería peor.
 
 ### Lo que no se construye, a propósito
 
@@ -5535,8 +5553,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
 | `RunNowPanel` | `features/messaging/run-now-panel.tsx` | «Enviar ahora» y el desglose de la pasada, sin prometer envío |
-| `PaymentInstructionsPage` | `features/finances/payment-instructions-page.tsx` | **Dónde puede pagar quien debe** (§11.1.16) |
-| `PaymentInstructionDialog` | `features/finances/payment-instruction-dialog.tsx` | El alta, con los campos que cambian según el `kind` |
+| `FinancialAccountsPage` | `features/masters/financial-accounts-page.tsx` | Cuentas de dinero **y dónde puede pagar el deudor**, en un solo sitio |
 | `instructionKind` · `MAX_IN_REMINDERS` | `features/finances/payment-instruction-labels.ts` | Las cinco formas en palabras, y cuántas caben en un mensaje |
 | `saysWherePay` · `paymentAwareUpgrade` | `features/messaging/labels.ts` | Las dos generaciones de plantilla: se clasifican por variable, se emparejan por clave |
 | `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: estado, entrantes y plantillas (§47.6, §97.26) |
@@ -5585,12 +5602,11 @@ comprueba un test—:
 | Organización | Empresa · Sedes · Miembros · Roles · Plan y consumo |
 | Catálogos | Conceptos de cobro · Categorías de gasto · Métodos de pago · Cuentas |
 | Reglas | Política de avisos · Políticas de interés · Aprobación de egresos |
-| WhatsApp | Número · Plantillas · Cobranza automática · Dónde te pagan |
+| WhatsApp | Número · Plantillas · Cobranza automática |
 | Numi | Asistente |
 
 Con dos renombres que el reagrupamiento dejó a la vista, y que valen también para el `<h1>` de
-cada pantalla: **«Formas de pago» → «Dónde te pagan»**, porque sonaba igual que los «Métodos de
-pago» del catálogo siendo otra cosa; y **«Cobranza por WhatsApp» → «Cobranza automática»** para la
+cada pantalla: **«Cobranza por WhatsApp» → «Cobranza automática»** para la
 política de `/config/cobranza`, que se titulaba **exactamente igual** que el historial de
 `/cartera/cobranza` —dos pantallas distintas con el mismo encabezado—. Dentro del grupo WhatsApp,
 «Número» y «Plantillas» tampoco repiten la palabra: en la paleta de comandos el grupo viaja como
@@ -6549,6 +6565,35 @@ navegador**: no hay `nummo-api` corriendo en este entorno.
 
 ---
 
+## Fase 28 — Las formas de pago vuelven a las cuentas ✅ **completada**
+
+El backend fusiona `payment_instructions` con `financial_accounts`. Es la fase que **borra una
+pantalla que se escribió hace dos días**, y el motivo está bien: eran dos verdades sobre la
+misma cuenta de banco, y la que veía el deudor podía quedarse vieja sin que nadie lo notara.
+
+1. **Retirada `/config/formas-de-pago`** con su diálogo, sus rótulos, sus hooks, su ruta y su
+   entrada de navegación. Ya había dos pantallas de cuentas; el handoff decía «se retira si ya
+   hay una».
+2. **El editor de cuentas gana los datos de pago**, con los campos cambiando según
+   `accountType` —una caja no enseña ninguno— y `paymentPreview` pintado tal cual lo compone
+   el servidor.
+3. **Publicar es una decisión aparte**: viene apagado, pide `financial_accounts.publish` y los
+   datos solo se exigen al marcarlo.
+4. **`paymentLink` en la política**, con `https` comprobado en el cliente porque el contrato
+   solo declara `format: uri`.
+5. **La billetera deja de ser un método de pago**: `METHOD_TYPES` baja a cuatro.
+
+**Lo que se llevó por delante y no se vio venir:** el permiso `financial_accounts.publish`
+entró sin rótulo, y el test que vigila que ningún permiso se quede sin verbo lo cazó —los
+permisos se *componen*, así que `tsc` no podía—. Es el mismo guardarraíl de §95.21 puesto a
+mano donde el tipo no llega.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 865 tests en verde (9 nuevos de la
+pantalla de cuentas, que no tenía ninguno; 17 retirados con lo fusionado), build OK. **Sin
+verificar contra el backend en el navegador**: no hay `nummo-api` corriendo en este entorno.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -6580,6 +6625,7 @@ navegador**: no hay `nummo-api` corriendo en este entorno.
 | ✅ 25 | Cobranza por WhatsApp | medio | 7, 9 (contrato) |
 | ✅ 26 | Número propio, plantillas y cupo | medio | 25 (contrato) |
 | ✅ 27 | La Ley 2300 entra en la política | medio | 25, 26 (contrato) |
+| ✅ 28 | Las formas de pago vuelven a las cuentas | medio | 27 (contrato) |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

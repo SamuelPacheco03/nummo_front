@@ -25,7 +25,7 @@ import type {
   CollectionPolicySchedule,
   WhatsAppTemplate,
 } from '@/api/generated/model'
-import { usePaymentInstructions } from '@/features/finances/hooks'
+import { useFinancialAccounts } from '@/features/masters/hooks'
 import { scheduleFixedByLaw, sendTimeOutOfRange } from './errors'
 import { paymentAwareUpgrade, saysWherePay } from './labels'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
@@ -70,18 +70,20 @@ export function CollectionPolicyPage() {
   )
   const save = useUpdateCollectionPolicy(orgId ?? '')
   /*
-    El recordatorio dice **dónde pagar**, y ese renglón sale de las formas de
-    pago. Sin ninguna publicada el mensaje no se queda en blanco —una variable
-    vacía haría que Meta rechazara el envío entero— pero dice «comunícate con
-    nosotros», y desde aquí no había forma de enterarse.
+    El recordatorio dice **dónde pagar**, y ese renglón lo arman las cuentas
+    marcadas como publicadas. Sin ninguna, el mensaje no se queda en blanco —una
+    variable vacía haría que Meta rechazara el envío entero— pero dice
+    «comunícate con nosotros», y desde aquí no había forma de enterarse.
   */
-  const { instructions } = usePaymentInstructions(
-    canRead && can('payment_instructions.read') ? orgId : undefined,
+  const { items: cuentas } = useFinancialAccounts(
+    canRead && can('financial_accounts.read') ? orgId : undefined,
+    { page: 1, pageSize: 100 },
   )
-  const sinFormasDePago = instructions.every((i) => !i.showInReminders)
+  const sinFormasDePago = cuentas.every((c) => !c.publishInReminders)
 
   const [enabled, setEnabled] = useState(false)
   const [sendAt, setSendAt] = useState('12:00')
+  const [paymentLink, setPaymentLink] = useState('')
   /*
     Las tres etapas van con el interruptor separado del número porque **apagar no
     es poner cero**: `daysAfter: 0` significa avisar el mismo día del vencimiento
@@ -101,6 +103,7 @@ export function CollectionPolicyPage() {
   useHydrateOnce(orgId, policy, (current) => {
     setEnabled(current.enabled)
     setSendAt(current.sendAt.slice(0, 5))
+    setPaymentLink(current.paymentLink ?? '')
     setBeforeOn(current.daysBefore != null)
     if (current.daysBefore != null) setBeforeDays(String(current.daysBefore))
     setOnDue(current.remindOnDueDate)
@@ -128,6 +131,16 @@ export function CollectionPolicyPage() {
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!orgId) return
+    /*
+      `https` y no `http`, y se comprueba aquí porque el contrato solo declara
+      `format: uri`: este enlace le pide dinero a alguien, y mandarlo por un canal
+      sin cifrar dentro de un mensaje de cobro es justo lo que enseña a los
+      deudores a fiarse de un enlace cualquiera.
+    */
+    if (paymentLink && !/^https:\/\//i.test(paymentLink)) {
+      toast.error('El enlace de pago tiene que empezar por https')
+      return
+    }
     try {
       const saved = await save.mutateAsync({
         orgId,
@@ -140,6 +153,8 @@ export function CollectionPolicyPage() {
             desde aquí no se mandan de vuelta.
           */
           sendAt,
+          // Vacío es «no hay enlace», que en el contrato es `null`.
+          paymentLink: paymentLink.trim() || null,
           // Apagada es `null`, y no cero: cero es una etapa encendida el día del
           // vencimiento.
           daysBefore: beforeOn ? Number(beforeDays) : null,
@@ -157,6 +172,7 @@ export function CollectionPolicyPage() {
       // respondió el servidor** y no con el borrador (§45.7).
       setEnabled(data.enabled)
       setSendAt(data.sendAt.slice(0, 5))
+      setPaymentLink(data.paymentLink ?? '')
       setBeforeOn(data.daysBefore != null)
       if (data.daysBefore != null) setBeforeDays(String(data.daysBefore))
       setOnDue(data.remindOnDueDate)
@@ -234,10 +250,10 @@ export function CollectionPolicyPage() {
               mal, y el aviso sería ruido. */}
           {policy?.enabled && sinFormasDePago && (
             <Note tone="warning" title="Los recordatorios no dicen dónde pagar">
-              Sin formas de pago publicadas, el mensaje dice «Para pagar: comunícate con
-              nosotros».{' '}
-              <Link to="/config/formas-de-pago" className="text-brand underline">
-                Añadir una
+              Ninguna cuenta está publicada, así que el mensaje dice «Para pagar: comunícate
+              con nosotros».{' '}
+              <Link to="/maestros/cuentas" className="text-brand underline">
+                Publicar una cuenta
               </Link>
             </Note>
           )}
@@ -322,6 +338,42 @@ export function CollectionPolicyPage() {
                       </option>
                     ))}
                   </NativeSelect>
+                </Field>
+              </div>
+
+              {/* ---------- Dónde puede pagar ---------- */}
+              <div className="space-y-4 border-t pt-5">
+                <div>
+                  <p className="text-sm font-medium">Dónde puede pagar</p>
+                  <p className="text-muted-foreground text-xs">
+                    El renglón de «cómo pagar» del mensaje lo arman{' '}
+                    <Link to="/maestros/cuentas" className="text-brand underline">
+                      las cuentas que marques como publicadas
+                    </Link>
+                    . Aquí solo va el enlace, si tienes uno.
+                  </p>
+                </div>
+
+                {/*
+                  El enlace **no es una cuenta**: el dinero no vive en una URL. Por
+                  eso es uno solo y vive en la política, en vez de competir con las
+                  cuentas por un sitio en la lista.
+                */}
+                <Field
+                  label="Enlace de pago"
+                  htmlFor="payment-link"
+                  hint="Opcional. Tiene que empezar por https."
+                >
+                  <Input
+                    id="payment-link"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://…"
+                    maxLength={300}
+                    value={paymentLink}
+                    disabled={!writable}
+                    onChange={(event) => setPaymentLink(event.target.value)}
+                  />
                 </Field>
               </div>
 

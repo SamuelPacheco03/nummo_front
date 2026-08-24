@@ -63,6 +63,12 @@ export function politicaDeCobranza(over: Partial<CollectionPolicy> = {}): Collec
     daysAfter: 1,
     // El defecto del backend, y el mediodía cae dentro de la franja todos los días.
     sendAt: '12:00',
+    /*
+      El enlace de pago **no es una cuenta**: el dinero no vive en una URL. Es uno
+      solo y va en la política, al lado de las cuentas publicadas y no dentro de
+      ellas.
+    */
+    paymentLink: null,
     // Días ISO: 1 es lunes y 7 domingo. Lunes a sábado es el defecto del backend.
     sendDays: [1, 2, 3, 4, 5, 6],
     skipHolidays: true,
