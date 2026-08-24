@@ -41,3 +41,16 @@ export function scheduleFixedByLaw(error: unknown): ScheduleFixedByLawDetails | 
   const details = detailsOf(error)
   return details?.reason === 'SCHEDULE_FIXED_BY_LAW' ? (details as ScheduleFixedByLawDetails) : null
 }
+
+/**
+ * Se intentó encender la cobranza sin teléfono ni correo de la empresa.
+ *
+ * **El contrato no lo declara todavía** —`CollectionPolicyErrorDetails` sigue con
+ * dos ramas y `ORGANIZATION_CONTACT_REQUIRED` no aparece en el JSON—, así que no
+ * hay tipo que estrechar y aquí solo se mira el motivo. Es lo único que hace
+ * falta para el mensaje: los dos campos que pide ya los sabe la pantalla, porque
+ * es ella la que los ofrece.
+ */
+export function organizationContactRequired(error: unknown): boolean {
+  return detailsOf(error)?.reason === 'ORGANIZATION_CONTACT_REQUIRED'
+}

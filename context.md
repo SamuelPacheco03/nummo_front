@@ -1746,6 +1746,32 @@ nosotros».** No se queda en blanco —una variable vacía haría que Meta recha
 entero— pero el deudor no sabe a dónde pagar, y desde la política no había forma de
 enterarse: ahora lo avisa, y solo con la cobranza encendida.
 
+### A dónde escribe el deudor
+
+**El número desde el que salen los recordatorios no recibe respuestas.** El de la plataforma
+es compartido entre todos los clientes de Nummo: si dos empresas tienen al mismo deudor y
+éste contesta, no hay forma de saber de quién es esa conversación. Así que el mensaje lleva
+un renglón que dice a dónde escribir de verdad — el mismo «este número no recibe mensajes»
+que pone un banco.
+
+De ahí `contactPhone` y `contactEmail` en la organización. Los dos son opcionales, pero
+**encender la cobranza sin ninguno responde 422** (`details.reason =
+"ORGANIZATION_CONTACT_REQUIRED"`). Solo al encender: cambiar una plantilla o la hora no lo
+pide.
+
+Están **en dos sitios y no es duplicar**: la ficha de la empresa es donde viven, y la
+pantalla de cobranza los **pide en línea cuando faltan** (`OrgContactNote`). Mandar a alguien
+a otra sección a mitad de una configuración es perderlo, y lo que falta son dos campos. Tres
+detalles que se hacen mal solos:
+
+1. **El botón del bloque es `type="button"`.** Vive dentro del formulario de la política, y
+   sin decirlo enviaría la política entera — justo la petición que el backend acaba de
+   rechazar.
+2. **Se mira la casilla del borrador, no la política guardada.** Es al encender cuando
+   estorba; avisarlo antes es ruido en una pantalla que solo se está leyendo.
+3. **Quien no puede editar la organización ve el enlace, no el formulario.** No hay nada que
+   pueda hacer ahí, y lo que necesita saber es a quién pedírselo.
+
 ### «Billetera digital» no es un método de pago
 
 `METHOD_TYPES` son cuatro: `CASH`, `BANK_TRANSFER`, `CARD`, `OTHER`. **Pagar desde un Nequi
@@ -5562,6 +5588,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `FinancialAccountsPage` | `features/masters/financial-accounts-page.tsx` | Cuentas de dinero **y dónde puede pagar el deudor**, en un solo sitio |
 | `BANK_ACCOUNT_KINDS` · `TRANSFER_KEY_KINDS` | `features/masters/labels.ts` | Ahorros/corriente y con qué se identifica una llave, en palabras |
 | `usePublishedAccounts` | `features/masters/hooks.ts` | ¿Hay alguna cuenta que el deudor vea? Una fila, con los filtros del endpoint |
+| `OrgContactNote` | `features/messaging/org-contact-note.tsx` | A dónde escribe el deudor, pedido en línea al encender la cobranza |
 | `saysWherePay` · `paymentAwareUpgrade` | `features/messaging/labels.ts` | Las dos generaciones de plantilla: se clasifican por variable, se emparejan por clave |
 | `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: estado, entrantes y plantillas (§47.6, §97.26) |
 | `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |

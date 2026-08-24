@@ -17,6 +17,8 @@ const m = vi.hoisted(() => ({
   permisos: new Set<string>(),
   correr: vi.fn(),
   cuentasPublicadas: undefined as number | undefined,
+  contacto: { phone: '+57 310 594 8908' as string | null, email: null as string | null },
+  guardarContacto: vi.fn(),
 }))
 
 vi.mock('sonner', () => ({
@@ -28,7 +30,17 @@ vi.mock('@/features/masters/hooks', () => ({
   usePublishedAccounts: () => ({ count: m.cuentasPublicadas }),
 }))
 vi.mock('@/features/organizations/hooks', () => ({
-  useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' } }),
+  useCurrentOrg: () => ({
+    orgId: 'o1',
+    organization: {
+      defaultCurrency: 'COP',
+      contactPhone: m.contacto.phone,
+      contactEmail: m.contacto.email,
+    },
+  }),
+}))
+vi.mock('@/features/config/hooks', () => ({
+  useUpdateOrg: () => ({ mutateAsync: m.guardarContacto, isPending: false }),
 }))
 vi.mock('@/features/platform/permissions', () => ({
   useCan: () => (permiso: string) => m.permisos.has(permiso),
@@ -97,8 +109,12 @@ beforeEach(() => {
     'messaging.send',
     'whatsapp.templates.read',
     'financial_accounts.read',
+    // Quien configura la cobranza suele poder editar la empresa: es el camino normal.
+    'organization.manage',
   ])
   m.cuentasPublicadas = 1
+  m.contacto = { phone: '+57 310 594 8908', email: null }
+  m.guardarContacto = vi.fn().mockResolvedValue({ data: {} })
   m.correr = vi.fn().mockResolvedValue({
     data: { before: 0, onDue: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0, sameDayDeferred: 0 },
   })
@@ -614,4 +630,91 @@ test('mientras no se sabe si hay cuentas publicadas, no se avisa', () => {
   m.cuentasPublicadas = undefined
   pintar()
   expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).toBeNull()
+})
+
+/* ---------- A dónde escribe el deudor ---------- */
+
+test('sin contacto de la empresa se pide aquí mismo, no en otra pantalla', async () => {
+  /*
+    Los recordatorios salen de un número que no recibe respuestas —el de la
+    plataforma es compartido—, así que el mensaje tiene que decir a dónde
+    contestar. Sin eso, encender la cobranza responde 422.
+  */
+  m.contacto = { phone: null, email: null }
+  pintar()
+
+  expect(screen.getByText(/Falta decirle al deudor a dónde escribirte/)).toBeInTheDocument()
+
+  await userEvent.type(screen.getByLabelText('Correo'), 'cartera@miempresa.co')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar contacto/ }))
+
+  expect(m.guardarContacto).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: { contactPhone: null, contactEmail: 'cartera@miempresa.co' },
+  })
+})
+
+test('guardar el contacto no envía la política entera', async () => {
+  // El bloque vive dentro del formulario de la política: sin `type="button"` el
+  // botón mandaría justo la petición que el backend acaba de rechazar.
+  m.contacto = { phone: null, email: null }
+  pintar()
+
+  await userEvent.type(screen.getByLabelText('Teléfono'), '+57 310 594 8908')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar contacto/ }))
+
+  expect(m.guardarContacto).toHaveBeenCalled()
+  expect(m.guardar).not.toHaveBeenCalled()
+})
+
+test('con uno de los dos basta, y sin ninguno se dice antes de gastar la petición', async () => {
+  m.contacto = { phone: null, email: null }
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Guardar contacto/ }))
+
+  expect(m.avisos.at(-1)).toMatch(/al menos un teléfono o un correo/)
+  expect(m.guardarContacto).not.toHaveBeenCalled()
+})
+
+test('con contacto puesto el aviso no sale', () => {
+  m.contacto = { phone: '+57 310 594 8908', email: null }
+  pintar()
+  expect(screen.queryByText(/Falta decirle al deudor a dónde escribirte/)).toBeNull()
+})
+
+test('con la cobranza apagada no se pide: solo estorba al encenderla', async () => {
+  m.contacto = { phone: null, email: null }
+  m.politica = politica({ enabled: false })
+  pintar()
+
+  expect(screen.queryByText(/Falta decirle al deudor a dónde escribirte/)).toBeNull()
+
+  // Y aparece en cuanto se marca la casilla, sin esperar a guardar.
+  await userEvent.click(screen.getByRole('checkbox', { name: /Escribirle a quien debe/ }))
+  expect(screen.getByText(/Falta decirle al deudor a dónde escribirte/)).toBeInTheDocument()
+})
+
+test('quien no puede editar la organización sabe a quién pedírselo', () => {
+  // No hay nada que pueda hacer aquí, así que el formulario en línea sobraría.
+  m.contacto = { phone: null, email: null }
+  m.permisos = new Set(['messaging.read', 'messaging.settings.manage'])
+  pintar()
+
+  expect(screen.getByText(/pídeselo a quien la administre/)).toBeInTheDocument()
+  expect(screen.queryByLabelText('Teléfono')).toBeNull()
+})
+
+test('el 422 de contacto se explica, no se enseña crudo', async () => {
+  // El contrato todavía no lo declara, así que solo se lee el motivo.
+  m.guardar = vi.fn().mockRejectedValue(
+    new ApiError(422, {
+      code: 'VALIDATION',
+      message: 'Invalid',
+      details: { reason: 'ORGANIZATION_CONTACT_REQUIRED', fields: ['contactPhone', 'contactEmail'] },
+    }),
+  )
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.avisos.at(-1)).toMatch(/a dónde te escribe quien te debe/)
 })

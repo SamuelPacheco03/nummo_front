@@ -26,7 +26,8 @@ import type {
   WhatsAppTemplate,
 } from '@/api/generated/model'
 import { usePublishedAccounts } from '@/features/masters/hooks'
-import { scheduleFixedByLaw, sendTimeOutOfRange } from './errors'
+import { organizationContactRequired, scheduleFixedByLaw, sendTimeOutOfRange } from './errors'
+import { OrgContactNote } from './org-contact-note'
 import { paymentAwareUpgrade, saysWherePay } from './labels'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
 import {
@@ -54,7 +55,7 @@ import { RunNowPanel } from './run-now-panel'
  * la única que puede responder `FEATURE_NOT_AVAILABLE` (§45.5).
  */
 export function CollectionPolicyPage() {
-  const { orgId } = useCurrentOrg()
+  const { orgId, organization } = useCurrentOrg()
   const can = useCan()
   const canRead = can('messaging.read')
   const canManage = can('messaging.settings.manage')
@@ -86,6 +87,14 @@ export function CollectionPolicyPage() {
     encima recibía un enlace a una pantalla que no puede abrir.
   */
   const sinFormasDePago = cuentasPublicadas === 0
+  /*
+    Sin teléfono ni correo de la empresa, **encender responde 422**: el mensaje
+    tiene que decirle al deudor a dónde contestar, porque el número desde el que
+    sale no recibe respuestas. Se mira sobre la casilla del borrador y no sobre la
+    política guardada: es al encenderla cuando estorba, y avisar antes sería ruido
+    en una pantalla que se está leyendo.
+  */
+  const sinContacto = Boolean(organization && !organization.contactPhone && !organization.contactEmail)
 
   const [enabled, setEnabled] = useState(false)
   const [sendAt, setSendAt] = useState('12:00')
@@ -203,6 +212,13 @@ export function CollectionPolicyPage() {
         })
         return
       }
+      if (organizationContactRequired(err)) {
+        toast.error('Falta decir a dónde te escribe quien te debe', {
+          description:
+            'Pon un teléfono o un correo de la empresa: va dentro del mensaje, porque el número desde el que sale no recibe respuestas.',
+        })
+        return
+      }
       const porLey = scheduleFixedByLaw(err)
       if (porLey) {
         toast.error('El horario lo fija la ley y no se puede cambiar', {
@@ -255,6 +271,10 @@ export function CollectionPolicyPage() {
 
           {/* Solo con la cobranza encendida: apagada no hay mensaje que salga
               mal, y el aviso sería ruido. */}
+          {enabled && sinContacto && (
+            <OrgContactNote orgId={orgId} canManageOrg={can('organization.manage')} />
+          )}
+
           {policy?.enabled && sinFormasDePago && (
             <Note tone="warning" title="Los recordatorios no dicen dónde pagar">
               Ninguna cuenta está publicada, así que el mensaje dice «Para pagar: comunícate

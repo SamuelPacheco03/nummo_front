@@ -31,6 +31,22 @@ const schema = z.object({
   type: z.enum(['SCHOOL', 'SHOP', 'PERSONAL', 'GENERIC']),
   timezone: z.string().trim().max(80).optional(),
   locale: z.string().trim().max(20).optional(),
+  /*
+    **A dónde te escribe quien recibe un cobro.** No es el contacto interno del
+    equipo: viaja dentro del mensaje de cobranza, porque los recordatorios salen
+    de un número que **no recibe respuestas** —el de la plataforma es compartido
+    entre todos los clientes de Nummo, y si dos empresas tienen al mismo deudor no
+    hay forma de saber de quién es esa conversación—. Es el mismo renglón que pone
+    un banco con su «este número no recibe mensajes».
+  */
+  contactPhone: z.string().trim().max(40, 'Máximo 40 caracteres.').optional(),
+  contactEmail: z
+    .string()
+    .trim()
+    .max(200, 'Máximo 200 caracteres.')
+    .email('No parece un correo válido.')
+    .or(z.literal(''))
+    .optional(),
 })
 type Values = z.infer<typeof schema>
 
@@ -50,6 +66,8 @@ function toForm(org: Organization): Values {
     type: org.type,
     timezone: org.timezone,
     locale: org.locale,
+    contactPhone: org.contactPhone ?? '',
+    contactEmail: org.contactEmail ?? '',
   }
 }
 
@@ -160,6 +178,9 @@ export function CompanyPage() {
           type: values.type,
           timezone: values.timezone || undefined,
           locale: values.locale || undefined,
+          // Vacío es «no lo pongo», que en el contrato es `null`.
+          contactPhone: values.contactPhone ? values.contactPhone : null,
+          contactEmail: values.contactEmail ? values.contactEmail : null,
         },
       })
       // Esta pantalla se queda: hay que marcarla limpia a mano con lo que se
@@ -217,6 +238,45 @@ export function CompanyPage() {
             <Field label="Locale" htmlFor="c-locale" error={errors.locale?.message}>
               <Input id="c-locale" placeholder="es-CO" disabled={!canManage} {...register('locale')} />
             </Field>
+          </div>
+
+          {/*
+            **A dónde te escribe quien recibe un cobro**, y por eso va aquí y no
+            entre los datos fiscales: viaja dentro del mensaje. Los recordatorios
+            salen de un número que no recibe respuestas, así que sin esto el deudor
+            se queda sin forma de contestar.
+          */}
+          <div className="space-y-3 border-t pt-4">
+            <div>
+              <p className="text-sm font-medium">A dónde te escribe quien te debe</p>
+              <p className="text-muted-foreground text-xs">
+                Va dentro de cada recordatorio de cobranza. El número desde el que salen los
+                mensajes <strong>no recibe respuestas</strong>, así que sin esto el deudor no
+                tiene a dónde contestar. Con uno de los dos basta.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Teléfono" htmlFor="c-phone" error={errors.contactPhone?.message}>
+                <Input
+                  id="c-phone"
+                  inputMode="tel"
+                  maxLength={40}
+                  placeholder="+57 310 594 8908"
+                  disabled={!canManage}
+                  {...register('contactPhone')}
+                />
+              </Field>
+              <Field label="Correo" htmlFor="c-email" error={errors.contactEmail?.message}>
+                <Input
+                  id="c-email"
+                  type="email"
+                  maxLength={200}
+                  placeholder="cartera@miempresa.co"
+                  disabled={!canManage}
+                  {...register('contactEmail')}
+                />
+              </Field>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground">
             Moneda: <span className="font-medium text-foreground">{organization.defaultCurrency}</span>{' '}
