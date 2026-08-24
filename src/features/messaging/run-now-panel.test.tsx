@@ -21,12 +21,14 @@ const { RunNowPanel } = await import('./run-now-panel')
 
 function pasada(over: Partial<CollectionRemindersRun> = {}): CollectionRemindersRun {
   return {
-    dueSoon: 0,
+    before: 0,
+    onDue: 0,
     overdue: 0,
     queued: 0,
     skipped: 0,
     overdueDeferred: 0,
     withoutPhone: 0,
+    sameDayDeferred: 0,
     ...over,
   }
 }
@@ -61,15 +63,34 @@ test('encola, y el texto no promete que se enviaron', async () => {
 
 test('pulsarlo dos veces no es un error: dice que ya estaba dicho', async () => {
   /*
-    La segunda pulsación devuelve `overdue: 1, queued: 0` porque la clave de
-    deduplicación ya cubrió ese aviso. Sin explicarlo, un «0 en cola» con un
-    vencido al lado se lee como avería.
+    La segunda pulsación devuelve **todo en cero**: el aviso ya quedó registrado
+    y la consulta ni siquiera lo devuelve. Un panel entero de ceros sin una
+    palabra al lado se lee como avería.
   */
-  m.correr = vi.fn().mockResolvedValue({ data: pasada({ overdue: 1, queued: 0 }) })
+  m.correr = vi.fn().mockResolvedValue({ data: pasada() })
   pintar()
   await userEvent.click(screen.getByRole('button', { name: /Enviar ahora/ }))
 
   expect(await screen.findByText(/ya estaba dicho/)).toBeInTheDocument()
+})
+
+test('las cifras de etapa no se leen como envíos fallidos', async () => {
+  // `before`, `onDue` y `overdue` cuentan lo REVISADO en cada etapa; lo que salió
+  // es `queued`. Sin decirlo, «Ya vencidos: 3 · En cola: 1» parece que fallaron dos.
+  m.correr = vi.fn().mockResolvedValue({ data: pasada({ overdue: 3, queued: 1 }) })
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Enviar ahora/ }))
+
+  expect(await screen.findByText(/lo que se revisó en cada etapa/)).toBeInTheDocument()
+})
+
+test('quien cedió el turno del día no se da por perdido', async () => {
+  m.correr = vi.fn().mockResolvedValue({ data: pasada({ queued: 1, sameDayDeferred: 4 }) })
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Enviar ahora/ }))
+
+  expect(await screen.findByText('Cedieron el turno')).toBeInTheDocument()
+  expect(screen.getByText(/no se pierden/)).toBeInTheDocument()
 })
 
 test('el botón no se deshabilita tras pulsarlo: repetir no duplica', async () => {

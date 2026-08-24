@@ -105,8 +105,12 @@ export function CollectionPolicyPage() {
         orgId,
         data: {
           enabled,
-          quietStart,
-          quietEnd,
+          /*
+            El horario **no viaja**: lo fija la Ley 2300 y el `PUT` lo rechaza
+            entero con un 422 si aparece. Los campos siguen llegando en el `GET`
+            —son la preferencia, que solo manda donde no hay horario legal— pero
+            desde aquí no se mandan de vuelta.
+          */
           // Vacío es «sin plantilla», que apaga ese aviso. No es una cadena vacía.
           dueSoonTemplateKey: dueSoon || null,
           overdueTemplateKey: overdue || null,

@@ -21,8 +21,8 @@ import { useRunCollectionReminders } from './hooks'
  * Tres decisiones que salen de cómo se comporta el backend:
  *
  * 1. **No se deshabilita «por si acaso» ni avisa de que ya se pulsó.** Pulsarlo
- *    dos veces no duplica nada, y lo garantiza la clave de deduplicación de cada
- *    mensaje. La segunda pulsación devuelve `overdue: 1, queued: 0`, que **no es
+ *    dos veces no duplica nada. La segunda pulsación devuelve **todo en cero**
+ *    —el aviso ya quedó registrado y la consulta ni lo devuelve—, y eso **no es
  *    un error**: significa «ya estaba dicho».
  * 2. **El resultado no va en un aviso.** Son seis cifras que hay que leer y
  *    comparar, y §40 reserva el toast para lo que no se estudia.
@@ -89,13 +89,19 @@ export function RunNowPanel({ orgId, canRun }: { orgId: string | undefined; canR
 /**
  * Lo que hizo la pasada, y **por qué salieron menos de los que esperabas**.
  *
- * `withoutPhone` y `overdueDeferred` son la respuesta a «pedí avisar a treinta y
- * salieron doce»: un cero sin explicación al lado parece un fallo del sistema, y
- * lo que hay detrás casi siempre es un contacto sin teléfono o una hora de
- * silencio que aplazó el envío.
+ * `withoutPhone`, `overdueDeferred` y `sameDayDeferred` son la respuesta a «pedí
+ * avisar a treinta y salieron doce»: un cero sin explicación al lado parece un
+ * fallo del sistema, y lo que hay detrás casi siempre es un contacto sin
+ * teléfono, una hora de silencio que aplazó el envío o un grupo que cedió el
+ * turno del día.
+ *
+ * **Las tres primeras cifras no son envíos**: `before`, `onDue` y `overdue`
+ * cuentan lo que se revisó en cada etapa. Lo que salió es `queued`, y sin decirlo
+ * un «Ya vencidos: 3 · En cola: 1» se lee como que fallaron dos.
  */
 function RunResult({ result }: { result: CollectionRemindersRun }) {
-  const { queued, dueSoon, overdue, skipped, overdueDeferred, withoutPhone } = result
+  const { queued, before, onDue, overdue, skipped, overdueDeferred, withoutPhone, sameDayDeferred } =
+    result
 
   return (
     <div className="space-y-2 border-t pt-4">
@@ -106,22 +112,38 @@ function RunResult({ result }: { result: CollectionRemindersRun }) {
             `${plural(queued, 'mensaje encolado', 'mensajes encolados')}`}
       </p>
 
-      {queued === 0 && (dueSoon > 0 || overdue > 0) && (
-        /* El caso que se lee como fallo y no lo es: ya se había avisado hoy. */
+      {queued === 0 && (
+        /*
+          El caso que se lee como fallo y no lo es. Las dos razones llegan
+          idénticas —todo en cero— así que el texto cubre las dos en vez de
+          adivinar cuál fue.
+        */
         <p className="text-muted-foreground text-xs">
-          Lo que tocaba avisar ya estaba dicho. Volver a pulsar no manda el mismo aviso dos veces.
+          O ya estaba dicho, o hoy no le tocaba a nadie. Volver a pulsar no manda el mismo aviso
+          dos veces.
         </p>
       )}
 
+      {/* Sin esto, «Ya vencidos: 3 · En cola: 1» se lee como que fallaron dos. */}
+      <p className="text-muted-foreground text-xs">
+        Las tres primeras son lo que se revisó en cada etapa; lo que salió es «En cola».
+      </p>
+
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
-        <Row label="Por vencer" value={dueSoon} />
-        <Row label="Vencidos" value={overdue} />
+        <Row label="Por vencer" value={before} />
+        <Row label="Vencen hoy" value={onDue} />
+        <Row label="Ya vencidos" value={overdue} />
         <Row label="En cola" value={queued} />
         <Row label="Sin teléfono" value={withoutPhone} hint="No se les puede escribir." />
         <Row
           label="Aplazados"
           value={overdueDeferred}
           hint="Cayeron en horas de silencio; salen al terminar."
+        />
+        <Row
+          label="Cedieron el turno"
+          value={sameDayDeferred}
+          hint="Les tocaba hoy otro aviso; no se pierden."
         />
         <Row label="Saltados" value={skipped} hint="Consentimiento, plantilla o cupo." />
       </dl>

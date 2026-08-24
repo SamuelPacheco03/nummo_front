@@ -96,7 +96,7 @@ beforeEach(() => {
   ])
   m.formasDePago = [{ showInReminders: true }]
   m.correr = vi.fn().mockResolvedValue({
-    data: { dueSoon: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0 },
+    data: { before: 0, onDue: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0, sameDayDeferred: 0 },
   })
 })
 afterEach(cleanup)
@@ -171,6 +171,26 @@ test('una plantilla que Meta no aprobó se ofrece, pero avisada', () => {
   m.plantillas = [plantilla({ status: 'PENDING', canSend: false })]
   pintar()
   expect(screen.getByText(/Meta todavía no la aprobó/)).toBeInTheDocument()
+})
+
+test('el horario NO viaja en el guardado: lo fija la ley y el PUT lo rechazaría', async () => {
+  /*
+    La Ley 2300 fija la franja, así que `quietStart`, `quietEnd`, `sendDays` y
+    `skipHolidays` dejaron de aceptarse: mandar uno solo tumba el guardado entero
+    con un 422 y no se salva ni una plantilla.
+
+    Esto se vigila desde aquí y no desde los tipos porque el fallo es de omisión:
+    el día que alguien vuelva a meter el campo en el objeto, TypeScript sí salta
+    —ya no está en `UpdateCollectionPolicyInput`—, pero el día que se copie este
+    formulario para otro país el guardarraíl tiene que ser una frase, no un tipo.
+  */
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  const [{ data }] = m.guardar.mock.calls[0] as [{ data: Record<string, unknown> }]
+  for (const prohibido of ['quietStart', 'quietEnd', 'sendDays', 'skipHolidays']) {
+    expect(data).not.toHaveProperty(prohibido)
+  }
 })
 
 test('vaciar la plantilla manda null, no cadena vacía', async () => {
