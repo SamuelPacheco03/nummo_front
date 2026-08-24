@@ -50,18 +50,18 @@ const schema = z
       un parámetro de plantilla de WhatsApp, y Meta rechaza el envío entero si
       lleva saltos de línea.
     */
-    bankName: z.string().trim().max(60).optional(),
+    bankName: z.string().trim().max(60, 'Máximo 60 caracteres.').optional(),
     accountKind: z.enum(['SAVINGS', 'CHECKING']).or(z.literal('')).optional(),
-    accountNumber: z.string().trim().max(40).optional(),
-    holderName: z.string().trim().max(120).optional(),
-    holderDocument: z.string().trim().max(40).optional(),
+    accountNumber: z.string().trim().max(40, 'Máximo 40 caracteres.').optional(),
+    holderName: z.string().trim().max(120, 'Máximo 120 caracteres.').optional(),
+    holderDocument: z.string().trim().max(40, 'Máximo 40 caracteres.').optional(),
     transferKeyKind: z
       .enum(['PHONE', 'EMAIL', 'DOCUMENT', 'ALPHANUMERIC'])
       .or(z.literal(''))
       .optional(),
-    transferKeyValue: z.string().trim().max(120).optional(),
-    provider: z.string().trim().max(40).optional(),
-    phone: z.string().trim().max(25).optional(),
+    transferKeyValue: z.string().trim().max(120, 'Máximo 120 caracteres.').optional(),
+    provider: z.string().trim().max(40, 'Máximo 40 caracteres.').optional(),
+    phone: z.string().trim().max(25, 'Máximo 25 caracteres.').optional(),
     publishInReminders: z.boolean().optional(),
   })
   .superRefine((v, ctx) => {
@@ -92,9 +92,19 @@ const schema = z
         })
       }
     }
-    // La llave es un par: media llave no lleva a ninguna parte.
-    if (v.transferKeyKind && !v.transferKeyValue) need('transferKeyValue', 'La llave en sí.')
-    if (v.transferKeyValue && !v.transferKeyKind) need('transferKeyKind', 'Con qué se identifica.')
+    /*
+      La llave es un par: media llave no lleva a ninguna parte. Pero **solo se
+      comprueba en una cuenta de banco**, porque los campos no se desmontan del
+      formulario al cambiar de tipo —RHF conserva lo escrito a propósito, para no
+      perderlo si vuelves atrás—. Sin este guardia, escribir media llave y luego
+      pasar a billetera dejaba el botón muerto: la validación fallaba contra unos
+      campos que ya no estaban en pantalla, así que el error no se veía en ninguna
+      parte.
+    */
+    if (v.accountType === 'BANK') {
+      if (v.transferKeyKind && !v.transferKeyValue) need('transferKeyValue', 'La llave en sí.')
+      if (v.transferKeyValue && !v.transferKeyKind) need('transferKeyKind', 'Con qué se identifica.')
+    }
   })
 type Values = z.infer<typeof schema>
 
@@ -209,8 +219,16 @@ function AccountDialog({
       openingBalance: v.openingBalance || undefined,
       openingBalanceDate: v.openingBalanceDate || undefined,
       branchId: v.branchId ? v.branchId : null,
-      paymentDetails: toPaymentDetails(v),
-      publishInReminders: v.publishInReminders ?? false,
+      /*
+        Los dos campos que piden `financial_accounts.publish` **solo viajan si se
+        tiene el permiso**, y no basta con deshabilitar sus controles: mandarlos
+        —aunque sea con el mismo valor que ya tenían— hace que el backend pida ese
+        permiso en la petición entera, y quien solo puede renombrar la cuenta se
+        queda sin poder guardar nada.
+      */
+      ...(canPublish
+        ? { paymentDetails: toPaymentDetails(v), publishInReminders: v.publishInReminders ?? false }
+        : {}),
     }
     try {
       if (isEdit && editing) {
@@ -281,10 +299,10 @@ function AccountDialog({
           <p className="text-sm font-medium">Datos para consignar</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Banco" htmlFor="fa-bank" error={errors.bankName?.message}>
-              <Input id="fa-bank" placeholder="Bancolombia" {...register('bankName')} />
+              <Input id="fa-bank" maxLength={60} disabled={!canPublish} placeholder="Bancolombia" {...register('bankName')} />
             </Field>
             <Field label="Tipo de cuenta" htmlFor="fa-kind" error={errors.accountKind?.message}>
-              <NativeSelect id="fa-kind" {...register('accountKind')}>
+              <NativeSelect id="fa-kind" disabled={!canPublish} {...register('accountKind')}>
                 <option value="">Elige una</option>
                 {BANK_ACCOUNT_KINDS.map((k) => (
                   <option key={k.value} value={k.value}>
@@ -295,11 +313,11 @@ function AccountDialog({
             </Field>
           </div>
           <Field label="Número" htmlFor="fa-number" error={errors.accountNumber?.message}>
-            <Input id="fa-number" placeholder="123-456789-00" {...register('accountNumber')} />
+            <Input id="fa-number" maxLength={40} disabled={!canPublish} placeholder="123-456789-00" {...register('accountNumber')} />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="A nombre de" htmlFor="fa-holder" error={errors.holderName?.message}>
-              <Input id="fa-holder" {...register('holderName')} />
+              <Input id="fa-holder" maxLength={120} disabled={!canPublish} {...register('holderName')} />
             </Field>
             <Field
               label="Documento del titular"
@@ -307,7 +325,7 @@ function AccountDialog({
               hint="Opcional"
               error={errors.holderDocument?.message}
             >
-              <Input id="fa-doc" placeholder="NIT 900123456" {...register('holderDocument')} />
+              <Input id="fa-doc" maxLength={40} disabled={!canPublish} placeholder="NIT 900123456" {...register('holderDocument')} />
             </Field>
           </div>
 
@@ -320,7 +338,7 @@ function AccountDialog({
               hint="Opcional"
               error={errors.transferKeyKind?.message}
             >
-              <NativeSelect id="fa-key-kind" {...register('transferKeyKind')}>
+              <NativeSelect id="fa-key-kind" disabled={!canPublish} {...register('transferKeyKind')}>
                 <option value="">Sin llave</option>
                 {TRANSFER_KEY_KINDS.map((k) => (
                   <option key={k.value} value={k.value}>
@@ -330,7 +348,7 @@ function AccountDialog({
               </NativeSelect>
             </Field>
             <Field label="Llave" htmlFor="fa-key" error={errors.transferKeyValue?.message}>
-              <Input id="fa-key" placeholder="3105948908" {...register('transferKeyValue')} />
+              <Input id="fa-key" maxLength={120} disabled={!canPublish} placeholder="3105948908" {...register('transferKeyValue')} />
             </Field>
           </div>
         </div>
@@ -341,10 +359,10 @@ function AccountDialog({
           <p className="text-sm font-medium">Datos para transferir</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Billetera" htmlFor="fa-provider" error={errors.provider?.message}>
-              <Input id="fa-provider" placeholder="Nequi" {...register('provider')} />
+              <Input id="fa-provider" maxLength={40} disabled={!canPublish} placeholder="Nequi" {...register('provider')} />
             </Field>
             <Field label="Celular" htmlFor="fa-phone" error={errors.phone?.message}>
-              <Input id="fa-phone" inputMode="tel" {...register('phone')} />
+              <Input id="fa-phone" maxLength={25} disabled={!canPublish} inputMode="tel" {...register('phone')} />
             </Field>
           </div>
           <Field
@@ -353,7 +371,7 @@ function AccountDialog({
             hint="Opcional"
             error={errors.holderName?.message}
           >
-            <Input id="fa-wallet-holder" {...register('holderName')} />
+            <Input id="fa-wallet-holder" maxLength={120} disabled={!canPublish} {...register('holderName')} />
           </Field>
         </div>
       )}
@@ -367,8 +385,17 @@ function AccountDialog({
         >
           <input
             type="checkbox"
+            id="fa-publish"
             className="accent-primary mt-0.5 size-4 shrink-0"
             disabled={!canPublish}
+            /*
+              El único control del diálogo que no pasa por `Field`, así que su
+              error y su nota se atan a mano: sin esto, quien navega con lector de
+              pantalla marca la casilla en una caja, envía, y no oye por qué no
+              pasó nada — el mensaje está al lado pero no asociado.
+            */
+            aria-describedby="fa-publish-hint"
+            aria-invalid={errors.publishInReminders ? true : undefined}
             {...register('publishInReminders')}
           />
           <span className="min-w-0">
@@ -378,24 +405,26 @@ function AccountDialog({
             </span>
           </span>
         </label>
-        {errors.publishInReminders?.message && (
-          <p className="text-destructive text-xs">{errors.publishInReminders.message}</p>
-        )}
-        {!canPublish && (
-          <p className="text-muted-foreground text-xs">
-            Tu rol no incluye publicar cuentas: decide a qué número consignan los clientes.
-          </p>
-        )}
-        {/*
-          `paymentPreview` es **el renglón exacto** que verá el deudor, compuesto
-          por el servidor. Se pinta tal cual; armarlo aquí garantizaría que las dos
-          versiones acaben diciendo cosas distintas.
-        */}
-        {publishing && editing?.paymentPreview && (
-          <p className="bg-muted/40 text-muted-foreground rounded-md border px-3 py-2 text-xs">
-            Hoy dice: <span className="text-foreground">{editing.paymentPreview}</span>
-          </p>
-        )}
+        <div id="fa-publish-hint" className="space-y-2">
+          {errors.publishInReminders?.message && (
+            <p className="text-destructive text-xs">{errors.publishInReminders.message}</p>
+          )}
+          {!canPublish && (
+            <p className="text-muted-foreground text-xs">
+              Tu rol no incluye publicar cuentas: decide a qué número consignan los clientes.
+            </p>
+          )}
+          {/*
+            `paymentPreview` es **el renglón exacto** que verá el deudor, compuesto
+            por el servidor. Se pinta tal cual; armarlo aquí garantizaría que las dos
+            versiones acaben diciendo cosas distintas.
+          */}
+          {publishing && editing?.paymentPreview && (
+            <p className="bg-muted/40 text-muted-foreground rounded-md border px-3 py-2 text-xs">
+              Hoy dice: <span className="text-foreground">{editing.paymentPreview}</span>
+            </p>
+          )}
+        </div>
       </div>
 
       {isEdit && (
@@ -467,7 +496,13 @@ export function FinancialAccountsPage() {
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
-        card: 'meta',
+        /*
+          **Sin papel en la tarjeta a propósito.** `meta` es solo para lo que
+          siempre tiene valor (§ `master-crud`): una cuenta sin publicar dejaría
+          un «Banco · COP · —» con el guion colgando, y una publicada metería el
+          renglón entero del servidor en una línea truncada. Al pie de la tarjeta
+          va con su etiqueta y cabe.
+        */
       },
     ],
     [branchName],

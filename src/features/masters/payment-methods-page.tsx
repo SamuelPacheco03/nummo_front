@@ -20,10 +20,20 @@ import type { MasterParams } from './hooks'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(100),
-  methodType: z.enum(['CASH', 'BANK_TRANSFER', 'CARD', 'OTHER']),
+  /*
+    Cadena y no enumerado, para que un tipo retirado que siga guardado pueda
+    cargarse en el formulario sin fallar. Lo constriñe el `<select>`: no hay forma
+    de elegir algo que no esté entre sus opciones, y la retirada va deshabilitada.
+  */
+  methodType: z.string().min(1),
   isActive: z.boolean().optional(),
 })
 type Values = z.infer<typeof schema>
+
+/** ¿Es un tipo que el catálogo todavía ofrece? Estrecha para el contrato. */
+function enCatalogo(tipo: string): tipo is (typeof METHOD_TYPES)[number] {
+  return (METHOD_TYPES as readonly string[]).includes(tipo)
+}
 
 const COLUMNS: Column<PaymentMethod>[] = [
   { header: 'Nombre', cell: (r) => r.name, card: 'title', sortField: 'name' },
@@ -56,6 +66,9 @@ function MethodDialog({
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
+  /** Lo guardado, cuando el catálogo ya no lo ofrece. */
+  const tipoRetirado = editing && !enCatalogo(editing.methodType) ? editing.methodType : null
+
   useEffect(() => {
     if (open)
       reset({
@@ -66,16 +79,24 @@ function MethodDialog({
   }, [open, editing, reset])
 
   const onSubmit = handleSubmit(async (v) => {
+    /*
+      Un tipo retirado **no se reenvía**: el `PATCH` es parcial, así que omitirlo
+      deja el que hay guardado. Es lo que permite corregirle el nombre a un método
+      antiguo sin reclasificarlo de paso, que era el único camino por el que se
+      podía perder ese dato sin querer.
+    */
+    const tipo = enCatalogo(v.methodType) ? v.methodType : null
     try {
       if (isEdit && editing) {
         await update.mutateAsync({
           orgId,
           id: editing.id,
-          data: { name: v.name, methodType: v.methodType, isActive: v.isActive },
+          data: { name: v.name, isActive: v.isActive, ...(tipo ? { methodType: tipo } : {}) },
         })
         toast.success('Método actualizado')
       } else {
-        await create.mutateAsync({ orgId, data: { name: v.name, methodType: v.methodType } })
+        // Al crear no hay opción retirada que elegir, así que siempre hay tipo.
+        await create.mutateAsync({ orgId, data: { name: v.name, methodType: tipo ?? 'CASH' } })
         toast.success('Método creado')
       }
       onOpenChange(false)
@@ -103,6 +124,18 @@ function MethodDialog({
               {METHOD_TYPE_LABELS[t]}
             </option>
           ))}
+          {/*
+            Un tipo guardado que el catálogo ya no ofrece se enseña igual, y
+            deshabilitado. Sin él, el desplegable se abre **en blanco** y el
+            primer «Guardar» —aunque solo se viniera a corregir el nombre—
+            reclasificaría el método sin decirlo. Deshabilitado deja verlo y
+            obliga a elegir a propósito.
+          */}
+          {tipoRetirado && (
+            <option value={tipoRetirado} disabled>
+              {METHOD_TYPE_LABELS[tipoRetirado] ?? tipoRetirado} (ya no se usa)
+            </option>
+          )}
         </NativeSelect>
       </Field>
       {isEdit && (

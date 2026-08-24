@@ -247,3 +247,75 @@ test('lo que ve el deudor se pinta tal cual lo compone el servidor', async () =>
   )
   expect(vistas.length).toBeGreaterThan(0)
 })
+
+test('sin permiso de publicar, los datos de pago NO viajan en el guardado', async () => {
+  /*
+    No basta con deshabilitar los controles: el backend pide
+    `financial_accounts.publish` en cuanto la petición lleva esos dos campos —da
+    igual que vayan con el mismo valor—, así que quien solo puede renombrar la
+    cuenta se quedaba sin poder guardar absolutamente nada, ni un nombre.
+  */
+  estado.permisos = ['financial_accounts.read', 'financial_accounts.manage']
+  const user = userEvent.setup()
+  montar()
+  const dialogo = await abrirNueva(user)
+
+  await user.type(within(dialogo).getByLabelText(/^Nombre/), 'Caja chica')
+  await user.selectOptions(within(dialogo).getByLabelText('Tipo'), 'CASH')
+  await user.click(within(dialogo).getByRole('button', { name: 'Crear' }))
+
+  const [enviada] = escrituras()
+  expect(enviada?.body).not.toHaveProperty('paymentDetails')
+  expect(enviada?.body).not.toHaveProperty('publishInReminders')
+  expect(enviada?.body?.name).toBe('Caja chica')
+})
+
+test('sin permiso de publicar tampoco se editan los datos de pago', async () => {
+  // Enseñar un campo editable para una decisión que el producto dice que no
+  // puedes tomar es peor que no enseñarlo.
+  estado.permisos = ['financial_accounts.read', 'financial_accounts.manage']
+  const user = userEvent.setup()
+  montar()
+  const dialogo = await abrirNueva(user)
+
+  await user.selectOptions(within(dialogo).getByLabelText('Tipo'), 'BANK')
+  expect(within(dialogo).getByLabelText('Banco')).toBeDisabled()
+  expect(within(dialogo).getByLabelText('Número')).toBeDisabled()
+  // Pero la cuenta se sigue editando.
+  expect(within(dialogo).getByLabelText(/^Nombre/)).toBeEnabled()
+})
+
+test('cambiar de banco a billetera no deja el botón muerto', async () => {
+  /*
+    RHF conserva lo escrito en campos que se desmontan —a propósito, para no
+    perderlo si vuelves atrás—. Media llave escrita como banco hacía fallar la
+    validación después de pasar a billetera, contra un campo que ya no estaba en
+    pantalla: cero peticiones y ningún error visible en ninguna parte.
+  */
+  const user = userEvent.setup()
+  montar()
+  const dialogo = await abrirNueva(user)
+
+  await user.type(within(dialogo).getByLabelText(/^Nombre/), 'Nequi del negocio')
+  await user.selectOptions(within(dialogo).getByLabelText('Tipo'), 'BANK')
+  await user.selectOptions(within(dialogo).getByLabelText(/Llave de transferencia/), 'PHONE')
+
+  await user.selectOptions(within(dialogo).getByLabelText('Tipo'), 'DIGITAL_WALLET')
+  await user.type(within(dialogo).getByLabelText('Billetera'), 'Nequi')
+  await user.type(within(dialogo).getByLabelText('Celular'), '3105948908')
+  await user.click(within(dialogo).getByRole('button', { name: 'Crear' }))
+
+  expect(escrituras()).toHaveLength(1)
+})
+
+test('pasarse de largo se dice en español', async () => {
+  // El mensaje por defecto de Zod es inglés, y la interfaz va en español.
+  const user = userEvent.setup()
+  montar()
+  const dialogo = await abrirNueva(user)
+
+  await user.type(within(dialogo).getByLabelText(/^Nombre/), 'Cuenta')
+  await user.selectOptions(within(dialogo).getByLabelText('Tipo'), 'DIGITAL_WALLET')
+  // El propio campo corta antes de llegar al tope del contrato.
+  expect(within(dialogo).getByLabelText('Billetera')).toHaveAttribute('maxLength', '40')
+})

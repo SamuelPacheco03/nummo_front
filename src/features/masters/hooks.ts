@@ -173,6 +173,35 @@ export function useFinancialAccounts(orgId: string | undefined, params: MasterPa
   })
   return normalize<FinancialAccount>(query)
 }
+/**
+ * **¿Hay alguna cuenta que el deudor vaya a ver?**
+ *
+ * Una consulta aparte de la lista, y con los filtros del endpoint en vez de un
+ * recorrido en el cliente. Tres razones, y ninguna es de estilo:
+ *
+ * 1. **La lista viene paginada.** Mirar `publishInReminders` sobre una página de
+ *    cien cuentas da la respuesta equivocada en cuanto la única publicada quede
+ *    en la ciento uno.
+ * 2. **Una cuenta desactivada no cuenta**, y sin el filtro `isActive` una
+ *    publicada pero apagada callaba el aviso mientras los recordatorios ya decían
+ *    «comunícate con nosotros».
+ * 3. Pide **una fila** y se queda con `total`. La pantalla que la usa necesita un
+ *    booleano, no cien cuentas enteras con sus datos de pago dentro.
+ *
+ * Devuelve `undefined` mientras no se sabe —cargando, o sin permiso para
+ * mirar—, que **no es lo mismo que cero**: quien lo use tiene que poder callarse
+ * en vez de avisar de un problema que quizá no existe.
+ */
+export function usePublishedAccounts(orgId: string | undefined): { count: number | undefined } {
+  const query = useGetApiV1OrganizationsOrgIdFinancialAccounts(
+    orgId ?? '',
+    { page: 1, pageSize: 1, publishInReminders: 'true', isActive: 'true' },
+    { query: { enabled: !!orgId } },
+  )
+  const page = query.data?.data as { total?: number } | undefined
+  return { count: query.isSuccess ? (page?.total ?? 0) : undefined }
+}
+
 export function useCreateFinancialAccount(orgId: string) {
   const qc = useQueryClient()
   return usePostApiV1OrganizationsOrgIdFinancialAccounts({

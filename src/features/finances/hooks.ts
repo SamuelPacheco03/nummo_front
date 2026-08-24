@@ -58,17 +58,3 @@ export function useCreateTransfer(orgId: string, idempotencyKey: string) {
     request: { headers: { 'Idempotency-Key': idempotencyKey } },
   })
 }
-
-/* ---------- Dónde puede pagar quien debe ---------- */
-
-/**
- * **Las formas de pago que se le dicen al deudor.**
- *
- * No confundir con `payment-methods`, que ya existe: aquel es **cómo se
- * registró** un pago que ya entró; esto es **dónde puede pagar** quien todavía
- * debe, y viaja dentro del recordatorio de cobranza.
- *
- * Va **por organización** y no por acuerdo ni por concepto, y lo decidió el
- * esquema: una cuenta por cobrar puede no tener acuerdo —las creadas a mano no lo
- * tienen— y colgarlo de ahí habría dejado sin datos de pago justo a esos cobros.
- */

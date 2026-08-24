@@ -16,14 +16,16 @@ const m = vi.hoisted(() => ({
   feature: true,
   permisos: new Set<string>(),
   correr: vi.fn(),
-  cuentas: [] as { publishInReminders: boolean }[],
+  cuentasPublicadas: undefined as number | undefined,
 }))
 
 vi.mock('sonner', () => ({
   toast: { success: (t: string) => m.avisos.push(t), error: (t: string) => m.avisos.push(t) },
 }))
 vi.mock('@/features/masters/hooks', () => ({
-  useFinancialAccounts: () => ({ items: m.cuentas }),
+  useFinancialAccounts: () => ({ items: [] }),
+  // `undefined` es «todavía no se sabe»; cero es «no hay ninguna publicada».
+  usePublishedAccounts: () => ({ count: m.cuentasPublicadas }),
 }))
 vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({ orgId: 'o1', organization: { defaultCurrency: 'COP' } }),
@@ -96,7 +98,7 @@ beforeEach(() => {
     'whatsapp.templates.read',
     'financial_accounts.read',
   ])
-  m.cuentas = [{ publishInReminders: true }]
+  m.cuentasPublicadas = 1
   m.correr = vi.fn().mockResolvedValue({
     data: { before: 0, onDue: 0, overdue: 0, queued: 0, skipped: 0, overdueDeferred: 0, withoutPhone: 0, sameDayDeferred: 0 },
   })
@@ -313,7 +315,7 @@ test('sin ninguna cuenta publicada se avisa: el recordatorio no dice dónde paga
     el envío entero—, pero dice «comunícate con nosotros». Desde esta pantalla no
     había forma de enterarse.
   */
-  m.cuentas = [{ publishInReminders: false }]
+  m.cuentasPublicadas = 0
   pintar()
 
   expect(screen.getByText(/Los recordatorios no dicen dónde pagar/)).toBeInTheDocument()
@@ -325,14 +327,14 @@ test('sin ninguna cuenta publicada se avisa: el recordatorio no dice dónde paga
 })
 
 test('con al menos una publicada el aviso no sale', () => {
-  m.cuentas = [{ publishInReminders: true }]
+  m.cuentasPublicadas = 1
   pintar()
   expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).not.toBeInTheDocument()
 })
 
 test('con la cobranza apagada el aviso sobra, aunque no haya formas de pago', () => {
   // Apagada no hay mensaje que salga mal: el aviso sería ruido.
-  m.cuentas = []
+  m.cuentasPublicadas = 0
   m.politica = politica({ enabled: false })
   pintar()
 
@@ -553,4 +555,63 @@ test('«por vencer» también lleva su plural: son cuatro plantillas, no dos', a
     orgId: 'o1',
     data: expect.objectContaining({ dueSoonSummaryTemplateKey: null }),
   })
+})
+
+/* ---------- El enlace de pago ---------- */
+
+test('el enlace guardado se pinta, y vacío viaja como null', async () => {
+  m.politica = politica({ paymentLink: 'https://pagos.miempresa.co/x' })
+  pintar()
+
+  const campo = screen.getByLabelText(/Enlace de pago/)
+  expect(campo).toHaveValue('https://pagos.miempresa.co/x')
+
+  await userEvent.clear(campo)
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ paymentLink: null }),
+  })
+})
+
+test('un enlace sin cifrar no sale hacia el deudor', async () => {
+  /*
+    El contrato solo declara `format: uri`, así que esta comprobación es la única
+    que hay: un enlace que pide dinero dentro de un mensaje de cobro no puede ir
+    por http, o enseñamos a los deudores a fiarse de cualquier enlace.
+  */
+  pintar()
+  await userEvent.type(screen.getByLabelText(/Enlace de pago/), 'http://pagos.example.com')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.avisos.at(-1)).toMatch(/tiene que empezar por https/)
+  expect(m.guardar).not.toHaveBeenCalled()
+})
+
+test('un espacio delante no convierte un enlace válido en un error', async () => {
+  // Copiar de WhatsApp o de una hoja de cálculo arrastra el espacio, y el campo
+  // `type="url"` lo esconde: el usuario ve un https y le dicen que no lo es.
+  pintar()
+  await userEvent.click(screen.getByLabelText(/Enlace de pago/))
+  await userEvent.paste('  https://pagos.miempresa.co/x  ')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ paymentLink: 'https://pagos.miempresa.co/x' }),
+  })
+})
+
+/* ---------- El aviso de «dónde pagar» ---------- */
+
+test('mientras no se sabe si hay cuentas publicadas, no se avisa', () => {
+  /*
+    La política llega antes que las cuentas, así que avisar con la lista todavía
+    vacía ponía el ámbar por delante de una organización bien configurada. Y a
+    quien no puede ver cuentas se le quedaba puesto para siempre, con un enlace a
+    una pantalla que no puede abrir.
+  */
+  m.cuentasPublicadas = undefined
+  pintar()
+  expect(screen.queryByText(/Los recordatorios no dicen dónde pagar/)).toBeNull()
 })

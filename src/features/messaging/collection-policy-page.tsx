@@ -25,7 +25,7 @@ import type {
   CollectionPolicySchedule,
   WhatsAppTemplate,
 } from '@/api/generated/model'
-import { useFinancialAccounts } from '@/features/masters/hooks'
+import { usePublishedAccounts } from '@/features/masters/hooks'
 import { scheduleFixedByLaw, sendTimeOutOfRange } from './errors'
 import { paymentAwareUpgrade, saysWherePay } from './labels'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
@@ -75,11 +75,17 @@ export function CollectionPolicyPage() {
     variable vacía haría que Meta rechazara el envío entero— pero dice
     «comunícate con nosotros», y desde aquí no había forma de enterarse.
   */
-  const { items: cuentas } = useFinancialAccounts(
+  const { count: cuentasPublicadas } = usePublishedAccounts(
     canRead && can('financial_accounts.read') ? orgId : undefined,
-    { page: 1, pageSize: 100 },
   )
-  const sinFormasDePago = cuentas.every((c) => !c.publishInReminders)
+  /*
+    **Solo cuando se sabe que son cero.** `undefined` es «todavía no se sabe» —la
+    consulta va en camino, o el rol no llega a las cuentas— y avisar ahí ponía el
+    ámbar delante de una organización bien configurada: en el primer render,
+    porque la política llega antes; y para siempre, a quien no puede ver cuentas y
+    encima recibía un enlace a una pantalla que no puede abrir.
+  */
+  const sinFormasDePago = cuentasPublicadas === 0
 
   const [enabled, setEnabled] = useState(false)
   const [sendAt, setSendAt] = useState('12:00')
@@ -137,7 +143,8 @@ export function CollectionPolicyPage() {
       sin cifrar dentro de un mensaje de cobro es justo lo que enseña a los
       deudores a fiarse de un enlace cualquiera.
     */
-    if (paymentLink && !/^https:\/\//i.test(paymentLink)) {
+    const enlace = paymentLink.trim()
+    if (enlace && !/^https:\/\//i.test(enlace)) {
       toast.error('El enlace de pago tiene que empezar por https')
       return
     }
@@ -154,7 +161,7 @@ export function CollectionPolicyPage() {
           */
           sendAt,
           // Vacío es «no hay enlace», que en el contrato es `null`.
-          paymentLink: paymentLink.trim() || null,
+          paymentLink: enlace || null,
           // Apagada es `null`, y no cero: cero es una etapa encendida el día del
           // vencimiento.
           daysBefore: beforeOn ? Number(beforeDays) : null,

@@ -1713,6 +1713,12 @@ Cuatro cosas que se hacen mal solas:
    solo lo piden `paymentDetails` y `publishInReminders`. Decide **a qué número consignan
    los clientes** y el deudor no tiene forma de notar un cambio, así que quien no lo tenga
    edita la cuenta igual con esos dos controles deshabilitados.
+
+   **Y deshabilitar el control no basta: los campos no pueden ni viajar.** El backend pide
+   el permiso en cuanto la petición los lleva —aunque sea con el mismo valor que ya
+   tenían—, así que enviarlos «por completitud» dejaba a quien solo puede renombrar una
+   cuenta sin poder guardar **nada**, ni un nombre. Es la regla general de cualquier campo
+   con permiso propio: no se manda lo que no se puede cambiar.
 4. **Ningún campo es un `textarea`.** Estos textos van dentro de un parámetro de plantilla
    de WhatsApp, y Meta rechaza el envío entero si lleva saltos de línea. El backend
    normaliza al entrar, pero una caja de varias líneas invita a escribir lo que no cabe.
@@ -5554,7 +5560,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
 | `RunNowPanel` | `features/messaging/run-now-panel.tsx` | «Enviar ahora» y el desglose de la pasada, sin prometer envío |
 | `FinancialAccountsPage` | `features/masters/financial-accounts-page.tsx` | Cuentas de dinero **y dónde puede pagar el deudor**, en un solo sitio |
-| `instructionKind` · `MAX_IN_REMINDERS` | `features/finances/payment-instruction-labels.ts` | Las cinco formas en palabras, y cuántas caben en un mensaje |
+| `BANK_ACCOUNT_KINDS` · `TRANSFER_KEY_KINDS` | `features/masters/labels.ts` | Ahorros/corriente y con qué se identifica una llave, en palabras |
+| `usePublishedAccounts` | `features/masters/hooks.ts` | ¿Hay alguna cuenta que el deudor vea? Una fila, con los filtros del endpoint |
 | `saysWherePay` · `paymentAwareUpgrade` | `features/messaging/labels.ts` | Las dos generaciones de plantilla: se clasifican por variable, se emparejan por clave |
 | `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: estado, entrantes y plantillas (§47.6, §97.26) |
 | `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |
@@ -6594,6 +6601,39 @@ verificar contra el backend en el navegador**: no hay `nummo-api` corriendo en e
 
 ---
 
+## Fase 29 — Parón y revisión ✅ **completada**
+
+Una pasada de revisión sobre las fases 25–28, hecha con una lectura independiente porque
+quien escribió el código no ve sus propios puntos ciegos. Catorce hallazgos, todos
+verificados contra el contrato o reproducidos antes de tocar nada. Los que valen como regla:
+
+1. **Un campo con permiso propio no se manda si no se puede cambiar.** `paymentDetails` y
+   `publishInReminders` viajaban siempre, así que un rol con `manage` pero sin `publish`
+   recibía un 403 al guardar **cualquier cosa**, incluido un renombrado.
+2. **RHF conserva lo escrito en campos desmontados**, y eso convierte una validación
+   condicional en un botón muerto: media llave escrita como banco hacía fallar el envío
+   después de pasar a billetera, contra un campo que ya no estaba en pantalla. Toda
+   comprobación de un campo que aparece y desaparece va guardada por su condición.
+3. **`[].every(...)` es `true`.** El aviso de «no hay dónde pagar» se encendía con la lista
+   todavía vacía y se quedaba encendido para siempre a quien no podía ver cuentas —con un
+   enlace a una pantalla que no podía abrir—. Un «no se sabe» no es un cero.
+4. **Filtrar en el servidor lo que el endpoint sabe filtrar.** El mismo aviso recorría cien
+   cuentas en el cliente para responder un booleano, y mentía a partir de la ciento uno.
+5. **Un `.max(n)` de Zod sin mensaje habla inglés** en una interfaz en español, y el tope
+   va también en el `maxLength` del campo, que corta antes de llegar al error.
+6. **Un valor retirado de un catálogo sigue guardado en filas viejas.** El desplegable se
+   abría en blanco y el primer «Guardar» reclasificaba el método sin decirlo; ahora se
+   enseña deshabilitado y el `PATCH` omite el campo en vez de inventarse uno.
+7. Y tres de higiene: comentarios que sobrevivieron a su código, una fila de §94 apuntando a
+   un fichero borrado, y el único control de un formulario que no pasaba por `Field` —y por
+   tanto no anunciaba su error a un lector de pantalla—.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 873 tests en verde (8 nuevos, y los
+dos más importantes comprobados contra el código anterior para confirmar que fallan), build
+OK.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -6626,6 +6666,7 @@ verificar contra el backend en el navegador**: no hay `nummo-api` corriendo en e
 | ✅ 26 | Número propio, plantillas y cupo | medio | 25 (contrato) |
 | ✅ 27 | La Ley 2300 entra en la política | medio | 25, 26 (contrato) |
 | ✅ 28 | Las formas de pago vuelven a las cuentas | medio | 27 (contrato) |
+| ✅ 29 | Parón y revisión de las fases 25–28 | bajo | 28 |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

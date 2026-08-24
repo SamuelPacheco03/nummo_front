@@ -97,9 +97,6 @@ export const GROUPS: SectionGroup[] = [
       // La política es un ajuste que se toca una vez; el historial de lo que se
       // le escribió al deudor es trabajo diario y vive en el sidebar (§14).
       { to: '/config/cobranza', label: 'Cobranza automática', Icon: MessageSquareText },
-      // Dónde puede pagar el deudor. Se llamaba «Formas de pago» y sonaba igual
-      // que los «Métodos de pago» del catálogo, siendo otra cosa: esto es lo que
-      // sale en cada recordatorio, y cambiarlo cambia a qué cuenta llega la plata.
     ],
   },
   {

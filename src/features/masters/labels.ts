@@ -1,17 +1,17 @@
 /*
   Cuatro y no cinco: **pagar desde un Nequi es una transferencia**. La billetera
   es *dónde está* la plata —eso sigue siendo un tipo de cuenta, ahí abajo— y no
-  *cómo se movió*. Los métodos que ya existían con ese tipo se reclasificaron a
-  `BANK_TRANSFER` en el backend.
+  *cómo se movió*. Los métodos que ya existían con ese tipo los reclasificó el
+  backend a `BANK_TRANSFER`, así que aquí tampoco se le guarda el sitio: un
+  rótulo para un valor que ya nadie emite es una invitación a volver a ofrecerlo.
 
-  El rótulo se queda para no dejar sin nombre a un método histórico que aún no se
-  haya migrado: se enseña crudo o no se enseña, y crudo es peor.
+  Va sobre `string` a propósito. Si aun así llegara un tipo que esta tabla no
+  conoce, se enseña crudo —feo pero honesto— en vez de desaparecer.
 */
 export const METHOD_TYPE_LABELS: Record<string, string> = {
   CASH: 'Efectivo',
   BANK_TRANSFER: 'Transferencia',
   CARD: 'Tarjeta',
-  DIGITAL_WALLET: 'Billetera digital',
   OTHER: 'Otro',
 }
 
