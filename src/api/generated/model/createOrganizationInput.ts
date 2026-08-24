@@ -25,4 +25,6 @@ export interface CreateOrganizationInput {
   timezone?: string;
   /** @maxLength 20 */
   locale?: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
 }

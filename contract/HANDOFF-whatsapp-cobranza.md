@@ -213,6 +213,28 @@ error, pero la vista previa debería reflejarlo.
 Estos campos **sí** son editables. Los que no lo son siguen siendo los del horario
 (`quietStart`, `quietEnd`, `sendDays`, `skipHolidays`) — ver arriba.
 
+#### ROMPE — activar la cobranza exige datos de contacto de la empresa
+
+La organización gana **`contactPhone`** y **`contactEmail`** (los dos opcionales, pero al
+menos uno hace falta). Están en `Organization`, `CreateOrganizationInput` y
+`UpdateOrganizationInput`.
+
+Encender la cobranza sin ninguno de los dos responde **422** con
+`details.reason = "ORGANIZATION_CONTACT_REQUIRED"` y
+`details.fields = ["contactPhone", "contactEmail"]`.
+
+Por qué, para que el texto de la pantalla lo pueda explicar: **los avisos salen de un
+número que no recibe respuestas.** El de la plataforma es compartido entre todos los
+clientes de Nummo — si dos empresas tienen al mismo deudor y éste responde, no hay forma
+de saber de quién es esa conversación. Así que el mensaje lleva un renglón que dice a
+dónde escribir de verdad, como hace un banco con su «este número no recibe mensajes».
+
+Solo se pide al **encender**. Cambiar una plantilla o la hora no lo exige.
+
+Dónde ponerlo es decisión tuya, pero lo natural es el formulario de la empresa, y que la
+pantalla de cobranza lo pida en línea cuando falte en vez de mandar al usuario a otra
+sección a buscarlo.
+
 #### La hora de envío: una sola, y acotada
 
 `sendAt` es la hora local a la que salen los avisos. **Por defecto las 12:00.** Es una

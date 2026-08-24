@@ -19,5 +19,7 @@ export interface UpdateOrganizationInput {
   timezone?: string;
   /** @maxLength 20 */
   locale?: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
   type?: UpdateOrganizationInputType;
 }

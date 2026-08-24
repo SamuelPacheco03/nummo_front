@@ -14340,6 +14340,30 @@
             "default": "es-CO",
             "type": "string",
             "maxLength": 20
+          },
+          "contactPhone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contactEmail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "format": "email",
+                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -14383,6 +14407,30 @@
           "locale": {
             "type": "string",
             "maxLength": 20
+          },
+          "contactPhone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contactEmail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "format": "email",
+                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "type": {
             "type": "string",
@@ -19227,6 +19275,26 @@
           "locale": {
             "type": "string"
           },
+          "contactPhone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contactEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -19248,6 +19316,8 @@
           "defaultCurrency",
           "timezone",
           "locale",
+          "contactPhone",
+          "contactEmail",
           "createdAt",
           "updatedAt"
         ],
