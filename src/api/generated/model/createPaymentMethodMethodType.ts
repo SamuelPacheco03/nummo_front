@@ -13,6 +13,5 @@ export const CreatePaymentMethodMethodType = {
   CASH: 'CASH',
   BANK_TRANSFER: 'BANK_TRANSFER',
   CARD: 'CARD',
-  DIGITAL_WALLET: 'DIGITAL_WALLET',
   OTHER: 'OTHER',
 } as const;

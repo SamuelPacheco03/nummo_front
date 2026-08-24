@@ -29,4 +29,5 @@ sort?: GetApiV1OrganizationsOrgIdFinancialAccountsSort;
 order?: GetApiV1OrganizationsOrgIdFinancialAccountsOrder;
 isActive?: GetApiV1OrganizationsOrgIdFinancialAccountsIsActive;
 accountType?: GetApiV1OrganizationsOrgIdFinancialAccountsAccountType;
+publishInReminders?: string;
 };

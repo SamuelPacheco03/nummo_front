@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PaymentInstructionDetails = {
-  kind: 'BANK_ACCOUNT';
+export type AccountPaymentDetailsOutput = {
+  kind: 'BANK';
   /**
      * @minLength 1
      * @maxLength 60
@@ -25,15 +25,8 @@ export type PaymentInstructionDetails = {
      */
   holderName: string;
   holderDocument: string | null;
-} | {
-  kind: 'TRANSFER_KEY';
-  bankName: string | null;
-  keyKind: 'PHONE' | 'EMAIL' | 'DOCUMENT' | 'ALPHANUMERIC';
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  keyValue: string;
+  transferKeyKind: 'PHONE' | 'EMAIL' | 'DOCUMENT' | 'ALPHANUMERIC' | null;
+  transferKeyValue: string | null;
 } | {
   kind: 'WALLET';
   /**
@@ -46,15 +39,5 @@ export type PaymentInstructionDetails = {
      * @maxLength 25
      */
   phone: string;
-} | {
-  kind: 'PAYMENT_LINK';
-  /** @maxLength 300 */
-  url: string;
-} | {
-  kind: 'OTHER';
-  /**
-     * @minLength 1
-     * @maxLength 160
-     */
-  text: string;
+  holderName: string | null;
 };

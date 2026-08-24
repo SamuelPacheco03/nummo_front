@@ -18,6 +18,7 @@ export interface CollectionPolicy {
   overdueTemplateKey: string | null;
   /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   sendAt: string;
+  paymentLink: string | null;
   daysBefore: number | null;
   remindOnDueDate: boolean;
   daysAfter: number | null;

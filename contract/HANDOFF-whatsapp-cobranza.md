@@ -65,6 +65,76 @@ Todos bajo `/api/v1/organizations/{orgId}`. La columna «feature» es lo que dev
 Las horas de silencio son de la organización y en su zona horaria: fuera de esa ventana
 no se le escribe a nadie. Es un requisito de decencia y de Meta, no una preferencia.
 
+#### ROMPE — las formas de pago se fusionaron con las cuentas
+
+`payment_instructions` **ya no existe**. Duplicaba `financial_accounts`: la misma cuenta
+de Bancolombia había que teclearla dos veces —una para cuadrar la caja, otra para
+publicársela al deudor— y las dos copias podían divergir hasta que alguien consignara al
+número viejo. Lo que lo zanja es hacia dónde va el producto: cuando se le mande a Numi un
+comprobante, registrar ese pago será atarlo a la cuenta donde entró.
+
+**Qué desaparece del cliente generado:**
+
+| Antes | Ahora |
+| --- | --- |
+| `GET/POST/PATCH/DELETE /payment-instructions` | Los endpoints de `/financial-accounts` de siempre |
+| `usePaymentInstructions` | `useGetApiV1OrganizationsOrgIdFinancialAccounts` |
+| `payment_instructions.read` | `financial_accounts.read` |
+| `payment_instructions.manage` | `financial_accounts.publish` |
+| `instruction.showInReminders` | `account.publishInReminders` |
+| `instruction.preview` | `account.paymentPreview` |
+
+**En `collection-policy-page.tsx`** (línea ~78) hay que cambiar el hook y el permiso; el
+`sinFormasDePago` pasa a ser «ninguna cuenta con `publishInReminders`». Y en
+`policy-fixture.ts`, añadir `paymentLink` — la respuesta lo trae siempre. La página
+`payment-instructions-page.tsx` se convierte en la de cuentas, o se retira si ya hay una.
+
+**La cuenta ahora lleva:**
+
+```jsonc
+{
+  "accountType": "BANK",                    // o DIGITAL_WALLET, CASH, OTHER
+  "paymentDetails": {                        // null en una caja
+    "kind": "BANK",                          // BANK | WALLET, casa con accountType
+    "bankName": "Bancolombia",
+    "accountKind": "SAVINGS",
+    "accountNumber": "123-456789-00",
+    "holderName": "Distribuidora El Sol",
+    "holderDocument": "NIT 900123456",
+    "transferKeyKind": "PHONE",              // la llave va aquí, no en otra fila
+    "transferKeyValue": "3105948908"
+  },
+  "paymentPreview": "Bancolombia ahorros 123-456789-00 a nombre de …",
+  "publishInReminders": false,               // ← apagado por defecto
+  "sortOrder": 0
+}
+```
+
+Tres cosas que cambian cómo se pinta:
+
+1. **Publicar viene apagado.** Crear una cuenta ya no la publica: son dos decisiones, y la
+   segunda hay que pedirla explícitamente. Una caja chica no debe salir en los mensajes a
+   los deudores porque alguien la creó.
+2. **`paymentPreview` es el renglón exacto** que verá el deudor. Píntalo tal cual en la
+   vista previa; si la armas por tu cuenta, las dos acabarán diciendo cosas distintas.
+3. **Tocar `paymentDetails` o `publishInReminders` pide `financial_accounts.publish`**, un
+   permiso más que el de crear cuentas. Solo en esas peticiones. Si el usuario no lo
+   tiene, esos dos controles van deshabilitados aunque pueda editar la cuenta — decide a
+   qué número consignan los clientes, y el deudor no puede notar un cambio.
+
+**La llave dejó de ser un destino aparte.** Es un alias *a* una cuenta bancaria, así que
+son dos campos de la cuenta. Ya no hay `kind: 'TRANSFER_KEY'`.
+
+**El enlace de pago tampoco es una cuenta** —el dinero no vive en una URL—: es
+`paymentLink` en la política de cobranza, uno solo, `https` obligatorio.
+
+#### ROMPE — «billetera digital» no es un método de pago
+
+`METHOD_TYPES` pasa de cinco a cuatro: `CASH`, `BANK_TRANSFER`, `CARD`, `OTHER`. Pagar
+desde un Nequi es una transferencia; la billetera es *dónde está* la plata —eso sigue
+siendo un tipo de **cuenta**— y no *cómo se movió*. Si el selector de métodos lo lista a
+mano, quítalo; los métodos ya creados con ese tipo se reclasificaron a `BANK_TRANSFER`.
+
 #### ROMPE — el horario ya no se configura, lo pone la ley
 
 La **Ley 2300 de 2023, art. 3** fija el horario de cobranza en Colombia y obliga a todo el
