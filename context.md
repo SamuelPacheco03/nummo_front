@@ -1441,17 +1441,51 @@ solo comparten la palabra «aviso».
 §11.1.10 y §47.4: una política se toca una vez, y el historial es trabajo diario —es a
 donde se entra cuando alguien pregunta por qué no le llegó el mensaje—.
 
-### Las horas de silencio aplazan, no cancelan
+### El horario lo fija la ley, no el cliente
 
-Un aviso que cae a las 23:00 **sale a la mañana siguiente**. No se pierde, así que la
-pantalla no puede decir «no se enviará».
+Un aviso fuera de horario **se aplaza, no se pierde**, así que la pantalla no puede decir
+«no se enviará».
 
-Y **la ventana normalmente cruza la medianoche**: `22:00 → 07:00` es el caso corriente, no
-el raro. Cualquier cálculo que asuma `inicio < fin` da negativo justo en la configuración
-que va a tener casi todo el mundo, así que la aritmética vive en `quiet-hours.ts` con sus
-pruebas —el módulo `(fin − inicio + 1440) % 1440` es lo que hace que cruzar el día deje de
-ser un caso aparte— y la pantalla enseña la franja en una frase: dos campos de hora
-sueltos no cuentan que el silencio pasa por la madrugada.
+Pero el horario **dejó de ser configurable**. En Colombia lo fija la **Ley 2300 de 2023,
+art. 3** —lunes a viernes de 07:00 a 19:00, sábados de 08:00 a 15:00, ningún contacto los
+domingos ni los festivos— y el `PUT` rechaza `quietStart`, `quietEnd`, `sendDays` y
+`skipHolidays` con un 422. **Ni para ampliarlo ni para recortarlo**: que un cliente quiera
+ser más estricto tampoco se acepta, porque «no configurable» tiene que valer en las dos
+direcciones.
+
+Tres consecuencias en la pantalla:
+
+1. **La semana se enseña como información, no como controles**, y cita `legalReference`.
+   Esconderla sería peor: es lo que explica por qué un recordatorio no salió el domingo, y
+   la pregunta se hace justo en esta pantalla. `groupWeek` (`schedule.ts`) agrupa los días
+   **consecutivos** que comparten franja —cinco filas idénticas no las lee nadie— y el
+   domingo, que llega como `null`, se dice con palabras: pintarlo «de 00:00 a 00:00» diría
+   que se escribe a medianoche.
+2. **Lo que sí se elige es `sendAt`**, la hora a la que salen. Y su rango sale más estrecho
+   que el de cualquier día porque tiene que valer **todos**: el sábado cierra a las tres, así
+   que `sendableRange` es `08:00`–`14:59`. Es `[inicio, fin]` en minutos pero se ofrece de
+   hora en hora, de modo que **el último valor ofrecible son las 14:00 y las 15:00 no
+   aparecen**.
+3. **El rango del mensaje de error sale del error**, nunca escrito en el front: el 422 trae
+   `earliest` y `latest` en un `details` tipado (`SendTimeOutOfRangeDetails`). Codificar
+   «entre 08:00 y 14:59» aquí sería la ley escrita en el cliente, y cambia por país.
+
+### Tres avisos por cuenta, y ni uno más
+
+Lo que **nadie va a suponer y la pantalla tiene que decir**: antes el aviso de mora salía
+cada día mientras la deuda existiera. Ahora cada cuenta por cobrar pasa por **tres etapas
+como mucho, una sola vez cada una en toda su vida** —`daysBefore`, `remindOnDueDate`,
+`daysAfter`—. Si el cliente no paga, Nummo se calla sobre esa cuenta.
+
+**Se configura el cuándo, nunca el cuántos**: no hay campo para pedir un cuarto aviso porque
+no existen más etapas. La cifra del texto sale de `schedule.maxRemindersPerReceivable` y no
+escrita a mano.
+
+Y **apagar no es poner cero**: `daysAfter: 0` avisa el mismo día del vencimiento —un aviso
+más, no uno menos— y `null` es el que no manda nada. Por eso cada etapa lleva el interruptor
+separado del número; con un solo campo las dos cosas se escribirían igual. Con `daysAfter: 0`
+la mora además **tapa** al aviso de «vence hoy», porque se mira primero: la casilla queda
+marcada sin hacer nada, y eso se avisa.
 
 **Sin plantilla no hay aviso**, y es una regla del backend y no un campo vacío: con
 `overdueTemplateKey` en `null` los vencidos no se avisan aunque la política esté encendida.
@@ -5495,7 +5529,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `CollectionPage` | `features/messaging/collection-page.tsx` | **Cobranza**: mensajes y consentimiento, en dos pestañas |
 | `MessagesTab` · `ConsentsTab` | `features/messaging/` | El historial de «por qué no le llegó» y quién puede recibir |
 | `CollectionRemindersSection` | `features/messaging/collection-reminders-section.tsx` | El tri-estado de un acuerdo, diciendo de qué hereda (§11.1.16) |
-| `describeQuietWindow` · `isWithinQuietHours` | `features/messaging/quiet-hours.ts` | La ventana de silencio, **cruzando la medianoche** sin caso aparte |
+| `groupWeek` · `sendableHours` · `describeStages` | `features/messaging/schedule.ts` | El horario legal agrupado, las horas elegibles y las tres etapas |
+| `sendTimeOutOfRange` · `scheduleFixedByLaw` | `features/messaging/errors.ts` | Los dos rechazos del `PUT` de la política, leídos del `details` tipado |
 | `WhatsAppAccountPage` | `features/messaging/whatsapp-account-page.tsx` | La cuenta de Meta del negocio: conectar, reemplazar y desconectar (§11.1.16) |
 | `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
@@ -6423,7 +6458,8 @@ contrato pasa a **153 rutas / 205 esquemas** (`contract/HANDOFF-whatsapp-cobranz
    tri-estado del acuerdo (§11.1.16).
 3. **Las horas de silencio en su propio módulo con pruebas.** `22:00 → 07:00` es el caso
    normal y cualquier resta ingenua da negativo justo ahí; el módulo lo resuelve sin caso
-   aparte.
+   aparte. *(`quiet-hours.ts` se retiró en la fase 28: el horario dejó de configurarse y lo
+   fija la Ley 2300 — ver «El horario lo fija la ley, no el cliente».)*
 4. Siete permisos nuevos entran en `permission-labels.ts` con un área propia, **Cobranza**: sin
    eso el editor de roles los habría listado crudos bajo «Otros».
 5. `ListToolbar` gana un buscador opcional. El endpoint de mensajes no acepta `q`, y una caja
@@ -6475,6 +6511,44 @@ verificar contra el backend en el navegador**: no hay `nummo-api` corriendo en e
 
 ---
 
+## Fase 27 — La Ley 2300 entra en la política ✅ **completada**
+
+El backend fija el horario de cobranza por norma y sustituye la cadencia por tres etapas. Es
+la fase que **quita controles** en vez de añadirlos, y donde la pantalla tiene que explicar un
+comportamiento que cambió de fondo.
+
+1. **El horario deja de configurarse.** Fuera los dos campos de hora; entra la semana como
+   información, citando `legalReference`. `quiet-hours.ts` se retiró entero —se quedó sin un
+   solo uso— y su sitio lo ocupa `schedule.ts`, que agrupa días consecutivos y acota las horas
+   elegibles.
+2. **`sendAt` en vez de una ventana.** Un desplegable acotado a `sendableRange`, y con el
+   cuidado de que la franja es `[inicio, fin]`: las 15:00 no se ofrecen.
+3. **Las tres etapas**, con el interruptor separado del número porque `null` y `0` significan
+   cosas distintas, y con la frase que dice lo que nadie va a suponer: **a quien no paga,
+   Nummo deja de escribirle**.
+4. **Cuatro selectores de plantilla**, no tres: «por vencer» también necesita su plural.
+5. **Los dos 422 con `details` tipado.** El rango del mensaje de error sale del error.
+
+**El aviso de tipos encontró un bug que llevaba días invisible.** Al retirar el backend
+`quietStart` y `quietEnd` del cuerpo del `PUT`, `tsc` señaló que el formulario los mandaba en
+cada guardado — lo que tumbaba la petición entera con un 422 sin salvar tampoco las
+plantillas. Mientras el esquema los aceptó, nada avisaba. Va con un test que mira **las claves
+que salen**, no los tipos: el tipo ya cubre el descuido, pero no cubre que alguien copie este
+formulario para un país sin ley y los reponga «porque allí sí valen».
+
+**Cinco huecos del contrato, pedidos y resueltos por el backend antes de construir:** el
+esquema de la pasada iba tres versiones por detrás del handoff, el cuerpo del `PUT` seguía
+aceptando los campos que la ley fija, su descripción los documentaba como configurables, los
+dos 422 no estaban declarados y los límites de las etapas solo viajaban en una dirección.
+Construir contra el handoff en vez de contra el contrato habría significado tipos escritos a
+mano — que es justo lo que §88 existe para evitar.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 873 tests en verde (32 nuevos: 14 del
+horario y las etapas, 18 de la pantalla), build OK. **Sin verificar contra el backend en el
+navegador**: no hay `nummo-api` corriendo en este entorno.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -6505,6 +6579,7 @@ verificar contra el backend en el navegador**: no hay `nummo-api` corriendo en e
 | ✅ 24 | Playground de Numi | medio | 7, 10 |
 | ✅ 25 | Cobranza por WhatsApp | medio | 7, 9 (contrato) |
 | ✅ 26 | Número propio, plantillas y cupo | medio | 25 (contrato) |
+| ✅ 27 | La Ley 2300 entra en la política | medio | 25, 26 (contrato) |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

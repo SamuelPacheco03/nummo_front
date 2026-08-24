@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
+import { ApiError } from '@/api/http-client'
 import type { CollectionPolicy, WhatsAppTemplate } from '@/api/generated/model'
-import { politicaDeCobranza as politica } from './policy-fixture'
+import { horarioLegal, politicaDeCobranza as politica } from './policy-fixture'
+import { sendTimeOutOfRange } from './errors'
 
 const m = vi.hoisted(() => ({
   guardar: vi.fn(),
@@ -119,7 +121,7 @@ test('lo guardado se pinta aunque la política llegue después del primer render
   m.cargando = true
   m.politica = null
   const { rerender } = pintar()
-  expect(screen.queryByRole('checkbox')).toBeNull()
+  expect(screen.queryByRole('checkbox', { name: /Escribirle a quien debe/ })).toBeNull()
 
   m.cargando = false
   m.politica = politica({ enabled: true, overdueTemplateKey: 'cobro_vencido' })
@@ -129,27 +131,38 @@ test('lo guardado se pinta aunque la política llegue después del primer render
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('checkbox')).toBeChecked()
-  expect(screen.getByLabelText(/cuando debe una sola factura/)).toHaveValue('cobro_vencido')
+  expect(screen.getByRole('checkbox', { name: /Escribirle a quien debe/ })).toBeChecked()
+  expect(screen.getByLabelText(/Vencida, cuando es una sola cuenta/)).toHaveValue('cobro_vencido')
 })
 
-test('la ventana que cruza medianoche se dice entera, con el día siguiente', () => {
-  // `22:00 → 07:00` es el caso normal, no el raro: dos campos de hora sueltos no
-  // cuentan que la franja pasa por la madrugada.
+test('la semana legal se enseña agrupada, y el domingo con palabras', () => {
+  /*
+    No es una preferencia: la fija la ley y no se puede tocar ni para ampliarla ni
+    para recortarla. Aun así se enseña —en vez de esconderse— porque es lo que
+    explica por qué un recordatorio no salió el domingo.
+  */
   pintar()
-  expect(screen.getByText(/De 22:00 a 07:00 del día siguiente/)).toBeInTheDocument()
+
+  expect(screen.getByText('Lunes a viernes')).toBeInTheDocument()
+  expect(screen.getByText('07:00 – 19:00')).toBeInTheDocument()
+  expect(screen.getByText('Sábado')).toBeInTheDocument()
+  expect(screen.getByText('08:00 – 15:00')).toBeInTheDocument()
+  // El domingo llega como `null`: pintarlo «de 00:00 a 00:00» diría que se
+  // escribe a medianoche.
+  expect(screen.getByText('No se contacta')).toBeInTheDocument()
 })
 
-test('cambiar las horas recalcula la franja aunque el fin sea menor que el inicio', async () => {
-  m.politica = politica({ quietStart: '13:00', quietEnd: '15:00' })
+test('el horario cita la norma que lo fija, no se lo atribuye a Nummo', () => {
   pintar()
-  expect(screen.getByText(/De 13:00 a 15:00/)).toBeInTheDocument()
-  expect(screen.queryByText(/día siguiente/)).not.toBeInTheDocument()
+  expect(screen.getByText(/Ley 2300 de 2023, art. 3/)).toBeInTheDocument()
+})
 
-  await userEvent.clear(screen.getByLabelText('Desde'))
-  await userEvent.type(screen.getByLabelText('Desde'), '20:00')
-
-  expect(await screen.findByText(/De 20:00 a 15:00 del día siguiente/)).toBeInTheDocument()
+test('el horario no se puede editar: no hay ni un control de hora suelto', () => {
+  // Que un cliente quiera ser MÁS estricto tampoco se acepta: «no configurable»
+  // vale en las dos direcciones.
+  pintar()
+  expect(screen.queryByLabelText('Desde')).toBeNull()
+  expect(screen.queryByLabelText('Hasta')).toBeNull()
 })
 
 test('el silencio aplaza y la pantalla no dice que se pierda', () => {
@@ -196,7 +209,7 @@ test('el horario NO viaja en el guardado: lo fija la ley y el PUT lo rechazaría
 test('vaciar la plantilla manda null, no cadena vacía', async () => {
   pintar()
   await userEvent.selectOptions(
-    screen.getByLabelText(/cuando debe una sola factura/),
+    screen.getByLabelText(/Vencida, cuando es una sola cuenta/),
     '',
   )
   await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
@@ -211,8 +224,8 @@ test('la mora lleva dos plantillas, y la pantalla explica por qué', () => {
   // Meta no pluraliza: con una sola saldría «tienes 1 facturas vencidas».
   pintar()
 
-  expect(screen.getByLabelText(/cuando debe una sola factura/)).toBeInTheDocument()
-  expect(screen.getByLabelText(/cuando debe varias/)).toBeInTheDocument()
+  expect(screen.getByLabelText(/Vencida, cuando es una sola cuenta/)).toBeInTheDocument()
+  expect(screen.getByLabelText(/Vencida, cuando son varias/)).toBeInTheDocument()
   expect(screen.getByText(/Meta no pluraliza/)).toBeInTheDocument()
 })
 
@@ -232,7 +245,7 @@ test('sin la de resumen NO se apaga el aviso: se degrada, y se dice sin ámbar',
 
 test('la de resumen viaja al guardar, y vacía va como null', async () => {
   pintar()
-  await userEvent.selectOptions(screen.getByLabelText(/cuando debe varias/), '')
+  await userEvent.selectOptions(screen.getByLabelText(/Vencida, cuando son varias/), '')
   await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
 
   expect(m.guardar).toHaveBeenCalledWith({
@@ -256,7 +269,7 @@ test('sin permiso de escritura la pantalla se enseña igual, sin el botón', () 
   m.permisos = new Set(['messaging.read'])
   pintar()
 
-  expect(screen.getByText(/Horas en las que no se molesta/)).toBeInTheDocument()
+  expect(screen.getByText(/Cuándo se le puede escribir/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Guardar política/ })).not.toBeInTheDocument()
 })
 
@@ -342,7 +355,7 @@ test('las dos generaciones van agrupadas, no seis opciones en fila', () => {
   m.plantillas = [plantilla(), conDatosDePago()]
   pintar()
 
-  const select = screen.getByLabelText(/cuando debe una sola factura/)
+  const select = screen.getByLabelText(/Vencida, cuando es una sola cuenta/)
   const grupos = [...select.querySelectorAll('optgroup')].map((g) => g.label)
   expect(grupos).toEqual(['Dicen dónde pagar', 'Sin datos de pago'])
 })
@@ -397,4 +410,146 @@ test('sin pareja no se sugiere: una plantilla propia no se llama `_v2`', () => {
   pintar()
 
   expect(screen.queryByRole('button', { name: /Hay una versión/ })).not.toBeInTheDocument()
+})
+
+/* ---------- Las tres etapas ---------- */
+
+test('apagar una etapa manda null, y cero es otra cosa', async () => {
+  /*
+    La distinción que se pierde con un solo campo numérico: `null` es «esta etapa
+    no manda nada» y `0` es «el mismo día del vencimiento» —un aviso más, no uno
+    menos—. Por eso el interruptor va separado del número.
+  */
+  pintar()
+  await userEvent.click(screen.getByRole('checkbox', { name: 'Antes de que venza' }))
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ daysBefore: null }),
+  })
+})
+
+test('el número de días viaja cuando la etapa está encendida', async () => {
+  pintar()
+  const dias = screen.getByLabelText(/Cuando ya esté vencida, días después/)
+  await userEvent.clear(dias)
+  await userEvent.type(dias, '5')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ daysAfter: 5 }),
+  })
+})
+
+test('apagada, la etapa no deja un número suelto que no se va a guardar', () => {
+  m.politica = politica({ daysBefore: null })
+  pintar()
+
+  expect(screen.getByRole('checkbox', { name: 'Antes de que venza' })).not.toBeChecked()
+  expect(screen.queryByLabelText(/Antes de que venza, días antes/)).toBeNull()
+})
+
+test('la pantalla dice lo que nadie va a suponer: la mora avisa UNA vez', () => {
+  /*
+    Antes el aviso de mora salía cada día mientras la deuda existiera. Ahora sale
+    una vez y nunca más, así que a quien no paga Nummo deja de escribirle. Es
+    deliberado, pero es lo bastante distinto de lo que la gente espera como para
+    que la pantalla lo diga.
+  */
+  pintar()
+  expect(screen.getByText(/no vuelve a insistir/)).toBeInTheDocument()
+  expect(screen.getByText(/3 avisos por cuenta de cobro/)).toBeInTheDocument()
+})
+
+test('el tope sale de la respuesta, no escrito a mano en la pantalla', () => {
+  // No es un número que el backend comprueba: es que no existen más etapas.
+  m.politica = politica({ schedule: horarioLegal({ maxRemindersPerReceivable: 2 }) })
+  pintar()
+  expect(screen.getByText(/2 avisos por cuenta de cobro/)).toBeInTheDocument()
+})
+
+test('con las tres apagadas se dice que no sale nada, en vez de callar', () => {
+  m.politica = politica({ daysBefore: null, remindOnDueDate: false, daysAfter: null })
+  pintar()
+  expect(screen.getByText(/no se le escribe nunca/)).toBeInTheDocument()
+})
+
+test('con la mora a 0 días se avisa de que «el día que vence» no va a salir', () => {
+  // Los dos caen el mismo día y gana el de mora, porque se mira primero. No es un
+  // error, pero deja una casilla marcada que no hace nada.
+  m.politica = politica({ remindOnDueDate: true, daysAfter: 0 })
+  pintar()
+  expect(screen.getByText(/gana el de mora/)).toBeInTheDocument()
+})
+
+/* ---------- La hora de envío ---------- */
+
+test('el desplegable de horas no ofrece las 15:00', async () => {
+  /*
+    La franja es `[inicio, fin)` y acaba a las 14:59 porque el sábado cierra a
+    las tres. Ofrecer las 15:00 sería ofrecer un valor que el PUT rechaza.
+  */
+  pintar()
+  const select = screen.getByLabelText(/A qué hora salen/)
+  const horas = within(select).getAllByRole('option').map((o) => o.textContent)
+
+  expect(horas).toContain('08:00')
+  expect(horas).toContain('14:00')
+  expect(horas).not.toContain('15:00')
+  expect(horas).not.toContain('07:00')
+})
+
+test('la hora elegida viaja al guardar', async () => {
+  pintar()
+  await userEvent.selectOptions(screen.getByLabelText(/A qué hora salen/), '09:00')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ sendAt: '09:00' }),
+  })
+})
+
+test('una hora fuera de rango se explica con el rango que manda el servidor', async () => {
+  /*
+    El rango sale del error, no escrito aquí: es el backend quien sabe que el
+    sábado cierra a las tres. Codificarlo sería la ley escrita en el front.
+  */
+  m.guardar = vi.fn().mockRejectedValue(
+    new ApiError(422, {
+      code: 'VALIDATION',
+      message: 'Invalid',
+      details: { reason: 'SEND_TIME_OUT_OF_RANGE', earliest: '08:00', latest: '14:59' },
+    }),
+  )
+  pintar()
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.avisos.at(-1)).toMatch(/queda fuera del horario/)
+})
+
+test('un 422 sin motivo cae al mensaje genérico, no inventa uno', () => {
+  // Sin `details.reason` es un fallo de esquema corriente y no tiene nada que ver
+  // con la ley: darle el texto del horario mentiría sobre la causa.
+  expect(sendTimeOutOfRange(new ApiError(422, { code: 'VALIDATION', message: 'x' }))).toBeNull()
+})
+
+/* ---------- El cuarto selector ---------- */
+
+test('«por vencer» también lleva su plural: son cuatro plantillas, no dos', async () => {
+  // Meta no pluraliza, así que cada momento necesita su singular y su plural.
+  pintar()
+
+  expect(screen.getByLabelText(/Por vencer, cuando es una sola cuenta/)).toBeInTheDocument()
+  expect(screen.getByLabelText(/Por vencer, cuando son varias/)).toBeInTheDocument()
+
+  await userEvent.selectOptions(screen.getByLabelText(/Por vencer, cuando son varias/), '')
+  await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
+
+  expect(m.guardar).toHaveBeenCalledWith({
+    orgId: 'o1',
+    data: expect.objectContaining({ dueSoonSummaryTemplateKey: null }),
+  })
 })

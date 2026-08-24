@@ -4,9 +4,10 @@ import { DetailSection } from '@/components/ui/detail-drawer'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { toastApiError } from '@/features/platform/errors'
 import { useCan } from '@/features/platform/permissions'
+import { plural } from '@/lib/format'
 import type { BillingAgreementCollectionReminders } from '@/api/generated/model'
 import { useCollectionPolicy } from './hooks'
-import { describeQuietWindow } from './quiet-hours'
+import { describeStages } from './schedule'
 
 type Mode = BillingAgreementCollectionReminders
 
@@ -107,8 +108,7 @@ function Explanation({
   if (mode === 'ON') {
     return (
       <>
-        A quien debe este cobro se le escribe, y sigue respetando las horas de silencio de la
-        organización.
+        A quien debe este cobro se le escribe, dentro del horario de cobranza que fija la ley.
       </>
     )
   }
@@ -117,14 +117,29 @@ function Explanation({
     return <>Hace lo que diga la política de cobranza de la organización.</>
   }
 
-  const window = describeQuietWindow(policy.quietStart, policy.quietEnd)
+  /*
+    Lo que se resume es **cuántas veces**, no la franja horaria: el horario lo fija
+    la ley y es igual para todos, así que repetirlo aquí no informa de nada. Lo que
+    sí cambia de una organización a otra —y lo que alguien viene a comprobar— es
+    si a este deudor se le va a escribir una vez, tres o ninguna.
+  */
+  const etapas = describeStages(policy)
   return (
     <>
       Según la política de la organización:{' '}
       <strong className={policy.enabled ? 'text-success-strong' : 'text-foreground'}>
         {policy.enabled ? 'se le escribe' : 'no se le escribe'}
       </strong>
-      {policy.enabled && !window.isEmpty && <> · en silencio {window.text.toLowerCase()}</>}.{' '}
+      {policy.enabled && (
+        <>
+          {' '}
+          ·{' '}
+          {etapas.count === 0
+            ? 'sin ninguna etapa encendida, así que no sale nada'
+            : `hasta ${plural(etapas.count, 'vez', 'veces')} por cuenta, a las ${policy.sendAt.slice(0, 5)}`}
+        </>
+      )}
+      .{' '}
       <Link to="/config/cobranza" className="text-brand underline">
         Cambiar la política
       </Link>

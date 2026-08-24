@@ -67,7 +67,18 @@ test('el valor por defecto dice de qué está heredando', () => {
   pintar('INHERIT')
   expect(screen.getByText(/Según la política de la organización/)).toBeInTheDocument()
   expect(screen.getByText('se le escribe')).toBeInTheDocument()
-  expect(screen.getByText(/de 22:00 a 07:00 del día siguiente/i)).toBeInTheDocument()
+  /*
+    Se resume **cuántas veces**, no la franja: el horario lo fija la ley y es
+    igual para todos, así que repetirlo aquí no informa de nada. Lo que cambia de
+    una organización a otra es si a este deudor se le escribe una vez o tres.
+  */
+  expect(screen.getByText(/hasta 3 veces por cuenta, a las 12:00/)).toBeInTheDocument()
+})
+
+test('una política sin etapas encendidas no promete un aviso que no sale', () => {
+  m.politica = politica({ daysBefore: null, remindOnDueDate: false, daysAfter: null })
+  pintar('INHERIT')
+  expect(screen.getByText(/sin ninguna etapa encendida/)).toBeInTheDocument()
 })
 
 test('heredar de una política apagada dice que no se le escribe', () => {
@@ -90,9 +101,11 @@ test('OFF es una decisión de este cobro, y lo dice frente a la organización', 
   expect(screen.getByText(/aunque la organización tenga la cobranza encendida/)).toBeInTheDocument()
 })
 
-test('ON sigue respetando las horas de silencio', () => {
+test('ON no promete saltarse el horario legal', () => {
+  // Decir «sí» a este cobro no lo saca del horario de cobranza: eso lo fija la
+  // ley y no hay ajuste que lo levante.
   pintar('ON')
-  expect(screen.getByText(/sigue respetando las horas de silencio/)).toBeInTheDocument()
+  expect(screen.getByText(/dentro del horario de cobranza que fija la ley/)).toBeInTheDocument()
 })
 
 test('elegir una opción la guarda', async () => {

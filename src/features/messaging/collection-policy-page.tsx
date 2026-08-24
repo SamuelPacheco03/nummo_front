@@ -17,13 +17,25 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { toastApiError } from '@/features/platform/errors'
 import { useCan, useFeature } from '@/features/platform/permissions'
+import { plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useHydrateOnce } from '@/lib/use-hydrate-once'
-import type { CollectionPolicy, WhatsAppTemplate } from '@/api/generated/model'
+import type {
+  CollectionPolicy,
+  CollectionPolicySchedule,
+  WhatsAppTemplate,
+} from '@/api/generated/model'
 import { usePaymentInstructions } from '@/features/finances/hooks'
+import { scheduleFixedByLaw, sendTimeOutOfRange } from './errors'
 import { paymentAwareUpgrade, saysWherePay } from './labels'
 import { useCollectionPolicy, useUpdateCollectionPolicy, useWhatsAppTemplates } from './hooks'
-import { describeQuietWindow } from './quiet-hours'
+import {
+  describeSendableRange,
+  describeStages,
+  groupWeek,
+  overdueEclipsesDueDate,
+  sendableHours,
+} from './schedule'
 import { RunNowPanel } from './run-now-panel'
 
 /**
@@ -69,17 +81,33 @@ export function CollectionPolicyPage() {
   const sinFormasDePago = instructions.every((i) => !i.showInReminders)
 
   const [enabled, setEnabled] = useState(false)
-  const [quietStart, setQuietStart] = useState('22:00')
-  const [quietEnd, setQuietEnd] = useState('07:00')
+  const [sendAt, setSendAt] = useState('12:00')
+  /*
+    Las tres etapas van con el interruptor separado del número porque **apagar no
+    es poner cero**: `daysAfter: 0` significa avisar el mismo día del vencimiento
+    —un aviso más, no uno menos—, y `null` es el que no manda nada. Con un solo
+    campo numérico las dos cosas se escribirían igual.
+  */
+  const [beforeOn, setBeforeOn] = useState(false)
+  const [beforeDays, setBeforeDays] = useState('3')
+  const [onDue, setOnDue] = useState(false)
+  const [afterOn, setAfterOn] = useState(false)
+  const [afterDays, setAfterDays] = useState('1')
   const [dueSoon, setDueSoon] = useState('')
+  const [dueSoonSummary, setDueSoonSummary] = useState('')
   const [overdue, setOverdue] = useState('')
   const [overdueSummary, setOverdueSummary] = useState('')
 
   useHydrateOnce(orgId, policy, (current) => {
     setEnabled(current.enabled)
-    setQuietStart(current.quietStart.slice(0, 5))
-    setQuietEnd(current.quietEnd.slice(0, 5))
+    setSendAt(current.sendAt.slice(0, 5))
+    setBeforeOn(current.daysBefore != null)
+    if (current.daysBefore != null) setBeforeDays(String(current.daysBefore))
+    setOnDue(current.remindOnDueDate)
+    setAfterOn(current.daysAfter != null)
+    if (current.daysAfter != null) setAfterDays(String(current.daysAfter))
     setDueSoon(current.dueSoonTemplateKey ?? '')
+    setDueSoonSummary(current.dueSoonSummaryTemplateKey ?? '')
     setOverdue(current.overdueTemplateKey ?? '')
     setOverdueSummary(current.overdueSummaryTemplateKey ?? '')
   })
@@ -111,8 +139,15 @@ export function CollectionPolicyPage() {
             —son la preferencia, que solo manda donde no hay horario legal— pero
             desde aquí no se mandan de vuelta.
           */
+          sendAt,
+          // Apagada es `null`, y no cero: cero es una etapa encendida el día del
+          // vencimiento.
+          daysBefore: beforeOn ? Number(beforeDays) : null,
+          remindOnDueDate: onDue,
+          daysAfter: afterOn ? Number(afterDays) : null,
           // Vacío es «sin plantilla», que apaga ese aviso. No es una cadena vacía.
           dueSoonTemplateKey: dueSoon || null,
+          dueSoonSummaryTemplateKey: dueSoonSummary || null,
           overdueTemplateKey: overdue || null,
           overdueSummaryTemplateKey: overdueSummary || null,
         },
@@ -121,19 +156,55 @@ export function CollectionPolicyPage() {
       // La pantalla se queda, así que se vuelve a marcar limpia con **lo que
       // respondió el servidor** y no con el borrador (§45.7).
       setEnabled(data.enabled)
-      setQuietStart(data.quietStart.slice(0, 5))
-      setQuietEnd(data.quietEnd.slice(0, 5))
+      setSendAt(data.sendAt.slice(0, 5))
+      setBeforeOn(data.daysBefore != null)
+      if (data.daysBefore != null) setBeforeDays(String(data.daysBefore))
+      setOnDue(data.remindOnDueDate)
+      setAfterOn(data.daysAfter != null)
+      if (data.daysAfter != null) setAfterDays(String(data.daysAfter))
       setDueSoon(data.dueSoonTemplateKey ?? '')
+      setDueSoonSummary(data.dueSoonSummaryTemplateKey ?? '')
       setOverdue(data.overdueTemplateKey ?? '')
       setOverdueSummary(data.overdueSummaryTemplateKey ?? '')
       toast.success('Política guardada')
     } catch (err) {
+      /*
+        El rango sale del error y no está escrito aquí: es el backend quien sabe
+        que el sábado cierra a las tres. Sin esto el usuario ve «datos inválidos»
+        delante de un desplegable que le ofreció esa hora.
+      */
+      const fuera = sendTimeOutOfRange(err)
+      if (fuera) {
+        toast.error('Esa hora queda fuera del horario de cobranza', {
+          description: `Tiene que valer todos los días de la semana: elige entre ${fuera.earliest} y ${fuera.latest}.`,
+        })
+        return
+      }
+      const porLey = scheduleFixedByLaw(err)
+      if (porLey) {
+        toast.error('El horario lo fija la ley y no se puede cambiar', {
+          description: `${porLey.reference} — se rechazaron: ${porLey.fields.join(', ')}.`,
+        })
+        return
+      }
       toastApiError(err, 'No se pudo guardar la política')
     }
   }
 
-  const window = describeQuietWindow(quietStart, quietEnd)
   const writable = canManage && hasFeature
+
+  const horas = sendableHours(policy?.schedule.sendableRange ?? null, sendAt)
+  const rangoLegible = describeSendableRange(policy?.schedule.sendableRange ?? null)
+  // Sale de la respuesta y no escrito aquí: no es un tope que el backend
+  // comprueba, es que no existen más etapas.
+  const topeDeAvisos = policy?.schedule.maxRemindersPerReceivable ?? 3
+  const etapasActuales = {
+    daysBefore: beforeOn ? Number(beforeDays) : null,
+    remindOnDueDate: onDue,
+    daysAfter: afterOn ? Number(afterDays) : null,
+  }
+  const etapas = describeStages(etapasActuales)
+  const tapaElDiaQueVence = overdueEclipsesDueDate(etapasActuales)
 
   return (
     <div className="space-y-4">
@@ -208,43 +279,126 @@ export function CollectionPolicyPage() {
                 </span>
               </label>
 
-              <div className="space-y-3 border-t pt-5">
+              {/* ---------- Cuándo se le escribe ---------- */}
+              <div className="space-y-4 border-t pt-5">
                 <div>
-                  <p className="text-sm font-medium">Horas en las que no se molesta</p>
+                  <p className="text-sm font-medium">Cuándo se le puede escribir</p>
                   <p className="text-muted-foreground text-xs">
-                    Un aviso que caiga dentro de la franja <strong>no se pierde: se aplaza</strong>{' '}
-                    y sale en cuanto termina.
+                    {policy?.schedule.legalReference ? (
+                      <>
+                        Lo fija la ley, no tú: <strong>{policy.schedule.legalReference}</strong>. Un
+                        aviso que caiga fuera <strong>no se pierde: se aplaza</strong>.
+                      </>
+                    ) : (
+                      <>
+                        El horario de contacto de tu país. Un aviso que caiga fuera{' '}
+                        <strong>no se pierde: se aplaza</strong>.
+                      </>
+                    )}
                   </p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Desde" htmlFor="quiet-start">
-                    <Input
-                      id="quiet-start"
-                      type="time"
-                      className="w-40"
-                      value={quietStart}
-                      disabled={!writable}
-                      onChange={(event) => setQuietStart(event.target.value)}
-                    />
-                  </Field>
-                  <Field label="Hasta" htmlFor="quiet-end">
-                    <Input
-                      id="quiet-end"
-                      type="time"
-                      className="w-40"
-                      value={quietEnd}
-                      disabled={!writable}
-                      onChange={(event) => setQuietEnd(event.target.value)}
-                    />
-                  </Field>
+                {policy && <LegalWeek schedule={policy.schedule} />}
+
+                <Field
+                  label="A qué hora salen"
+                  htmlFor="send-at"
+                  hint={
+                    rangoLegible
+                      ? `Tiene que valer todos los días, así que solo se puede entre ${rangoLegible}.`
+                      : undefined
+                  }
+                >
+                  <NativeSelect
+                    id="send-at"
+                    className="w-40"
+                    value={sendAt}
+                    disabled={!writable}
+                    onChange={(event) => setSendAt(event.target.value)}
+                  >
+                    {horas.map((hora) => (
+                      <option key={hora} value={hora}>
+                        {hora}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              </div>
+
+              {/* ---------- Cuántas veces ---------- */}
+              <div className="space-y-4 border-t pt-5">
+                <div>
+                  <p className="text-sm font-medium">Cuántas veces se le escribe</p>
+                  {/*
+                    Lo que nadie va a suponer y hay que decir en la pantalla: antes
+                    el aviso de mora salía **cada día** mientras la deuda existiera.
+                    Ahora cada etapa dispara una sola vez en toda la vida de la
+                    cuenta, así que a quien no paga Nummo deja de escribirle.
+                  */}
+                  <p className="text-muted-foreground text-xs">
+                    Como mucho <strong>{topeDeAvisos} avisos por cuenta de cobro</strong>, y cada
+                    uno <strong>una sola vez</strong>. Si no te pagan,{' '}
+                    <strong>Nummo no vuelve a insistir</strong> por esa cuenta.
+                  </p>
                 </div>
 
-                {/* Dos campos de hora sueltos no dicen que la franja cruza la
-                    madrugada, y `22:00 → 07:00` es el caso normal. */}
+                <StageField
+                  id="before"
+                  label="Antes de que venza"
+                  unit="días antes"
+                  min={1}
+                  checked={beforeOn}
+                  value={beforeDays}
+                  disabled={!writable}
+                  onToggle={setBeforeOn}
+                  onValue={setBeforeDays}
+                />
+
+                <label
+                  className={cn('flex items-start gap-3', writable ? 'cursor-pointer' : 'opacity-60')}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-primary mt-0.5 size-4 shrink-0"
+                    checked={onDue}
+                    disabled={!writable}
+                    onChange={(event) => setOnDue(event.target.checked)}
+                  />
+                  <span className="block text-sm">El día que vence</span>
+                </label>
+
+                <StageField
+                  id="after"
+                  label="Cuando ya esté vencida"
+                  unit="días después"
+                  /* Cero es válido y significa el mismo día del vencimiento. */
+                  min={0}
+                  checked={afterOn}
+                  value={afterDays}
+                  disabled={!writable}
+                  onToggle={setAfterOn}
+                  onValue={setAfterDays}
+                />
+
+                {tapaElDiaQueVence && (
+                  <Note tone="info" title="«El día que vence» no va a salir">
+                    Con el aviso de mora a los 0 días, los dos caen el mismo día y{' '}
+                    <strong>gana el de mora</strong>. Ponlo a 1 día o más si quieres los dos.
+                  </Note>
+                )}
+
                 <p className="text-muted-foreground text-sm" aria-live="polite">
-                  {window.text}
-                  {window.duration && ` · ${window.duration}`}
+                  {etapas.count === 0 ? (
+                    <>
+                      Ahora mismo <strong>no se le escribe nunca</strong>: no hay ninguna etapa
+                      encendida.
+                    </>
+                  ) : (
+                    <>
+                      Se le escribe <strong>{plural(etapas.count, 'vez', 'veces')}</strong>:{' '}
+                      {listar(etapas.parts)}.
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -263,9 +417,22 @@ export function CollectionPolicyPage() {
                   </p>
                 </div>
 
+                {/*
+                  Cuatro plantillas y no dos, y la pantalla tiene que explicar por
+                  qué: **un deudor recibe un solo aviso** con todo lo que debe, no
+                  uno por factura. Cada momento va con su singular y su plural
+                  porque Meta no pluraliza — con una sola saldría «tienes 1
+                  facturas vencidas».
+                */}
+                <p className="text-muted-foreground text-xs">
+                  A quien debe varias facturas se le escribe <strong>una sola vez</strong>, con el
+                  total. Por eso cada momento lleva dos plantillas: Meta no pluraliza, y con una
+                  sola saldría «tienes 1 facturas vencidas».
+                </p>
+
                 <TemplateField
                   id="due-soon"
-                  label="Aviso de que está por vencer"
+                  label="Por vencer, cuando es una sola cuenta"
                   emptyWarning="Sin plantilla, no se avisa de lo que está por vencer."
                   templates={templates}
                   value={dueSoon}
@@ -273,21 +440,22 @@ export function CollectionPolicyPage() {
                   onChange={setDueSoon}
                 />
 
-                {/*
-                  Dos plantillas para la mora, y la pantalla tiene que explicar
-                  por qué: **un deudor recibe un solo aviso** con todo lo que
-                  debe, no uno por factura. Están separadas porque Meta no
-                  pluraliza, y con una sola saldría «tienes 1 facturas vencidas».
-                */}
-                <p className="text-muted-foreground border-t pt-4 text-xs">
-                  A quien debe varias facturas se le escribe <strong>una sola vez</strong>, con el
-                  total. Por eso la mora lleva dos plantillas: Meta no pluraliza, y con una sola
-                  saldría «tienes 1 facturas vencidas».
-                </p>
+                <TemplateField
+                  id="due-soon-summary"
+                  label="Por vencer, cuando son varias"
+                  /* Vacía **no es un error**: cae a la singular con el total, y no
+                     miente porque su texto dice «saldo pendiente», no «tu factura». */
+                  emptyWarning="Sin plantilla se usa la de arriba, con el total pero sin decir cuántas cuentas son."
+                  emptyTone="muted"
+                  templates={templates}
+                  value={dueSoonSummary}
+                  disabled={!writable}
+                  onChange={setDueSoonSummary}
+                />
 
                 <TemplateField
                   id="overdue"
-                  label="Aviso de mora, cuando debe una sola factura"
+                  label="Vencida, cuando es una sola cuenta"
                   emptyWarning="Sin plantilla, no se avisa de la mora aunque la cobranza esté encendida."
                   templates={templates}
                   value={overdue}
@@ -297,7 +465,7 @@ export function CollectionPolicyPage() {
 
                 <TemplateField
                   id="overdue-summary"
-                  label="Aviso de mora, cuando debe varias"
+                  label="Vencida, cuando son varias"
                   /* Vacía **no es un error**: se cae a la singular con el total.
                      Lo que se pierde es el conteo, y eso sí hay que decirlo. */
                   emptyWarning="Sin plantilla se usa la de arriba, con el total pero sin decir cuántas facturas son."
@@ -309,15 +477,6 @@ export function CollectionPolicyPage() {
                 />
               </div>
 
-              {/* Se configura una vez y en un sitio: los días de antelación ya
-                  rigen los avisos internos y no se duplica el control aquí. */}
-              <Note tone="info" title="Cuántos días antes se avisa se configura aparte">
-                Sale de los días de antelación de la organización, que ya rigen los recordatorios
-                internos.{' '}
-                <Link to="/config/avisos" className="text-brand underline">
-                  Política de avisos
-                </Link>
-              </Note>
             </CardContent>
 
             {writable && (
@@ -336,6 +495,112 @@ export function CollectionPolicyPage() {
             </p>
           )}
         </form>
+      )}
+    </div>
+  )
+}
+
+/** «3 días antes, el día que vence y 1 día después» — una lista en castellano. */
+function listar(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? ''
+  return `${parts.slice(0, -1).join(', ')} y ${parts.at(-1)}`
+}
+
+/**
+ * **La semana como información, no como controles.**
+ *
+ * Donde hay ley que fija el horario de cobranza —en Colombia la 2300— esto no es
+ * una preferencia y no se puede editar ni para ampliarlo ni para recortarlo. Aun
+ * así se enseña en vez de esconderse: es lo que explica por qué un recordatorio
+ * no salió el domingo, y esconderlo dejaría esa pregunta sin respuesta en la
+ * pantalla que la provoca.
+ *
+ * El domingo llega como `null` y se dice con palabras. Pintarlo como una franja
+ * vacía —«de 00:00 a 00:00»— diría que se escribe a medianoche.
+ */
+function LegalWeek({ schedule }: { schedule: CollectionPolicySchedule }) {
+  return (
+    <dl className="bg-muted/40 divide-border divide-y rounded-lg border text-sm">
+      {groupWeek(schedule.week).map(({ label, window }) => (
+        <div key={label} className="flex items-baseline justify-between gap-3 px-3 py-2">
+          <dt className="text-muted-foreground min-w-0">{label}</dt>
+          <dd className={cn('shrink-0', window ? 'nums font-medium' : 'text-muted-foreground')}>
+            {window ? `${window.start} – ${window.end}` : 'No se contacta'}
+          </dd>
+        </div>
+      ))}
+      {schedule.excludesHolidays && (
+        <div className="text-muted-foreground px-3 py-2 text-xs">
+          Los festivos tampoco: se toman del país de la organización.
+        </div>
+      )}
+    </dl>
+  )
+}
+
+/**
+ * Una etapa de aviso: **el interruptor y el número van separados a propósito.**
+ *
+ * Apagar no es poner cero. `daysAfter: 0` significa avisar el mismo día del
+ * vencimiento —un aviso más, no uno menos— y `null` es el que no manda nada. Con
+ * un solo campo numérico las dos cosas se escribirían igual y no habría forma de
+ * apagar la etapa sin adelantarla.
+ */
+function StageField({
+  id,
+  label,
+  unit,
+  min,
+  checked,
+  value,
+  disabled,
+  onToggle,
+  onValue,
+}: {
+  id: string
+  label: string
+  unit: string
+  min: number
+  checked: boolean
+  value: string
+  disabled: boolean
+  onToggle: (checked: boolean) => void
+  onValue: (value: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <label className={cn('flex items-center gap-3', disabled ? 'opacity-60' : 'cursor-pointer')}>
+        <input
+          type="checkbox"
+          className="accent-primary size-4 shrink-0"
+          checked={checked}
+          disabled={disabled}
+          onChange={(event) => onToggle(event.target.checked)}
+        />
+        <span className="text-sm">{label}</span>
+      </label>
+
+      {/*
+        El número solo existe si la etapa está encendida: apagada no hay nada que
+        contar, y un campo activo al lado de una casilla vacía invita a escribir
+        algo que no se va a guardar.
+      */}
+      {checked && (
+        <span className="flex items-center gap-2">
+          <Input
+            id={id}
+            type="number"
+            className="w-20"
+            aria-label={`${label}, ${unit}`}
+            min={min}
+            max={90}
+            required
+            value={value}
+            disabled={disabled}
+            onChange={(event) => onValue(event.target.value)}
+          />
+          <span className="text-muted-foreground text-sm">{unit}</span>
+        </span>
       )}
     </div>
   )
