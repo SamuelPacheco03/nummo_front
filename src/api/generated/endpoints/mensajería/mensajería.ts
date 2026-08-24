@@ -33,6 +33,7 @@ import type {
   GetApiV1OrganizationsOrgIdMessagingMessages200,
   GetApiV1OrganizationsOrgIdMessagingMessagesParams,
   MessageConsent,
+  PutApiV1OrganizationsOrgIdMessagingCollectionPolicy422,
   SetMessageConsentInput,
   UpdateCollectionPolicyInput
 } from '../../model';
@@ -460,7 +461,9 @@ export const getGetApiV1OrganizationsOrgIdMessagingCollectionPolicyUrl = (orgId:
 /**
  * Una organización que nunca lo configuró recibe la política por defecto —apagada—, no un vacío.
  *
- * El *cuándo* no está aquí: son los `dueReminderDays` de los ajustes de la organización, que ya rigen los avisos internos.
+ * **`schedule` trae el horario ya resuelto** y es lo que la pantalla debe pintar: la semana entera por día ISO (`week`, con `null` en los días que no se contacta), si es editable, de qué norma sale, el rango en que se puede mover `sendAt` y cuántos avisos recibe como mucho una cuenta por cobrar. El backend resuelve la ley para que el cliente no tenga que saberse la Ley 2300.
+ *
+ * Los campos sueltos de horario —`quietStart`, `quietEnd`, `sendDays`, `skipHolidays`— salen aquí como **lectura**. Donde hay ley no deciden nada y el `PUT` no los acepta.
  * @summary Cuándo y con qué plantilla se le recuerda a un deudor que debe
  */
 export const getApiV1OrganizationsOrgIdMessagingCollectionPolicy = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdMessagingCollectionPolicyResponse> => {
@@ -557,15 +560,20 @@ export type putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponse200 = {
   status: 200
 }
 
+export type putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponse422 = {
+  data: PutApiV1OrganizationsOrgIdMessagingCollectionPolicy422
+  status: 422
+}
+
 export type putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponseDefault = {
   data: ErrorResponse
-  status: Exclude<HTTPStatusCodes, 200>
+  status: Exclude<HTTPStatusCodes, 200 | 422>
 }
 
 export type putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponseSuccess = (putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponse200) & {
   headers: Headers;
 };
-export type putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponseError = (putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponseDefault) & {
+export type putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponseError = (putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponse422 | putApiV1OrganizationsOrgIdMessagingCollectionPolicyResponseDefault) & {
   headers: Headers;
 };
 
@@ -584,9 +592,11 @@ export const getPutApiV1OrganizationsOrgIdMessagingCollectionPolicyUrl = (orgId:
  *
  * Sin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora.
  *
- * **Las horas de silencio aplazan; los días no hábiles saltan.** Un recordatorio nocturno sale a la mañana siguiente, pero un domingo o un festivo **no se escanea**, y eso es deliberado: aplazarlo duplicaría el aviso, porque la clave de deduplicación lleva la fecha del escaneo.
+ * **El horario no se configura donde hay ley que lo fije.** En Colombia lo pone la Ley 2300 de 2023, art. 3: lunes a viernes de 07:00 a 19:00, sábados de 08:00 a 15:00, y ningún contacto los domingos ni los festivos. Por eso `quietStart`, `quietEnd`, `sendDays` y `skipHolidays` **no se aceptan** en este cuerpo; salen en el `GET` como lectura, y el horario ya resuelto viene en `schedule`.
  *
- * `sendDays` son días ISO —1 lunes, 7 domingo— y por defecto es lunes a sábado. `skipHolidays` usa los festivos del país de la organización, deducido de su `locale`: hoy solo hay calendario de Colombia, y un país sin calendario envía todos los días.
+ * Lo que sí se elige es **`sendAt`**, la hora a la que salen los avisos —una hora, no una ventana—, por defecto las `12:00`. Tiene que caer dentro de la franja **todos** los días, así que se valida contra la intersección de la semana: el sábado cierra a las tres, de modo que el rango real es `08:00`–`14:59`. Ese mismo rango viene en `schedule.sendableRange`.
+ *
+ * Y las tres etapas: `daysBefore`, `remindOnDueDate` y `daysAfter`. Cada cuenta por cobrar recibe **como mucho tres avisos en toda su vida**, uno por etapa. Se configura el cuándo, nunca el cuántos.
  * @summary Activa o ajusta los recordatorios de cobro
  */
 export const putApiV1OrganizationsOrgIdMessagingCollectionPolicy = async (orgId: string,
@@ -605,7 +615,7 @@ export const putApiV1OrganizationsOrgIdMessagingCollectionPolicy = async (orgId:
 
 
 
-export const getPutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationOptions = <TError = ErrorResponse,
+export const getPutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationOptions = <TError = PutApiV1OrganizationsOrgIdMessagingCollectionPolicy422 | ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMessagingCollectionPolicy>>, TError,{orgId: string;data: UpdateCollectionPolicyInput}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMessagingCollectionPolicy>>, TError,{orgId: string;data: UpdateCollectionPolicyInput}, TContext> => {
 
@@ -634,12 +644,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMessagingCollectionPolicy>>>
     export type PutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationBody = UpdateCollectionPolicyInput
-    export type PutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationError = ErrorResponse
+    export type PutApiV1OrganizationsOrgIdMessagingCollectionPolicyMutationError = PutApiV1OrganizationsOrgIdMessagingCollectionPolicy422 | ErrorResponse
 
     /**
  * @summary Activa o ajusta los recordatorios de cobro
  */
-export const usePutApiV1OrganizationsOrgIdMessagingCollectionPolicy = <TError = ErrorResponse,
+export const usePutApiV1OrganizationsOrgIdMessagingCollectionPolicy = <TError = PutApiV1OrganizationsOrgIdMessagingCollectionPolicy422 | ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMessagingCollectionPolicy>>, TError,{orgId: string;data: UpdateCollectionPolicyInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdMessagingCollectionPolicy>>,
@@ -677,13 +687,15 @@ export const getPostApiV1OrganizationsOrgIdMessagingCollectionRemindersRunUrl = 
 }
 
 /**
- * El escaneo automático corre a la hora local de la organización y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.
+ * El escaneo automático corre a la hora local de la organización —`sendAt`, por defecto las 12:00— y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.
  *
- * **Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.
+ * **Pulsarlo dos veces no duplica nada.** La segunda vez el aviso ya está en el registro de enviados y la consulta ni lo devuelve: verás todos los conteos en cero, y eso no es un error. Tampoco cancela la corrida automática de ese día.
  *
- * Sigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.
+ * `before`, `onDue` y `overdue` son cuántos deudores se miraron en cada etapa, **no** cuántos salieron: eso es `queued`. `sameDayDeferred` son los que cedieron el turno porque su deudor tenía algo más urgente — no se pierden, vuelven mañana.
  *
- * **No mira `sendDays` ni `skipHolidays`.** Esos dicen si el trabajo corre solo hoy; esto lo pidió una persona, un domingo, a sabiendas. Bloquearlo lo dejaría sin hacer nada en silencio.
+ * **No mira el calendario, pero sí la hora.** El día lo eligió quien lo pulsó, así que funciona un domingo; la franja legal se respeta igual, de modo que un disparo a las nueve de la noche encola para la mañana siguiente. Y adelanta el aviso que ya tocaba: no añade uno más, porque cada cuenta por cobrar tiene sus tres etapas y ninguna se repite.
+ *
+ * Sigue respetando consentimiento y cupo del plan. Encola; de mandarlos se encarga el worker.
  *
  * Exige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.
  * @summary Manda los recordatorios de cobro ahora, sin esperar a la hora

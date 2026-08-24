@@ -3416,7 +3416,7 @@
           "Mensajería"
         ],
         "summary": "Cuándo y con qué plantilla se le recuerda a un deudor que debe",
-        "description": "Una organización que nunca lo configuró recibe la política por defecto —apagada—, no un vacío.\n\nEl *cuándo* no está aquí: son los `dueReminderDays` de los ajustes de la organización, que ya rigen los avisos internos.",
+        "description": "Una organización que nunca lo configuró recibe la política por defecto —apagada—, no un vacío.\n\n**`schedule` trae el horario ya resuelto** y es lo que la pantalla debe pintar: la semana entera por día ISO (`week`, con `null` en los días que no se contacta), si es editable, de qué norma sale, el rango en que se puede mover `sendAt` y cuántos avisos recibe como mucho una cuenta por cobrar. El backend resuelve la ley para que el cliente no tenga que saberse la Ley 2300.\n\nLos campos sueltos de horario —`quietStart`, `quietEnd`, `sendDays`, `skipHolidays`— salen aquí como **lectura**. Donde hay ley no deciden nada y el `PUT` no los acepta.",
         "security": [
           {
             "cookieAuth": []
@@ -3463,7 +3463,7 @@
           "Mensajería"
         ],
         "summary": "Activa o ajusta los recordatorios de cobro",
-        "description": "Endpoint propio y no un campo de los ajustes generales, como la política de aprobaciones: encender o apagar los recordatorios de una empresa entera tiene que ser un acto deliberado.\n\nSin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora.\n\n**Las horas de silencio aplazan; los días no hábiles saltan.** Un recordatorio nocturno sale a la mañana siguiente, pero un domingo o un festivo **no se escanea**, y eso es deliberado: aplazarlo duplicaría el aviso, porque la clave de deduplicación lleva la fecha del escaneo.\n\n`sendDays` son días ISO —1 lunes, 7 domingo— y por defecto es lunes a sábado. `skipHolidays` usa los festivos del país de la organización, deducido de su `locale`: hoy solo hay calendario de Colombia, y un país sin calendario envía todos los días.",
+        "description": "Endpoint propio y no un campo de los ajustes generales, como la política de aprobaciones: encender o apagar los recordatorios de una empresa entera tiene que ser un acto deliberado.\n\nSin plantilla configurada, ese aviso no sale — lo que permite activar solo la mora.\n\n**El horario no se configura donde hay ley que lo fije.** En Colombia lo pone la Ley 2300 de 2023, art. 3: lunes a viernes de 07:00 a 19:00, sábados de 08:00 a 15:00, y ningún contacto los domingos ni los festivos. Por eso `quietStart`, `quietEnd`, `sendDays` y `skipHolidays` **no se aceptan** en este cuerpo; salen en el `GET` como lectura, y el horario ya resuelto viene en `schedule`.\n\nLo que sí se elige es **`sendAt`**, la hora a la que salen los avisos —una hora, no una ventana—, por defecto las `12:00`. Tiene que caer dentro de la franja **todos** los días, así que se valida contra la intersección de la semana: el sábado cierra a las tres, de modo que el rango real es `08:00`–`14:59`. Ese mismo rango viene en `schedule.sendableRange`.\n\nY las tres etapas: `daysBefore`, `remindOnDueDate` y `daysAfter`. Cada cuenta por cobrar recibe **como mucho tres avisos en toda su vida**, uno por etapa. Se configura el cuándo, nunca el cuántos.",
         "security": [
           {
             "cookieAuth": []
@@ -3502,6 +3502,57 @@
               }
             }
           },
+          "422": {
+            "description": "La configuración no es válida. Con `details.reason` presente es una de las dos de arriba —el horario lo fija la ley, o la hora está fuera de la franja— y `details` trae con qué escribir el mensaje. Sin `reason`, es un fallo de esquema normal y `details` lleva las incidencias de validación.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "ORGANIZATION_SUSPENDED",
+                            "FEATURE_NOT_AVAILABLE",
+                            "LIMIT_EXCEEDED",
+                            "RATE_LIMITED",
+                            "INTERNAL"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "$ref": "#/components/schemas/CollectionPolicyErrorDetails"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "details"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "default": {
             "description": "Error.",
             "content": {
@@ -3523,7 +3574,7 @@
           "Mensajería"
         ],
         "summary": "Manda los recordatorios de cobro ahora, sin esperar a la hora",
-        "description": "El escaneo automático corre a la hora local de la organización y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.\n\n**Pulsarlo dos veces no duplica nada.** Lo que impide el duplicado es la clave de deduplicación de cada mensaje —una por cuenta, paso y día local—, no el marcador diario del job. Tampoco cancela la corrida automática de ese día.\n\nSigue respetando todo lo demás: consentimiento, horas de silencio —que aplazan, no cancelan— y el cupo del plan. Encola; de mandarlos se encarga el worker.\n\n**No mira `sendDays` ni `skipHolidays`.** Esos dicen si el trabajo corre solo hoy; esto lo pidió una persona, un domingo, a sabiendas. Bloquearlo lo dejaría sin hacer nada en silencio.\n\nExige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.",
+        "description": "El escaneo automático corre a la hora local de la organización —`sendAt`, por defecto las 12:00— y una sola vez al día. Esto lo dispara al momento, que es lo que hace falta el día que se activa la cobranza y cuando alguien quiere ver el efecto de un cambio.\n\n**Pulsarlo dos veces no duplica nada.** La segunda vez el aviso ya está en el registro de enviados y la consulta ni lo devuelve: verás todos los conteos en cero, y eso no es un error. Tampoco cancela la corrida automática de ese día.\n\n`before`, `onDue` y `overdue` son cuántos deudores se miraron en cada etapa, **no** cuántos salieron: eso es `queued`. `sameDayDeferred` son los que cedieron el turno porque su deudor tenía algo más urgente — no se pierden, vuelven mañana.\n\n**No mira el calendario, pero sí la hora.** El día lo eligió quien lo pulsó, así que funciona un domingo; la franja legal se respeta igual, de modo que un disparo a las nueve de la noche encola para la mañana siguiente. Y adelanta el aviso que ya tocaba: no añade uno más, porque cada cuenta por cobrar tiene sus tres etapas y ninguna se repite.\n\nSigue respetando consentimiento y cupo del plan. Encola; de mandarlos se encarga el worker.\n\nExige la política activada: **409** `COLLECTION_POLICY_DISABLED` si está apagada.",
         "security": [
           {
             "cookieAuth": []
@@ -15437,14 +15488,6 @@
           "enabled": {
             "type": "boolean"
           },
-          "quietStart": {
-            "type": "string",
-            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
-          },
-          "quietEnd": {
-            "type": "string",
-            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
-          },
           "dueSoonTemplateKey": {
             "anyOf": [
               {
@@ -15468,6 +15511,17 @@
             ]
           },
           "overdueTemplateKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdueSummaryTemplateKey": {
             "anyOf": [
               {
                 "type": "string",
@@ -15508,31 +15562,9 @@
                 "type": "null"
               }
             ]
-          },
-          "sendDays": {
-            "maxItems": 7,
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 7
-            }
-          },
-          "skipHolidays": {
-            "type": "boolean"
-          },
-          "overdueSummaryTemplateKey": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 80
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
-        }
+        },
+        "additionalProperties": false
       },
       "PlaygroundChatInput": {
         "type": "object",
@@ -22104,8 +22136,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
+                "minimum": 1,
+                "maximum": 90
               },
               {
                 "type": "null"
@@ -22119,8 +22151,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
+                "minimum": 0,
+                "maximum": 90
               },
               {
                 "type": "null"
@@ -22271,10 +22303,83 @@
         ],
         "additionalProperties": false
       },
+      "CollectionPolicyErrorDetails": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ScheduleFixedByLawDetails"
+          },
+          {
+            "$ref": "#/components/schemas/SendTimeOutOfRangeDetails"
+          }
+        ],
+        "type": "object",
+        "discriminator": {
+          "propertyName": "reason",
+          "mapping": {
+            "SCHEDULE_FIXED_BY_LAW": "#/components/schemas/ScheduleFixedByLawDetails",
+            "SEND_TIME_OUT_OF_RANGE": "#/components/schemas/SendTimeOutOfRangeDetails"
+          }
+        }
+      },
+      "ScheduleFixedByLawDetails": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "const": "SCHEDULE_FIXED_BY_LAW"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "reason",
+          "reference",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "SendTimeOutOfRangeDetails": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "const": "SEND_TIME_OUT_OF_RANGE"
+          },
+          "earliest": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "latest": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "reference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "earliest",
+          "latest"
+        ],
+        "additionalProperties": false
+      },
       "CollectionRemindersRun": {
         "type": "object",
         "properties": {
-          "dueSoon": {
+          "before": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "onDue": {
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
@@ -22303,15 +22408,22 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "sameDayDeferred": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
-          "dueSoon",
+          "before",
+          "onDue",
           "overdue",
           "queued",
           "skipped",
           "overdueDeferred",
-          "withoutPhone"
+          "withoutPhone",
+          "sameDayDeferred"
         ],
         "additionalProperties": false
       },

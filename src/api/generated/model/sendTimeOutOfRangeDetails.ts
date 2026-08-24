@@ -5,16 +5,13 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { SendTimeOutOfRangeDetailsReason } from './sendTimeOutOfRangeDetailsReason';
 
-export interface UpdateCollectionPolicyInput {
-  enabled?: boolean;
-  dueSoonTemplateKey?: string | null;
-  dueSoonSummaryTemplateKey?: string | null;
-  overdueTemplateKey?: string | null;
-  overdueSummaryTemplateKey?: string | null;
+export interface SendTimeOutOfRangeDetails {
+  reason: SendTimeOutOfRangeDetailsReason;
   /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
-  sendAt?: string;
-  daysBefore?: number | null;
-  remindOnDueDate?: boolean;
-  daysAfter?: number | null;
+  earliest: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
+  latest: string;
+  reference?: string;
 }

@@ -180,6 +180,39 @@ Dos de las tres etapas se recuperan y una no, y conviene no prometer lo contrari
 - **El día que vence** no se recupera. Su texto dice «vence hoy» y mandarlo tarde sería
   falso, así que se pierde y lo recoge el de mora.
 
+#### Lo que se arregló del contrato tras tu revisión
+
+Los cuatro puntos eran correctos. Ya están en `openapi.json`:
+
+- **`CollectionRemindersRun`** trae los ocho conteos: `before`, `onDue`, `overdue`,
+  `queued`, `skipped`, `overdueDeferred`, `withoutPhone`, `sameDayDeferred`. Fuera
+  `dueSoon`. La causa de que se quedara atrás tres veces era que ese DTO solo describía y
+  nadie lo parseaba; ahora hay una comprobación de tipos que lo vuelve un error de
+  compilación en el backend, así que no puede volver a pasar.
+- **`UpdateCollectionPolicyInput`** ya no declara `quietStart`, `quietEnd`, `sendDays` ni
+  `skipHolidays`. El esquema es `strict`, así que mandarlos es un `422` y no un descarte
+  en silencio.
+- **Las descripciones** del `GET`, el `PUT` y el de «enviar ahora» están reescritas. Ya no
+  contradicen esto.
+- **El `422` está declarado** con `details` tipado.
+
+Para el error de la hora:
+
+```ts
+import type { CollectionPolicyErrorDetails } from '@/api/generated/model'
+
+// Unión discriminada por `reason`.
+if (details?.reason === 'SEND_TIME_OUT_OF_RANGE') {
+  `Esa hora no se puede. El rango es ${details.earliest}–${details.latest}.`
+}
+```
+
+Un `422` **sin** `reason` es un fallo de esquema normal, con las incidencias de Zod en
+`details` como en el resto de la API.
+
+Y los límites de `daysBefore` (1–90) y `daysAfter` (0–90) ahora también salen en la
+respuesta, no solo en la entrada.
+
 #### Las cuatro plantillas, y por qué son cuatro
 
 Un deudor recibe **un solo aviso** con todo lo que debe, no uno por factura. Como Meta no

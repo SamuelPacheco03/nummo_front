@@ -11,7 +11,12 @@ export interface CollectionRemindersRun {
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  dueSoon: number;
+  before: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  onDue: number;
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
@@ -37,4 +42,9 @@ export interface CollectionRemindersRun {
      * @maximum 9007199254740991
      */
   withoutPhone: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  sameDayDeferred: number;
 }
