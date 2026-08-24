@@ -8,9 +8,8 @@ import type { CollectionPolicy, CollectionPolicySchedule } from '@/api/generated
  * Los días van en ISO —1 es lunes, 7 domingo— y **el domingo es `null`**, que no
  * es lo mismo que una franja vacía: es «no se contacta».
  *
- * Ojo con los tres números de cadencia: solo el máximo diario sale de la ley.
- * `maxContactsPerWindow` y `minDaysBetweenContacts` son decisión de producto —más
- * estricta que la norma— y ningún texto de la interfaz debe atribuírselos a ella.
+ * `sendableRange` no es el horario de un día: es la intersección de todos, porque
+ * la hora elegida tiene que caber cualquier día de la semana.
  */
 export function horarioLegal(over: Partial<CollectionPolicySchedule> = {}): CollectionPolicySchedule {
   return {
@@ -26,9 +25,16 @@ export function horarioLegal(over: Partial<CollectionPolicySchedule> = {}): Coll
       '7': null,
     },
     excludesHolidays: true,
-    maxContactsPerWindow: 2,
-    windowDays: 7,
-    minDaysBetweenContacts: 3,
+    // Siempre 3, y viene en la respuesta para no escribirlo a mano en el texto:
+    // no es un tope que se comprueba, es que no existen más etapas.
+    maxRemindersPerReceivable: 3,
+    /*
+      La franja en la que se puede elegir la hora de envío, y sale más estrecha
+      que cualquiera de los días: tiene que valer **todos**, y el sábado cierra a
+      las tres. Es `[inicio, fin)`, así que las 15:00 NO son válidas — el último
+      minuto que envía es el 14:59.
+    */
+    sendableRange: { earliest: '08:00', latest: '14:59' },
     ...over,
   }
 }
@@ -48,6 +54,15 @@ export function politicaDeCobranza(over: Partial<CollectionPolicy> = {}): Collec
     dueSoonSummaryTemplateKey: 'cobro_por_vencer_resumen',
     overdueTemplateKey: 'cobro_vencido',
     overdueSummaryTemplateKey: 'cobro_vencido_resumen',
+    // Las tres etapas por las que pasa una cuenta por cobrar, **una sola vez cada
+    // una en toda su vida**. Se configura el cuándo, nunca el cuántos.
+    daysBefore: 3,
+    remindOnDueDate: true,
+    // A propósito NO es 0: con `daysAfter: 0` la mora sale el mismo día del
+    // vencimiento y le gana al aviso de «vence hoy», que es un caso aparte.
+    daysAfter: 1,
+    // El defecto del backend, y el mediodía cae dentro de la franja todos los días.
+    sendAt: '12:00',
     // Días ISO: 1 es lunes y 7 domingo. Lunes a sábado es el defecto del backend.
     sendDays: [1, 2, 3, 4, 5, 6],
     skipHolidays: true,
