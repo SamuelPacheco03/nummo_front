@@ -5,7 +5,7 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateWhatsAppTemplateInputCategory } from './createWhatsAppTemplateInputCategory';
+import type { CreateWhatsAppTemplateInputMetaCategory } from './createWhatsAppTemplateInputMetaCategory';
 import type { WhatsAppTemplateSpec } from './whatsAppTemplateSpec';
 
 export interface CreateWhatsAppTemplateInput {
@@ -26,6 +26,6 @@ export interface CreateWhatsAppTemplateInput {
      * @maxLength 15
      */
   language: string;
-  category: CreateWhatsAppTemplateInputCategory;
+  metaCategory: CreateWhatsAppTemplateInputMetaCategory;
   spec: WhatsAppTemplateSpec;
 }

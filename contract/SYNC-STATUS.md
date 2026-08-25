@@ -1,6 +1,74 @@
 # SYNC-STATUS — Backend → Frontend
 
-**Fecha:** 2026-08-21 (contrato traído de `dev`, **159 paths / 223 esquemas**) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral + centro de notificaciones + Web Push + stream único de eventos + identidad de conceptos y categorías + auto-registro de recurrentes.**
+**Fecha:** 2026-08-25 (contrato traído de `dev`, **179 paths / 222 operaciones / 254 esquemas**) · **Estado del backend: V1 COMPLETO (Fases 0–8) + verticalización + config IA + chat Numi (A–D) + historial persistente + base de conocimiento + mensajes de voz + buscador global + onda de las notas de voz + informe de cuentas + idempotencia en todas las mutaciones de dinero + permisos por acción + planes, features y límites + consola de plataforma + catálogo público de planes y señal de acceso a la consola + roles personalizados + aprobaciones por umbral + centro de notificaciones + Web Push + stream único de eventos + identidad de conceptos y categorías + auto-registro de recurrentes.**
+
+## 🆕 Categorías propias para agrupar plantillas de WhatsApp — regenera con `pnpm api:gen`
+
+Las plantillas ya traían una `category`, pero era **de Meta**: `UTILITY` / `MARKETING` /
+`AUTHENTICATION` decide precio y reglas de aprobación, ni siquiera se elige del todo —Meta
+recategoriza por su cuenta lo que suene a promoción— y no sirve para agrupar una lista. Ahora
+hay una categoría **nuestra**, en tabla, con el mismo eje que las plantillas: de la plataforma
+(compartida por todas las organizaciones) o propia de la organización.
+
+### ⚠️ ROMPE — `category` pasó a llamarse `metaCategory`
+
+En `WhatsAppTemplate` y en `CreateWhatsAppTemplateInput`. Si se sigue mandando `category`,
+`tsc` falla al regenerar. Ya está arreglado en `template-form-dialog.tsx` (el campo del
+formulario se llama `metaCategory`) y en `whatsapp-templates-tab.tsx`.
+
+### Cinco endpoints nuevos
+
+| Ruta | Qué hace |
+| --- | --- |
+| `GET /organizations/:orgId/whatsapp/template-categories` | Las que puede usar: propias + las de plataforma (`whatsapp.templates.read`) |
+| `POST …/template-categories` | Crea una propia. La `key` se deriva del nombre, no se manda |
+| `PATCH …/template-categories/:categoryId` | Edita una propia |
+| `DELETE …/template-categories/:categoryId` | Archiva (baja lógica, `204`) |
+| `PUT …/whatsapp/templates/:templateKey/category` | Clasifica una plantilla propia; `categoryId: null` la deja sin clasificar |
+
+Los cuatro de escritura piden `whatsapp.templates.manage` — **no hay permisos nuevos**: etiquetar
+y redactar plantillas son el mismo trabajo.
+
+`WhatsAppTemplateCategory` trae `scope` (`PLATFORM` | `ORGANIZATION`), `editable`, `key`, `name`,
+`description`, `position`, `isActive`, `templateCount` (cuántas plantillas cuelgan de ella hoy) y
+`createdAt`.
+
+### Cuatro errores que hay que pintar, y ninguno es 403
+
+- **Editar o archivar una de plataforma → `422`**, no `403`: la fila es una y compartida, y un
+  `OWNER` tampoco puede. El botón se apaga con `editable: false`, no con el rol.
+- **Nombre repetido → `409`**, contra las propias **y** contra las de plataforma.
+- **Archivar con plantillas dentro → `409` con el conteo.** No las suelta por debajo: son dos
+  decisiones y solo se pidió una.
+- **Categoría o plantilla de otra organización → `404`**, no `403`.
+
+### ✅ Cerrado — `WhatsAppTemplate` ya dice en qué categoría está
+
+Se pidió y llegó: **`categoryId` (`uuid | null`, obligatorio) en `WhatsAppTemplate`**. Va como
+id y no como objeto anidado a propósito —la lista de categorías se pide una vez y se indexa por
+id—, así que quien pinta cruza los dos. Con eso la agrupación se puede construir entera, y ya
+lo está.
+
+### Qué se construyó en el front
+
+- **Las fichas de categoría** en `/config/plantillas`, filtrando *dentro* de los dos paneles
+  («De Nummo» / «De tu organización»): son dos ejes distintos y agrupar por categoría a secas
+  mezclaría en una lista las que se pueden borrar con las que no.
+- **`TemplateCategoriesDrawer`** — crear, renombrar, archivar y reactivar las propias. Las de
+  Nummo se ven pero no se tocan: el botón se apaga con `editable`, que llega fila a fila.
+- **Clasificar una plantilla propia** desde su fila. No exige número propio: no habla con Meta.
+- Los dos `409` se leen del `details` (`templateCategoryInUse`, `templateCategoryNameTaken`):
+  el mensaje del backend viene en inglés y «The category still has templates.» no es lo que
+  tiene que ver quien acaba de pulsar Archivar.
+
+**Lo único que no se ofrece es `position`**: el contrato lo acepta, pero sin endpoint de
+reordenación en bloque —como el de los catálogos— un campo numérico suelto ordena peor que el
+alfabético. Detalle en `context.md` §11.1.16.
+
+### Sembrado
+
+Existe una sola categoría de plataforma —**Cobranza**— con las ocho plantillas de cobro dentro.
+No hay «Citas» ni «Postventa»: serían etiquetas vacías.
 
 ## 🆕 La página pública — precios, señales y Numi de preventa
 

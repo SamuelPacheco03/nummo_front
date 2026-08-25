@@ -24,11 +24,17 @@ import {
 } from '@/api/generated/endpoints/assistant/assistant'
 import { getGetApiV1OrganizationsOrgIdMeCapabilitiesQueryKey } from '@/api/generated/endpoints/platform/platform'
 import {
+  getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryKey,
   getGetApiV1OrganizationsOrgIdWhatsappTemplatesQueryKey,
+  useDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId,
   useDeleteApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKey,
+  useGetApiV1OrganizationsOrgIdWhatsappTemplateCategories,
   useGetApiV1OrganizationsOrgIdWhatsappTemplates,
+  usePatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId,
+  usePostApiV1OrganizationsOrgIdWhatsappTemplateCategories,
   usePostApiV1OrganizationsOrgIdWhatsappTemplates,
   usePostApiV1OrganizationsOrgIdWhatsappTemplatesSync,
+  usePutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory,
 } from '@/api/generated/endpoints/whats-app/whats-app'
 import type {
   CollectionPolicy,
@@ -39,6 +45,8 @@ import type {
   WhatsAppAccount,
   WhatsAppAccountState,
   WhatsAppTemplate,
+  WhatsAppTemplateCategory,
+  WhatsAppTemplateCategoryList,
   WhatsAppTemplateList,
 } from '@/api/generated/model'
 import { asArray, type ListResult } from '@/lib/list-result'
@@ -222,6 +230,103 @@ export function useSyncWhatsAppTemplates(orgId: string) {
         })
       },
     },
+  })
+}
+
+/* ---------- Categorías de plantilla ---------- */
+
+/**
+ * **Las nuestras**, no las de Meta.
+ *
+ * `metaCategory` (`UTILITY` · `MARKETING` · `AUTHENTICATION`) decide el precio y
+ * las reglas de aprobación, y ni siquiera se elige del todo: Meta recategoriza
+ * por su cuenta. Ésta responde a otra pregunta —«¿de qué va esta plantilla?»— y
+ * es la que agrupa la lista.
+ *
+ * Devuelve **las de la plataforma y las propias**, y también **las archivadas**:
+ * el contrato no filtra por `isActive`, así que quien pinta decide. Los sitios
+ * donde se elige una ofrecen solo las activas; el cajón de categorías las enseña
+ * todas, porque si no una archivada no se podría reactivar nunca.
+ */
+export function useWhatsAppTemplateCategories(orgId: string | undefined): {
+  categories: WhatsAppTemplateCategory[]
+  isPending: boolean
+  isError: boolean
+  error: unknown
+} {
+  const query = useGetApiV1OrganizationsOrgIdWhatsappTemplateCategories(orgId ?? '', {
+    query: { enabled: !!orgId },
+  })
+  return {
+    categories: asArray<WhatsAppTemplateCategory>(
+      body<WhatsAppTemplateCategoryList>(query.data)?.categories,
+    ),
+    isPending: query.isPending,
+    isError: query.isError,
+    error: query.error,
+  }
+}
+
+export function useCreateWhatsAppTemplateCategory(orgId: string) {
+  const qc = useQueryClient()
+  return usePostApiV1OrganizationsOrgIdWhatsappTemplateCategories({
+    mutation: { onSuccess: () => invalidateCategories(qc, orgId) },
+  })
+}
+
+/**
+ * Renombrar, describir, reordenar o **reactivar** una propia.
+ *
+ * Sobre una de la plataforma responde `422`, no `403`: la fila es una y
+ * compartida, así que no es cuestión de permisos —un `OWNER` tampoco puede— sino
+ * de a quién pertenece. Por eso el botón se apaga con `editable`, que lo dice el
+ * contrato fila a fila, y no con el rol.
+ */
+export function useUpdateWhatsAppTemplateCategory(orgId: string) {
+  const qc = useQueryClient()
+  return usePatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId({
+    mutation: { onSuccess: () => invalidateCategories(qc, orgId) },
+  })
+}
+
+/**
+ * Archivar: baja lógica, la fila se conserva y deja de ofrecerse.
+ *
+ * **Con plantillas dentro responde `409` con cuántas son** y no las suelta por
+ * debajo: archivar y desclasificar son dos decisiones y aquí solo se pidió una.
+ */
+export function useArchiveWhatsAppTemplateCategory(orgId: string) {
+  const qc = useQueryClient()
+  return useDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId({
+    mutation: { onSuccess: () => invalidateCategories(qc, orgId) },
+  })
+}
+
+/**
+ * Clasificar una plantilla propia. `categoryId: null` la deja sin clasificar,
+ * que es un estado válido y no un hueco por rellenar.
+ *
+ * Las de la plataforma no se clasifican desde aquí —la fila la comparten todas
+ * las organizaciones—, así que la pantalla ofrece esto solo en las propias.
+ */
+export function useSetWhatsAppTemplateCategory(orgId: string) {
+  const qc = useQueryClient()
+  return usePutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory({
+    mutation: { onSuccess: () => invalidateCategories(qc, orgId) },
+  })
+}
+
+/**
+ * Las dos consultas van juntas siempre: `templateCount` vive en la categoría y
+ * `categoryId` en la plantilla, así que cualquiera de las dos mutaciones deja
+ * vieja a la otra lista.
+ */
+function invalidateCategories(qc: QueryClient, orgId: string): void {
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryKey(orgId),
+  })
+  void qc.invalidateQueries({
+    queryKey: getGetApiV1OrganizationsOrgIdWhatsappTemplatesQueryKey(orgId),
   })
 }
 

@@ -2976,6 +2976,291 @@
         "x-required-permission": "whatsapp.templates.manage"
       }
     },
+    "/api/v1/organizations/{orgId}/whatsapp/template-categories": {
+      "get": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Categorías que la organización puede usar (requiere whatsapp.templates.read)",
+        "description": "Incluye las de la plataforma, que comparten todas las organizaciones. `editable` dice cuáles puede tocar: las de plataforma nunca, porque la fila es compartida y renombrarla se la renombraría a las demás. `templateCount` es cuántas plantillas cuelgan de ella hoy.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categorías disponibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplateCategoryList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.read"
+      },
+      "post": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Crear una categoría propia (requiere whatsapp.templates.manage)",
+        "description": "La clave se deriva del nombre; no se envía. Un nombre que ya use otra categoría —propia **o** de la plataforma— responde 409: dos etiquetas iguales en la misma lista no las distingue nadie.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWhatsAppTemplateCategory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Categoría creada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplateCategory"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/whatsapp/template-categories/{categoryId}": {
+      "patch": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Editar una categoría propia (requiere whatsapp.templates.manage)",
+        "description": "Solo las propias. Sobre una de la plataforma responde 422: no es una cuestión de permisos —un `OWNER` tampoco puede— sino de a quién pertenece la fila.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "categoryId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWhatsAppTemplateCategory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categoría actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplateCategory"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      },
+      "delete": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Archivar una categoría propia (requiere whatsapp.templates.manage)",
+        "description": "Baja lógica: la fila se conserva y deja de ofrecerse. Con plantillas dentro responde 409 con cuántas son — desclasificarlas es otra decisión y no se toma por debajo.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "categoryId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Archivada."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      }
+    },
+    "/api/v1/organizations/{orgId}/whatsapp/templates/{templateKey}/category": {
+      "put": {
+        "tags": [
+          "WhatsApp"
+        ],
+        "summary": "Clasificar una plantilla propia (requiere whatsapp.templates.manage)",
+        "description": "`categoryId: null` la deja sin clasificar, que es un estado válido. Solo plantillas propias: las de la plataforma las clasifica el sembrado, porque su fila la comparten todas las organizaciones.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "templateKey",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetWhatsAppTemplateCategory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Clasificada."
+          },
+          "default": {
+            "description": "Error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-required-permission": "whatsapp.templates.manage"
+      }
+    },
     "/api/v1/organizations/{orgId}/whatsapp/account": {
       "get": {
         "tags": [
@@ -15066,7 +15351,7 @@
             "minLength": 2,
             "maxLength": 15
           },
-          "category": {
+          "metaCategory": {
             "type": "string",
             "enum": [
               "UTILITY",
@@ -15082,7 +15367,7 @@
           "templateKey",
           "name",
           "language",
-          "category",
+          "metaCategory",
           "spec"
         ]
       },
@@ -15184,6 +15469,84 @@
         "required": [
           "type",
           "text"
+        ]
+      },
+      "CreateWhatsAppTemplateCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateWhatsAppTemplateCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetWhatsAppTemplateCategory": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "categoryId"
         ]
       },
       "ConnectWhatsAppAccountInput": {
@@ -21301,12 +21664,24 @@
           "language": {
             "type": "string"
           },
-          "category": {
+          "metaCategory": {
             "type": "string",
             "enum": [
               "UTILITY",
               "MARKETING",
               "AUTHENTICATION"
+            ]
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "status": {
@@ -21357,7 +21732,8 @@
           "displayName",
           "purpose",
           "language",
-          "category",
+          "metaCategory",
+          "categoryId",
           "status",
           "canSend",
           "parameterNames",
@@ -21433,6 +21809,88 @@
         "required": [
           "reviewed",
           "updated"
+        ],
+        "additionalProperties": false
+      },
+      "WhatsAppTemplateCategoryList": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WhatsAppTemplateCategory"
+            }
+          }
+        },
+        "required": [
+          "categories"
+        ],
+        "additionalProperties": false
+      },
+      "WhatsAppTemplateCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "PLATFORM",
+              "ORGANIZATION"
+            ]
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "templateCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "scope",
+          "editable",
+          "key",
+          "name",
+          "description",
+          "position",
+          "isActive",
+          "templateCount",
+          "createdAt"
         ],
         "additionalProperties": false
       },

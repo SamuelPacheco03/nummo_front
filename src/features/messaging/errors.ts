@@ -1,4 +1,5 @@
 import { ApiError } from '@/api/http-client'
+import { errorCode } from '@/lib/errors'
 import type {
   OrganizationContactRequiredDetails,
   ScheduleFixedByLawDetails,
@@ -61,4 +62,31 @@ export function organizationContactRequired(
   return details?.reason === 'ORGANIZATION_CONTACT_REQUIRED'
     ? (details as OrganizationContactRequiredDetails)
     : null
+}
+
+/**
+ * Los dos rechazos de una **categoría de plantillas**, que llegan como el mismo
+ * `409 CONFLICT` y solo se distinguen por lo que traen en `details`.
+ *
+ * El contrato no les da esquema —`details` es libre—, así que aquí se comprueba
+ * la forma en tiempo de ejecución. Vale la pena leerlos: el mensaje del backend
+ * viene en inglés, y «The category still has templates.» no es lo que tiene que
+ * ver quien acaba de pulsar Archivar.
+ */
+
+/** Archivar una categoría que todavía tiene plantillas dentro. Devuelve cuántas. */
+export function templateCategoryInUse(error: unknown): number | null {
+  if (errorCode(error) !== 'CONFLICT') return null
+  const details = (error as ApiError).details as { templateCount?: unknown } | undefined
+  return typeof details?.templateCount === 'number' ? details.templateCount : null
+}
+
+/**
+ * El nombre ya lo usa otra categoría. `scope` dice cuál: `PLATFORM` es una de
+ * Nummo, que no se ve en la lista de editables y por eso el choque sorprende.
+ */
+export function templateCategoryNameTaken(error: unknown): { scope: string } | null {
+  if (errorCode(error) !== 'CONFLICT') return null
+  const details = (error as ApiError).details as { key?: unknown; scope?: unknown } | undefined
+  return typeof details?.key === 'string' ? { scope: String(details.scope ?? '') } : null
 }

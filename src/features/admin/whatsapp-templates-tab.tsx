@@ -99,7 +99,7 @@ function TemplateRow({ template }: { template: WhatsAppTemplate }) {
       <div className="min-w-0 space-y-1">
         <p className="truncate text-sm font-medium">{template.name}</p>
         <p className="text-muted-foreground truncate text-xs">
-          {template.templateKey} · {template.language} · {template.category}
+          {template.templateKey} · {template.language} · {template.metaCategory}
         </p>
         {template.parameterNames.length > 0 && (
           <p className="text-muted-foreground text-xs">Usa: {template.parameterNames.join(', ')}</p>

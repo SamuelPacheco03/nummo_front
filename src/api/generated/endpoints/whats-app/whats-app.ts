@@ -25,10 +25,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CreateWhatsAppTemplateCategory,
   CreateWhatsAppTemplateInput,
   ErrorResponse,
+  SetWhatsAppTemplateCategory,
   SyncWhatsAppTemplatesResult,
+  UpdateWhatsAppTemplateCategory,
   WhatsAppTemplate,
+  WhatsAppTemplateCategory,
+  WhatsAppTemplateCategoryList,
   WhatsAppTemplateList
 } from '../../model';
 
@@ -455,4 +460,493 @@ export const useDeleteApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKey = <TEr
         TContext
       > => {
       return useMutation(getDeleteApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyMutationOptions(options), queryClient);
+    }
+    export type getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse200 = {
+  data: WhatsAppTemplateCategoryList
+  status: 200
+}
+
+export type getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseSuccess = (getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse200) & {
+  headers: Headers;
+};
+export type getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseError = (getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseDefault) & {
+  headers: Headers;
+};
+
+export type getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse = (getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseSuccess | getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseError)
+
+export const getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/template-categories`
+}
+
+/**
+ * Incluye las de la plataforma, que comparten todas las organizaciones. `editable` dice cuáles puede tocar: las de plataforma nunca, porque la fila es compartida y renombrarla se la renombraría a las demás. `templateCount` es cuántas plantillas cuelgan de ella hoy.
+ * @summary Categorías que la organización puede usar (requiere whatsapp.templates.read)
+ */
+export const getApiV1OrganizationsOrgIdWhatsappTemplateCategories = async (orgId: string, options?: Parameters<typeof customFetch>[1]): Promise<getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse> => {
+
+  return customFetch<getApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse>(getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryKey = (orgId: string,) => {
+    return [
+    `/api/v1/organizations/${orgId}/whatsapp/template-categories`
+    ] as const;
+    }
+
+
+export const getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError = ErrorResponse>(orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>> = ({ signal }) => getApiV1OrganizationsOrgIdWhatsappTemplateCategories(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orgId !== null && orgId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>>
+export type GetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryError = ErrorResponse
+
+
+export function useGetApiV1OrganizationsOrgIdWhatsappTemplateCategories<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError = ErrorResponse>(
+ orgId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdWhatsappTemplateCategories<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV1OrganizationsOrgIdWhatsappTemplateCategories<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Categorías que la organización puede usar (requiere whatsapp.templates.read)
+ */
+
+export function useGetApiV1OrganizationsOrgIdWhatsappTemplateCategories<TData = Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError = ErrorResponse>(
+ orgId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiV1OrganizationsOrgIdWhatsappTemplateCategoriesQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse201 = {
+  data: WhatsAppTemplateCategory
+  status: 201
+}
+
+export type postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 201>
+}
+
+export type postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseSuccess = (postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse201) & {
+  headers: Headers;
+};
+export type postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseError = (postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseDefault) & {
+  headers: Headers;
+};
+
+export type postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse = (postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseSuccess | postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponseError)
+
+export const getPostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesUrl = (orgId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/template-categories`
+}
+
+/**
+ * La clave se deriva del nombre; no se envía. Un nombre que ya use otra categoría —propia **o** de la plataforma— responde 409: dos etiquetas iguales en la misma lista no las distingue nadie.
+ * @summary Crear una categoría propia (requiere whatsapp.templates.manage)
+ */
+export const postApiV1OrganizationsOrgIdWhatsappTemplateCategories = async (orgId: string,
+    createWhatsAppTemplateCategory: CreateWhatsAppTemplateCategory, options?: Parameters<typeof customFetch>[1]): Promise<postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse> => {
+
+  return customFetch<postApiV1OrganizationsOrgIdWhatsappTemplateCategoriesResponse>(getPostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesUrl(orgId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createWhatsAppTemplateCategory)
+  }
+);}
+
+
+
+
+
+export const getPostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError,{orgId: string;data: CreateWhatsAppTemplateCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError,{orgId: string;data: CreateWhatsAppTemplateCategory}, TContext> => {
+
+const mutationKey = ['postApiV1OrganizationsOrgIdWhatsappTemplateCategories'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, {orgId: string;data: CreateWhatsAppTemplateCategory}> = (props) => {
+          const {orgId,data} = props ?? {};
+
+          return  postApiV1OrganizationsOrgIdWhatsappTemplateCategories(orgId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdWhatsappTemplateCategories>>>
+    export type PostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesMutationBody = CreateWhatsAppTemplateCategory
+    export type PostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesMutationError = ErrorResponse
+
+    /**
+ * @summary Crear una categoría propia (requiere whatsapp.templates.manage)
+ */
+export const usePostApiV1OrganizationsOrgIdWhatsappTemplateCategories = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdWhatsappTemplateCategories>>, TError,{orgId: string;data: CreateWhatsAppTemplateCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1OrganizationsOrgIdWhatsappTemplateCategories>>,
+        TError,
+        {orgId: string;data: CreateWhatsAppTemplateCategory},
+        TContext
+      > => {
+      return useMutation(getPostApiV1OrganizationsOrgIdWhatsappTemplateCategoriesMutationOptions(options), queryClient);
+    }
+    export type patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse200 = {
+  data: WhatsAppTemplateCategory
+  status: 200
+}
+
+export type patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseSuccess = (patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse200) & {
+  headers: Headers;
+};
+export type patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseError = (patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse = (patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseSuccess | patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseError)
+
+export const getPatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdUrl = (orgId: string,
+    categoryId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/template-categories/${categoryId}`
+}
+
+/**
+ * Solo las propias. Sobre una de la plataforma responde 422: no es una cuestión de permisos —un `OWNER` tampoco puede— sino de a quién pertenece la fila.
+ * @summary Editar una categoría propia (requiere whatsapp.templates.manage)
+ */
+export const patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId = async (orgId: string,
+    categoryId: string,
+    updateWhatsAppTemplateCategory: UpdateWhatsAppTemplateCategory, options?: Parameters<typeof customFetch>[1]): Promise<patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse> => {
+
+  return customFetch<patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse>(getPatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdUrl(orgId,categoryId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateWhatsAppTemplateCategory)
+  }
+);}
+
+
+
+
+
+export const getPatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, TError,{orgId: string;categoryId: string;data: UpdateWhatsAppTemplateCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, TError,{orgId: string;categoryId: string;data: UpdateWhatsAppTemplateCategory}, TContext> => {
+
+const mutationKey = ['patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, {orgId: string;categoryId: string;data: UpdateWhatsAppTemplateCategory}> = (props) => {
+          const {orgId,categoryId,data} = props ?? {};
+
+          return  patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId(orgId,categoryId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>>
+    export type PatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationBody = UpdateWhatsAppTemplateCategory
+    export type PatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationError = ErrorResponse
+
+    /**
+ * @summary Editar una categoría propia (requiere whatsapp.templates.manage)
+ */
+export const usePatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, TError,{orgId: string;categoryId: string;data: UpdateWhatsAppTemplateCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>,
+        TError,
+        {orgId: string;categoryId: string;data: UpdateWhatsAppTemplateCategory},
+        TContext
+      > => {
+      return useMutation(getPatchApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationOptions(options), queryClient);
+    }
+    export type deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseSuccess = (deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse204) & {
+  headers: Headers;
+};
+export type deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseError = (deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseDefault) & {
+  headers: Headers;
+};
+
+export type deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse = (deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseSuccess | deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponseError)
+
+export const getDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdUrl = (orgId: string,
+    categoryId: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/template-categories/${categoryId}`
+}
+
+/**
+ * Baja lógica: la fila se conserva y deja de ofrecerse. Con plantillas dentro responde 409 con cuántas son — desclasificarlas es otra decisión y no se toma por debajo.
+ * @summary Archivar una categoría propia (requiere whatsapp.templates.manage)
+ */
+export const deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId = async (orgId: string,
+    categoryId: string, options?: Parameters<typeof customFetch>[1]): Promise<deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse> => {
+
+  return customFetch<deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdResponse>(getDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdUrl(orgId,categoryId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, TError,{orgId: string;categoryId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, TError,{orgId: string;categoryId: string}, TContext> => {
+
+const mutationKey = ['deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, {orgId: string;categoryId: string}> = (props) => {
+          const {orgId,categoryId} = props ?? {};
+
+          return  deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId(orgId,categoryId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>>
+
+    export type DeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationError = ErrorResponse
+
+    /**
+ * @summary Archivar una categoría propia (requiere whatsapp.templates.manage)
+ */
+export const useDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>, TError,{orgId: string;categoryId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryId>>,
+        TError,
+        {orgId: string;categoryId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteApiV1OrganizationsOrgIdWhatsappTemplateCategoriesCategoryIdMutationOptions(options), queryClient);
+    }
+    export type putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponse204 = {
+  data: void
+  status: 204
+}
+
+export type putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponseDefault = {
+  data: ErrorResponse
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponseSuccess = (putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponse204) & {
+  headers: Headers;
+};
+export type putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponseError = (putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponseDefault) & {
+  headers: Headers;
+};
+
+export type putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponse = (putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponseSuccess | putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponseError)
+
+export const getPutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryUrl = (orgId: string,
+    templateKey: string,) => {
+
+
+
+
+  return `/api/v1/organizations/${orgId}/whatsapp/templates/${templateKey}/category`
+}
+
+/**
+ * `categoryId: null` la deja sin clasificar, que es un estado válido. Solo plantillas propias: las de la plataforma las clasifica el sembrado, porque su fila la comparten todas las organizaciones.
+ * @summary Clasificar una plantilla propia (requiere whatsapp.templates.manage)
+ */
+export const putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory = async (orgId: string,
+    templateKey: string,
+    setWhatsAppTemplateCategory: SetWhatsAppTemplateCategory, options?: Parameters<typeof customFetch>[1]): Promise<putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponse> => {
+
+  return customFetch<putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryResponse>(getPutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryUrl(orgId,templateKey),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setWhatsAppTemplateCategory)
+  }
+);}
+
+
+
+
+
+export const getPutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory>>, TError,{orgId: string;templateKey: string;data: SetWhatsAppTemplateCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory>>, TError,{orgId: string;templateKey: string;data: SetWhatsAppTemplateCategory}, TContext> => {
+
+const mutationKey = ['putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory>>, {orgId: string;templateKey: string;data: SetWhatsAppTemplateCategory}> = (props) => {
+          const {orgId,templateKey,data} = props ?? {};
+
+          return  putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory(orgId,templateKey,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory>>>
+    export type PutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryMutationBody = SetWhatsAppTemplateCategory
+    export type PutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryMutationError = ErrorResponse
+
+    /**
+ * @summary Clasificar una plantilla propia (requiere whatsapp.templates.manage)
+ */
+export const usePutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory>>, TError,{orgId: string;templateKey: string;data: SetWhatsAppTemplateCategory}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategory>>,
+        TError,
+        {orgId: string;templateKey: string;data: SetWhatsAppTemplateCategory},
+        TContext
+      > => {
+      return useMutation(getPutApiV1OrganizationsOrgIdWhatsappTemplatesTemplateKeyCategoryMutationOptions(options), queryClient);
     }

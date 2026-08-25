@@ -69,7 +69,7 @@ test('se manda un ejemplo por variable, y los opcionales vacíos no viajan', asy
     templateKey: 'cobro_recordatorio',
     name: 'Recordatorio',
     language: 'es',
-    category: 'UTILITY',
+    metaCategory: 'UTILITY',
     spec: {
       body: 'Hola {{nombre}}',
       bodyExamples: { nombre: 'Ana Ruiz' },

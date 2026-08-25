@@ -138,13 +138,12 @@ mirando.
 ## Contexto del repositorio
 
 - Frontend React que consume `nummo-api` mediante contrato OpenAPI congelado
-  (`contract/openapi.json`, v1.0.0, 177 paths / 220 operaciones / 246 esquemas).
+  (`contract/openapi.json`, v1.0.0, 179 paths / 222 operaciones / 254 esquemas).
 - Handoffs por área en `contract/`: numerados hasta `HANDOFF-fase-11.md`, y de ahí en
   adelante con nombre —`whatsapp-cobranza`, `numi-imagenes`, `landing`,
   `buscador`…—, porque la numeración de fases del backend **no** es la de `context.md`.
-  Resumen en `contract/SYNC-STATUS.md`. **Léelos antes de construir una sección nueva**, y
-  ten en cuenta que el resumen va por detrás: lo cerró en 159 rutas y el contrato ya trae
-  177.
+  Resumen en `contract/SYNC-STATUS.md`, al día con el contrato (2026-08-25, 179 rutas).
+  **Léelos antes de construir una sección nueva.**
 - **Dos entradas** (§97.11): `index.html` es la portada pública (`/`) y `app.html` la
   consola, que vive bajo `/app`. Al desplegar, el hosting tiene que servir `app.html` para
   `/app` y `/app/*`.

@@ -39,7 +39,7 @@ const schema = z.object({
     .regex(/^[a-z0-9_]+$/, 'Solo minúsculas, números y guion bajo.'),
   name: z.string().trim().min(1, 'Meta necesita un nombre.').max(200),
   language: z.string().trim().min(1, 'Di en qué idioma está.').max(15),
-  category: z.enum(['UTILITY', 'MARKETING', 'AUTHENTICATION']),
+  metaCategory: z.enum(['UTILITY', 'MARKETING', 'AUTHENTICATION']),
   header: z.string().trim().max(60).optional(),
   body: z.string().trim().min(1, 'Sin mensaje no hay plantilla.').max(1024),
   footer: z.string().trim().max(60).optional(),
@@ -64,7 +64,7 @@ export function TemplateFormDialog({
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { language: 'es', category: 'UTILITY' },
+    defaultValues: { language: 'es', metaCategory: 'UTILITY' },
   })
   const [examples, setExamples] = useState<Record<string, string>>({})
 
@@ -80,7 +80,7 @@ export function TemplateFormDialog({
       templateKey: values.templateKey,
       name: values.name,
       language: values.language,
-      category: values.category,
+      metaCategory: values.metaCategory,
       spec: {
         body: values.body,
         bodyExamples: buildExamples(values.body, examples),
@@ -123,10 +123,10 @@ export function TemplateFormDialog({
         <Field
           label="Categoría"
           htmlFor="tpl-category"
-          error={errors.category?.message}
+          error={errors.metaCategory?.message}
           hint="La cobranza es de servicio, no publicidad."
         >
-          <NativeSelect id="tpl-category" {...register('category')}>
+          <NativeSelect id="tpl-category" {...register('metaCategory')}>
             <option value="UTILITY">Servicio (recordatorios, avisos)</option>
             <option value="MARKETING">Publicidad</option>
             <option value="AUTHENTICATION">Autenticación</option>

@@ -1652,6 +1652,50 @@ Del alta hay dos decisiones que conviene no deshacer:
   cobro no los usa, y un repetidor anidado es una pantalla entera para algo que esta función
   no necesita. Se añade el día que haga falta, no por completar el esquema.
 
+### Dos categorías que no son la misma, y solo una es nuestra
+
+Una plantilla llega con **dos** categorías y confundirlas es el error caro:
+
+| | Quién manda | Para qué sirve |
+| --- | --- | --- |
+| `metaCategory` | Meta | Decide el **precio** y las reglas de aprobación. Se declara al crear la plantilla y Meta la confirma **o la cambia**: lo que suene a promoción lo recategoriza por su cuenta |
+| `categoryId` | Nosotros | Solo **agrupa**. No gatea envíos, no cambia precios y no elige plantilla |
+
+En la pantalla conviven porque responden a preguntas distintas: **de quién es** una
+plantilla decide qué se puede hacer con ella —los dos paneles, «De Nummo» y «De tu
+organización»—, y **de qué va** decide dónde buscarla —las fichas—. Por eso las fichas
+filtran *dentro* de los paneles en vez de sustituirlos: agrupar por categoría a secas
+mezclaría en una lista las que se pueden borrar con las que no.
+
+**Las fichas aparecen solo cuando hay algo que repartir.** Con un único montón —una
+categoría y nada suelto— «Todas 8» y «Cobranza 8» son la misma frase dos veces. Y los
+contadores se cuentan **sobre las plantillas que la pantalla tiene delante**, no sobre el
+`templateCount` del contrato: cuenta lo mismo por otro camino, y dos caminos es lo que hace
+falta para que una ficha diga 3 y al pulsarla salgan 2.
+
+Tres reglas del backend que se ven en el cajón de categorías, y **ninguna es de permisos**:
+
+- **Las de Nummo se usan pero no se editan.** La fila es una y la comparten todas las
+  organizaciones, así que renombrarla se la renombraría a las demás. El backend responde
+  **422, no 403** —un `OWNER` tampoco puede—, y por eso el botón se apaga con `editable`,
+  que llega fila a fila, y no con `useCan`.
+- **Con plantillas dentro no se archiva** (409 con el conteo). Archivar y desclasificar son
+  dos decisiones y solo se pidió una. El conteo se enseña antes de que nadie pulse, y el 409
+  se lee igual: otro pudo clasificar algo mientras el cajón estaba abierto.
+- **Archivar es baja lógica.** Por eso el cajón enseña también las archivadas, con
+  «Reactivar»: el contrato las devuelve —`GET` no filtra por `isActive`— y esconderlas las
+  dejaría sin forma de volver. Donde **sí** se filtran es al elegir una: lo archivado dejó de
+  ofrecerse a propósito.
+
+**Clasificar no habla con Meta**, así que —a diferencia de crear y borrar— no exige número
+propio: basta con que la plantilla sea de la casa. Las de la plataforma las clasifica el
+sembrado, y `categoryId: null` es un estado válido y no un hueco por rellenar.
+
+Lo que **no** se ofrece todavía: el `position` de una categoría. El contrato lo acepta, pero
+no hay endpoint de reordenación en bloque como el de los catálogos (§11.1.12), y un campo
+numérico suelto ordena peor que el alfabético que ya sale. Se añade cuando haya más de un
+puñado de categorías, no antes.
+
 ### El cupo, y cuándo significa algo
 
 `whatsapp_messages_monthly` sale de `me/capabilities` como los demás topes y **se lee en «Plan y
@@ -5757,7 +5801,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `PlaygroundControlarPage` | `features/playground/controlar-page.tsx` | Herramientas, escrituras y conocimiento |
 | `previousRange` · `delta` | `features/playground/ranges.ts` | La ventana anterior y el cambio, **pedidos** al backend y no estimados |
 | `CollectionPolicyPage` | `features/messaging/collection-policy-page.tsx` | La política de cobranza por WhatsApp (§11.1.16) |
-| `WhatsAppTemplatesPage` | `features/messaging/templates-page.tsx` | Las plantillas y su estado en Meta, de solo lectura |
+| `WhatsAppTemplatesPage` | `features/messaging/templates-page.tsx` | Las plantillas, su estado en Meta y con qué se agrupan |
 | `CollectionPage` | `features/messaging/collection-page.tsx` | **Cobranza**: mensajes y consentimiento, en dos pestañas |
 | `MessagesTab` · `ConsentsTab` | `features/messaging/` | El historial de «por qué no le llegó» y quién puede recibir |
 | `CollectionRemindersSection` | `features/messaging/collection-reminders-section.tsx` | El tri-estado de un acuerdo, diciendo de qué hereda (§11.1.16) |
@@ -5765,6 +5809,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `sendTimeOutOfRange` · `scheduleFixedByLaw` | `features/messaging/errors.ts` | Los dos rechazos del `PUT` de la política, leídos del `details` tipado |
 | `WhatsAppAccountPage` | `features/messaging/whatsapp-account-page.tsx` | La cuenta de Meta del negocio: conectar, reemplazar y desconectar (§11.1.16) |
 | `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
+| `TemplateCategoriesDrawer` | `features/messaging/template-categories-drawer.tsx` | **Las categorías con las que se agrupan las plantillas** — las de Nummo se usan, las propias se editan (§11.1.16) |
+| `templateCategoryInUse` · `templateCategoryNameTaken` | `features/messaging/errors.ts` | Los dos `409` de una categoría, leídos del `details` porque el mensaje del backend viene en inglés |
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |
 | `RunNowPanel` | `features/messaging/run-now-panel.tsx` | «Enviar ahora» y el desglose de la pasada, sin prometer envío |
 | `FinancialAccountsPage` | `features/masters/financial-accounts-page.tsx` | Cuentas de dinero **y dónde puede pagar el deudor**, en un solo sitio |

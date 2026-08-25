@@ -6,11 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CreateWhatsAppTemplateInputCategory = typeof CreateWhatsAppTemplateInputCategory[keyof typeof CreateWhatsAppTemplateInputCategory];
+export type WhatsAppTemplateCategoryScope = typeof WhatsAppTemplateCategoryScope[keyof typeof WhatsAppTemplateCategoryScope];
 
 
-export const CreateWhatsAppTemplateInputCategory = {
-  UTILITY: 'UTILITY',
-  MARKETING: 'MARKETING',
-  AUTHENTICATION: 'AUTHENTICATION',
+export const WhatsAppTemplateCategoryScope = {
+  PLATFORM: 'PLATFORM',
+  ORGANIZATION: 'ORGANIZATION',
 } as const;
