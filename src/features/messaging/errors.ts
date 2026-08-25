@@ -1,5 +1,9 @@
 import { ApiError } from '@/api/http-client'
-import type { ScheduleFixedByLawDetails, SendTimeOutOfRangeDetails } from '@/api/generated/model'
+import type {
+  OrganizationContactRequiredDetails,
+  ScheduleFixedByLawDetails,
+  SendTimeOutOfRangeDetails,
+} from '@/api/generated/model'
 
 /**
  * Los dos rechazos propios del `PUT` de la política, **leídos del `details`**.
@@ -45,12 +49,16 @@ export function scheduleFixedByLaw(error: unknown): ScheduleFixedByLawDetails | 
 /**
  * Se intentó encender la cobranza sin teléfono ni correo de la empresa.
  *
- * **El contrato no lo declara todavía** —`CollectionPolicyErrorDetails` sigue con
- * dos ramas y `ORGANIZATION_CONTACT_REQUIRED` no aparece en el JSON—, así que no
- * hay tipo que estrechar y aquí solo se mira el motivo. Es lo único que hace
- * falta para el mensaje: los dos campos que pide ya los sabe la pantalla, porque
- * es ella la que los ofrece.
+ * Trae `fields` con los que faltan. Hoy la pantalla no los usa —ofrece los dos y
+ * con uno basta, así que no hay nada que resaltar— pero se devuelve el `details`
+ * entero y no un booleano: el día que sean tres, el aviso podrá nombrarlos sin
+ * tener que cambiar de forma.
  */
-export function organizationContactRequired(error: unknown): boolean {
-  return detailsOf(error)?.reason === 'ORGANIZATION_CONTACT_REQUIRED'
+export function organizationContactRequired(
+  error: unknown,
+): OrganizationContactRequiredDetails | null {
+  const details = detailsOf(error)
+  return details?.reason === 'ORGANIZATION_CONTACT_REQUIRED'
+    ? (details as OrganizationContactRequiredDetails)
+    : null
 }

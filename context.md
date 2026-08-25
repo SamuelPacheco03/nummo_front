@@ -1772,7 +1772,7 @@ te escribe quien trata contigo desde fuera—, no por la función que hoy los ex
 dato por su único consumidor de hoy es lo que obliga a renombrarlo mañana.
 
 Los dos son opcionales, pero **encender la cobranza sin ninguno responde 422**
-(`details.reason = "ORGANIZATION_CONTACT_REQUIRED"`). Solo al encender: cambiar una plantilla
+(`details.reason = "ORGANIZATION_CONTACT_REQUIRED"`, con `fields` tipado como las otras dos ramas del 422). Solo al encender: cambiar una plantilla
 o la hora no lo pide.
 
 Están **en dos sitios y no es duplicar**: la ficha de la empresa es donde viven, y la
