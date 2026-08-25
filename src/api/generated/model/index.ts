@@ -366,6 +366,8 @@ export * from './notificationUnreadCount';
 export * from './numiAnswer';
 export * from './numiAskInput';
 export * from './organization';
+export * from './organizationContactRequiredDetails';
+export * from './organizationContactRequiredDetailsReason';
 export * from './organizationSettings';
 export * from './organizationSettingsThemeMode';
 export * from './organizationSettingsUiConfig';

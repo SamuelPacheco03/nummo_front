@@ -5,7 +5,8 @@
  * API de administración financiera y cartera (V1): auth multi-tenant, contactos, cartera con mora, pagos, gastos/egresos, caja y reportes. Autenticación por cookie de sesión (HttpOnly) + CSRF; dinero como string decimal.
  * OpenAPI spec version: 1.0.0
  */
+import type { OrganizationContactRequiredDetails } from './organizationContactRequiredDetails';
 import type { ScheduleFixedByLawDetails } from './scheduleFixedByLawDetails';
 import type { SendTimeOutOfRangeDetails } from './sendTimeOutOfRangeDetails';
 
-export type CollectionPolicyErrorDetails = ScheduleFixedByLawDetails | SendTimeOutOfRangeDetails;
+export type CollectionPolicyErrorDetails = ScheduleFixedByLawDetails | SendTimeOutOfRangeDetails | OrganizationContactRequiredDetails;

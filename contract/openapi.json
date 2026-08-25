@@ -21947,6 +21947,9 @@
           },
           {
             "$ref": "#/components/schemas/SendTimeOutOfRangeDetails"
+          },
+          {
+            "$ref": "#/components/schemas/OrganizationContactRequiredDetails"
           }
         ],
         "type": "object",
@@ -21954,7 +21957,8 @@
           "propertyName": "reason",
           "mapping": {
             "SCHEDULE_FIXED_BY_LAW": "#/components/schemas/ScheduleFixedByLawDetails",
-            "SEND_TIME_OUT_OF_RANGE": "#/components/schemas/SendTimeOutOfRangeDetails"
+            "SEND_TIME_OUT_OF_RANGE": "#/components/schemas/SendTimeOutOfRangeDetails",
+            "ORGANIZATION_CONTACT_REQUIRED": "#/components/schemas/OrganizationContactRequiredDetails"
           }
         }
       },
@@ -22005,6 +22009,26 @@
           "reason",
           "earliest",
           "latest"
+        ],
+        "additionalProperties": false
+      },
+      "OrganizationContactRequiredDetails": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "const": "ORGANIZATION_CONTACT_REQUIRED"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "reason",
+          "fields"
         ],
         "additionalProperties": false
       },

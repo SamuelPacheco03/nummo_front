@@ -299,6 +299,10 @@ if (details?.reason === 'SEND_TIME_OUT_OF_RANGE') {
 }
 ```
 
+La unión tiene **tres** ramas: `SCHEDULE_FIXED_BY_LAW`, `SEND_TIME_OUT_OF_RANGE` y
+`ORGANIZATION_CONTACT_REQUIRED`. La tercera se quedó fuera del contrato en su momento y ya
+está publicada con su esquema — no hace falta leerla a mano.
+
 Un `422` **sin** `reason` es un fallo de esquema normal, con las incidencias de Zod en
 `details` como en el resto de la API.
 
