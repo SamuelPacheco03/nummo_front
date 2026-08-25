@@ -160,6 +160,13 @@ export function TemplateCategoriesDrawer({
 
   return (
     <Drawer
+      /*
+        `fit`: en un teléfono el alto lo pone el contenido. Son dos categorías y
+        un botón, o dos campos: subir hasta el borde superior dejaba media
+        pantalla en blanco, que se lee como que falta algo por cargar. Con muchas
+        categorías crece hasta el 88 % del alto y la lista hace su propio scroll.
+      */
+      fit
       open={open}
       onOpenChange={(next) => {
         if (!next) closeForm()

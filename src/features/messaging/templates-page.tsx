@@ -171,18 +171,30 @@ export function WhatsAppTemplatesPage() {
         title="Plantillas de WhatsApp"
         description="Los mensajes con los que Nummo le escribe a quien te debe."
       >
-        <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
+        {/*
+          El `aria-label` repite el texto que se esconde bajo `sm`, y no sobra:
+          `hidden` es `display: none`, así que en un teléfono estos tres botones
+          se quedaban **sin nombre** —tres iconos y nada que leer en voz alta—.
+          Se descubrió intentando pulsarlos desde fuera: lo que no encuentra
+          Playwright por su nombre tampoco lo encuentra un lector de pantalla.
+        */}
+        <Button variant="outline" aria-label="Categorías" onClick={() => setCategoriesOpen(true)}>
           <Tags aria-hidden className="size-4" />
           <span className="hidden sm:inline">Categorías</span>
         </Button>
         {canManage && (
-          <Button variant="outline" onClick={() => void onSync()} disabled={sync.isPending}>
+          <Button
+            variant="outline"
+            aria-label="Actualizar estado"
+            onClick={() => void onSync()}
+            disabled={sync.isPending}
+          >
             {sync.isPending ? <Loader className="size-4" /> : <RefreshCw className="size-4" />}
             <span className="hidden sm:inline">Actualizar estado</span>
           </Button>
         )}
         {canManage && connected && (
-          <Button onClick={() => setFormOpen(true)}>
+          <Button aria-label="Nueva plantilla" onClick={() => setFormOpen(true)}>
             <Plus aria-hidden className="size-4" />
             <span className="hidden sm:inline">Nueva plantilla</span>
           </Button>
