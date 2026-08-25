@@ -221,7 +221,12 @@ export function BillingConceptsPage() {
         rowIcon={(row) => catalogRowIcon(row, ReceiptText)}
         actions={
           canManage && (
-            <Button variant="outline" size="sm" onClick={() => setOrdering(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Ordenar"
+              onClick={() => setOrdering(true)}
+            >
               <ArrowUpDown aria-hidden className="size-4" />
               <span className="hidden sm:inline">Ordenar</span>
             </Button>

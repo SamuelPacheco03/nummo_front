@@ -67,7 +67,7 @@ export function CollectionPage() {
         title="Cobranza por WhatsApp"
         description="Lo que Nummo le ha escrito a quien te debe, y qué pasó con cada mensaje."
       >
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" aria-label="Política">
           <Link to="/config/cobranza">
             <Settings2 className="size-4" />
             <span className="hidden sm:inline">Política</span>

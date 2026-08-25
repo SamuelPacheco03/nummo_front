@@ -288,7 +288,12 @@ export function AdminPlansPage() {
             key={plan.code}
             title={plan.name}
             action={
-              <Button variant="outline" size="sm" onClick={() => setEditing(plan)}>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={`Editar ${plan.name}`}
+                onClick={() => setEditing(plan)}
+              >
                 <Pencil aria-hidden className="size-4" />
                 <span className="hidden sm:inline">Editar</span>
               </Button>
