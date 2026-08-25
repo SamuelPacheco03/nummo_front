@@ -12,45 +12,48 @@ import { mockApi } from './mock-api'
  * RUTA=/app/config/cobranza pnpm shots
  * RUTA=/app/config/cobranza ANCHOS=390,768 pnpm shots
  * RUTA=/app/config/cobranza TEMA=dark pnpm shots
+ * RUTA=/app/config/empresa,/app/config/sedes pnpm shots   # varias de una pasada
  * ```
  *
  * Sale en `.shots/`, que no se versiona.
  */
 
-const RUTA = process.env.RUTA ?? '/app/config/cobranza'
+const RUTAS = (process.env.RUTA ?? '/app/config/cobranza').split(',').map((r) => r.trim())
 const ANCHOS = (process.env.ANCHOS ?? '390,768,1280,1440').split(',').map(Number)
 const TEMA = process.env.TEMA ?? 'light'
 const SALIDA = '.shots'
 
-const nombre = RUTA.replace(/^\/app\/?/, '').replace(/\//g, '-') || 'inicio'
-
 test.describe.configure({ mode: 'serial' })
 
-for (const ancho of ANCHOS) {
-  test(`${RUTA} @ ${ancho}px`, async ({ page }) => {
-    mkdirSync(SALIDA, { recursive: true })
-    await mockApi(page)
+for (const RUTA of RUTAS) {
+  const nombre = RUTA.replace(/^\/app\/?/, '').replace(/\//g, '-') || 'inicio'
 
-    /*
-      El tema por defecto es «el del sistema», así que se pide al navegador en vez
-      de escribir en `localStorage`: la clave del store es un detalle interno y
-      fingirla se rompe en silencio —la primera versión de esto sacó capturas en
-      claro creyendo que eran oscuras—.
-    */
-    await page.emulateMedia({ colorScheme: TEMA as 'light' | 'dark' })
+  for (const ancho of ANCHOS) {
+    test(`${RUTA} @ ${ancho}px`, async ({ page }) => {
+      mkdirSync(SALIDA, { recursive: true })
+      await mockApi(page)
 
-    await page.setViewportSize({ width: ancho, height: 1000 })
-    await page.goto(RUTA, { waitUntil: 'networkidle' })
+      /*
+        El tema por defecto es «el del sistema», así que se pide al navegador en vez
+        de escribir en `localStorage`: la clave del store es un detalle interno y
+        fingirla se rompe en silencio —la primera versión de esto sacó capturas en
+        claro creyendo que eran oscuras—.
+      */
+      await page.emulateMedia({ colorScheme: TEMA as 'light' | 'dark' })
 
-    /*
-      Que el `<h1>` esté es lo que separa «la pantalla se pintó» de «salió el
-      esqueleto y la captura no dice nada». Sin esto, un fallo de datos se
-      entrega como una imagen gris.
-    */
-    await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 })
-    // Las fuentes variables llegan después del primer pintado.
-    await page.evaluate(() => document.fonts.ready)
+      await page.setViewportSize({ width: ancho, height: 1000 })
+      await page.goto(RUTA, { waitUntil: 'networkidle' })
 
-    await page.screenshot({ path: `${SALIDA}/${nombre}-${TEMA}-${ancho}.png`, fullPage: true })
-  })
+      /*
+        Que el `<h1>` esté es lo que separa «la pantalla se pintó» de «salió el
+        esqueleto y la captura no dice nada». Sin esto, un fallo de datos se
+        entrega como una imagen gris.
+      */
+      await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 })
+      // Las fuentes variables llegan después del primer pintado.
+      await page.evaluate(() => document.fonts.ready)
+
+      await page.screenshot({ path: `${SALIDA}/${nombre}-${TEMA}-${ancho}.png`, fullPage: true })
+    })
+  }
 }

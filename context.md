@@ -1825,8 +1825,14 @@ Cuatro decisiones que lo hacen fiable:
    es un detalle interno y fingirla falla en silencio — la primera versión sacó capturas en
    claro creyendo que eran oscuras.
 
+Acepta **varias rutas de una pasada** (`RUTA=/app/config/empresa,/app/config/sedes`), que es
+como se repasa una sección entera.
+
 Sus datos están elegidos para que las pantallas se vean **llenas y realistas**, no para afirmar
-nada: no es un test, es un espejo. Y ya se ganó el sueldo — la primera tanda de capturas
+nada: no es un test, es un espejo. Y la forma de cada respuesta **se comprueba en
+`openapi.json`, no se supone**: media sección salió vacía por dar por paginado lo que el
+contrato declara como array pelado, y una pantalla sin filas se lee como un vacío de diseño en
+vez de como una maqueta incompleta. Y ya se ganó el sueldo — la primera tanda de capturas
 descubrió que el desplegable de plantillas enseñaba `cobro_vencido`, el nombre en Meta, en vez
 de `displayName`.
 

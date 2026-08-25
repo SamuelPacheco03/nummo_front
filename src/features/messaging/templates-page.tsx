@@ -24,7 +24,7 @@ import {
   useWhatsAppAccount,
   useWhatsAppTemplates,
 } from './hooks'
-import { isPlatformTemplate, templateStatus } from './labels'
+import { isPlatformTemplate, parameterLabel, templateStatus } from './labels'
 import { TemplateFormDialog } from './template-form-dialog'
 
 /**
@@ -237,13 +237,19 @@ function TemplateRow({
   return (
     <li className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3">
       <div className="min-w-0 space-y-1">
-        <p className="truncate text-sm font-medium">{template.name}</p>
+        {/*
+          `displayName` primero: `name` es como se llama la plantilla **en Meta**
+          —`cobro_vencido`— y titular con eso una lista en español no dice nada.
+          La clave sigue debajo, que es lo que se busca al cotejar con Meta.
+        */}
+        <p className="truncate text-sm font-medium">{template.displayName ?? template.name}</p>
         <p className="text-muted-foreground truncate text-xs">
           {template.templateKey} · {template.language}
         </p>
+        {template.purpose && <p className="text-muted-foreground text-xs">{template.purpose}</p>}
         {template.parameterNames.length > 0 && (
           <p className="text-muted-foreground text-xs">
-            Usa: {template.parameterNames.join(', ')}
+            Usa: {template.parameterNames.map(parameterLabel).join(', ')}
           </p>
         )}
         {/* Meta dice por qué la rechazó; esconderlo deja la fila sin salida. */}

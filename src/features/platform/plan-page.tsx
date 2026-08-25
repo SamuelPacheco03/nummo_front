@@ -95,7 +95,12 @@ function LimitMeter({ limit }: { limit: LimitUsage }) {
       <div className="flex items-baseline justify-between gap-3 text-sm">
         <span className="flex min-w-0 items-center gap-2">
           {Icon && <Icon aria-hidden className="text-muted-foreground size-4 shrink-0" />}
-          <span className="truncate">
+          {/*
+            Sin `truncate`: lo primero que se comía era el «· este mes», que es
+            justo lo que distingue una cuota que se renueva de un aforo que hay
+            que liberar archivando. En 390 px se leía «Mensajes de Numi · est…».
+          */}
+          <span>
             {capitalize(limitLabel(limit.key))}
             {limit.periodic && <span className="text-muted-foreground"> · este mes</span>}
           </span>

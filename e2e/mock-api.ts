@@ -120,6 +120,52 @@ const POLICY = {
   updatedAt: '2026-08-20T10:00:00Z',
 }
 
+/** Un aviso con sus canales, tal como lo firma `NotificationPreference`. */
+function aviso(tipo: string, over: Record<string, unknown> = {}) {
+  return {
+    type: tipo, category: 'CARTERA', priority: 'NORMAL', enabled: true,
+    channels: ['INAPP'], supportedChannels: ['INAPP', 'PUSH', 'EMAIL'],
+    leadDays: null, supportsLeadDays: false,
+    ...over,
+  }
+}
+
+const PREFERENCIAS = {
+  availableChannels: ['INAPP', 'PUSH', 'EMAIL'],
+  pushPreview: 'FULL',
+  preferences: [
+    aviso('receivable.due_soon', { channels: ['INAPP', 'PUSH'], leadDays: [5, 1], supportsLeadDays: true }),
+    aviso('receivable.overdue', { priority: 'HIGH', channels: ['INAPP', 'PUSH', 'EMAIL'] }),
+    aviso('receivable.overdue_digest', { channels: ['EMAIL'] }),
+    aviso('payment.received', { channels: ['INAPP'] }),
+    aviso('payment.reversed', { priority: 'HIGH', channels: ['INAPP', 'EMAIL'] }),
+    aviso('payable.due_soon', { category: 'GASTOS', leadDays: [3], supportsLeadDays: true }),
+    aviso('payable.overdue', { category: 'GASTOS', priority: 'HIGH' }),
+    aviso('disbursement.pending_approval', { category: 'GASTOS', enabled: false, channels: [] }),
+  ],
+}
+
+const MIEMBROS = [
+  { id: 'm1', userId: 'u1', email: 'samuel2003pacheco@gmail.com', fullName: 'Samuel Pacheco', role: 'OWNER', customRole: null, isActive: true, createdAt: '2026-01-15T10:00:00Z' },
+  { id: 'm2', userId: 'u2', email: 'profetapiedad@semillasdealegria.co', fullName: 'Piedad Pacheco Villamizar', role: 'ADMIN', customRole: null, isActive: true, createdAt: '2026-02-01T10:00:00Z' },
+  { id: 'm3', userId: 'u3', email: 'contabilidad@semillasdealegria.co', fullName: 'Marta Lucía Restrepo', role: 'ACCOUNTANT', customRole: { id: 'r1', name: 'Cartera' }, isActive: false, createdAt: '2026-03-10T10:00:00Z' },
+]
+
+const SEDES = [
+  { id: 'b1', organizationId: ORG_ID, name: 'Sede principal', code: 'PRI', address: 'Calle 45 #23-11, Bucaramanga', phone: '+57 607 645 1122', isActive: true, createdAt: '2026-01-15T10:00:00Z', updatedAt: '2026-01-15T10:00:00Z' },
+  { id: 'b2', organizationId: ORG_ID, name: 'Sede norte', code: 'NOR', address: 'Carrera 33 #52-40', phone: null, isActive: true, createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:00:00Z' },
+]
+
+const ROLES = [
+  { id: 'r1', name: 'Cartera', description: 'Cobra y registra pagos, sin tocar gastos.', permissions: ['receivables.read', 'payments.create', 'messaging.read'], membersCount: 1, createdAt: '2026-02-01T10:00:00Z', updatedAt: '2026-02-01T10:00:00Z' },
+  { id: 'r2', name: 'Solo lectura', description: null, permissions: ['receivables.read', 'reports.read'], membersCount: 0, createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z' },
+]
+
+const SESIONES = [
+  { id: 's1', createdAt: '2026-08-25T09:00:00Z', expiresAt: '2026-09-25T09:00:00Z', ipAddress: '186.30.44.12', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141.0', current: true },
+  { id: 's2', createdAt: '2026-08-20T18:30:00Z', expiresAt: '2026-09-20T18:30:00Z', ipAddress: '190.85.12.7', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) Safari/605.1', current: false },
+]
+
 /** Una página vacía con la forma que espera `normalize()`. */
 const VACIO = { data: [], page: 1, pageSize: 20, total: 0, totalPages: 1 }
 
@@ -139,11 +185,21 @@ const RUTAS: [RegExp, unknown][] = [
     usage: { ai_messages_monthly: 212, voice_minutes_monthly: 8, vision_documents_monthly: 31, whatsapp_messages_monthly: 6 },
   }],
   [/\/messaging\/collection-policy$/, POLICY],
+  [/\/notifications\/preferences$/, PREFERENCIAS],
   // Este NO viene paginado: el contrato lo declara como { templates: [...] }.
   [/\/whatsapp\/templates/, { templates: TEMPLATES }],
   [/\/financial-accounts/, pagina(CUENTAS)],
   [/\/organizations\/[^/]+$/, ORG],
-  [/\/branches/, pagina([{ id: 'b1', name: 'Sede principal', isActive: true }])],
+  /*
+    Estos cuatro **no vienen paginados**: el contrato los declara como array
+    pelado. Comprobarlo en `openapi.json` en vez de suponerlo es la diferencia
+    entre una captura útil y cuatro pantallas vacías que parecen un vacío de
+    diseño.
+  */
+  [/\/members/, MIEMBROS],
+  [/\/branches/, SEDES],
+  [/\/roles/, ROLES],
+  [/\/sessions/, SESIONES],
 ]
 
 /**
