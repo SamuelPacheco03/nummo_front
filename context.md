@@ -1799,6 +1799,43 @@ del contenedor.
 **Un diálogo que quiera pasarse del ancho por defecto manda las dos**: `max-w-none
 sm:max-w-none`, y su ancho de verdad aparte.
 
+### La pantalla de cobranza se mira mientras se toca
+
+El rediseño de la pantalla de política, y lo que hay que conservar si se vuelve a tocar.
+
+**La vista previa es la pieza que la cambia de formulario a herramienta.** Antes se configuraba
+a ciegas: eliges una plantilla por su nombre y no sabes qué le llega a tu cliente hasta que le
+llega. Ahora va en columna pegajosa al lado, y se actualiza con lo que se está tocando —incluso
+tocar un selector de plantilla la trae a esa.
+
+**Y no finge el texto del mensaje, a propósito.** El contrato publica de una plantilla su
+`purpose` y sus `parameterNames`, pero **no su cuerpo**: el texto lo aprueba Meta y no viaja.
+Fabricar aquí un «Hola, Ana María…» sería peor que no enseñar nada — el usuario confiaría en
+una vista previa que no es lo que sale. Así que el primer renglón dice de qué va el aviso y qué
+datos lleva, en cursiva y marcado como «lo pone la plantilla», y los otros dos —dónde pagar y a
+dónde escribirte— **son exactos**, porque los compone el servidor con lo que se configura en
+esta misma pantalla. Son justo los que se degradan en silencio, y por fin se ven venir.
+
+**Las tres etapas van en línea de tiempo** alrededor del día del vencimiento, no en tres filas
+de casilla y número: lo que se viene a comprobar es la *forma* de la cobranza —cuándo se avisa y
+con cuánto margen—, y una lista obliga a reconstruirla leyendo tres renglones y sumando de
+cabeza. En un teléfono la línea se pone vertical: horizontal, tres nodos con su stepper no caben
+en 360 px sin encoger los controles por debajo del tamaño táctil (§46).
+
+**El interruptor maestro es un `Switch` y no una casilla**, y la diferencia no es estética: un
+checkbox es «marca esta opción» y se lee junto a las demás de su grupo; un interruptor es «esto
+está funcionando», y su estado se ve de lejos. Donde lo que se enciende **hace algo por su
+cuenta** —le escribe a tus clientes— hace falta la segunda lectura. Va sobre un
+`<input type="checkbox" role="switch">`: conserva la semántica de formulario y el teclado, y el
+rol es lo que hace que un lector de pantalla diga «activado».
+
+**Apagada, la pantalla se atenúa pero se sigue pudiendo tocar.** Lo normal es dejarlo todo
+configurado y encenderlo al final; bloquearlo obligaría a encender la cobranza —y empezar a
+escribirle a la gente— para poder prepararla.
+
+**El botón de guardar va pegado abajo.** La pantalla es larga y en un teléfono acababa al final
+de un desplazamiento entero, después de cuatro tarjetas.
+
 ### A dónde escribe el deudor
 
 **El número desde el que salen los recordatorios no recibe respuestas.** El de la plataforma
@@ -5649,6 +5686,11 @@ Todos son parte del sistema y deben reutilizarse:
 | `BANK_ACCOUNT_KINDS` · `TRANSFER_KEY_KINDS` | `features/masters/labels.ts` | Ahorros/corriente y con qué se identifica una llave, en palabras |
 | `usePublishedAccounts` | `features/masters/hooks.ts` | ¿Hay alguna cuenta que el deudor vea? Una fila, con los filtros del endpoint |
 | `OrgContactNote` | `features/messaging/org-contact-note.tsx` | A dónde escribe el deudor, pedido en línea al encender la cobranza |
+| `Switch` | `components/ui/switch.tsx` | Encendido/apagado de algo que **funciona solo**, sobre un checkbox nativo |
+| `MessagePreview` | `features/messaging/message-preview.tsx` | Cómo le queda el mensaje al deudor, **sin fingir el texto de la plantilla** |
+| `StageTimeline` | `features/messaging/stage-timeline.tsx` | Las tres etapas alrededor del vencimiento, con su interruptor y su stepper |
+| `LegalWeek` | `features/messaging/legal-week.tsx` | El horario legal en siete pastillas, con el domingo dicho con palabras |
+| `TemplateField` | `features/messaging/template-field.tsx` | Elegir plantilla con el hueco nombrado y las dos generaciones agrupadas |
 | `saysWherePay` · `paymentAwareUpgrade` | `features/messaging/labels.ts` | Las dos generaciones de plantilla: se clasifican por variable, se emparejan por clave |
 | `WhatsAppChannelPage` | `features/admin/whatsapp-channel-page.tsx` | **El canal visto por Nummo**: estado, entrantes y plantillas (§47.6, §97.26) |
 | `WhatsAppInboundTab` · `WhatsAppTemplatesTab` | `features/admin/` | La cola de webhooks y el catálogo compartido |

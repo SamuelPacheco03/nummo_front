@@ -17,6 +17,7 @@ const m = vi.hoisted(() => ({
   permisos: new Set<string>(),
   correr: vi.fn(),
   cuentasPublicadas: undefined as number | undefined,
+  renglonesDePago: [] as string[],
   contacto: { phone: '+57 310 594 8908' as string | null, email: null as string | null },
   guardarContacto: vi.fn(),
 }))
@@ -27,7 +28,7 @@ vi.mock('sonner', () => ({
 vi.mock('@/features/masters/hooks', () => ({
   useFinancialAccounts: () => ({ items: [] }),
   // `undefined` es «todavía no se sabe»; cero es «no hay ninguna publicada».
-  usePublishedAccounts: () => ({ count: m.cuentasPublicadas }),
+  usePublishedAccounts: () => ({ count: m.cuentasPublicadas, previews: m.renglonesDePago }),
 }))
 vi.mock('@/features/organizations/hooks', () => ({
   useCurrentOrg: () => ({
@@ -113,6 +114,7 @@ beforeEach(() => {
     'organization.manage',
   ])
   m.cuentasPublicadas = 1
+  m.renglonesDePago = ['Bancolombia ahorros 123-456789-00 a nombre de Semillas']
   m.contacto = { phone: '+57 310 594 8908', email: null }
   m.guardarContacto = vi.fn().mockResolvedValue({ data: {} })
   m.correr = vi.fn().mockResolvedValue({
@@ -139,7 +141,7 @@ test('lo guardado se pinta aunque la política llegue después del primer render
   m.cargando = true
   m.politica = null
   const { rerender } = pintar()
-  expect(screen.queryByRole('checkbox', { name: /Escribirle a quien debe/ })).toBeNull()
+  expect(screen.queryByRole('switch', { name: /Cobranza automática/ })).toBeNull()
 
   m.cargando = false
   m.politica = politica({ enabled: true, overdueTemplateKey: 'cobro_vencido' })
@@ -149,7 +151,7 @@ test('lo guardado se pinta aunque la política llegue después del primer render
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('checkbox', { name: /Escribirle a quien debe/ })).toBeChecked()
+  expect(screen.getByRole('switch', { name: /Cobranza automática/ })).toBeChecked()
   expect(screen.getByLabelText(/Vencida, cuando es una sola cuenta/)).toHaveValue('cobro_vencido')
 })
 
@@ -161,13 +163,15 @@ test('la semana legal se enseña agrupada, y el domingo con palabras', () => {
   */
   pintar()
 
-  expect(screen.getByText('Lunes a viernes')).toBeInTheDocument()
-  expect(screen.getByText('07:00 – 19:00')).toBeInTheDocument()
-  expect(screen.getByText('Sábado')).toBeInTheDocument()
-  expect(screen.getByText('08:00 – 15:00')).toBeInTheDocument()
+  // Siete pastillas: se viene a comprobar un día concreto, no a leer un horario.
+  for (const letra of ['L', 'M', 'X', 'J', 'V', 'S', 'D']) {
+    expect(screen.getByText(letra)).toBeInTheDocument()
+  }
+  expect(screen.getAllByText('07:00')).toHaveLength(5)
+  expect(screen.getByText('15:00')).toBeInTheDocument()
   // El domingo llega como `null`: pintarlo «de 00:00 a 00:00» diría que se
   // escribe a medianoche.
-  expect(screen.getByText('No se contacta')).toBeInTheDocument()
+  expect(screen.getByText('nunca')).toBeInTheDocument()
 })
 
 test('el horario cita la norma que lo fija, no se lo atribuye a Nummo', () => {
@@ -287,7 +291,7 @@ test('sin permiso de escritura la pantalla se enseña igual, sin el botón', () 
   m.permisos = new Set(['messaging.read'])
   pintar()
 
-  expect(screen.getByText(/Cuándo se le puede escribir/)).toBeInTheDocument()
+  expect(screen.getByText('Horario permitido')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Guardar política/ })).not.toBeInTheDocument()
 })
 
@@ -440,7 +444,7 @@ test('apagar una etapa manda null, y cero es otra cosa', async () => {
     menos—. Por eso el interruptor va separado del número.
   */
   pintar()
-  await userEvent.click(screen.getByRole('checkbox', { name: 'Antes de que venza' }))
+  await userEvent.click(screen.getByRole('switch', { name: 'Avisar antes' }))
   await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
 
   expect(m.guardar).toHaveBeenCalledWith({
@@ -450,10 +454,9 @@ test('apagar una etapa manda null, y cero es otra cosa', async () => {
 })
 
 test('el número de días viaja cuando la etapa está encendida', async () => {
+  m.politica = politica({ daysAfter: 4 })
   pintar()
-  const dias = screen.getByLabelText(/Cuando ya esté vencida, días después/)
-  await userEvent.clear(dias)
-  await userEvent.type(dias, '5')
+  await userEvent.click(screen.getByRole('button', { name: /Avisar la mora: un día más/ }))
   await userEvent.click(screen.getByRole('button', { name: /Guardar política/ }))
 
   expect(m.guardar).toHaveBeenCalledWith({
@@ -462,12 +465,21 @@ test('el número de días viaja cuando la etapa está encendida', async () => {
   })
 })
 
+test('el stepper no se sale del rango que acepta el contrato', async () => {
+  // `daysAfter` va de 0 a 90, y cero es válido: avisa el mismo día del vencimiento.
+  m.politica = politica({ daysAfter: 0 })
+  pintar()
+  expect(screen.getByRole('button', { name: /Avisar la mora: un día menos/ })).toBeDisabled()
+  expect(screen.getByLabelText(/Avisar la mora, el mismo día/)).toHaveTextContent('0')
+})
+
 test('apagada, la etapa no deja un número suelto que no se va a guardar', () => {
   m.politica = politica({ daysBefore: null })
   pintar()
 
-  expect(screen.getByRole('checkbox', { name: 'Antes de que venza' })).not.toBeChecked()
-  expect(screen.queryByLabelText(/Antes de que venza, días antes/)).toBeNull()
+  expect(screen.getByRole('switch', { name: 'Avisar antes' })).not.toBeChecked()
+  expect(screen.queryByRole('button', { name: /Avisar antes: un día más/ })).toBeNull()
+  expect(screen.getByText('Apagada: no sale este aviso.')).toBeInTheDocument()
 })
 
 test('la pantalla dice lo que nadie va a suponer: la mora avisa UNA vez', () => {
@@ -479,14 +491,14 @@ test('la pantalla dice lo que nadie va a suponer: la mora avisa UNA vez', () => 
   */
   pintar()
   expect(screen.getByText(/no vuelve a insistir/)).toBeInTheDocument()
-  expect(screen.getByText(/3 avisos por cuenta de cobro/)).toBeInTheDocument()
+  expect(screen.getByText(/de 3 avisos por cuenta/)).toBeInTheDocument()
 })
 
 test('el tope sale de la respuesta, no escrito a mano en la pantalla', () => {
   // No es un número que el backend comprueba: es que no existen más etapas.
   m.politica = politica({ schedule: horarioLegal({ maxRemindersPerReceivable: 2 }) })
   pintar()
-  expect(screen.getByText(/2 avisos por cuenta de cobro/)).toBeInTheDocument()
+  expect(screen.getByText(/de 2 avisos por cuenta/)).toBeInTheDocument()
 })
 
 test('con las tres apagadas se dice que no sale nada, en vez de callar', () => {
@@ -690,7 +702,7 @@ test('con la cobranza apagada no se pide: solo estorba al encenderla', async () 
   expect(screen.queryByText(/Falta decirle al deudor a dónde escribirte/)).toBeNull()
 
   // Y aparece en cuanto se marca la casilla, sin esperar a guardar.
-  await userEvent.click(screen.getByRole('checkbox', { name: /Escribirle a quien debe/ }))
+  await userEvent.click(screen.getByRole('switch', { name: /Cobranza automática/ }))
   expect(screen.getByText(/Falta decirle al deudor a dónde escribirte/)).toBeInTheDocument()
 })
 

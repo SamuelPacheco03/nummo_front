@@ -191,15 +191,26 @@ export function useFinancialAccounts(orgId: string | undefined, params: MasterPa
  * Devuelve `undefined` mientras no se sabe —cargando, o sin permiso para
  * mirar—, que **no es lo mismo que cero**: quien lo use tiene que poder callarse
  * en vez de avisar de un problema que quizá no existe.
+ *
+ * `previews` son los renglones **tal y como los compone el servidor**, para
+ * poder enseñar el «Para pagar:» de verdad. Pide tres —las que caben en un
+ * mensaje— y el conteo sigue saliendo de `total`, así que no miente aunque haya
+ * veinte.
  */
-export function usePublishedAccounts(orgId: string | undefined): { count: number | undefined } {
+export function usePublishedAccounts(orgId: string | undefined): {
+  count: number | undefined
+  previews: string[]
+} {
   const query = useGetApiV1OrganizationsOrgIdFinancialAccounts(
     orgId ?? '',
-    { page: 1, pageSize: 1, publishInReminders: 'true', isActive: 'true' },
+    { page: 1, pageSize: 3, publishInReminders: 'true', isActive: 'true' },
     { query: { enabled: !!orgId } },
   )
-  const page = query.data?.data as { total?: number } | undefined
-  return { count: query.isSuccess ? (page?.total ?? 0) : undefined }
+  const page = query.data?.data as { total?: number; data?: FinancialAccount[] } | undefined
+  return {
+    count: query.isSuccess ? (page?.total ?? 0) : undefined,
+    previews: (page?.data ?? []).map((a) => a.paymentPreview).filter((x): x is string => !!x),
+  }
 }
 
 export function useCreateFinancialAccount(orgId: string) {

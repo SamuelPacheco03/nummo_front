@@ -217,6 +217,32 @@ export function templateStatus(template: WhatsAppTemplate): { label: string; ton
 }
 
 /**
+ * Los datos que una plantilla mete en su texto, dichos en cristiano.
+ *
+ * Sirven para contar **qué lleva** el mensaje cuando no se puede enseñar cómo
+ * queda: el contrato publica `parameterNames` y `purpose`, pero **no el cuerpo**,
+ * así que la única forma honesta de previsualizarlo es nombrar sus piezas.
+ *
+ * Lo que no esté aquí se enseña crudo, que es feo pero honesto — igual que en el
+ * resto de este archivo.
+ */
+const PARAMETERS: Record<string, string> = {
+  nombre: 'su nombre',
+  monto: 'el monto',
+  saldo: 'el saldo pendiente',
+  dias: 'los días',
+  fecha: 'la fecha',
+  cuantas: 'cuántas cuentas son',
+  empresa: 'el nombre de tu empresa',
+  como_pagar: 'dónde pagar',
+  contacto: 'a dónde escribirte',
+}
+
+export function parameterLabel(name: string): string {
+  return PARAMETERS[name] ?? name
+}
+
+/**
  * ¿Esta plantilla le dice al deudor **dónde pagar**?
  *
  * Se mira `parameterNames` y no el nombre de la clave, y la diferencia importa:
