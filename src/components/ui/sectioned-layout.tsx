@@ -65,8 +65,11 @@ function Groups({ groups, onNavigate }: { groups: SectionGroup[]; onNavigate?: (
  * destino actual —repitiendo el `<h1>` que va justo debajo— y en tablet se estira
  * hasta parecer un campo de formulario vacío.
  *
- * El ancho del contenido lo pone este layout y no cada página: si cada una
- * declara el suyo, saltar entre hermanas reencuadra la pantalla.
+ * El ancho del contenido no lo declara cada página —si cada una pone el suyo,
+ * saltar entre hermanas reencuadra la pantalla— y este layout tampoco lo capa:
+ * reparte lo que le da `AppShell` (72 rem) entre el carril y el contenido. Un
+ * segundo techo aquí dejaba 112 px muertos dentro de la caja centrada, y en un
+ * monitor ancho eso se ve como un bloque descentrado.
  */
 export function SectionedLayout({
   label,
@@ -81,12 +84,13 @@ export function SectionedLayout({
    * **Consola**: la sección se queda con todo el ancho y todo el alto, y el
    * scroll lo administra ella.
    *
-   * La regla de arriba —el ancho lo pone el layout— sigue valiendo para las
-   * pantallas que se leen: Configuración y Ayuda son texto y formularios, y una
-   * columna de 48rem es lo que los hace legibles. Pero el playground de Numi no
-   * se lee: se opera. Tiene un chat que quiere alto propio con su caja anclada
-   * abajo, y una traza que acompaña a la conversación en un carril; las dos cosas
-   * mueren dentro de una columna de 48rem que además scrollea con la página.
+   * La regla de arriba —el ancho sale del shell— sigue valiendo para las
+   * pantallas que se leen: Configuración y Ayuda son texto y formularios, y
+   * caben de sobra en lo que deja el carril. Pero el playground de Numi no se
+   * lee: se opera. Tiene un chat que quiere alto propio con su caja anclada
+   * abajo, y una traza que acompaña a la conversación en un carril; las dos
+   * cosas mueren dentro de una columna centrada que además scrollea con la
+   * página.
    */
   console?: boolean
   children: ReactNode
@@ -168,7 +172,7 @@ export function SectionedLayout({
         </Drawer>
       </div>
 
-      <div className={cn('min-w-0 flex-1', console ? 'min-h-0' : 'max-w-3xl')}>{children}</div>
+      <div className={cn('min-w-0 flex-1', console && 'min-h-0')}>{children}</div>
     </div>
   )
 }

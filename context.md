@@ -910,8 +910,14 @@ elegido se quedaba también sin pastilla. Los tonos siguen siendo semánticos (`
 
 **El ancho lo pone el layout, no cada página.** Unas iban a `max-w-2xl` y otras a todo lo ancho,
 así que saltar de Empresa a Sedes cambiaba el tamaño de la columna y parecía otra pantalla. Hoy
-es un `max-w-3xl` en `SectionedLayout` y ninguna página declara el suyo: deja respirar las filas
-de miembros y sedes sin estirar los formularios más allá de lo que se lee cómodo.
+ninguna página declara el suyo y **el techo es uno solo en toda la app**: las 72 rem de `AppShell`.
+`SectionedLayout` reparte lo que hay —carril de 15 rem, hueco de 2 y el resto para el contenido—
+en vez de capar por su cuenta.
+
+Tuvo su propio `max-w-3xl` y se quitó: dos techos apilados dejaban una franja muerta de 112 px
+dentro de la caja centrada, así que en un monitor ancho el bloque entero se veía descentrado y
+con medio hueco a la derecha —el mismo defecto que §47.2 le reprocha a la consola—. Por debajo
+de ~1470 px de ventana no cambia nada: ahí manda el ancho de la ventana, no el techo.
 
 `Sheet` se queda para lo que **no** cambia de eje: los laterales de navegación y la hoja inferior
 de acciones.
@@ -1891,17 +1897,18 @@ de `displayName`.
 ### Dentro de Configuración, el ancho no lo decide la ventana
 
 **`sm:` y `lg:` miran la ventana, no el sitio donde está el bloque.** Es la trampa de este
-layout: `SectionedLayout` capa el contenido en **48 rem** a propósito —lo dice él mismo: el
-ancho lo pone el layout y no cada página, o saltar entre hermanas reencuadra la pantalla—, así
-que una página de Configuración **nunca** tiene más de 768 px por mucho que el navegador esté
-abierto de par en par.
+layout: el contenido de Configuración vive dentro del carril de secciones, así que **nunca** tiene
+el ancho de la ventana. Como mucho llega a **55 rem** —las 72 de `AppShell` menos el carril y su
+hueco—, y en una ventana normal se queda bastante por debajo.
 
-Ahí, un `lg:grid-cols-[1fr_22rem]` se cumple igual y parte esas 48 rem en dos columnas de
-400 px. Se rompió así la pantalla de cobranza entera: la vista previa apretada contra el borde y
+Ahí, un `lg:grid-cols-[1fr_22rem]` se cumple igual y parte esas 55 rem en dos columnas de
+440 px. Se rompió así la pantalla de cobranza entera: la vista previa apretada contra el borde y
 la tarjeta del interruptor con su descripción en una columna de un carácter de ancho.
 
 **Cualquier bloque dentro de Configuración usa container queries** (`@container` en el
-contenedor y `@xl:`, `@5xl:`… en los hijos), que miden **su** sitio. Dos ventajas además de la
+contenedor y `@xl:`, `@5xl:`… en los hijos), que miden **su** sitio. Desde que el contenido crece
+con la ventana en vez de estar capado en un número fijo, esto importa más y no menos: el sitio
+que tiene un bloque ya no se puede deducir mirando el breakpoint. Dos ventajas además de la
 obvia: la pantalla se ve igual dentro y fuera del cajón lateral, y si el layout deja más sitio
 algún día la columna aparece sola sin tocar la página.
 
@@ -4132,9 +4139,9 @@ La cabecera se reparte como manda §11.1.1: el sidebar navega, y tema y cuenta v
 la derecha.
 
 **Y el cuerpo no es el de Configuración.** Alto de ventana, scroll de la pantalla y no de la
-página, y contenido centrado en 72rem (`PlatformPage`). La columna de 48rem que comparten Ajustes y Ayuda es la que hace legible un
-texto; aquí lo que hay son **tablas densas de administración**, y esa columna las dejaba apretadas
-con medio monitor en blanco al lado. Las dos que no la usan son las que no se leen sino que se
+página, y contenido centrado en 72rem (`PlatformPage`). Ajustes y Ayuda gastan parte de esas
+72 rem en su carril de secciones; aquí lo que hay son **tablas densas de administración**, que
+las quieren enteras. Las dos que no la usan son las que no se leen sino que se
 operan —la consola de Numi y la comparación—, que traen su propio marco con la barra de contexto
 pegada arriba.
 
