@@ -22,6 +22,11 @@ import { toastApiError } from '@/features/platform/errors'
  * y no con un enlace a la ficha de la empresa: mandar a alguien a otra sección a
  * mitad de una configuración es perderlo, y lo que falta son dos campos.
  *
+ * Pero **el dato es de la organización, no de la cobranza** —hoy es su único
+ * consumidor y mañana no—, así que se dice dónde se guarda: quien lo escribe aquí
+ * tiene que saber que lo está poniendo en la ficha de la empresa y no en un ajuste
+ * de esta pantalla.
+ *
  * Quien no pueda editar la organización sí ve el enlace: no hay nada que pueda
  * hacer aquí, y necesita saber a quién pedírselo.
  */
@@ -100,7 +105,9 @@ export function OrgContactNote({
               {update.isPending && <Loader className="size-4" />}
               Guardar contacto
             </Button>
-            <span className="text-muted-foreground text-xs">Con uno de los dos basta.</span>
+            <span className="text-muted-foreground text-xs">
+              Con uno de los dos basta. Se guarda en la ficha de la empresa.
+            </span>
           </div>
         </div>
       ) : (

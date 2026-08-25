@@ -203,23 +203,34 @@ export function MembersPage() {
             const isSelf = user?.id === member.userId
             return (
               <Card key={member.id}>
-                <CardContent className="flex flex-wrap items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-                    {initials(member.fullName)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate font-medium">{member.fullName}</span>
-                      {isSelf && <Badge variant="secondary">Tú</Badge>}
-                      {!member.isActive && <Badge variant="outline">Inactivo</Badge>}
+                {/*
+                  **Quién es y qué puede hacer son dos renglones en el teléfono.**
+                  En una sola fila los desplegables de rol se llevan el ancho fijo
+                  que piden y a la identidad no le queda nada: un nombre se leía
+                  «Samu…» y el correo «samuel2003…», que no identifica a nadie. A
+                  partir de `sm` vuelven a la misma línea, donde sí caben.
+                */}
+                <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                  <div className="flex min-w-0 items-center gap-3 sm:flex-1">
+                    <span className="bg-secondary text-secondary-foreground grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold">
+                      {initials(member.fullName)}
+                    </span>
+                    <div className="min-w-0">
+                      {/* Las etiquetas bajan de línea antes que comerse el nombre. */}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="truncate font-medium">{member.fullName}</span>
+                        {isSelf && <Badge variant="secondary">Tú</Badge>}
+                        {!member.isActive && <Badge variant="outline">Inactivo</Badge>}
+                      </div>
+                      <div className="text-muted-foreground truncate text-sm">{member.email}</div>
                     </div>
-                    <div className="truncate text-sm text-muted-foreground">{member.email}</div>
                   </div>
 
                   {canManage ? (
                     <div className="flex items-center gap-2">
+                      {/* En el teléfono reparten el ancho; desde `sm` vuelven al suyo fijo. */}
                       <NativeSelect
-                        className="h-8 w-36"
+                        className="h-8 min-w-0 flex-1 sm:w-36 sm:flex-none"
                         value={member.role}
                         disabled={busyId === member.id}
                         onChange={(e) => changeRole(member, e.target.value as AnyRole)}
@@ -233,7 +244,7 @@ export function MembersPage() {
                       </NativeSelect>
                       {canAssignCustom && (
                         <NativeSelect
-                          className="h-8 w-40"
+                          className="h-8 min-w-0 flex-1 sm:w-40 sm:flex-none"
                           value={member.customRole?.id ?? ''}
                           disabled={busyId === member.id}
                           onChange={(e) => changeCustomRole(member, e.target.value)}
@@ -250,6 +261,7 @@ export function MembersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="shrink-0"
                         onClick={() => setRemoving(member)}
                         aria-label={`Remover ${member.fullName}`}
                       >
@@ -257,7 +269,7 @@ export function MembersPage() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="secondary">{roleLabel(member.role)}</Badge>
                       {member.customRole && <Badge variant="outline">{member.customRole.name}</Badge>}
                     </div>

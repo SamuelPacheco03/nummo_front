@@ -1746,6 +1746,17 @@ nosotros».** No se queda en blanco —una variable vacía haría que Meta recha
 entero— pero el deudor no sabe a dónde pagar, y desde la política no había forma de
 enterarse: ahora lo avisa, y solo con la cobranza encendida.
 
+### Un ancho que la variante `sm:` se comía
+
+`DialogContent` termina su clase base en **`sm:max-w-lg`**, y para tailwind-merge eso es
+**otra clave** que `max-w-none`: pasarle `max-w-none` a secas cambia el ancho por debajo de
+640 px y no lo toca por encima. El catálogo de planes se quedaba en 512 px con sus tres
+columnas apretadas dentro y barra horizontal, pareciendo un problema de la rejilla cuando era
+del contenedor.
+
+**Un diálogo que quiera pasarse del ancho por defecto manda las dos**: `max-w-none
+sm:max-w-none`, y su ancho de verdad aparte.
+
 ### A dónde escribe el deudor
 
 **El número desde el que salen los recordatorios no recibe respuestas.** El de la plataforma
@@ -1754,10 +1765,15 @@ es compartido entre todos los clientes de Nummo: si dos empresas tienen al mismo
 un renglón que dice a dónde escribir de verdad — el mismo «este número no recibe mensajes»
 que pone un banco.
 
-De ahí `contactPhone` y `contactEmail` en la organización. Los dos son opcionales, pero
-**encender la cobranza sin ninguno responde 422** (`details.reason =
-"ORGANIZATION_CONTACT_REQUIRED"`). Solo al encender: cambiar una plantilla o la hora no lo
-pide.
+De ahí `contactPhone` y `contactEmail`. **Son de la organización, no de la cobranza**, y la
+diferencia no es de matiz: la cobranza es hoy su único consumidor y mañana no lo será. En la
+ficha de la empresa se llaman «Contacto de la empresa» y se explican por lo que son —a dónde
+te escribe quien trata contigo desde fuera—, no por la función que hoy los exige. Nombrar un
+dato por su único consumidor de hoy es lo que obliga a renombrarlo mañana.
+
+Los dos son opcionales, pero **encender la cobranza sin ninguno responde 422**
+(`details.reason = "ORGANIZATION_CONTACT_REQUIRED"`). Solo al encender: cambiar una plantilla
+o la hora no lo pide.
 
 Están **en dos sitios y no es duplicar**: la ficha de la empresa es donde viven, y la
 pantalla de cobranza los **pide en línea cuando faltan** (`OrgContactNote`). Mandar a alguien
@@ -1771,6 +1787,8 @@ detalles que se hacen mal solos:
    estorba; avisarlo antes es ruido en una pantalla que solo se está leyendo.
 3. **Quien no puede editar la organización ve el enlace, no el formulario.** No hay nada que
    pueda hacer ahí, y lo que necesita saber es a quién pedírselo.
+4. **El bloque dice dónde se guarda.** Quien lo escribe desde cobranza tiene que saber que lo
+   está poniendo en la ficha de la empresa, y no en un ajuste de esta pantalla.
 
 ### «Billetera digital» no es un método de pago
 

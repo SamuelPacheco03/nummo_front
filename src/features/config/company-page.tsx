@@ -29,15 +29,14 @@ const schema = z.object({
   legalName: z.string().trim().max(200).optional(),
   taxId: z.string().trim().max(80).optional(),
   type: z.enum(['SCHOOL', 'SHOP', 'PERSONAL', 'GENERIC']),
-  timezone: z.string().trim().max(80).optional(),
-  locale: z.string().trim().max(20).optional(),
   /*
-    **A dónde te escribe quien recibe un cobro.** No es el contacto interno del
-    equipo: viaja dentro del mensaje de cobranza, porque los recordatorios salen
-    de un número que **no recibe respuestas** —el de la plataforma es compartido
-    entre todos los clientes de Nummo, y si dos empresas tienen al mismo deudor no
-    hay forma de saber de quién es esa conversación—. Es el mismo renglón que pone
-    un banco con su «este número no recibe mensajes».
+    **El contacto de la empresa hacia fuera**, no el del equipo por dentro: eso son
+    los miembros, cada uno con el suyo.
+
+    Hoy lo usa la cobranza —lo mete en el recordatorio y lo exige al encenderse,
+    porque el número desde el que salen los mensajes no recibe respuestas—, pero el
+    dato es de la organización y no de esa función. Nombrarlo por su único
+    consumidor de hoy sería lo que obliga a renombrarlo mañana.
   */
   contactPhone: z.string().trim().max(40, 'Máximo 40 caracteres.').optional(),
   contactEmail: z
@@ -64,8 +63,6 @@ function toForm(org: Organization): Values {
     legalName: org.legalName ?? '',
     taxId: org.taxId ?? '',
     type: org.type,
-    timezone: org.timezone,
-    locale: org.locale,
     contactPhone: org.contactPhone ?? '',
     contactEmail: org.contactEmail ?? '',
   }
@@ -176,8 +173,6 @@ export function CompanyPage() {
           legalName: values.legalName ? values.legalName : null,
           taxId: values.taxId ? values.taxId : null,
           type: values.type,
-          timezone: values.timezone || undefined,
-          locale: values.locale || undefined,
           // Vacío es «no lo pongo», que en el contrato es `null`.
           contactPhone: values.contactPhone ? values.contactPhone : null,
           contactEmail: values.contactEmail ? values.contactEmail : null,
@@ -231,28 +226,20 @@ export function CompanyPage() {
               </div>
             </Field>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Zona horaria" htmlFor="c-tz" error={errors.timezone?.message}>
-              <Input id="c-tz" placeholder="America/Bogota" disabled={!canManage} {...register('timezone')} />
-            </Field>
-            <Field label="Locale" htmlFor="c-locale" error={errors.locale?.message}>
-              <Input id="c-locale" placeholder="es-CO" disabled={!canManage} {...register('locale')} />
-            </Field>
-          </div>
 
           {/*
-            **A dónde te escribe quien recibe un cobro**, y por eso va aquí y no
-            entre los datos fiscales: viaja dentro del mensaje. Los recordatorios
-            salen de un número que no recibe respuestas, así que sin esto el deudor
-            se queda sin forma de contestar.
+            **El contacto de la empresa hacia fuera**, y por eso va aquí y no
+            colgando de la pantalla que hoy lo necesita: no es un campo de
+            cobranza. La cobranza es solo el primer sitio que lo usa —lo mete en
+            el recordatorio, y por eso lo exige al encenderse—, pero el dato es de
+            la organización y lo van a leer más cosas.
           */}
           <div className="space-y-3 border-t pt-4">
             <div>
-              <p className="text-sm font-medium">A dónde te escribe quien te debe</p>
+              <p className="text-sm font-medium">Contacto de la empresa</p>
               <p className="text-muted-foreground text-xs">
-                Va dentro de cada recordatorio de cobranza. El número desde el que salen los
-                mensajes <strong>no recibe respuestas</strong>, así que sin esto el deudor no
-                tiene a dónde contestar. Con uno de los dos basta.
+                A dónde te escribe quien trata contigo desde fuera: clientes, proveedores, quien
+                recibe un cobro. Con uno de los dos basta.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -278,9 +265,20 @@ export function CompanyPage() {
               </Field>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Moneda: <span className="font-medium text-foreground">{organization.defaultCurrency}</span>{' '}
+          {/*
+            Lo que administra Nummo se enseña, no se esconde: la zona horaria decide
+            a qué hora del día salen los recordatorios y el locale de dónde salen
+            los festivos que la cobranza salta. Quitarlos de la vista dejaría esas
+            dos preguntas sin respuesta en ninguna pantalla.
+          */}
+          <p className="text-muted-foreground text-xs">
+            Moneda: <span className="text-foreground font-medium">{organization.defaultCurrency}</span>{' '}
+            · Zona horaria: <span className="text-foreground font-medium">{organization.timezone}</span>{' '}
+            · Locale: <span className="text-foreground font-medium">{organization.locale}</span>{' '}
             · Creada: {formatDateHuman(organization.createdAt)}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            La moneda, la zona horaria y el locale los administra Nummo; no se cambian desde aquí.
           </p>
         </CardContent>
         {canManage && (

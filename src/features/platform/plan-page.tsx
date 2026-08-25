@@ -23,7 +23,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ErrorState } from '@/components/ui/error-state'
-import { Note } from '@/components/ui/note'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatMonthName, formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -281,11 +280,6 @@ export function PlanPage() {
                 <LimitMeter key={limit.key} limit={limit} />
               ))}
             </div>
-
-            <Note tone="info">
-              Un tope lleno bloquea crear, nunca borra lo que ya existe. Los aforos se liberan
-              archivando —lo archivado no gasta cupo— y las cuotas del mes se renuevan solas.
-            </Note>
           </div>
         )}
       </Panel>
@@ -358,10 +352,15 @@ export function PlanPage() {
           eso, Radix avisa por consola de que falta. Lo que había explicaba lo mismo que ya
           dice el panel de detrás, y su única consecuencia visible era robarle alto a las
           tarjetas — que es justo lo que sobra aquí.
+
+          Y el ancho va **también con la variante `sm:`**. `DialogContent` termina en
+          `sm:max-w-lg`, que es otra clave para tailwind-merge: un `max-w-none` a secas no la
+          toca y a partir de 640 px el diálogo se quedaba en 512, con tres columnas de plan
+          apretadas dentro y barra horizontal.
         */}
         <DialogContent
           aria-describedby={undefined}
-          className="w-[min(96vw,84rem)] max-w-none max-h-[94dvh] p-5 sm:p-6"
+          className="w-[min(96vw,84rem)] max-h-[94dvh] max-w-none p-5 sm:max-w-none sm:p-6"
         >
           <DialogHeader>
             <DialogTitle>Planes</DialogTitle>
