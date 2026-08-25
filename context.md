@@ -1687,6 +1687,14 @@ Tres reglas del backend que se ven en el cajón de categorías, y **ninguna es d
   dejaría sin forma de volver. Donde **sí** se filtran es al elegir una: lo archivado dejó de
   ofrecerse a propósito.
 
+**Cada plantilla es una tarjeta, no un renglón.** Una fila que reparte nombre, clave,
+propósito, parámetros, estado y fecha entre dos columnas que a 360 px no caben acaba
+envolviendo por donde puede, y lo que queda es un párrafo con trozos de seis datos distintos.
+En escritorio gana lo mismo por otra razón: cinco plantillas separadas por una línea de un
+píxel se leen como una tabla sin cabecera. Dentro de la tarjeta **solo se recorta la clave**
+—es un identificador y se reconoce por el principio—; el idioma y la categoría son palabras
+enteras o no son nada, y en un teléfono eran justo las que se perdían.
+
 **Clasificar no habla con Meta**, así que —a diferencia de crear y borrar— no exige número
 propio: basta con que la plantilla sea de la casa. Las de la plataforma las clasifica el
 sembrado, y `categoryId: null` es un estado válido y no un hueco por rellenar.
@@ -4345,9 +4353,11 @@ Son de Nummo y las comparten todos los clientes, así que **si Meta pausa una se
 cobranza de todos a la vez** — y la única señal eran los mensajes saltados repartidos por el
 historial de cada uno.
 
-Se traducen con la **misma tabla** que la pantalla del inquilino (`messaging/labels`): son
-las mismas plantillas mirando desde el otro lado, y dos tablas del mismo enum se separan a
-la primera corrección.
+Se pintan con la **misma tarjeta** y se traducen con la **misma tabla** que la pantalla del
+inquilino (`messaging/template-card`, `messaging/labels`): son las mismas plantillas mirando
+desde el otro lado, y dos copias de lo mismo se separan a la primera corrección. Lo propio de
+esta cara viaja como props: aquí la línea de clave dice la categoría **de Meta** —la que
+decide el precio, que es lo que se vigila desde la consola— y no hay botones.
 
 **El sync es idempotente y hay que decirlo**, porque el instinto es no tocar un botón que
 habla con Meta: lo que ya existe se refleja en vez de recrearse — recrear gastaría cupo de
@@ -5592,6 +5602,7 @@ siempre son palabras y un endpoint, así que viajan como props:
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
 | Pagos / egresos | `SettlementList`, `SettlementDetail`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 | Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
+| Plantillas del inquilino / de la consola | `TemplateCard` | El tercer dato de la línea de clave —la categoría nuestra o la de Meta—, el aviso bajo el estado y los botones |
 
 `SettlementDrawer` nació de dos archivos de ~310 líneas idénticos salvo por eso. Hoy el
 formulario vive una vez y cada página son ~120 líneas: sus palabras, su consulta de cuentas
@@ -5809,6 +5820,8 @@ Todos son parte del sistema y deben reutilizarse:
 | `sendTimeOutOfRange` · `scheduleFixedByLaw` | `features/messaging/errors.ts` | Los dos rechazos del `PUT` de la política, leídos del `details` tipado |
 | `WhatsAppAccountPage` | `features/messaging/whatsapp-account-page.tsx` | La cuenta de Meta del negocio: conectar, reemplazar y desconectar (§11.1.16) |
 | `TemplateFormDialog` | `features/messaging/template-form-dialog.tsx` | Crear una plantilla propia, con un ejemplo por variable |
+| `TemplateCard` | `features/messaging/template-card.tsx` | **Una plantilla como tarjeta**, en las dos pantallas que las enseñan (§94.0) |
+| `templateLabel` | `features/messaging/labels.ts` | Cómo se llama una plantilla para una persona: `displayName`, y `name` si no lo trae |
 | `TemplateCategoriesDrawer` | `features/messaging/template-categories-drawer.tsx` | **Las categorías con las que se agrupan las plantillas** — las de Nummo se usan, las propias se editan (§11.1.16) |
 | `templateCategoryInUse` · `templateCategoryNameTaken` | `features/messaging/errors.ts` | Los dos `409` de una categoría, leídos del `details` porque el mensaje del backend viene en inglés |
 | `parseVariables` · `buildExamples` | `features/messaging/template-variables.ts` | Las variables `{{}}` de una plantilla, derivadas del texto y no escritas aparte |

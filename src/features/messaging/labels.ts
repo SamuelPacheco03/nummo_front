@@ -281,6 +281,22 @@ export function paymentAwareUpgrade(
 }
 
 /**
+ * **Cómo se llama una plantilla para una persona.**
+ *
+ * `name` es el nombre en Meta —minúsculas y guiones bajos, `cobro_vencido`— así
+ * que titular con él una lista en español no dice nada. Se cae a `name` cuando no
+ * hay `displayName`, que es lo que pasa con una plantilla propia recién creada.
+ *
+ * Vive aquí y no en la tarjeta porque los botones tienen que nombrarla **igual
+ * que el título**: un «Borrar cobro_vencido» leído en voz alta sobre una fila que
+ * dice «Vencida — solo recordatorio» son dos plantillas distintas para quien no
+ * ve la pantalla.
+ */
+export function templateLabel(template: WhatsAppTemplate): string {
+  return template.displayName ?? template.name
+}
+
+/**
  * Una plantilla de la plataforma sirve a todas las organizaciones; una propia es
  * de esta. `organizationId` en `null` es lo primero.
  */

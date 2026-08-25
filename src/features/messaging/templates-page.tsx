@@ -14,11 +14,9 @@ import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Note } from '@/components/ui/note'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { toastApiError } from '@/features/platform/errors'
 import { useCan, useFeature } from '@/features/platform/permissions'
-import { formatDateHuman } from '@/lib/format'
 import type {
   SyncWhatsAppTemplatesResult,
   WhatsAppTemplate,
@@ -34,7 +32,8 @@ import {
   useWhatsAppTemplateCategories,
   useWhatsAppTemplates,
 } from './hooks'
-import { isPlatformTemplate, parameterLabel, templateStatus } from './labels'
+import { isPlatformTemplate, templateLabel } from './labels'
+import { TemplateCard } from './template-card'
 import { TemplateCategoriesDrawer } from './template-categories-drawer'
 import { TemplateFormDialog } from './template-form-dialog'
 
@@ -224,12 +223,12 @@ export function WhatsAppTemplatesPage() {
                   <p className="text-muted-foreground mb-2 text-xs">
                     Vienen aprobadas y son las que nombra la política de cobranza.
                   </p>
-                  <ul className="divide-y">
+                  <ul className="grid gap-2">
                     {platform.map((template) => (
-                      <TemplateRow
+                      <TemplateCard
                         key={template.id}
                         template={template}
-                        category={categoryName(template.categoryId)}
+                        label={categoryName(template.categoryId)}
                       />
                     ))}
                   </ul>
@@ -238,17 +237,40 @@ export function WhatsAppTemplatesPage() {
 
               {own.length > 0 && (
                 <Panel title="De tu organización">
-                  <ul className="divide-y">
+                  <ul className="grid gap-2">
                     {own.map((template) => (
-                      <TemplateRow
+                      <TemplateCard
                         key={template.id}
                         template={template}
-                        category={categoryName(template.categoryId)}
-                        /* Clasificar no habla con Meta, así que no pide número
-                           propio: basta con que la plantilla sea de la casa. */
-                        onClassify={canManage ? () => setClassifying(template) : undefined}
-                        onDelete={
-                          canManage && connected ? () => setDeleting(template) : undefined
+                        label={categoryName(template.categoryId)}
+                        actions={
+                          <>
+                            {/* Clasificar no habla con Meta, así que no pide
+                                número propio: basta con que la plantilla sea de
+                                la casa. Borrar sí, y por eso van separados. */}
+                            {canManage && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => setClassifying(template)}
+                                aria-label={`Clasificar ${templateLabel(template)}`}
+                              >
+                                <Tag aria-hidden className="size-4" />
+                              </Button>
+                            )}
+                            {canManage && connected && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => setDeleting(template)}
+                                aria-label={`Borrar ${templateLabel(template)}`}
+                              >
+                                <Trash2 aria-hidden className="size-4" />
+                              </Button>
+                            )}
+                          </>
                         }
                       />
                     ))}
@@ -301,7 +323,7 @@ export function WhatsAppTemplatesPage() {
         title="Borrar la plantilla"
         description={
           deleting
-            ? `«${deleting.name}» se borra también en Meta. Si la política de cobranza la estaba usando, ese aviso se queda sin plantilla y deja de salir.`
+            ? `«${templateLabel(deleting)}» se borra también en Meta. Si la política de cobranza la estaba usando, ese aviso se queda sin plantilla y deja de salir.`
             : undefined
         }
         confirmLabel="Borrar"
@@ -387,7 +409,7 @@ function ClassifyDialog({
       open
       onOpenChange={onOpenChange}
       title="Clasificar la plantilla"
-      description={`«${template.displayName ?? template.name}» se agrupa con las demás de esa categoría. No cambia nada de lo que Meta ve.`}
+      description={`«${templateLabel(template)}» se agrupa con las demás de esa categoría. No cambia nada de lo que Meta ve.`}
       submitLabel="Guardar"
       loading={loading}
       onSubmit={(event) => {
@@ -410,80 +432,5 @@ function ClassifyDialog({
         </NativeSelect>
       </Field>
     </FormDialog>
-  )
-}
-
-function TemplateRow({
-  template,
-  category,
-  onClassify,
-  onDelete,
-}: {
-  template: WhatsAppTemplate
-  /** Cómo se llama su categoría, si tiene una. */
-  category?: string
-  /** Solo las propias; clasificar no exige cuenta conectada. */
-  onClassify?: () => void
-  /** Solo las propias y solo con cuenta conectada; si no, no llega. */
-  onDelete?: () => void
-}) {
-  const status = templateStatus(template)
-  /*
-    `displayName` primero: `name` es como se llama la plantilla **en Meta**
-    —`cobro_vencido`— y titular con eso una lista en español no dice nada. La
-    clave sigue debajo, que es lo que se busca al cotejar con Meta.
-
-    Y es **el mismo nombre** en el título y en los botones: un «Borrar
-    cobro_vencido» leído en voz alta sobre una fila que dice «Vencida — solo
-    recordatorio» son dos plantillas distintas para quien no ve la pantalla.
-  */
-  const label = template.displayName ?? template.name
-
-  return (
-    <li className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3">
-      <div className="min-w-0 space-y-1">
-        <p className="truncate text-sm font-medium">{label}</p>
-        <p className="text-muted-foreground truncate text-xs">
-          {template.templateKey} · {template.language}
-          {category && ` · ${category}`}
-        </p>
-        {template.purpose && <p className="text-muted-foreground text-xs">{template.purpose}</p>}
-        {template.parameterNames.length > 0 && (
-          <p className="text-muted-foreground text-xs">
-            Usa: {template.parameterNames.map(parameterLabel).join(', ')}
-          </p>
-        )}
-        {/* Meta dice por qué la rechazó; esconderlo deja la fila sin salida. */}
-        {template.rejectedReason && (
-          <p className="text-destructive text-xs">{template.rejectedReason}</p>
-        )}
-      </div>
-
-      <div className="flex shrink-0 items-start gap-3">
-        <div className="flex flex-col items-end gap-1">
-          <StatusBadge {...status} />
-          {template.lastSyncedAt && (
-            <span className="text-muted-foreground text-xs">
-              Contrastado el {formatDateHuman(template.lastSyncedAt)}
-            </span>
-          )}
-        </div>
-        {onClassify && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClassify}
-            aria-label={`Clasificar ${label}`}
-          >
-            <Tag aria-hidden className="size-4" />
-          </Button>
-        )}
-        {onDelete && (
-          <Button variant="ghost" size="sm" onClick={onDelete} aria-label={`Borrar ${label}`}>
-            <Trash2 aria-hidden className="size-4" />
-          </Button>
-        )}
-      </div>
-    </li>
   )
 }

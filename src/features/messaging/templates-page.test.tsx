@@ -153,8 +153,11 @@ afterEach(cleanup)
 
 test('cada plantilla dice de qué categoría cuelga, y la que no tiene no dice nada', () => {
   pintar()
-  expect(screen.getByText(/cobro_vencido · es · Cobranza/)).toBeInTheDocument()
-  expect(screen.getByText('suelta · es')).toBeInTheDocument()
+  // La clave se recorta y va en su propio elemento; el idioma y la categoría no.
+  expect(screen.getByText('cobro_vencido')).toBeInTheDocument()
+  expect(screen.getByText('· es · Cobranza')).toBeInTheDocument()
+  expect(screen.getByText('· es · Citas')).toBeInTheDocument()
+  expect(screen.getByText('· es')).toBeInTheDocument()
 })
 
 test('las fichas reparten por categoría y filtran la lista', async () => {

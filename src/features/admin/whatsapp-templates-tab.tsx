@@ -7,11 +7,9 @@ import { ErrorState } from '@/components/ui/error-state'
 import { Loader } from '@/components/ui/loader'
 import { Note } from '@/components/ui/note'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { toastApiError } from '@/features/platform/errors'
-import { templateStatus } from '@/features/messaging/labels'
-import { formatDateHuman } from '@/lib/format'
-import type { PlatformTemplateSync, WhatsAppTemplate } from '@/api/generated/model'
+import { TemplateCard } from '@/features/messaging/template-card'
+import type { PlatformTemplateSync } from '@/api/generated/model'
 import { usePlatformTemplates, useSyncPlatformTemplates } from './hooks'
 
 /**
@@ -22,9 +20,12 @@ import { usePlatformTemplates, useSyncPlatformTemplates } from './hooks'
  * **todos** a la vez, y la única señal eran los mensajes saltados repartidos por
  * el historial de cada organización. Nadie ata una cosa con la otra.
  *
- * Los estados se traducen con la misma tabla que usa la pantalla del inquilino
- * (`messaging/labels`): son las mismas plantillas mirando desde el otro lado, y
- * dos tablas del mismo enum se separan a la primera corrección.
+ * La tarjeta y los estados son **los mismos** que usa la pantalla del inquilino
+ * (`messaging/template-card`, `messaging/labels`): son las mismas plantillas
+ * mirando desde el otro lado, y dos copias de lo mismo se separan a la primera
+ * corrección. Lo que cambia de esta cara viaja como props: aquí la línea de clave
+ * dice la categoría **de Meta** —la que decide el precio, que es lo que se vigila
+ * desde la consola— y no hay botones, porque esta pantalla mira y no toca.
  */
 export function WhatsAppTemplatesTab() {
   const { templates, isPending, isError, error } = usePlatformTemplates()
@@ -72,9 +73,18 @@ export function WhatsAppTemplatesTab() {
               description="Sincroniza con Meta para empujar el catálogo de Nummo."
             />
           ) : (
-            <ul className="divide-y">
+            <ul className="grid gap-2">
               {templates.map((template) => (
-                <TemplateRow key={template.id} template={template} />
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  label={template.metaCategory}
+                  warning={
+                    !template.canSend && (
+                      <span className="text-warning-strong text-xs">No se puede enviar</span>
+                    )
+                  }
+                />
               ))}
             </ul>
           )}
@@ -88,40 +98,6 @@ export function WhatsAppTemplatesTab() {
         propia dejan de poder enviar ese aviso, y lo único que ven es un mensaje saltado.
       </Note>
     </div>
-  )
-}
-
-function TemplateRow({ template }: { template: WhatsAppTemplate }) {
-  const status = templateStatus(template)
-
-  return (
-    <li className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3">
-      <div className="min-w-0 space-y-1">
-        <p className="truncate text-sm font-medium">{template.name}</p>
-        <p className="text-muted-foreground truncate text-xs">
-          {template.templateKey} · {template.language} · {template.metaCategory}
-        </p>
-        {template.parameterNames.length > 0 && (
-          <p className="text-muted-foreground text-xs">Usa: {template.parameterNames.join(', ')}</p>
-        )}
-        {template.rejectedReason && (
-          <p className="text-destructive text-xs">{template.rejectedReason}</p>
-        )}
-      </div>
-
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        {/* `canSend` viene calculado; no se deduce del `status`. */}
-        <StatusBadge {...status} />
-        {!template.canSend && (
-          <span className="text-warning-strong text-xs">No se puede enviar</span>
-        )}
-        {template.lastSyncedAt && (
-          <span className="text-muted-foreground text-xs">
-            Contrastada el {formatDateHuman(template.lastSyncedAt)}
-          </span>
-        )}
-      </div>
-    </li>
   )
 }
 
