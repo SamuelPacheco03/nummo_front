@@ -1,4 +1,5 @@
-import { MessageCircle } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, MessageCircle } from 'lucide-react'
 import type { WhatsAppTemplate } from '@/api/generated/model'
 import { cn } from '@/lib/utils'
 import { parameterLabel } from './labels'
@@ -26,6 +27,7 @@ export function MessagePreview({
   paymentLink,
   contact,
   when,
+  tabs,
   className,
 }: {
   /** La plantilla elegida, o `undefined` si ese aviso está sin plantilla. */
@@ -36,17 +38,67 @@ export function MessagePreview({
   contact: { phone: string | null; email: string | null }
   /** «3 días antes del vencimiento» — cuándo sale este aviso. */
   when: string
+  /** Los cuatro avisos, para poder mirar cualquiera sin salir de aquí. */
+  tabs: { label: string; active: boolean; onSelect: () => void }[]
   className?: string
 }) {
+  const [abierta, setAbierta] = useState(false)
   const parts = (template?.parameterNames ?? []).filter((p) => p !== 'como_pagar' && p !== 'contacto')
   const contactValue = contact.phone || contact.email
 
+  /*
+    **Plegada en un teléfono, siempre abierta cuando hay sitio.** Es lo primero
+    que se quiere ver, pero mide media pantalla: dejarla desplegada obligaba a
+    bajar tres pantallas de maqueta antes de llegar al primer control.
+
+    El estado solo manda por debajo de `@md`; a partir de ahí el CSS la abre y el
+    botón desaparece, así que no hay forma de esconderla donde no estorba.
+  */
   return (
     <div className={cn('overflow-hidden rounded-lg border', className)}>
-      <div className="space-y-1 border-b p-4">
-        <p className="text-sm font-medium">Así lo recibe</p>
-        <p className="text-muted-foreground text-xs">{when}</p>
+      <button
+        type="button"
+        aria-expanded={abierta}
+        onClick={() => setAbierta((v) => !v)}
+        className="@md:hidden flex w-full items-center gap-3 p-4 text-left"
+      >
+        <Cabecera when={when} />
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            'text-muted-foreground size-4 shrink-0 transition-transform',
+            abierta && 'rotate-180',
+          )}
+        />
+      </button>
+      <div className="@md:block hidden p-4">
+        <Cabecera when={when} />
       </div>
+
+      <div className={cn('@md:block', abierta ? 'block' : 'hidden')}>
+        {/*
+          Dentro y no encima: cerrada, cuatro pastillas flotando sobre un panel
+          plegado no eligen nada y en un teléfono se parten en dos filas.
+        */}
+        <div role="tablist" aria-label="Qué aviso se está viendo" className="flex flex-wrap gap-1.5 px-4 pb-3">
+          {tabs.map((tab) => (
+            <button
+              key={tab.label}
+              type="button"
+              role="tab"
+              aria-selected={tab.active}
+              onClick={tab.onSelect}
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                tab.active
+                  ? 'bg-primary text-primary-foreground border-transparent font-medium'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
       {/*
         Fondo de conversación, no del producto: lo que se está mirando es un
@@ -83,15 +135,26 @@ export function MessagePreview({
         </div>
       </div>
 
-      <div className="text-muted-foreground flex gap-2.5 border-t p-4 text-xs">
-        <MessageCircle aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-        <p>
-          <strong className="text-foreground font-medium">El primer renglón lo pone la plantilla</strong>{' '}
-          y su texto exacto lo aprueba Meta. Los otros dos los armas tú aquí, y son los que se ven
-          arriba tal como van a salir.
-        </p>
+        <div className="text-muted-foreground flex gap-2.5 border-t p-4 text-xs">
+          <MessageCircle aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          <p>
+            <strong className="text-foreground font-medium">
+              El primer renglón lo pone la plantilla
+            </strong>{' '}
+            y su texto exacto lo aprueba Meta. Los otros dos los armas tú aquí.
+          </p>
+        </div>
       </div>
     </div>
+  )
+}
+
+function Cabecera({ when }: { when: string }) {
+  return (
+    <span className="min-w-0 flex-1">
+      <span className="block text-sm font-medium">Así lo recibe</span>
+      <span className="text-muted-foreground block text-xs">{when}</span>
+    </span>
   )
 }
 

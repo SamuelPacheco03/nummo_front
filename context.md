@@ -1890,6 +1890,25 @@ escribirle a la gente— para poder prepararla.
 **El botón de guardar va pegado abajo.** La pantalla es larga y en un teléfono acababa al final
 de un desplazamiento entero, después de cuatro tarjetas.
 
+**Y en un teléfono la pantalla es otra, no la misma encogida.** Apilar sin más daba un muro:
+seis tarjetas idénticas con su párrafo, la vista previa comiéndose un cuarto del scroll antes de
+tocar nada, tres etapas convertidas en cajas casi vacías y siete pastillas de horario a 40 px con
+la hora en 9. Cuatro cambios, todos por container query:
+
+1. **La vista previa se pliega** a un renglón y se abre a propósito. Es lo primero que se quiere
+   ver, pero también mide media pantalla. Las pastillas de qué aviso se mira van **dentro**: sobre
+   un panel cerrado no eligen nada y se partían en dos filas.
+2. **Las etapas dejan de ser tarjetas y pasan a filas**: interruptor, nombre y stepper en una
+   línea. El raíl no se dibuja —sin él no hay línea de tiempo que leer— así que la caja alrededor
+   solo era aire.
+3. **El horario se agrupa en tres renglones** con `groupWeek`: «Lunes a viernes 07:00–19:00».
+   Siete columnas solo cuando caben.
+4. **El texto se recorta a una línea por sección** y el porqué se va a la (i). En 390 px el
+   párrafo explicativo es la mitad de lo que hay que leer para tocar un desplegable.
+
+Y **«Enviar ahora» baja al final**: es una acción puntual, no un ajuste, y en medio partía la
+lectura en dos.
+
 ### A dónde escribe el deudor
 
 **El número desde el que salen los recordatorios no recibe respuestas.** El de la plataforma

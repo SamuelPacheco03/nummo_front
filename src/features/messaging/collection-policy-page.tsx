@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { Field } from '@/components/ui/field'
+import { InfoHint } from '@/components/ui/info-hint'
 import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -370,25 +371,6 @@ export function CollectionPolicyPage() {
               cuenta nada. En columna ocupa la suya entera.
             */}
             <div className="@5xl:col-start-2 @5xl:row-start-1 @5xl:sticky @5xl:top-4 @5xl:max-w-none max-w-xl space-y-2">
-              <div role="tablist" aria-label="Qué aviso se está viendo" className="flex flex-wrap gap-1.5">
-                {AVISOS.map((aviso, i) => (
-                  <button
-                    key={aviso.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={i === verAviso}
-                    onClick={() => setVerAviso(i)}
-                    className={cn(
-                      'rounded-full border px-2.5 py-1 text-xs transition-colors',
-                      i === verAviso
-                        ? 'bg-primary text-primary-foreground border-transparent font-medium'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {aviso.chip}
-                  </button>
-                ))}
-              </div>
               <MessagePreview
                 template={plantillaDe(avisoVisto.key)}
                 paymentLines={renglonesDePago}
@@ -398,14 +380,15 @@ export function CollectionPolicyPage() {
                   email: organization?.contactEmail ?? null,
                 }}
                 when={cuandoSale}
+                tabs={AVISOS.map((aviso, i) => ({
+                  label: aviso.chip,
+                  active: i === verAviso,
+                  onSelect: () => setVerAviso(i),
+                }))}
               />
             </div>
 
             <div className="space-y-4 @5xl:col-start-1 @5xl:row-start-1">
-              {/* Solo con la política **guardada** como activa: apagada, el endpoint
-                  responde 409 y el botón no tendría sentido. */}
-              {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
-
               {/*
                 Apagada se atenúa pero **se sigue pudiendo tocar**: lo normal es
                 dejarlo configurado y encenderlo al final, y bloquearlo obligaría a
@@ -419,8 +402,8 @@ export function CollectionPolicyPage() {
                       <div>
                         <p className="text-sm font-medium">Cuándo se le escribe</p>
                         <p className="text-muted-foreground text-xs">
-                          Cada cuenta pasa por estas etapas <strong>una sola vez</strong>. Si no
-                          te pagan, <strong>Nummo no vuelve a insistir</strong> por esa cuenta.
+                          Cada cuenta pasa por estas etapas <strong>una sola vez</strong>: si no
+                          te pagan, <strong>no volvemos a insistir</strong>.
                         </p>
                       </div>
                       <span className="text-muted-foreground shrink-0 text-xs">
@@ -502,10 +485,16 @@ export function CollectionPolicyPage() {
                           su singular y su plural — con una sola saldría «tienes 1
                           facturas vencidas».
                         */}
+                        {/*
+                          El porqué de que sean dos —Meta no pluraliza y saldría
+                          «tienes 1 facturas vencidas»— va en la (i) y no en el
+                          párrafo: en un teléfono ese renglón de más es la mitad de
+                          lo que hay que leer para tocar un desplegable.
+                        */}
                         <p className="text-muted-foreground text-xs">
-                          A quien debe varias cuentas se le escribe <strong>una sola vez</strong>{' '}
-                          con el total. Por eso cada momento lleva dos plantillas: Meta no
-                          pluraliza, y con una sola saldría «tienes 1 facturas vencidas».
+                          A quien debe varias se le escribe <strong>una sola vez</strong> con el
+                          total, por eso cada momento lleva dos.{' '}
+                          <InfoHint>Meta no pluraliza: con una sola plantilla saldría «tienes 1 facturas vencidas».</InfoHint>
                         </p>
                       </div>
                       <Link to="/config/plantillas" className="text-brand shrink-0 text-sm underline">
@@ -568,11 +557,11 @@ export function CollectionPolicyPage() {
                     <div>
                       <p className="text-sm font-medium">Dónde puede pagar</p>
                       <p className="text-muted-foreground text-xs">
-                        El renglón de «cómo pagar» del mensaje lo arman{' '}
+                        Lo arman{' '}
                         <Link to="/maestros/cuentas" className="text-brand underline">
-                          las cuentas que marques como publicadas
+                          las cuentas publicadas
                         </Link>
-                        . Aquí solo va el enlace, si tienes uno.
+                        . Aquí solo va el enlace.
                       </p>
                     </div>
                     {/*
@@ -598,6 +587,15 @@ export function CollectionPolicyPage() {
                     </Field>
                   </CardContent>
                 </Card>
+
+                {/*
+                  Al final y no en medio: es una **acción puntual** —adelantar la
+                  pasada de hoy—, no un ajuste, y puesta entre las tarjetas de
+                  configuración partía la lectura en dos. Solo con la política
+                  **guardada** como activa: apagada, el endpoint responde 409 y el
+                  botón no tendría sentido.
+                */}
+                {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
               </div>
             </div>
 

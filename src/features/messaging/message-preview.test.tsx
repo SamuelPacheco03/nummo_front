@@ -33,6 +33,7 @@ const pintar = (props: Partial<Parameters<typeof MessagePreview>[0]> = {}) =>
       paymentLink=""
       contact={{ phone: '310 594 8908', email: null }}
       when="Sale 3 días antes del vencimiento, a las 12:00."
+      tabs={[{ label: 'Por vencer · una', active: true, onSelect: () => {} }]}
       {...props}
     />,
   )
@@ -89,6 +90,8 @@ test('sin plantilla se dice que ese aviso no sale, en vez de pintar una burbuja 
 })
 
 test('dice cuándo sale, que es la otra mitad de la pregunta', () => {
+  // Dos veces en el DOM: la cabecera plegable del teléfono y la fija de escritorio.
+  // Las separa el ancho del contenedor, no el DOM.
   pintar()
-  expect(screen.getByText('Sale 3 días antes del vencimiento, a las 12:00.')).toBeInTheDocument()
+  expect(screen.getAllByText('Sale 3 días antes del vencimiento, a las 12:00.')).toHaveLength(2)
 })

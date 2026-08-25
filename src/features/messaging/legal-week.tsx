@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react'
 import type { CollectionPolicySchedule } from '@/api/generated/model'
 import { cn } from '@/lib/utils'
+import { groupWeek } from './schedule'
 
 /** Días ISO en la inicial con la que se leen de un vistazo. */
 const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
@@ -13,10 +14,15 @@ const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
  * de esconderse: es lo que explica por qué un recordatorio no salió el domingo, y
  * esa pregunta se hace justo en esta pantalla.
  *
- * Siete pastillas y no una tabla de tres filas, porque lo que se busca aquí es
- * comprobar un día concreto, no leer un horario de arriba abajo. Y **el domingo
- * dice «nunca» con la palabra**: pintarlo como una franja vacía —«00:00–00:00»—
- * diría que se escribe a medianoche.
+ * Dos formas según el sitio que haya, y no es un capricho:
+ *
+ * - **Con sitio, siete pastillas.** Lo que se busca es comprobar un día concreto
+ *   —«¿el sábado sí?»— y una pastilla por día se mira sin leer.
+ * - **En un teléfono, tres renglones agrupados.** Siete columnas en 390 px salen a
+ *   40 px cada una y la hora acaba en 9 px, que no se lee: ahí es mejor la frase.
+ *
+ * En las dos, **el domingo dice «nunca» con la palabra**: pintarlo como una
+ * franja vacía —«00:00–00:00»— diría que se escribe a medianoche.
  */
 export function LegalWeek({
   schedule,
@@ -37,7 +43,19 @@ export function LegalWeek({
         )}
       </div>
 
-      <ul className="mt-3 flex gap-1.5">
+      {/* Agrupada: los días seguidos que comparten franja van en un renglón. */}
+      <dl className="@md:hidden mt-2.5 space-y-1 text-sm">
+        {groupWeek(schedule.week).map(({ label, window }) => (
+          <div key={label} className="flex items-baseline justify-between gap-3">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className={cn('shrink-0', window ? 'nums' : 'text-muted-foreground')}>
+              {window ? `${window.start} – ${window.end}` : 'No se contacta'}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <ul className="@md:flex mt-3 hidden gap-1.5">
         {LETRAS.map((letra, i) => {
           const franja = schedule.week[String(i + 1)] ?? null
           return (

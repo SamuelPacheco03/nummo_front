@@ -68,7 +68,7 @@ export function StageTimeline({
         <span>DESPUÉS</span>
       </div>
 
-      <div className="@xl:grid-cols-3 mt-3 grid gap-3">
+      <div className="@xl:grid-cols-3 @xl:gap-3 @xl:mt-3 mt-1 grid gap-2">
         <StageCard
           label="Avisar antes"
           unit={before.days === 1 ? 'día antes' : 'días antes'}
@@ -80,7 +80,7 @@ export function StageTimeline({
 
         <div
           className={cn(
-            'flex flex-col justify-between rounded-lg border p-3.5',
+            '@xl:p-3.5 flex flex-col justify-between rounded-lg border p-3',
             onDue ? 'border-brand/35 bg-brand/4' : 'bg-muted/40',
           )}
         >
@@ -91,9 +91,10 @@ export function StageTimeline({
           {/*
             La única de las tres que no se recupera: su texto dice «vence hoy» y
             mandarlo tarde sería falso, así que si no sale ese día se pierde y lo
-            recoge el de mora.
+            recoge el de mora. En un teléfono la salvedad sobra: se cuenta en la
+            guía, no en cada renglón de un ajuste.
           */}
-          <p className="text-muted-foreground mt-3 text-xs">
+          <p className="text-muted-foreground @xl:block mt-3 hidden text-xs">
             Sale esa mañana. Si no alcanza a salir ese día, no se recupera.
           </p>
         </div>
@@ -156,22 +157,27 @@ function StageCard({
   return (
     <div
       className={cn(
-        'rounded-lg border p-3.5',
+        '@xl:block @xl:p-3.5 flex items-center gap-3 rounded-lg border p-3',
         stage.on ? 'border-brand/35 bg-brand/4' : 'bg-muted/40',
       )}
     >
-      <label className={cn('flex items-center gap-2.5', disabled ? 'opacity-60' : 'cursor-pointer')}>
+      <label
+        className={cn(
+          '@xl:flex-none flex min-w-0 flex-1 items-center gap-2.5',
+          disabled ? 'opacity-60' : 'cursor-pointer',
+        )}
+      >
         <Switch
           size="sm"
           checked={stage.on}
           disabled={disabled}
           onCheckedChange={(on) => onChange({ ...stage, on })}
         />
-        <span className="text-sm font-medium">{label}</span>
+        <span className="truncate text-sm font-medium">{label}</span>
       </label>
 
       {stage.on ? (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="@xl:mt-3 flex shrink-0 items-center gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -183,11 +189,13 @@ function StageCard({
           >
             <Minus />
           </Button>
-          <p className="min-w-0 flex-1 text-center">
+          <p className="@xl:flex-1 min-w-0 text-center">
             <output className="nums text-lg font-semibold" aria-label={`${label}, ${unit}`}>
               {stage.days}
             </output>
-            <span className="text-muted-foreground ml-1.5 text-xs">{unit}</span>
+            {/* La unidad solo cuando hay sitio: en una fila estrecha el número y
+                su interruptor ya dicen de qué va, y «días después» la parte. */}
+            <span className="text-muted-foreground @xl:inline ml-1.5 hidden text-xs">{unit}</span>
           </p>
           <Button
             type="button"
@@ -202,7 +210,9 @@ function StageCard({
           </Button>
         </div>
       ) : (
-        <p className="text-muted-foreground mt-3 text-xs">Apagada: no sale este aviso.</p>
+        <p className="text-muted-foreground @xl:mt-3 @xl:block hidden text-xs">
+          Apagada: no sale este aviso.
+        </p>
       )}
     </div>
   )

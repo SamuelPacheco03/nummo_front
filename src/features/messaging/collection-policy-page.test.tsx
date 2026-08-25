@@ -248,7 +248,8 @@ test('la mora lleva dos plantillas, y la pantalla explica por qué', () => {
 
   expect(screen.getByLabelText(/Vencida, cuando es una sola cuenta/)).toBeInTheDocument()
   expect(screen.getByLabelText(/Vencida, cuando son varias/)).toBeInTheDocument()
-  expect(screen.getByText(/Meta no pluraliza/)).toBeInTheDocument()
+  // El porqué vive en la (i): el párrafo dice el qué, la ayuda el motivo.
+  expect(screen.getByText(/cada momento lleva dos/)).toBeInTheDocument()
 })
 
 test('sin la de resumen NO se apaga el aviso: se degrada, y se dice sin ámbar', () => {
@@ -490,7 +491,7 @@ test('la pantalla dice lo que nadie va a suponer: la mora avisa UNA vez', () => 
     que la pantalla lo diga.
   */
   pintar()
-  expect(screen.getByText(/no vuelve a insistir/)).toBeInTheDocument()
+  expect(screen.getByText(/no volvemos a insistir/)).toBeInTheDocument()
   expect(screen.getByText(/de 3 avisos por cuenta/)).toBeInTheDocument()
 })
 
