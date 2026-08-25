@@ -112,10 +112,28 @@ pnpm preview    # única forma de probar el service worker (y la consola vive en
 pnpm typecheck  # tsc -b --noEmit
 pnpm lint       # oxlint
 pnpm test       # vitest run
-pnpm e2e        # playwright test
+pnpm e2e        # playwright test (exige nummo-api en :4010)
+pnpm shots      # capturas de una pantalla con el API doblada, SIN backend
 pnpm api:gen    # regenera el cliente desde contract/openapi.json
 pnpm icons:gen  # regenera favicons e iconos PWA desde brand/logo_nummo.png
 ```
+
+## Mira la pantalla antes de darla por buena
+
+Sin `nummo-api` no se puede usar la app… pero **sí se puede ver**:
+
+```bash
+RUTA=/app/config/cobranza pnpm shots            # 390, 768, 1280 y 1440
+RUTA=/app/cartera/cxc ANCHOS=390 TEMA=dark pnpm shots
+```
+
+Sale en `.shots/` (no se versiona) y se abre con la herramienta de leer imágenes. El API la
+dobla `e2e/mock-api.ts`; lo que no esté en su tabla se contesta con una página vacía, así que
+añadir una pantalla nueva suele ser añadir una fila.
+
+**Úsalo antes de entregar cualquier cambio visual.** Razonar la maquetación no basta: un `lg:`
+mira la ventana y esta app tiene pantallas dentro de columnas estrechas, y eso solo se ve
+mirando.
 
 ## Contexto del repositorio
 

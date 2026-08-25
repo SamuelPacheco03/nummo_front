@@ -306,7 +306,7 @@ export function CollectionPolicyPage() {
 
           {/* ---------- El interruptor, y lo que está pasando ---------- */}
           <Card>
-            <CardContent className="@md:flex-nowrap flex flex-wrap items-center gap-4">
+            <CardContent className="@md:flex-row @md:items-center flex flex-col gap-4">
               <label
                 className={cn(
                   'flex min-w-0 flex-1 items-center gap-4',
@@ -364,7 +364,12 @@ export function CollectionPolicyPage() {
               arriba, junto al interruptor, y no al final de cuatro tarjetas. En
               ancho se coloca a la derecha por rejilla, sin depender del orden.
             */}
-            <div className="space-y-2 @5xl:col-start-2 @5xl:row-start-1 @5xl:sticky @5xl:top-4">
+            {/*
+              Apilada se acota: la burbuja mide lo que mide un mensaje y el fondo
+              de conversación estirado a todo lo ancho deja un campo vacío que no
+              cuenta nada. En columna ocupa la suya entera.
+            */}
+            <div className="@5xl:col-start-2 @5xl:row-start-1 @5xl:sticky @5xl:top-4 @5xl:max-w-none max-w-xl space-y-2">
               <div role="tablist" aria-label="Qué aviso se está viendo" className="flex flex-wrap gap-1.5">
                 {AVISOS.map((aviso, i) => (
                   <button

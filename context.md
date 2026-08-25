@@ -1799,6 +1799,37 @@ del contenedor.
 **Un diálogo que quiera pasarse del ancho por defecto manda las dos**: `max-w-none
 sm:max-w-none`, y su ancho de verdad aparte.
 
+### Cómo se mira la app sin backend
+
+`pnpm shots` levanta el front, **dobla el API** (`e2e/mock-api.ts`) y captura una pantalla a
+varios anchos en `.shots/`:
+
+```bash
+RUTA=/app/config/cobranza pnpm shots
+RUTA=/app/config/cobranza ANCHOS=390 TEMA=dark pnpm shots
+```
+
+Existe por una carencia concreta: el contenedor donde se desarrolla no tiene `nummo-api`, así
+que las pantallas se entregaban razonadas pero **nunca vistas** — y así se colaron dos
+problemas de maquetación seguidos que un vistazo habría cazado.
+
+Cuatro decisiones que lo hacen fiable:
+
+1. **Config aparte de `playwright.config.ts`.** Aquella exige backend en el 4010 y hace login de
+   verdad; ese es justo el requisito que aquí no se puede cumplir.
+2. **Lo que no esté en la tabla de rutas se contesta con una página vacía**, no con un 404: una
+   pantalla a medio pintar despista más que una lista sin filas.
+3. **Afirma que el `<h1>` está visible** antes de capturar. Sin eso, un fallo de datos se
+   entrega como una imagen gris que parece un diseño.
+4. **El tema se pide con `emulateMedia`**, no escribiendo en `localStorage`: la clave del store
+   es un detalle interno y fingirla falla en silencio — la primera versión sacó capturas en
+   claro creyendo que eran oscuras.
+
+Sus datos están elegidos para que las pantallas se vean **llenas y realistas**, no para afirmar
+nada: no es un test, es un espejo. Y ya se ganó el sueldo — la primera tanda de capturas
+descubrió que el desplegable de plantillas enseñaba `cobro_vencido`, el nombre en Meta, en vez
+de `displayName`.
+
 ### Dentro de Configuración, el ancho no lo decide la ventana
 
 **`sm:` y `lg:` miran la ventana, no el sitio donde está el bloque.** Es la trampa de este

@@ -2,7 +2,7 @@ import { Field } from '@/components/ui/field'
 import { NativeSelect } from '@/components/ui/native-select'
 import { StatusBadge } from '@/components/ui/status-badge'
 import type { WhatsAppTemplate } from '@/api/generated/model'
-import { paymentAwareUpgrade, saysWherePay } from './labels'
+import { parameterLabel, paymentAwareUpgrade, saysWherePay } from './labels'
 
 /**
  * Un desplegable de plantillas con **el hueco nombrado**.
@@ -128,7 +128,7 @@ export function TemplateField({
           <StatusBadge tone="success" label="Lista para enviar" />
           {chosen.parameterNames.length > 0 && (
             <span className="text-muted-foreground">
-              Usa: {chosen.parameterNames.join(', ')}
+              Usa: {chosen.parameterNames.map(parameterLabel).join(', ')}
             </span>
           )}
         </div>
@@ -141,7 +141,13 @@ export function TemplateField({
 function TemplateOption({ template }: { template: WhatsAppTemplate }) {
   return (
     <option value={template.templateKey}>
-      {template.name}
+      {/*
+        `displayName` primero: `name` es como se llama la plantilla **en Meta**
+        —`cobro_vencido`— y en un desplegable en español no dice nada. Cae a
+        `name` porque el contrato lo firma nulable, y una opción sin texto es
+        peor que una con la clave cruda.
+      */}
+      {template.displayName ?? template.name}
       {/* `canSend` viene calculado: no se deduce del `status`. */}
       {template.canSend ? '' : ' — todavía no se puede enviar'}
     </option>
