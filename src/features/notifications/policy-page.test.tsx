@@ -129,7 +129,8 @@ test('la moneda con la que se compara se dice, no se supone', async () => {
   estado.ajustes = ajustes({ lowBalanceCurrency: 'USD' })
   await abrir()
 
-  expect(screen.getByText(/Se compara con tus cuentas en USD/)).toBeVisible()
+  // Se vigila que la moneda APAREZCA, no cómo esté redactada la frase.
+  expect(screen.getByText(/una cuenta en USD/)).toBeVisible()
 })
 
 test('sin el permiso propio se mira, no se toca', async () => {

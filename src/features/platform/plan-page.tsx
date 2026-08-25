@@ -152,8 +152,9 @@ function UpgradeDialog({
         <DialogHeader>
           <DialogTitle>Pasar a {plan.name}</DialogTitle>
           <DialogDescription>
-            El cambio de plan lo aplica el equipo de Nummo: escríbenos y lo movemos. Lo que ya
-            tienes se conserva siempre — cambiar de plan ajusta los topes, nunca borra datos.
+            El cambio lo hacemos nosotros: escríbenos y lo movemos. Lo que ya tienes se
+            conserva — cambiar de plan sube o baja hasta dónde te alcanza, nunca borra nada de
+            lo tuyo.
           </DialogDescription>
         </DialogHeader>
       </DialogContent>
@@ -290,10 +291,17 @@ export function PlanPage() {
             En frase y del color del texto, no la micro-etiqueta en VERSALITAS
             que llevan las páginas de precios: §11.1 la prohíbe justamente porque
             cuando todo grita, nada jerarquiza.
+
+            **Y en las palabras de quien paga, no en las nuestras.** «Se paga por
+            capacidad», «cuánta cartera cabe» o «el ciclo completo» son como
+            hablamos del producto por dentro; quien está mirando precios solo
+            quiere saber qué gana si paga más. La respuesta es «lo mismo, pero para
+            más», y así es como hay que decirlo.
           */}
           <p className="text-muted-foreground max-w-prose text-sm">
-            Se paga por capacidad: lo que cambia entre planes es cuánta cartera, cuánto equipo y
-            cuánta IA caben. El ciclo completo —cobrar, pagar, mora y reportes— está en todos.
+            Todos los planes hacen lo mismo: cobrar, registrar pagos, controlar la mora y ver
+            los reportes. Lo que cambia es <strong>hasta dónde te alcanza</strong>: cuántos
+            clientes puedes tener, cuánta gente de tu equipo entra y cuánto puedes usar a Numi.
           </p>
 
           {plansLoading ? (

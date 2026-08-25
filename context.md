@@ -1106,6 +1106,37 @@ la bandeja, que es lo que §24 pide distinguir.
 vuelve a pedir cuando llega la señal. Un `refetchInterval` por encima sería pagar dos veces por la
 misma noticia.
 
+## 11.1.8b. En las palabras de quien lee, no en las nuestras
+
+La trampa más fácil de este repositorio: **razonamos mucho las decisiones, y ese razonamiento
+se cuela tal cual en la pantalla**. Sale un texto correcto, denso y escrito desde dentro —para
+alguien que ya conoce el producto—, cuando quien lo lee solo quiere saber qué le pasa a él.
+
+Tres que se colaron y hubo que reescribir:
+
+| Se leía | Debía leerse |
+| --- | --- |
+| «Se paga por capacidad: lo que cambia entre planes es cuánta cartera, cuánto equipo y cuánta IA caben» | «Todos los planes hacen lo mismo. Lo que cambia es **hasta dónde te alcanza**: cuántos clientes, cuánta gente de tu equipo y cuánto puedes usar a Numi» |
+| «Un umbral en cero haría que cualquier peso interrumpiera a media oficina» | «No es lo mismo que poner 0: con 0 te avisaríamos de cualquier monto, hasta de un peso» |
+| «desde qué cifra vale la pena interrumpir» | «desde qué monto se notifica» |
+
+El patrón es el mismo en las tres: **explicaban el porqué de la decisión en vez de decir qué
+pasa**. El porqué es valiosísimo y tiene su sitio —el comentario del código, este documento—;
+la pantalla se queda con la consecuencia.
+
+Dos señales de que un texto está escrito desde dentro:
+
+1. **Nombra conceptos que solo existen aquí**: «umbral», «capacidad», «el ciclo completo»,
+   «la categoría entera», «nacen vacíos». Si la palabra no aparecería en la frase que el
+   usuario le diría a un compañero, sobra.
+2. **Argumenta contra una alternativa que el usuario nunca consideró.** «Un umbral en cero
+   haría que…» está respondiendo a un debate de diseño que él no tuvo.
+
+**Y el test mira la regla, no la frase.** Un `getByText` con el copy exacto convierte cada
+mejora de redacción en un test roto, y el reflejo entonces es no tocar el texto. Se afirma lo
+que no puede dejar de ser cierto —que la moneda aparezca, que el diálogo diga que el cambio lo
+hace Nummo—, no cómo está redactado hoy.
+
 ## 11.1.9. Una sola conexión en vivo
 
 `lib/realtime-stream.ts` mantiene **un** `EventSource` contra `/organizations/:orgId/events` para

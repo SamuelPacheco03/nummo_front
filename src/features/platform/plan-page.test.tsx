@@ -198,5 +198,10 @@ test('el plan contratado no ofrece contratarse, y los demás dicen qué pasa al 
   expect(within(actual).queryByRole('button')).toBeNull()
 
   await userEvent.click(screen.getByRole('button', { name: /consultar pro/i }))
-  expect(await screen.findByText(/lo aplica el equipo de Nummo/)).toBeInTheDocument()
+  /*
+    Se vigila la regla y no el copy: el diálogo tiene que decir que el cambio lo
+    hace Nummo, porque el contrato no publica una compra y el botón no puede
+    fingir un carrito.
+  */
+  expect(await screen.findByText(/El cambio lo hacemos nosotros/)).toBeInTheDocument()
 })

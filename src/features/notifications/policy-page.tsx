@@ -104,7 +104,7 @@ export function NotificationPolicyPage() {
     <div className="space-y-4">
       <PageHeader
         title="Política de avisos"
-        description="Cuándo salen los recordatorios de toda la organización y desde qué cifra vale la pena interrumpir."
+        description="A qué hora salen los avisos de toda la organización y desde qué monto se notifica."
       />
 
       {isPending ? (
@@ -137,7 +137,7 @@ export function NotificationPolicyPage() {
               <Field
                 label="Avisar cuando una cuenta baje de"
                 htmlFor="low-balance"
-                hint={`Se compara con tus cuentas en ${settings?.lowBalanceCurrency ?? 'COP'}. Déjalo vacío para no avisar de saldos bajos.`}
+                hint={`Te avisamos cuando una cuenta en ${settings?.lowBalanceCurrency ?? 'COP'} baje de aquí. En blanco, no se avisa de saldos bajos.`}
               >
                 <MoneyInput
                   id="low-balance"
@@ -151,7 +151,7 @@ export function NotificationPolicyPage() {
               <Field
                 label="Avisar de lo que registra el equipo desde"
                 htmlFor="team-activity"
-                hint="Solo se avisa de un movimiento ajeno si llega a este monto. Déjalo vacío para no avisar de la actividad del equipo."
+                hint="Te avisamos de lo que registre otra persona del equipo solo si llega a este monto. En blanco, no se avisa de nada de eso."
               >
                 <MoneyInput
                   id="team-activity"
@@ -162,10 +162,15 @@ export function NotificationPolicyPage() {
                 />
               </Field>
 
-              <Note tone="warning" title="Vacío apaga la alerta, no la pone en cero">
-                Un umbral en cero haría que cualquier peso interrumpiera a media oficina, y lo
-                primero que haría cualquiera es apagar la categoría entera. Los dos nacen vacíos a
-                propósito.
+              {/*
+                En las palabras de quien lo lee. «Un umbral en cero», «interrumpir
+                a media oficina» o «nacen vacíos» es cómo lo razonamos por dentro;
+                quien está en esta pantalla solo necesita saber qué pasa si deja el
+                campo en blanco, y que no es lo mismo que escribir un cero.
+              */}
+              <Note tone="warning" title="Dejarlo vacío apaga el aviso">
+                No es lo mismo que poner 0: con 0 te avisaríamos de cualquier monto, hasta de un
+                peso. En blanco, ese aviso simplemente no se manda.
               </Note>
 
               <p className="text-muted-foreground text-sm">
