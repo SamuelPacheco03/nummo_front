@@ -37,9 +37,9 @@ const COPY = {
   description:
     'Cada gasto de este recurrente se registra como pagado el día que vence, sin que nadie lo toque.',
   warning: {
-    title: 'Por encima del umbral no paga: pide firma',
+    title: 'Si es un monto grande no paga: pide firma',
     body:
-      'Si el monto supera el umbral de aprobación de la organización, el automático deja una solicitud esperando aprobación y no mueve dinero. Por debajo, el egreso se registra solo.',
+      'Si el gasto supera el monto que la organización pide aprobar, el automático deja una solicitud esperando firma y no mueve dinero. Por debajo, el egreso se registra solo.',
   },
   enableTitle: 'Activar el pago automático',
   disableDescription:

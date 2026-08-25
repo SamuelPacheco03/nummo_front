@@ -150,7 +150,7 @@ function RunResult({ result }: { result: CollectionRemindersRun }) {
 
       {queued > 0 && (
         <p className="text-muted-foreground text-xs">
-          Están en cola: el envío lo hace el worker en segundos.{' '}
+          Están en cola: salen en unos segundos.{' '}
           <Link to="/cartera/cobranza" className="text-brand underline">
             Ver el historial
           </Link>

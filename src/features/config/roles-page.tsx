@@ -161,8 +161,12 @@ export function RolesPage() {
 
       {canManage && !hasFeature && (
         <Note tone="info" title="Crear roles propios es de un plan superior">
-          Los que ya tengas siguen funcionando y sus miembros trabajan igual — bajar de plan
-          bloquea crear, nunca borra. <Link className="underline underline-offset-4" to="/config/plan">Mira los planes</Link>.
+          Los que ya tienes siguen funcionando y tu equipo trabaja igual. Con este plan no
+          puedes crear más, pero no se borra ninguno.{' '}
+          <Link className="underline underline-offset-4" to="/config/plan">
+            Mira los planes
+          </Link>
+          .
         </Note>
       )}
 

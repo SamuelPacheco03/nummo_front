@@ -401,7 +401,7 @@ export function NotificationPreferencesPage() {
                     solo enseña: es la pregunta que deja «Te avisamos 5 y 1 días
                     antes» sin contestar. */}
                 <p className="text-muted-foreground text-sm">
-                  La hora de los recordatorios y los umbrales los fija la organización en{' '}
+                  La hora de los avisos y desde qué montos se notifica los fija la organización en{' '}
                   <Link className="text-brand underline underline-offset-4" to="/config/avisos">
                     la política de avisos
                   </Link>

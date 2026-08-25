@@ -23,7 +23,7 @@ export function ReadOnlyBanner() {
     <div className="mb-6">
       <Note tone="warning" title={`Organización ${orgStatus(status).label.toLowerCase()}`}>
         Puedes consultar y exportar toda tu información, pero registrar y modificar está
-        deshabilitado. Solo la plataforma puede reactivarla.
+        deshabilitado. Solo el equipo de Nummo puede reactivarla.
       </Note>
     </div>
   )

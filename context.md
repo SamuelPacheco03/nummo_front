@@ -1132,6 +1132,17 @@ Dos señales de que un texto está escrito desde dentro:
 2. **Argumenta contra una alternativa que el usuario nunca consideró.** «Un umbral en cero
    haría que…» está respondiendo a un debate de diseño que él no tuvo.
 
+**Dos audiencias, dos vocabularios.** `admin/` es la consola de plataforma y `playground/` la
+mesa de pruebas de Numi: ahí el lector **es** alguien que conoce el sistema, y decir «el
+grounding obligó a repetir» o «sin `confirmed: true` devuelve su petición de confirmación» es
+exacto y correcto. La regla de arriba vale para lo que ve un cliente, no para todo el
+repositorio.
+
+Palabras que se colaron y hubo que cambiar, para reconocer la familia: **umbral** (→ monto),
+**el worker** (→ «salen en unos segundos»), **la plataforma** (→ el equipo de Nummo), **el
+canal recibe estados de entrega** (→ «si el cliente responde, ese mensaje no le llega a
+nadie»), **no está montado en este despliegue** (→ «todavía no está activo en Nummo»).
+
 **Y el test mira la regla, no la frase.** Un `getByText` con el copy exacto convierte cada
 mejora de redacción en un test roto, y el reflejo entonces es no tocar el texto. Se afirma lo
 que no puede dejar de ser cierto —que la moneda aparezca, que el diálogo diga que el cambio lo

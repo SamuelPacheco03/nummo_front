@@ -68,7 +68,7 @@ const SKIP_REASONS: Record<string, string> = {
   template_not_approved: 'Meta todavía no aprobó la plantilla, o la pausó',
   missing_parameters: 'A la plantilla le falta un dato que el escaneo no pudo armar',
   quota_exceeded: 'Se agotó el cupo de mensajes del mes',
-  channel_not_configured: 'El canal no está montado en este despliegue',
+  channel_not_configured: 'WhatsApp todavía no está activo en Nummo',
   no_whatsapp_account: 'La organización no tiene cuenta con la que enviar',
 }
 

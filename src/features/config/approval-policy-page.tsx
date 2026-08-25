@@ -51,9 +51,9 @@ export function ApprovalPolicyPage() {
         // pasar por aprobación hasta el café—.
         data: { disbursementApprovalThreshold: threshold.trim() || null },
       })
-      toast.success(threshold.trim() ? 'Umbral guardado' : 'Aprobaciones desactivadas')
+      toast.success(threshold.trim() ? 'Monto guardado' : 'Aprobaciones desactivadas')
     } catch (err) {
-      toastApiError(err, 'No se pudo guardar el umbral')
+      toastApiError(err, 'No se pudo guardar el monto')
     }
   }
 
@@ -68,7 +68,7 @@ export function ApprovalPolicyPage() {
 
       {!hasFeature && (
         <Note tone="info" title="Las aprobaciones son de un plan superior">
-          Si ya tenías un umbral puesto, sigue aplicándose.{' '}
+          Si ya tenías un monto puesto, sigue aplicándose.{' '}
           <Link className="underline underline-offset-4" to="/config/plan">
             Mira los planes
           </Link>
@@ -99,8 +99,8 @@ export function ApprovalPolicyPage() {
               </Field>
 
               <Note tone="warning" title="Qué cambia al ponerlo">
-                Un egreso por encima del umbral se registra como <strong>solicitud</strong>: no
-                sale dinero hasta que alguien con permiso de aprobar lo firma, y{' '}
+                Un egreso por encima de ese monto se registra como <strong>solicitud</strong>:
+                no sale dinero hasta que alguien con permiso de aprobar lo firma, y{' '}
                 <strong>quien lo registró no puede aprobarlo</strong>. Se encuentran filtrando la
                 lista de egresos por «Espera aprobación».
               </Note>
