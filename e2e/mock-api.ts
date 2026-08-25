@@ -62,9 +62,11 @@ const PERMISOS = [
 function plantilla(over: Record<string, unknown> = {}) {
   return {
     id: 't1', organizationId: null, templateKey: 'cobro_vencido',
-    name: 'cobro_vencido',  // el nombre en Meta; la UI enseña displayName displayName: 'Vencida — solo recordatorio',
+    name: 'cobro_vencido',  // el nombre en Meta; la UI enseña displayName
+    displayName: 'Vencida — solo recordatorio',
     purpose: 'El aviso de mora de una sola cuenta.',
-    language: 'es', category: 'UTILITY', status: 'APPROVED', canSend: true,
+    // `metaCategory` es la de Meta —precio y aprobación—; `categoryId`, la nuestra.
+    language: 'es', metaCategory: 'UTILITY', categoryId: 'wc1', status: 'APPROVED', canSend: true,
     parameterNames: ['nombre', 'monto', 'dias'],
     rejectedReason: null, lastSyncedAt: '2026-08-20T10:00:00Z', createdAt: '2026-08-01T10:00:00Z',
     ...over,
@@ -77,6 +79,18 @@ const TEMPLATES = [
   plantilla({ id: 't3', templateKey: 'cobro_por_vencer_resumen_v2', displayName: 'Varias por vencer', purpose: 'Varias cuentas por vencer, con el total.', parameterNames: ['nombre', 'monto', 'cuantas', 'como_pagar'] }),
   plantilla({ id: 't4', templateKey: 'cobro_vencido_v2', displayName: 'Vencida — dice dónde pagar', purpose: 'El aviso de mora de una sola cuenta, con los datos de pago.', parameterNames: ['nombre', 'monto', 'dias', 'como_pagar'] }),
   plantilla({ id: 't5', templateKey: 'cobro_vencido_resumen_v2', displayName: 'Varias vencidas', purpose: 'Varias cuentas vencidas, con el saldo total.', parameterNames: ['nombre', 'monto', 'cuantas', 'como_pagar'], status: 'PENDING', canSend: false }),
+  // Una propia y sin clasificar: es lo que hace que las fichas repartan algo.
+  plantilla({ id: 't6', organizationId: ORG_ID, templateKey: 'cita_recordatorio', name: 'cita_recordatorio', displayName: 'Recordatorio de cita', purpose: 'Le recuerda a un cliente la cita de mañana.', parameterNames: ['nombre', 'fecha'], categoryId: null }),
+]
+
+/**
+ * Las nuestras, no las de Meta. `templateCount` es cuántas cuelgan de cada una, y
+ * `editable` en `false` es lo que apaga el botón de editar en las de la
+ * plataforma: la fila la comparten todas las organizaciones.
+ */
+const CATEGORIAS = [
+  { id: 'wc1', scope: 'PLATFORM', editable: false, key: 'cobranza', name: 'Cobranza', description: 'Los avisos con los que se cobra.', position: 0, isActive: true, templateCount: 5, createdAt: '2026-08-01T10:00:00Z' },
+  { id: 'wc2', scope: 'ORGANIZATION', editable: true, key: 'citas', name: 'Citas', description: null, position: 1, isActive: true, templateCount: 0, createdAt: '2026-08-20T10:00:00Z' },
 ]
 
 const CUENTAS = [
@@ -186,7 +200,10 @@ const RUTAS: [RegExp, unknown][] = [
   }],
   [/\/messaging\/collection-policy$/, POLICY],
   [/\/notifications\/preferences$/, PREFERENCIAS],
-  // Este NO viene paginado: el contrato lo declara como { templates: [...] }.
+  // Estos dos NO vienen paginados: el contrato los declara como { templates: [...] }
+  // y { categories: [...] }. El de categorías va primero porque «template-categories»
+  // no casa con el otro, pero leerlos juntos ahorra buscarlos por separado.
+  [/\/whatsapp\/template-categories/, { categories: CATEGORIAS }],
   [/\/whatsapp\/templates/, { templates: TEMPLATES }],
   [/\/financial-accounts/, pagina(CUENTAS)],
   [/\/organizations\/[^/]+$/, ORG],
