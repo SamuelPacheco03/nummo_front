@@ -280,7 +280,7 @@ export function CollectionPolicyPage() {
           onRetry={() => void refetch()}
         />
       ) : (
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="@container space-y-4">
           {enabled && sinContacto && (
             <OrgContactNote orgId={orgId} canManageOrg={can('organization.manage')} />
           )}
@@ -304,54 +304,99 @@ export function CollectionPolicyPage() {
             </Note>
           )}
 
+          {/* ---------- El interruptor, y lo que está pasando ---------- */}
+          <Card>
+            <CardContent className="@md:flex-nowrap flex flex-wrap items-center gap-4">
+              <label
+                className={cn(
+                  'flex min-w-0 flex-1 items-center gap-4',
+                  writable ? 'cursor-pointer' : 'opacity-60',
+                )}
+              >
+                <Switch checked={enabled} disabled={!writable} onCheckedChange={setEnabled} />
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    <span className="font-medium">Cobranza automática</span>
+                    <StatusBadge
+                      tone={enabled ? 'success' : 'muted'}
+                      label={enabled ? 'Encendida' : 'Apagada'}
+                    />
+                  </span>
+                  <span className="text-muted-foreground mt-0.5 block text-xs">
+                    {enabled
+                      ? 'Nummo revisa los vencimientos y le manda el aviso al teléfono del deudor.'
+                      : 'Puedes dejarlo todo listo aquí; no sale ningún mensaje hasta que la enciendas.'}
+                  </span>
+                </span>
+              </label>
+
+              {/* Lo que hay que saber sin leer nada más: cuántas veces y a qué hora. */}
+              <dl className="@md:border-t-0 @md:border-l @md:pt-0 @md:pl-6 flex gap-6 border-t pt-4">
+                <div>
+                  <dd className="nums text-xl font-semibold">{etapas.count}</dd>
+                  <dt className="text-muted-foreground text-xs">
+                    de {topeDeAvisos} avisos por cuenta
+                  </dt>
+                </div>
+                <div>
+                  <dd className="nums text-xl font-semibold">{sendAt}</dd>
+                  <dt className="text-muted-foreground text-xs">hora de envío</dt>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+
           {/*
-            Dos columnas en escritorio y la vista previa pegada arriba: se mira
-            mientras se toca lo de al lado, que es justo lo que la hace útil.
+            **Container queries y no breakpoints de ventana.** Esta pantalla vive
+            dentro de la columna de Configuración, que `SectionedLayout` capa en
+            48rem a propósito —el ancho lo pone el layout para que saltar entre
+            hermanas no reencuadre la pantalla—. Un `lg:` mira la ventana: con el
+            navegador a 1800 px se activaba igual y partía esas 48rem en dos
+            columnas de 400 px, que es donde se rompía todo.
+
+            `@5xl` son 64 rem: dentro de Configuración **nunca** se cumple y la
+            vista previa se queda arriba, apilada. Si algún día el layout deja más
+            sitio, la columna aparece sola.
           */}
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-            <div className="space-y-4">
-              {/* ---------- El interruptor, y lo que está pasando ---------- */}
-              <Card>
-                <CardContent className="flex flex-wrap items-center gap-4 sm:flex-nowrap">
-                  <label
+          <div className="grid gap-4 @5xl:grid-cols-[minmax(0,1fr)_20rem] @5xl:items-start">
+            {/*
+              La vista previa va **primera en el DOM**: apilada tiene que quedar
+              arriba, junto al interruptor, y no al final de cuatro tarjetas. En
+              ancho se coloca a la derecha por rejilla, sin depender del orden.
+            */}
+            <div className="space-y-2 @5xl:col-start-2 @5xl:row-start-1 @5xl:sticky @5xl:top-4">
+              <div role="tablist" aria-label="Qué aviso se está viendo" className="flex flex-wrap gap-1.5">
+                {AVISOS.map((aviso, i) => (
+                  <button
+                    key={aviso.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === verAviso}
+                    onClick={() => setVerAviso(i)}
                     className={cn(
-                      'flex min-w-0 flex-1 items-center gap-4',
-                      writable ? 'cursor-pointer' : 'opacity-60',
+                      'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                      i === verAviso
+                        ? 'bg-primary text-primary-foreground border-transparent font-medium'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    <Switch checked={enabled} disabled={!writable} onCheckedChange={setEnabled} />
-                    <span className="min-w-0">
-                      <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                        <span className="font-medium">Cobranza automática</span>
-                        <StatusBadge
-                          tone={enabled ? 'success' : 'muted'}
-                          label={enabled ? 'Encendida' : 'Apagada'}
-                        />
-                      </span>
-                      <span className="text-muted-foreground mt-0.5 block text-xs">
-                        {enabled
-                          ? 'Nummo revisa los vencimientos y le manda el aviso al teléfono del deudor.'
-                          : 'Puedes dejarlo todo listo aquí; no sale ningún mensaje hasta que la enciendas.'}
-                      </span>
-                    </span>
-                  </label>
+                    {aviso.chip}
+                  </button>
+                ))}
+              </div>
+              <MessagePreview
+                template={plantillaDe(avisoVisto.key)}
+                paymentLines={renglonesDePago}
+                paymentLink={paymentLink.trim()}
+                contact={{
+                  phone: organization?.contactPhone ?? null,
+                  email: organization?.contactEmail ?? null,
+                }}
+                when={cuandoSale}
+              />
+            </div>
 
-                  {/* Lo que hay que saber sin leer nada más: cuántas veces y a qué hora. */}
-                  <dl className="flex gap-6 border-t pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6">
-                    <div>
-                      <dd className="nums text-xl font-semibold">{etapas.count}</dd>
-                      <dt className="text-muted-foreground text-xs">
-                        de {topeDeAvisos} avisos por cuenta
-                      </dt>
-                    </div>
-                    <div>
-                      <dd className="nums text-xl font-semibold">{sendAt}</dd>
-                      <dt className="text-muted-foreground text-xs">hora de envío</dt>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-
+            <div className="space-y-4 @5xl:col-start-1 @5xl:row-start-1">
               {/* Solo con la política **guardada** como activa: apagada, el endpoint
                   responde 409 y el botón no tendría sentido. */}
               {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
@@ -413,7 +458,7 @@ export function CollectionPolicyPage() {
 
                 {/* ---------- A qué hora, y el horario que fija la ley ---------- */}
                 <Card>
-                  <CardContent className="grid gap-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-start">
+                  <CardContent className="@2xl:grid-cols-[10rem_minmax(0,1fr)] @2xl:items-start grid gap-4">
                     <Field
                       label="A qué hora salen"
                       htmlFor="send-at"
@@ -463,7 +508,7 @@ export function CollectionPolicyPage() {
                       </Link>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="@xl:grid-cols-2 grid gap-4">
                       <TemplateField
                         id="due-soon"
                         label="Por vencer, cuando es una sola cuenta"
@@ -551,38 +596,6 @@ export function CollectionPolicyPage() {
               </div>
             </div>
 
-            {/* ---------- La vista previa ---------- */}
-            <div className="space-y-2 lg:sticky lg:top-4">
-              <div role="tablist" aria-label="Qué aviso se está viendo" className="flex flex-wrap gap-1.5">
-                {AVISOS.map((aviso, i) => (
-                  <button
-                    key={aviso.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={i === verAviso}
-                    onClick={() => setVerAviso(i)}
-                    className={cn(
-                      'rounded-full border px-2.5 py-1 text-xs transition-colors',
-                      i === verAviso
-                        ? 'bg-primary text-primary-foreground border-transparent font-medium'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {aviso.chip}
-                  </button>
-                ))}
-              </div>
-              <MessagePreview
-                template={plantillaDe(avisoVisto.key)}
-                paymentLines={renglonesDePago}
-                paymentLink={paymentLink.trim()}
-                contact={{
-                  phone: organization?.contactPhone ?? null,
-                  email: organization?.contactEmail ?? null,
-                }}
-                when={cuandoSale}
-              />
-            </div>
           </div>
 
           {policy?.updatedAt == null && (
@@ -596,8 +609,8 @@ export function CollectionPolicyPage() {
             final de un desplazamiento entero, después de cuatro tarjetas.
           */}
           {writable && (
-            <div className="bg-background/90 sticky bottom-0 -mx-4 flex justify-end border-t px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-lg sm:px-0">
-              <Button type="submit" disabled={save.isPending} className="w-full sm:w-auto">
+            <div className="bg-background/90 @md:mx-0 @md:px-0 sticky bottom-0 -mx-4 flex justify-end border-t px-4 py-3 backdrop-blur">
+              <Button type="submit" disabled={save.isPending} className="@md:w-auto w-full">
                 {save.isPending && <Loader className="size-4" />}
                 Guardar política
               </Button>

@@ -1799,6 +1799,29 @@ del contenedor.
 **Un diálogo que quiera pasarse del ancho por defecto manda las dos**: `max-w-none
 sm:max-w-none`, y su ancho de verdad aparte.
 
+### Dentro de Configuración, el ancho no lo decide la ventana
+
+**`sm:` y `lg:` miran la ventana, no el sitio donde está el bloque.** Es la trampa de este
+layout: `SectionedLayout` capa el contenido en **48 rem** a propósito —lo dice él mismo: el
+ancho lo pone el layout y no cada página, o saltar entre hermanas reencuadra la pantalla—, así
+que una página de Configuración **nunca** tiene más de 768 px por mucho que el navegador esté
+abierto de par en par.
+
+Ahí, un `lg:grid-cols-[1fr_22rem]` se cumple igual y parte esas 48 rem en dos columnas de
+400 px. Se rompió así la pantalla de cobranza entera: la vista previa apretada contra el borde y
+la tarjeta del interruptor con su descripción en una columna de un carácter de ancho.
+
+**Cualquier bloque dentro de Configuración usa container queries** (`@container` en el
+contenedor y `@xl:`, `@5xl:`… en los hijos), que miden **su** sitio. Dos ventajas además de la
+obvia: la pantalla se ve igual dentro y fuera del cajón lateral, y si el layout deja más sitio
+algún día la columna aparece sola sin tocar la página.
+
+Las referencias que hacen falta: `@xl` son 36 rem —lo que piden tres nodos de etapa en fila— y
+`@5xl` son 64 rem, que dentro de Configuración no se cumple nunca: por eso la vista previa se
+queda apilada arriba, y va **primera en el DOM** con su sitio en la rejilla puesto a mano
+(`@5xl:col-start-2`), para que apilada quede junto al interruptor y no al final de cuatro
+tarjetas.
+
 ### La pantalla de cobranza se mira mientras se toca
 
 El rediseño de la pantalla de política, y lo que hay que conservar si se vuelve a tocar.

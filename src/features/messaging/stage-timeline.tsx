@@ -20,9 +20,12 @@ export interface Stage {
  * Cada etapa dispara **una sola vez en toda la vida de la cuenta**. No es un tope
  * que el backend comprueba: es que no existen más etapas.
  *
- * En un teléfono la línea se pone **vertical**. Horizontal, tres nodos con su
- * stepper no caben en 360 px sin encoger los controles por debajo del tamaño al
- * que se les puede dar (§46).
+ * Se apila cuando **su contenedor** es estrecho, no cuando lo es la ventana: esta
+ * pantalla vive dentro de la columna de Configuración, capada en 48 rem, así que
+ * un `sm:` de ventana la habría puesto en tres columnas de 130 px con el
+ * navegador abierto de par en par. Tres nodos con su stepper piden unas 36 rem;
+ * por debajo van uno encima de otro, con los controles al tamaño al que se les
+ * puede dar (§46).
  */
 export function StageTimeline({
   before,
@@ -44,7 +47,7 @@ export function StageTimeline({
   return (
     <div>
       {/* El raíl solo existe en escritorio: apilado, la línea la hace el borde. */}
-      <div aria-hidden className="relative mt-2 hidden h-8 sm:block">
+      <div aria-hidden className="@xl:block relative mt-2 hidden h-8">
         <div className="absolute top-[13px] right-[8%] left-[8%] flex">
           <span className={cn('h-[3px] flex-1 rounded-full', before.on ? 'bg-brand' : 'bg-border')} />
           <span className="bg-border h-[3px] w-8 shrink-0" />
@@ -59,13 +62,13 @@ export function StageTimeline({
         </div>
       </div>
 
-      <div className="text-muted-foreground mt-1 hidden grid-cols-3 gap-4 text-center text-[0.7rem] tracking-wide sm:grid">
+      <div className="text-muted-foreground @xl:grid mt-1 hidden grid-cols-3 gap-4 text-center text-[0.7rem] tracking-wide">
         <span>ANTES</span>
         <span className="text-foreground font-semibold">DÍA DEL VENCIMIENTO</span>
         <span>DESPUÉS</span>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <div className="@xl:grid-cols-3 mt-3 grid gap-3">
         <StageCard
           label="Avisar antes"
           unit={before.days === 1 ? 'día antes' : 'días antes'}
