@@ -6,7 +6,6 @@ import { Drawer } from '@/components/ui/drawer'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
-import { Note } from '@/components/ui/note'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toastApiError } from '@/features/platform/errors'
 import { plural } from '@/lib/format'
@@ -175,9 +174,7 @@ export function TemplateCategoriesDrawer({
       title={
         editing === null ? 'Categorías' : editing === 'new' ? 'Nueva categoría' : 'Editar categoría'
       }
-      meta={
-        editing === null ? 'Con qué se agrupan las plantillas de esta organización.' : undefined
-      }
+      meta={editing === null ? 'Con qué se agrupan las plantillas.' : undefined}
       footer={
         editing !== null ? (
           <div className="flex justify-end gap-2">
@@ -255,12 +252,16 @@ export function TemplateCategoriesDrawer({
             </div>
           )}
 
-          {/* Se dice una vez arriba y no en cada fila: es la misma regla para
-              todas, y repetirla siete veces la convierte en ruido. */}
-          <Note tone="info" title="Las de Nummo no se editan">
-            Las comparten todas las organizaciones, así que renombrarlas se las renombraría a las
-            demás. Y una categoría con plantillas dentro no se archiva: primero se sacan.
-          </Note>
+          {/*
+            Dos frases y en gris, no un aviso con caja. Lo que hay que saber son
+            las consecuencias —no se cambian, no se archivan llenas—; el porqué
+            —la fila es compartida, archivar y desclasificar son dos decisiones—
+            es asunto nuestro y estaba escrito para nosotros.
+          */}
+          <p className="text-muted-foreground text-xs">
+            Las de Nummo se usan, pero no se cambian. Y para archivar una tuya, primero sácale las
+            plantillas.
+          </p>
         </div>
       )}
     </Drawer>
