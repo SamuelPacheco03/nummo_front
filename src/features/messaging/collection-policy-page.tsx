@@ -365,28 +365,6 @@ export function CollectionPolicyPage() {
               arriba, junto al interruptor, y no al final de cuatro tarjetas. En
               ancho se coloca a la derecha por rejilla, sin depender del orden.
             */}
-            {/*
-              Apilada se acota: la burbuja mide lo que mide un mensaje y el fondo
-              de conversación estirado a todo lo ancho deja un campo vacío que no
-              cuenta nada. En columna ocupa la suya entera.
-            */}
-            <div className="@5xl:col-start-2 @5xl:row-start-1 @5xl:sticky @5xl:top-4 @5xl:max-w-none max-w-xl space-y-2">
-              <MessagePreview
-                template={plantillaDe(avisoVisto.key)}
-                paymentLines={renglonesDePago}
-                paymentLink={paymentLink.trim()}
-                contact={{
-                  phone: organization?.contactPhone ?? null,
-                  email: organization?.contactEmail ?? null,
-                }}
-                when={cuandoSale}
-                tabs={AVISOS.map((aviso, i) => ({
-                  label: aviso.chip,
-                  active: i === verAviso,
-                  onSelect: () => setVerAviso(i),
-                }))}
-              />
-            </div>
 
             <div className="space-y-4 @5xl:col-start-1 @5xl:row-start-1">
               {/*
@@ -588,18 +566,42 @@ export function CollectionPolicyPage() {
                   </CardContent>
                 </Card>
 
-                {/*
-                  Al final y no en medio: es una **acción puntual** —adelantar la
-                  pasada de hoy—, no un ajuste, y puesta entre las tarjetas de
-                  configuración partía la lectura en dos. Solo con la política
-                  **guardada** como activa: apagada, el endpoint responde 409 y el
-                  botón no tendría sentido.
-                */}
-                {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
               </div>
+
+            {/*
+              Apilada se acota: la burbuja mide lo que mide un mensaje y el fondo
+              de conversación estirado a todo lo ancho deja un campo vacío que no
+              cuenta nada. En columna ocupa la suya entera.
+            */}
+            <div className="@5xl:col-start-2 @5xl:row-start-1 @5xl:sticky @5xl:top-4 @5xl:max-w-none max-w-xl space-y-2">
+              <MessagePreview
+                template={plantillaDe(avisoVisto.key)}
+                paymentLines={renglonesDePago}
+                paymentLink={paymentLink.trim()}
+                contact={{
+                  phone: organization?.contactPhone ?? null,
+                  email: organization?.contactEmail ?? null,
+                }}
+                when={cuandoSale}
+                tabs={AVISOS.map((aviso, i) => ({
+                  label: aviso.chip,
+                  active: i === verAviso,
+                  onSelect: () => setVerAviso(i),
+                }))}
+              />
+            </div>
             </div>
 
           </div>
+
+            {/*
+              Al final y no en medio: es una **acción puntual** —adelantar la
+              pasada de hoy—, no un ajuste, y puesta entre las tarjetas de
+              configuración partía la lectura en dos. Solo con la política
+              **guardada** como activa: apagada, el endpoint responde 409 y el
+              botón no tendría sentido.
+            */}
+            {policy?.enabled && <RunNowPanel orgId={orgId} canRun={can('messaging.send')} />}
 
           {policy?.updatedAt == null && (
             <p className="text-muted-foreground text-xs">

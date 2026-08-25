@@ -1865,8 +1865,14 @@ El rediseño de la pantalla de política, y lo que hay que conservar si se vuelv
 
 **La vista previa es la pieza que la cambia de formulario a herramienta.** Antes se configuraba
 a ciegas: eliges una plantilla por su nombre y no sabes qué le llega a tu cliente hasta que le
-llega. Ahora va en columna pegajosa al lado, y se actualiza con lo que se está tocando —incluso
-tocar un selector de plantilla la trae a esa.
+llega. Se actualiza con lo que se está tocando —incluso tocar un selector de plantilla la trae a
+ese aviso—.
+
+**Va al final, y no arriba**: es el *resultado* de lo que se configura, así que la pantalla se
+lee configurando de arriba abajo y termina en «así queda», justo antes de «Enviar ahora». Ponerla
+segunda enseñaba el resultado antes de que hubiera nada que resultar. En una columna ancha
+—`@5xl`, que dentro de Configuración no llega— se colocaría pegajosa a la derecha con
+`col-start-2`, sin depender del orden del DOM.
 
 **Y no finge el texto del mensaje, a propósito.** El contrato publica de una plantilla su
 `purpose` y sus `parameterNames`, pero **no su cuerpo**: el texto lo aprueba Meta y no viaja.
