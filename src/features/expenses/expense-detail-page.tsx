@@ -9,6 +9,7 @@ import {
 import { useExpenseCategories } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
+import { withApply } from '@/lib/settlement'
 import { expenseStatus } from './labels'
 import { useCancelExpense, useExpense, useWriteOffExpense } from './hooks'
 
@@ -91,7 +92,7 @@ export function ExpenseDetailPage() {
       listTo={LIST}
       copy={COPY}
       statusOf={expenseStatus}
-      settleTo={(supplierId) => `/gastos/egresos/nuevo?supplier=${supplierId}`}
+      settleTo={(contactId, id) => withApply(`/gastos/egresos/nuevo?supplier=${contactId}`, id)}
       settleIcon={Coins}
       canSettle={can('disbursements.create')}
       canManage={can('expenses.manage')}

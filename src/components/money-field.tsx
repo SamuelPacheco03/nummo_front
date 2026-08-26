@@ -16,6 +16,16 @@ interface MoneyFieldProps<T extends FieldValues> {
   disabled?: boolean
   allowNegative?: boolean
   className?: string
+  /**
+   * Se llama **además** de avisar a RHF, con el valor crudo.
+   *
+   * Existe para el campo que otro sitio puede rellenar solo: el monto de
+   * registrar un pago se calcula con las cuentas que se marcan, y necesita
+   * saber que quien escribió fue una persona para dejar de recalcularlo.
+   * `Controller` se queda el `onChange`, así que sin esto habría que
+   * reimplementar el campo entero para enterarse (§«nada por duplicado»).
+   */
+  onValueChange?: (raw: string) => void
 }
 
 /**
@@ -36,6 +46,7 @@ export function MoneyField<T extends FieldValues>({
   disabled,
   allowNegative,
   className,
+  onValueChange,
 }: MoneyFieldProps<T>) {
   return (
     <Field label={label} htmlFor={id} required={required} error={error} hint={hint} info={info}>
@@ -50,7 +61,10 @@ export function MoneyField<T extends FieldValues>({
             allowNegative={allowNegative}
             className={className}
             value={(field.value as string | undefined) ?? ''}
-            onChange={field.onChange}
+            onChange={(raw) => {
+              field.onChange(raw)
+              onValueChange?.(raw)
+            }}
             onBlur={field.onBlur}
             ref={field.ref}
           />

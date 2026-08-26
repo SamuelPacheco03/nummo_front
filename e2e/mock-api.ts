@@ -205,6 +205,25 @@ function cuentaPorCobrar(id: string, dueDate: string, balance: string, displaySt
   }
 }
 
+const CATEGORIAS_GASTO = [
+  { id: '66666666-6666-4666-8666-666666666661', name: 'Arriendo', description: null, position: 0, isActive: true, createdAt: '2026-01-15T10:00:00Z', updatedAt: '2026-01-15T10:00:00Z' },
+  { id: '66666666-6666-4666-8666-666666666662', name: 'Servicios', description: null, position: 1, isActive: true, createdAt: '2026-01-15T10:00:00Z', updatedAt: '2026-01-15T10:00:00Z' },
+]
+
+function gasto(id: string, dueDate: string, balance: string, displayStatus: string) {
+  return {
+    expenseId: id, supplierContactId: CONTACTO_ID, supplierName: 'Mariana Ospina Ríos',
+    expenseCategoryId: '66666666-6666-4666-8666-666666666661', dueDate, currency: 'COP',
+    originalAmount: balance, paidTotal: '0.00', balance, displayStatus,
+  }
+}
+
+const CXP = [
+  gasto('77777777-7777-4777-8777-777777777771', '2026-06-15', '1200000.00', 'OVERDUE'),
+  gasto('77777777-7777-4777-8777-777777777772', '2026-07-15', '1200000.00', 'OVERDUE'),
+  gasto('77777777-7777-4777-8777-777777777773', '2026-08-15', '1200000.00', 'PENDING'),
+]
+
 const CXC = [
   cuentaPorCobrar('55555555-5555-4555-8555-555555555551', '2026-05-05', '380000.00', 'OVERDUE'),
   cuentaPorCobrar('55555555-5555-4555-8555-555555555552', '2026-06-05', '380000.00', 'OVERDUE'),
@@ -241,6 +260,8 @@ const RUTAS: [RegExp, unknown][] = [
   [/\/financial-accounts/, pagina(CUENTAS)],
   [/\/payment-methods/, pagina(METODOS)],
   [/\/billing-concepts/, pagina(CONCEPTOS)],
+  [/\/expense-categories/, pagina(CATEGORIAS_GASTO)],
+  [/\/expenses$/, pagina(CXP)],
   [/\/receivables$/, pagina(CXC)],
   [/\/contacts\/[^/]+$/, CONTACTOS[0]],
   [/\/contacts$/, pagina(CONTACTOS)],

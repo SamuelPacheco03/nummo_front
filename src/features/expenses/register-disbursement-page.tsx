@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { SettlementDrawer } from '@/components/settlement-drawer'
 import {
+  applyId,
   isOpenAccount,
   returnPath,
   type SettlementCopy,
@@ -15,7 +16,7 @@ import type {
   DisbursementDetail,
   RegisterDisbursementAllocationsItem,
 } from '@/api/generated/model'
-import { DISBURSEMENT_PURPOSE_LABELS } from './labels'
+import { DISBURSEMENT_PURPOSE_LABELS, expenseStatus } from './labels'
 import { useExpenses, useRegisterDisbursement } from './hooks'
 
 const LIST = '/gastos/egresos'
@@ -32,11 +33,13 @@ const COPY: SettlementCopy = {
   account: 'Cuenta origen',
   directConcept: 'Categoría del egreso',
   directConceptMissing: 'Selecciona la categoría del egreso',
-  allocate: 'Aplicar a gastos',
+  allocate: '¿Qué gastos cubre?',
   open: ['gasto abierto', 'gastos abiertos'],
-  settleAll: 'Pagar todo',
+  unit: ['gasto', 'gastos'],
+  selectAll: 'Seleccionar todos',
+  clearAll: 'Quitar todos',
   nothingOpen: 'Este proveedor no tiene gastos abiertos. El egreso queda como anticipo.',
-  leftover: 'Lo que sobre queda como anticipo al proveedor.',
+  leftover: 'como anticipo al proveedor',
 }
 
 /**
@@ -58,6 +61,8 @@ export function RegisterDisbursementPage() {
   // Quien llegó desde una cuenta por pagar vuelve a ella, no a la ficha del
   // egreso: lo que estaba mirando era la cartera.
   const back = returnPath(searchParams)
+  // Y el gasto que estaba mirando llega marcado: venía a pagar ese.
+  const preselected = applyId(searchParams)
 
   const { items: categories } = useExpenseCategories(orgId, {
     page: 1,
@@ -80,6 +85,8 @@ export function RegisterDisbursementPage() {
             dueDate: e.dueDate,
             balance: e.balance,
             currency: e.currency,
+            catalogId: e.expenseCategoryId,
+            status: e.displayStatus,
           }))
         : [],
     [supplierId, expenses],
@@ -124,7 +131,9 @@ export function RegisterDisbursementPage() {
       partyId={supplierId}
       onPartyChange={setSupplierId}
       openAccounts={openAccounts}
-      amountInfo="Monto total que pagas. Los miles se separan solos; usa coma para decimales. Luego puedes repartirlo entre los gastos de abajo."
+      preselectedAccountId={preselected}
+      statusOf={expenseStatus}
+      amountInfo="Se suma solo con los gastos que marques arriba. Puedes escribir otro: lo que sobre queda como anticipo al proveedor."
       isSubmitting={register.isPending}
       onSubmit={onSubmit}
     />

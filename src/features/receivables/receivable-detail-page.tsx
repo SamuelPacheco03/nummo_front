@@ -15,6 +15,7 @@ import { useCurrentOrg } from '@/features/organizations/hooks'
 import { useCan } from '@/features/platform/permissions'
 import { toastApiError } from '@/features/platform/errors'
 import { formatAmount, formatDateHuman, plural } from '@/lib/format'
+import { withApply } from '@/lib/settlement'
 import { cn } from '@/lib/utils'
 import { AddAdjustmentDialog } from './add-adjustment-dialog'
 import { WaiveInterestDialog } from './waive-interest-dialog'
@@ -132,7 +133,7 @@ export function ReceivableDetailPage() {
       listTo={LIST}
       copy={COPY}
       statusOf={receivableStatus}
-      settleTo={(payerId) => `/cartera/pagos/nuevo?payer=${payerId}`}
+      settleTo={(contactId, id) => withApply(`/cartera/pagos/nuevo?payer=${contactId}`, id)}
       settleIcon={Banknote}
       canSettle={can('payments.create')}
       canManage={canManage}

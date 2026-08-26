@@ -116,7 +116,7 @@ export function AccountDetail({
   copy: AccountDetailCopy
   statusOf: (status: string) => { tone: StatusTone; label: string }
   /** Formulario de saldar, con la contraparte ya puesta. */
-  settleTo: (contactId: string | null) => string
+  settleTo: (contactId: string | null, accountId: string) => string
   settleIcon: LucideIcon
   /**
    * Quién puede saldar y quién puede cerrar la cuenta. Vienen de fuera porque el
@@ -193,7 +193,7 @@ export function AccountDetail({
           <>
             {canSettle && !isClosed && (
               <Button asChild size="sm">
-                <Link to={withReturn(settleTo(data.contactId), pathname)}>
+                <Link to={withReturn(settleTo(data.contactId, data.id), pathname)}>
                   <SettleIcon aria-hidden className="size-4" />
                   {copy.settleLabel}
                 </Link>

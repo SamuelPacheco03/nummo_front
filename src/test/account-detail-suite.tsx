@@ -96,6 +96,8 @@ export function runAccountDetailSuite(c: AccountDetailCase) {
     expect(enlace.getAttribute('href')).toContain(c.registrarHref)
     // Y con por dónde volver, para no dejar a nadie en la lista equivocada.
     expect(enlace.getAttribute('href')).toContain('volver=%2Fficha')
+    // Y con esta misma cuenta marcada: se vino a saldar esta, no a elegir otra.
+    expect(enlace.getAttribute('href')).toContain('aplicar=a1')
   })
 
   test('una cuenta cerrada ya no se salda ni se cierra otra vez', () => {

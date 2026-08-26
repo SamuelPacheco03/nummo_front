@@ -2210,6 +2210,75 @@ línea deja de traducir nada y la pantalla se queda solo con lo suyo.
 
 ---
 
+## 11.1.17. El dinero se aplica eligiendo, no repartiendo
+
+Registrar un pago —o un egreso— contra varias cuentas abiertas se hacía **al revés de como se
+piensa**. El formulario pedía primero el **Monto**, obligatorio, y al final de todo ofrecía una caja
+para repartirlo a mano cuenta por cuenta. Quien cobra no piensa así: piensa «me pagó mayo, junio y
+julio». El total es la **consecuencia** de esa frase, no su punto de partida.
+
+El precio era hacer la misma aritmética dos veces: sumar en la cabeza para escribir el total, y
+deshacer la suma en la pantalla rellenando cinco campos. Y el orden estaba atrancado por código —el
+botón de repartir se activaba solo con un monto escrito—, así que empezar por abajo era imposible
+aunque se quisiera.
+
+**Ahora se marcan cuentas y el monto se suma solo.**
+
+1. **La selección va antes que el monto**, justo detrás del contacto, porque es lo que lo decide.
+   Estaba después de fecha y referencia: en un teléfono quedaba **fuera de la pantalla**, y se
+   registraban pagos sin aplicar sin saber que había dónde aplicarlos.
+2. **Marcar es el gesto; el importe es la excepción.** La casilla pone el saldo entero —lo que pasa
+   casi siempre— y el campo de al lado solo hace falta para un abono parcial. No hay dos estados:
+   una cuenta está marcada **porque tiene importe**, así que teclear una cifra la marca y borrarla
+   la desmarca. Una casilla marcada que no aporta nada no puede existir.
+3. **El monto sigue siendo editable**, y tiene que serlo: un anticipo y un ingreso directo no tienen
+   cuentas que sumar, y un pago puede traer de más. En cuanto alguien lo toca es suyo y deja de
+   recalcularse.
+4. **Volver al total de lo marcado se ofrece, no se impone.** Se probó que el campo vacío volviera a
+   seguir a la selección y **peleaba con quien quiere escribir otro número**: borras para teclear y
+   la cifra reaparece antes de la primera tecla. Hoy, cuando el monto escrito no cuadra con lo
+   marcado, el resumen ofrece un «Usar $700.000» y ahí se decide.
+5. **La cuenta desde la que se entró llega marcada.** Quien pulsa «Cobrar» en la pensión de julio
+   viene a cobrar **esa**, y aterrizaba en cinco filas vacías sin ninguna pista de cuál era. Viaja
+   en la URL como `aplicar=<id>`, junto a `volver` (§21.1).
+
+### Una fila dice de qué es y cómo está
+
+Decía «Vence 5 may» y un saldo. Cinco pensiones del mismo pagador eran **cinco filas que no se
+distinguían entre sí**, y desde luego no se veía cuál estaba vencida. Hoy cada fila lleva el
+concepto o la categoría, el vencimiento, su `StatusBadge` y el saldo.
+
+El nombre del catálogo se **cruza en el cliente** contra el que la pantalla ya carga para los
+movimientos directos: `ReceivableBalance` y `ExpenseBalance` solo traen el id (§95.19), el viaje ya
+se hacía y no hay uno nuevo. El tono y la etiqueta del estado entran como `statusOf`, igual que en
+`AccountDetail`: «Vencida» y «Vencido» no son la misma palabra y un componente compartido no
+decide eso por su cuenta (§88.5).
+
+### Y lo que sobra se dice con palabras
+
+Al pie había una cifra rotulada «Sin asignar» y una nota que solo aparecía **cuando ya sobraba**:
+había que restar mentalmente para saber si el pago cuadraba. Los tres finales posibles se cuentan
+enteros, y la cifra va dentro de la frase:
+
+- «Se aplica completo a 3 cuentas.»
+- «Sobran $120.000, que quedan a favor del pagador.»
+- «Lo repartido supera el monto por $50.000.»
+
+### Dos botones que hacían casi lo mismo
+
+Convivían un enlace «Cobrar todo: $1.900.000» bajo el monto y un botón «Repartir» en la caja: uno
+rellenaba todo, el otro repartía lo escrito, y había que probarlos para saber cuál era cuál. Hoy es
+**uno** que dice lo que hace —«Seleccionar todas» / «Quitar todas»—, y el total abierto vive en la
+línea de contexto del encabezado, que es donde se consulta sin pulsar nada.
+
+### Un reparto solo vale para las cuentas que tiene delante
+
+Cambiar de contacto **dejaba en el estado las filas del anterior**, invisibles, y viajaban dentro
+del POST siguiente: cuentas de otra persona en este pago. Cambiar de contacto o de propósito
+descarta el reparto y, con él, el monto si lo puso la selección.
+
+---
+
 ## 11.2. Los componentes heredan su superficie
 
 Desde que el sidebar va oscuro también en tema claro (§4), la aplicación tiene **dos superficies
@@ -5566,7 +5635,8 @@ mismo commit, como cualquier otra prueba.
 - Todo bug corregido en lógica pura suma un test que lo reproduce.
 - No se persigue cobertura por cobertura: se prueban decisiones, no getters.
 - **Un par de pantallas espejo se prueba con una sola suite parametrizada**
-  (`test/accounts-list-suite.tsx`, `test/settlement-list-suite.tsx`): cada cara aporta sus
+  (`test/accounts-list-suite.tsx`, `test/settlement-list-suite.tsx`,
+  `test/settlement-drawer-suite.tsx`): cada cara aporta sus
   palabras, su endpoint y lo que de verdad la distingue, y las afirmaciones se escriben una vez.
   Dos archivos de pruebas calcados son el mismo duplicado que el componente compartido vino a
   quitar, y se separan igual de rápido — con el agravante de que unas pruebas que no coinciden no
@@ -5606,15 +5676,22 @@ siempre son palabras y un endpoint, así que viajan como props:
 | --- | --- | --- |
 | Cuentas por cobrar / por pagar | `AccountsList` (lista), `AccountDetail` (ficha) | `copy`, un hook que consulta su endpoint y sus acciones propias |
 | Aplicar anticipo de pago / de egreso | `AdvanceAllocationDialog` | `copy` (dos frases) y dos hooks: sus cuentas abiertas y su endpoint de reparto |
-| Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras) y `onSubmit` |
+| Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras), `onSubmit`, sus cuentas abiertas y su `statusOf` |
 | Pagos / egresos | `SettlementList`, `SettlementDetail`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 | Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
 | Plantillas del inquilino / de la consola | `TemplateCard` | El tercer dato de la línea de clave —la categoría nuestra o la de Meta—, el aviso bajo el estado y los botones |
 
 `SettlementDrawer` nació de dos archivos de ~310 líneas idénticos salvo por eso. Hoy el
-formulario vive una vez y cada página son ~120 líneas: sus palabras, su consulta de cuentas
-abiertas y su llamada al contrato. La lógica que no es de pantalla —qué cuenta admite dinero, qué
-entrega el formulario— vive en `lib/settlement.ts`, donde se puede probar sin montar nada.
+formulario vive una vez y cada página son ~130 líneas: sus palabras, su consulta de cuentas
+abiertas y su llamada al contrato. La lógica que no es de pantalla —qué cuenta admite dinero, cómo
+se reparte, qué entrega el formulario— vive en `lib/settlement.ts`, donde se puede probar sin montar
+nada. Cómo pregunta hoy ese formulario está en §11.1.17.
+
+**Y la aritmética del dinero vive ahí una sola vez.** `sumAllocations`, `fillAll`, `spreadAmount` y
+`allocationEntries` las comparten el formulario de registrar y el diálogo de anticipos, que hasta
+ahora tenían cada uno su copia del mismo bucle: dos redondeos que solo esperaban a que alguien
+tocara uno. Es el mismo error que §94.0 vino a corregir, escondido un nivel más abajo que los
+componentes.
 
 `AccountsList` fue el **cuarto en llegar, y el que más caro salió**. Cuentas por cobrar y por
 pagar eran dos archivos de ~500 líneas **idénticos en un 64%**: las mismas seis columnas en el
@@ -5719,7 +5796,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `ThemeProvider` · `ThemeToggle` | `components/theme-provider.tsx`, `theme-toggle.tsx` | Tema claro/oscuro/sistema y su selector |
 | `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
-| `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale |
+| `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale, eligiendo a qué cuentas va (§11.1.17) |
 | `SettlementList` | `components/settlement-list.tsx` | Listado de pagos o egresos |
 | `RecurringList` | `components/recurring-list.tsx` | Listado de acuerdos o gastos recurrentes |
 | `CashflowKpis` | `components/cashflow-kpis.tsx` | Cifras de flujo del mes, con comparación |
@@ -6148,7 +6225,7 @@ color, las listas de cartera y de gastos los pasarían desde la fila. Se cumpli�
 `expenseCategoryId` y nada más.
 
 Se pinta igualmente, **cruzando cada fila contra el catálogo que esas mismas pantallas ya cargaban
-para el nombre** (`catalogRowIcon`, §94): son cien registros como mucho, el viaje ya se hacía y no
+para el nombre** (`catalogRowIcon`, §94; y en el formulario de registrar, §11.1.17): son cien registros como mucho, el viaje ya se hacía y no
 hay uno nuevo. Lo que sigue abierto no es de rendimiento sino de dónde vive la verdad: una lista que
 se pagina en el servidor no debería necesitar un segundo viaje para saber cómo se pinta cada fila, y
 un catálogo de más de cien elementos dejaría filas sin icono sin decirlo.
@@ -6914,6 +6991,33 @@ OK.
 
 ---
 
+## Fase 30 — Se eligen cuentas, y el monto se suma solo ✅ **completada**
+
+Registrar un pago o un egreso contra varias cuentas abiertas pedía el total arriba para
+repartirlo a mano abajo: la misma aritmética dos veces, y la caja del reparto fuera de la
+pantalla en un teléfono. Se invirtió el orden —§11.1.17— y de paso se cerraron tres cosas
+que solo se ven al mirar la pantalla con datos dentro:
+
+1. **Las filas no se distinguían entre sí.** «Vence 5 may» y un saldo, cinco veces. Hoy llevan
+   concepto, estado y saldo, cruzando el catálogo que la pantalla ya cargaba (§95.19).
+2. **El reparto sobrevivía al cambio de contacto**, invisible, y viajaba dentro del POST
+   siguiente. Era un bug de verdad, no una molestia de diseño.
+3. **El formulario no tenía ninguna prueba.** Estaba compartido desde hacía tiempo y nada
+   sujetaba lo que promete. Ahora hay una suite parametrizada para las dos caras
+   (`test/settlement-drawer-suite.tsx`, 10 casos × 2).
+
+Y una lección de método que vale para la próxima: **la primera versión del «volver al total»
+se descartó al probarla**. Se había resuelto que vaciar el campo devolviera el mando a la
+selección; en la prueba se vio que eso pelea con quien borra para escribir otro número —la
+cifra reaparece antes de la primera tecla—. La salida es explícita porque la implícita se
+midió y era peor.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 931 tests en verde (20 nuevos de las
+dos caras y 8 de `lib/settlement`), y la pantalla mirada con `pnpm shots` en 390 / 768 / 1280
+/ 1440, claro y oscuro, en los dos lados del espejo.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -6947,6 +7051,7 @@ OK.
 | ✅ 27 | La Ley 2300 entra en la política | medio | 25, 26 (contrato) |
 | ✅ 28 | Las formas de pago vuelven a las cuentas | medio | 27 (contrato) |
 | ✅ 29 | Parón y revisión de las fases 25–28 | bajo | 28 |
+| ✅ 30 | Se eligen cuentas, y el monto se suma solo | medio | 5 |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

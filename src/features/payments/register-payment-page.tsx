@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { SettlementDrawer } from '@/components/settlement-drawer'
 import {
+  applyId,
   isOpenAccount,
   returnPath,
   type SettlementCopy,
@@ -14,6 +15,7 @@ import { useReceivables } from '@/features/receivables/hooks'
 import { toastApiError } from '@/features/platform/errors'
 import type { PaymentDetail, RegisterPaymentAllocationsItem } from '@/api/generated/model'
 import { PAYMENT_PURPOSE_LABELS } from './labels'
+import { receivableStatus } from '@/features/receivables/labels'
 import { useRegisterPayment } from './hooks'
 
 const LIST = '/cartera/pagos'
@@ -30,11 +32,13 @@ const COPY: SettlementCopy = {
   account: 'Cuenta destino',
   directConcept: 'Concepto del ingreso',
   directConceptMissing: 'Selecciona el concepto del ingreso',
-  allocate: 'Aplicar a cuentas por cobrar',
+  allocate: '¿Qué cuentas cubre?',
   open: ['cuenta abierta', 'cuentas abiertas'],
-  settleAll: 'Cobrar todo',
+  unit: ['cuenta', 'cuentas'],
+  selectAll: 'Seleccionar todas',
+  clearAll: 'Quitar todas',
   nothingOpen: 'Este pagador no tiene cuentas abiertas. El pago queda como saldo a su favor.',
-  leftover: 'Lo que sobre queda como saldo a favor del pagador.',
+  leftover: 'a favor del pagador',
 }
 
 /**
@@ -56,6 +60,8 @@ export function RegisterPaymentPage() {
   // Quien llegó desde una cuenta por cobrar vuelve a ella, no a la ficha del
   // pago: lo que estaba mirando era la cartera.
   const back = returnPath(searchParams)
+  // Y la cuenta que estaba mirando llega marcada: venía a cobrar esa.
+  const preselected = applyId(searchParams)
 
   const { items: concepts } = useBillingConcepts(orgId, {
     page: 1,
@@ -78,6 +84,8 @@ export function RegisterPaymentPage() {
             dueDate: r.dueDate,
             balance: r.balance,
             currency: r.currency,
+            catalogId: r.billingConceptId,
+            status: r.displayStatus,
           }))
         : [],
     [payerId, receivables],
@@ -122,7 +130,9 @@ export function RegisterPaymentPage() {
       partyId={payerId}
       onPartyChange={setPayerId}
       openAccounts={openAccounts}
-      amountInfo="Monto total recibido. Los miles se separan solos; usa coma para decimales. Luego puedes repartirlo entre las cuentas por cobrar de abajo."
+      preselectedAccountId={preselected}
+      statusOf={receivableStatus}
+      amountInfo="Se suma solo con las cuentas que marques arriba. Puedes escribir otro: lo que sobre queda como saldo a favor del pagador."
       isSubmitting={register.isPending}
       onSubmit={onSubmit}
     />

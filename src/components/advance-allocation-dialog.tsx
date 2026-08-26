@@ -14,6 +14,7 @@ import {
 import { MoneyInput } from '@/components/ui/money-input'
 import { toastApiError } from '@/features/platform/errors'
 import { useIdempotencyKey } from '@/lib/idempotency'
+import { spreadAmount, sumAllocations, type Allocation } from '@/lib/settlement'
 import { formatAmount, formatDateHuman } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -90,7 +91,7 @@ export function AdvanceAllocationDialog({
 }) {
   const idem = useIdempotencyKey()
   const { apply, isPending } = useApply(idem.key)
-  const [alloc, setAlloc] = useState<Record<string, string>>({})
+  const [alloc, setAlloc] = useState<Allocation>({})
   const availableNum = Number(available) || 0
 
   const targets = useTargets()
@@ -98,25 +99,13 @@ export function AdvanceAllocationDialog({
     () => targets.filter((t) => OPEN.has(t.displayStatus) && Number(t.balance) > 0),
     [targets],
   )
-  const assigned = useMemo(
-    () => Object.values(alloc).reduce((s, v) => s + (Number(v) || 0), 0),
-    [alloc],
-  )
+  const assigned = useMemo(() => sumAllocations(alloc), [alloc])
   const excess = assigned > availableNum + 0.001
 
-  const autoAllocate = () => {
-    let remaining = availableNum
-    const next: Record<string, string> = {}
-    for (const t of openTargets) {
-      if (remaining <= 0) break
-      const take = Math.min(Number(t.balance), remaining)
-      if (take > 0) {
-        next[t.id] = take.toFixed(2)
-        remaining -= take
-      }
-    }
-    setAlloc(next)
-  }
+  // El reparto por vencimiento vive en `lib/settlement` y lo comparte con el
+  // formulario de registrar: dos copias de la misma aritmética son dos
+  // redondeos que acaban separándose (§94).
+  const autoAllocate = () => setAlloc(spreadAmount(openTargets, availableNum))
 
   const submit = async () => {
     const allocations = Object.entries(alloc)
