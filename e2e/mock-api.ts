@@ -180,6 +180,39 @@ const SESIONES = [
   { id: 's2', createdAt: '2026-08-20T18:30:00Z', expiresAt: '2026-09-20T18:30:00Z', ipAddress: '190.85.12.7', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) Safari/605.1', current: false },
 ]
 
+const CONTACTO_ID = '22222222-2222-4222-8222-222222222222'
+
+const CONTACTOS = [
+  { id: CONTACTO_ID, contactType: 'PERSON', displayName: 'Mariana Ospina Ríos', firstName: 'Mariana', lastName: 'Ospina Ríos', companyName: null, documentType: 'CC', documentNumber: '1098765432', email: 'mariana@correo.co', phone: '+57 300 111 2233', address: null, notes: null, isActive: true, createdAt: '2026-01-20T10:00:00Z', updatedAt: '2026-01-20T10:00:00Z' },
+]
+
+const METODOS = [
+  { id: '33333333-3333-4333-8333-333333333331', name: 'Transferencia', methodType: 'BANK_TRANSFER', isActive: true, createdAt: '2026-01-15T10:00:00Z' },
+  { id: '33333333-3333-4333-8333-333333333332', name: 'Efectivo', methodType: 'CASH', isActive: true, createdAt: '2026-01-15T10:00:00Z' },
+]
+
+const CONCEPTOS = [
+  { id: '44444444-4444-4444-8444-444444444441', name: 'Pensión', description: null, position: 0, isActive: true, createdAt: '2026-01-15T10:00:00Z', updatedAt: '2026-01-15T10:00:00Z' },
+  { id: '44444444-4444-4444-8444-444444444442', name: 'Matrícula', description: null, position: 1, isActive: true, createdAt: '2026-01-15T10:00:00Z', updatedAt: '2026-01-15T10:00:00Z' },
+]
+
+function cuentaPorCobrar(id: string, dueDate: string, balance: string, displayStatus: string) {
+  return {
+    receivableId: id, payerContactId: CONTACTO_ID, payerName: 'Mariana Ospina Ríos',
+    beneficiaryContactId: null, billingConceptId: '44444444-4444-4444-8444-444444444441',
+    dueDate, currency: 'COP', originalAmount: balance, adjustmentsTotal: '0.00',
+    interestTotal: '0.00', totalDue: balance, paidTotal: '0.00', balance, displayStatus,
+  }
+}
+
+const CXC = [
+  cuentaPorCobrar('55555555-5555-4555-8555-555555555551', '2026-05-05', '380000.00', 'OVERDUE'),
+  cuentaPorCobrar('55555555-5555-4555-8555-555555555552', '2026-06-05', '380000.00', 'OVERDUE'),
+  cuentaPorCobrar('55555555-5555-4555-8555-555555555553', '2026-07-05', '380000.00', 'OVERDUE'),
+  cuentaPorCobrar('55555555-5555-4555-8555-555555555554', '2026-08-05', '380000.00', 'PENDING'),
+  cuentaPorCobrar('55555555-5555-4555-8555-555555555555', '2026-09-05', '380000.00', 'PENDING'),
+]
+
 /** Una página vacía con la forma que espera `normalize()`. */
 const VACIO = { data: [], page: 1, pageSize: 20, total: 0, totalPages: 1 }
 
@@ -206,6 +239,11 @@ const RUTAS: [RegExp, unknown][] = [
   [/\/whatsapp\/template-categories/, { categories: CATEGORIAS }],
   [/\/whatsapp\/templates/, { templates: TEMPLATES }],
   [/\/financial-accounts/, pagina(CUENTAS)],
+  [/\/payment-methods/, pagina(METODOS)],
+  [/\/billing-concepts/, pagina(CONCEPTOS)],
+  [/\/receivables$/, pagina(CXC)],
+  [/\/contacts\/[^/]+$/, CONTACTOS[0]],
+  [/\/contacts$/, pagina(CONTACTOS)],
   [/\/organizations\/[^/]+$/, ORG],
   /*
     Estos cuatro **no vienen paginados**: el contrato los declara como array
