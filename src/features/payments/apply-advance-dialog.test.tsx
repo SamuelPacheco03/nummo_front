@@ -8,11 +8,11 @@ const m = vi.hoisted(() => ({
   avisos: [] as { tono: string; texto: string }[],
   vacia: false,
   cuentas: [
-    { receivableId: 'a1', dueDate: '2026-08-05', balance: '300000', currency: 'COP', displayStatus: 'OVERDUE' },
-    { receivableId: 'a2', dueDate: '2026-09-05', balance: '400000', currency: 'COP', displayStatus: 'PENDING' },
+    { receivableId: 'a1', dueDate: '2026-08-05', balance: '300000', currency: 'COP', billingConceptId: 'k1', displayStatus: 'OVERDUE' },
+    { receivableId: 'a2', dueDate: '2026-09-05', balance: '400000', currency: 'COP', billingConceptId: 'k1', displayStatus: 'PENDING' },
     // Estas dos no se reparten: una está saldada y la otra ya no debe nada.
-    { receivableId: 'a3', dueDate: '2026-07-05', balance: '0', currency: 'COP', displayStatus: 'PARTIAL' },
-    { receivableId: 'a4', dueDate: '2026-06-05', balance: '100000', currency: 'COP', displayStatus: 'PAID' },
+    { receivableId: 'a3', dueDate: '2026-07-05', balance: '0', currency: 'COP', billingConceptId: 'k1', displayStatus: 'PARTIAL' },
+    { receivableId: 'a4', dueDate: '2026-06-05', balance: '100000', currency: 'COP', billingConceptId: 'k1', displayStatus: 'PAID' },
   ],
 }))
 
@@ -21,6 +21,9 @@ vi.mock('sonner', () => ({
     success: (texto: string) => m.avisos.push({ tono: 'success', texto }),
     error: (texto: string) => m.avisos.push({ tono: 'error', texto }),
   },
+}))
+vi.mock('@/features/masters/hooks', () => ({
+  useBillingConcepts: () => ({ items: [{ id: 'k1', name: 'Mensualidad' }] }),
 }))
 vi.mock('@/features/receivables/hooks', () => ({
   useReceivables: () => ({ items: m.vacia ? [] : m.cuentas }),
@@ -58,6 +61,9 @@ runApplyAdvanceSuite({
   Dialog: Dialogo,
   sinAsignar: /al menos una cuenta/,
   vacio: /Este pagador no tiene cuentas abiertas/,
+  seleccionarTodas: 'Seleccionar todas',
+  cubre: /Se aplica a 1 cuenta/,
+  vencida: 'Vencida',
   claveItem: 'receivableId',
   aplicar: () => m.aplicar,
   avisos: () => m.avisos,

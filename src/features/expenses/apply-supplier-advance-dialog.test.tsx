@@ -8,11 +8,11 @@ const m = vi.hoisted(() => ({
   avisos: [] as { tono: string; texto: string }[],
   vacia: false,
   gastos: [
-    { expenseId: 'a1', dueDate: '2026-08-05', balance: '300000', currency: 'COP', displayStatus: 'OVERDUE' },
-    { expenseId: 'a2', dueDate: '2026-09-05', balance: '400000', currency: 'COP', displayStatus: 'PENDING' },
+    { expenseId: 'a1', dueDate: '2026-08-05', balance: '300000', currency: 'COP', expenseCategoryId: 'k1', displayStatus: 'OVERDUE' },
+    { expenseId: 'a2', dueDate: '2026-09-05', balance: '400000', currency: 'COP', expenseCategoryId: 'k1', displayStatus: 'PENDING' },
     // Estos dos no se reparten: uno está saldado y el otro ya no debe nada.
-    { expenseId: 'a3', dueDate: '2026-07-05', balance: '0', currency: 'COP', displayStatus: 'PARTIAL' },
-    { expenseId: 'a4', dueDate: '2026-06-05', balance: '100000', currency: 'COP', displayStatus: 'PAID' },
+    { expenseId: 'a3', dueDate: '2026-07-05', balance: '0', currency: 'COP', expenseCategoryId: 'k1', displayStatus: 'PARTIAL' },
+    { expenseId: 'a4', dueDate: '2026-06-05', balance: '100000', currency: 'COP', expenseCategoryId: 'k1', displayStatus: 'PAID' },
   ],
 }))
 
@@ -21,6 +21,9 @@ vi.mock('sonner', () => ({
     success: (texto: string) => m.avisos.push({ tono: 'success', texto }),
     error: (texto: string) => m.avisos.push({ tono: 'error', texto }),
   },
+}))
+vi.mock('@/features/masters/hooks', () => ({
+  useExpenseCategories: () => ({ items: [{ id: 'k1', name: 'Mensualidad' }] }),
 }))
 vi.mock('./hooks', () => ({
   useExpenses: () => ({ items: m.vacia ? [] : m.gastos }),
@@ -56,6 +59,9 @@ runApplyAdvanceSuite({
   Dialog: Dialogo,
   sinAsignar: /al menos un gasto/,
   vacio: /Este proveedor no tiene gastos abiertos/,
+  seleccionarTodas: 'Seleccionar todos',
+  cubre: /Se aplica a 1 gasto/,
+  vencida: 'Vencido',
   claveItem: 'expenseId',
   aplicar: () => m.aplicar,
   avisos: () => m.avisos,

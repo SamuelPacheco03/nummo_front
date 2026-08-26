@@ -13,17 +13,31 @@ import type { ComponentType } from 'react'
  *
  * Nació como **red para extraer el diálogo común**: se escribió contra los dos
  * diálogos tal como estaban y tuvo que seguir pasando **sin tocarla** con el
- * diálogo ya compartido. Por eso mira lo que ve quien reparte —los saldos, el
- * total asignado, los avisos— y lo que sale hacia el API, nunca qué componente
- * pinta qué.
+ * diálogo ya compartido. Por eso mira lo que ve quien reparte —los saldos, lo
+ * que queda de crédito, los avisos— y lo que sale hacia el API, nunca qué
+ * componente pinta qué.
+ *
+ * Se reescribió al pasar el diálogo a **marcar cuentas** (§11.1.17), que es un
+ * cambio de lo que la pantalla promete y no una refactorización: lo que antes
+ * era «escribe un importe en cada fila» hoy es «marca y, si acaso, ajusta».
+ *
+ * Los datos son siempre los mismos: $500.000 de crédito sobre cuentas abiertas
+ * de 300.000 y 400.000 —más una saldada y otra sin saldo, que no se ofrecen—,
+ * todas del concepto «Mensualidad».
  */
 export interface ApplyAdvanceCase {
   /** El diálogo montado y abierto, con sus props puestas. */
   Dialog: ComponentType
-  /** Aviso cuando no se asignó nada: «Asigna al menos una cuenta» / «un gasto». */
+  /** Aviso cuando no se marcó nada: «Marca al menos una cuenta» / «un gasto». */
   sinAsignar: RegExp
   /** Aviso cuando la contraparte no tiene nada abierto. */
   vacio: RegExp
+  /** «Seleccionar todas» / «Seleccionar todos». */
+  seleccionarTodas: string
+  /** «Se aplica a 2 cuentas» / «… 2 gastos». */
+  cubre: RegExp
+  /** Cómo llama cada cara a una cuenta vencida: «Vencida» / «Vencido». */
+  vencida: string
   /** Nombre del campo que identifica la cuenta en el cuerpo del POST. */
   claveItem: string
   /** El `mutateAsync` simulado del endpoint de reparto. */
@@ -41,6 +55,10 @@ function montos(): HTMLInputElement[] {
   return screen.getAllByPlaceholderText('0') as HTMLInputElement[]
 }
 
+function casillas(): HTMLInputElement[] {
+  return screen.getAllByRole('checkbox') as HTMLInputElement[]
+}
+
 export function runApplyAdvanceSuite(c: ApplyAdvanceCase) {
   test('muestra el crédito disponible y solo las cuentas abiertas con saldo', () => {
     render(<c.Dialog />)
@@ -51,31 +69,57 @@ export function runApplyAdvanceSuite(c: ApplyAdvanceCase) {
     expect(montos()).toHaveLength(2)
     expect(screen.getByText(/Saldo \$300\.000,00/)).toBeInTheDocument()
     expect(screen.getByText(/Saldo \$400\.000,00/)).toBeInTheDocument()
+    // Y cada fila dice de qué es y cómo está, no solo cuándo vence.
+    expect(screen.getAllByText('Mensualidad')).toHaveLength(2)
+    expect(screen.getByText(c.vencida)).toBeInTheDocument()
   })
 
-  test('sin cuentas abiertas lo dice y no ofrece el reparto automático', () => {
+  test('sin cuentas abiertas lo dice y no ofrece marcar nada', () => {
     c.vaciarListado()
     render(<c.Dialog />)
 
     expect(screen.getByText(c.vacio)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Automático' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: c.seleccionarTodas })).not.toBeInTheDocument()
   })
 
-  test('el automático reparte por orden hasta agotar el crédito', async () => {
+  test('seleccionar todas reparte por vencimiento hasta agotar el crédito', async () => {
     const user = userEvent.setup()
     render(<c.Dialog />)
 
-    await user.click(screen.getByRole('button', { name: 'Automático' }))
+    await user.click(screen.getByRole('button', { name: c.seleccionarTodas }))
 
     // 500.000 de crédito sobre saldos de 300.000 y 400.000: la primera entera,
     // la segunda solo lo que queda.
     expect(montos()[0]).toHaveValue('300.000,00')
     expect(montos()[1]).toHaveValue('200.000,00')
-    // El disponible y lo asignado coinciden: el crédito quedó repartido entero.
-    expect(screen.getAllByText('$500.000,00')).toHaveLength(2)
+    expect(screen.getByText(/el crédito queda en cero/)).toBeInTheDocument()
   })
 
-  test('avisa si no se asignó nada', async () => {
+  test('marcar una cuenta pone lo que quepa, no su saldo entero', async () => {
+    const user = userEvent.setup()
+    render(<c.Dialog />)
+
+    // La segunda debe 400.000 y hay 500.000: entra entera.
+    await user.click(casillas()[1])
+    expect(montos()[1]).toHaveValue('400.000,00')
+
+    // La primera debe 300.000 pero ya solo quedan 100.000 de crédito: ofrecerle
+    // su saldo entero sería ofrecer un error.
+    await user.click(casillas()[0])
+    expect(montos()[0]).toHaveValue('100.000,00')
+  })
+
+  test('dice cuánto crédito queda sin aplicar', async () => {
+    const user = userEvent.setup()
+    render(<c.Dialog />)
+
+    await user.click(casillas()[0])
+
+    expect(screen.getByText(c.cubre)).toBeInTheDocument()
+    expect(screen.getByText('$200.000')).toBeInTheDocument()
+  })
+
+  test('avisa si no se marcó nada', async () => {
     const user = userEvent.setup()
     render(<c.Dialog />)
 
@@ -94,7 +138,7 @@ export function runApplyAdvanceSuite(c: ApplyAdvanceCase) {
 
     expect(c.avisos().at(-1)).toEqual({
       tono: 'error',
-      texto: 'Lo asignado supera el crédito disponible',
+      texto: 'Lo asignado supera el crédito por $100.000,00',
     })
     expect(c.aplicar()).not.toHaveBeenCalled()
   })

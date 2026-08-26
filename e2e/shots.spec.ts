@@ -13,7 +13,12 @@ import { mockApi } from './mock-api'
  * RUTA=/app/config/cobranza ANCHOS=390,768 pnpm shots
  * RUTA=/app/config/cobranza TEMA=dark pnpm shots
  * RUTA=/app/config/empresa,/app/config/sedes pnpm shots   # varias de una pasada
+ * RUTA=/app/cartera/pagos/p1 PULSA='Aplicar anticipo' pnpm shots   # abre un diálogo
  * ```
+ *
+ * `PULSA` existe porque **un diálogo no tiene ruta**: vive detrás de un botón de
+ * su pantalla, y sin esto la mitad de lo que se rediseña no se puede mirar. Es
+ * el nombre accesible del botón, que es como se pide todo en este repo (§92.2).
  *
  * Sale en `.shots/`, que no se versiona.
  */
@@ -21,6 +26,7 @@ import { mockApi } from './mock-api'
 const RUTAS = (process.env.RUTA ?? '/app/config/cobranza').split(',').map((r) => r.trim())
 const ANCHOS = (process.env.ANCHOS ?? '390,768,1280,1440').split(',').map(Number)
 const TEMA = process.env.TEMA ?? 'light'
+const PULSA = process.env.PULSA
 const SALIDA = '.shots'
 
 test.describe.configure({ mode: 'serial' })
@@ -50,6 +56,15 @@ for (const RUTA of RUTAS) {
         entrega como una imagen gris.
       */
       await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 })
+
+      if (PULSA) {
+        await page.getByRole('button', { name: PULSA }).click()
+        // Lo que abre un botón entra animado: capturar antes saca el panel a
+        // medio camino y con la opacidad a la mitad.
+        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 })
+        await page.waitForTimeout(400)
+      }
+
       // Las fuentes variables llegan después del primer pintado.
       await page.evaluate(() => document.fonts.ready)
 

@@ -33,12 +33,14 @@ const COPY: SettlementCopy = {
   account: 'Cuenta origen',
   directConcept: 'Categoría del egreso',
   directConceptMissing: 'Selecciona la categoría del egreso',
-  allocate: '¿Qué gastos cubre?',
-  open: ['gasto abierto', 'gastos abiertos'],
-  unit: ['gasto', 'gastos'],
-  selectAll: 'Seleccionar todos',
-  clearAll: 'Quitar todos',
-  nothingOpen: 'Este proveedor no tiene gastos abiertos. El egreso queda como anticipo.',
+  picker: {
+    title: '¿Qué gastos cubre?',
+    open: ['gasto abierto', 'gastos abiertos'],
+    unit: ['gasto', 'gastos'],
+    selectAll: 'Seleccionar todos',
+    clearAll: 'Quitar todos',
+    empty: 'Este proveedor no tiene gastos abiertos. El egreso queda como anticipo.',
+  },
   leftover: 'como anticipo al proveedor',
 }
 

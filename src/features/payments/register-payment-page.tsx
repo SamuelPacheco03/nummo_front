@@ -32,12 +32,14 @@ const COPY: SettlementCopy = {
   account: 'Cuenta destino',
   directConcept: 'Concepto del ingreso',
   directConceptMissing: 'Selecciona el concepto del ingreso',
-  allocate: '¿Qué cuentas cubre?',
-  open: ['cuenta abierta', 'cuentas abiertas'],
-  unit: ['cuenta', 'cuentas'],
-  selectAll: 'Seleccionar todas',
-  clearAll: 'Quitar todas',
-  nothingOpen: 'Este pagador no tiene cuentas abiertas. El pago queda como saldo a su favor.',
+  picker: {
+    title: '¿Qué cuentas cubre?',
+    open: ['cuenta abierta', 'cuentas abiertas'],
+    unit: ['cuenta', 'cuentas'],
+    selectAll: 'Seleccionar todas',
+    clearAll: 'Quitar todas',
+    empty: 'Este pagador no tiene cuentas abiertas. El pago queda como saldo a su favor.',
+  },
   leftover: 'a favor del pagador',
 }
 

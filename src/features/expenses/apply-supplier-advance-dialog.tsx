@@ -4,12 +4,20 @@ import {
   type AdvanceCopy,
   type AdvanceTarget,
 } from '@/components/advance-allocation-dialog'
+import { useExpenseCategories } from '@/features/masters/hooks'
 import { useApplyDisbursementAllocations, useExpenses } from './hooks'
+import { expenseStatus } from './labels'
 
 const COPY: AdvanceCopy = {
-  empty: 'Este proveedor no tiene gastos abiertos.',
-  nothingAssigned: 'Asigna al menos un gasto',
-  amountLabel: 'Asignar al gasto',
+  picker: {
+    title: '¿Qué gastos cubre?',
+    open: ['gasto abierto', 'gastos abiertos'],
+    unit: ['gasto', 'gastos'],
+    selectAll: 'Seleccionar todos',
+    clearAll: 'Quitar todos',
+    empty: 'Este proveedor no tiene gastos abiertos.',
+  },
+  nothingAssigned: 'Marca al menos un gasto',
 }
 
 /** Sin contraparte no hay nada que repartir; una sola referencia, siempre la misma. */
@@ -37,6 +45,15 @@ export function ApplySupplierAdvanceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  // El mismo catálogo que la ficha ya consulta para nombrar la categoría de un
+  // gasto: sin él la fila solo sabría decir cuándo vence (§95.19).
+  const { items: categories } = useExpenseCategories(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'position',
+    order: 'asc',
+  })
+
   const useTargets = (): AdvanceTarget[] => {
     const { items } = useExpenses(orgId, {
       page: 1,
@@ -51,7 +68,8 @@ export function ApplySupplierAdvanceDialog({
           dueDate: e.dueDate,
           balance: e.balance,
           currency: e.currency,
-          displayStatus: e.displayStatus,
+          catalogId: e.expenseCategoryId,
+          status: e.displayStatus,
         })),
       [items],
     )
@@ -81,6 +99,8 @@ export function ApplySupplierAdvanceDialog({
       onOpenChange={onOpenChange}
       available={available}
       copy={COPY}
+      concepts={categories}
+      statusOf={expenseStatus}
       useTargets={useTargets}
       useApply={useApply}
     />

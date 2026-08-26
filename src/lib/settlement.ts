@@ -46,6 +46,15 @@ interface Fillable {
 export type Allocation = Record<string, string>
 
 /**
+ * Céntimos de tolerancia. Comparar dinero en coma flotante sin esto miente:
+ * `0.1 + 0.2 > 0.3` es `true` y un reparto que cuadra se marca como pasado.
+ *
+ * Vive aquí porque lo usan las tres pantallas que reparten, y tres constantes
+ * iguales son tres sitios donde afinar el redondeo por separado.
+ */
+export const MONEY_EPSILON = 0.001
+
+/**
  * Lo asignado hasta ahora.
  *
  * Vive aquí y no en cada pantalla porque **la aritmética del dinero no se
@@ -103,6 +112,26 @@ export interface SettlementValues {
   allocations: { id: string; amount: string }[]
 }
 
+/**
+ * Las palabras del **selector de cuentas**, que es el mismo en las tres
+ * pantallas que reparten dinero: registrar un pago, registrar un egreso y
+ * aplicar un anticipo (§11.1.17).
+ */
+export interface AccountPickerCopy {
+  /** La pregunta del encabezado: «¿Qué cuentas cubre?» / «¿Qué gastos cubre?». */
+  title: string
+  /** Cómo se llama lo que está abierto: `['gasto abierto', 'gastos abiertos']`. */
+  open: [singular: string, plural: string]
+  /** Lo mismo, a secas: `['gasto', 'gastos']`. «Se aplica completo a 3 gastos». */
+  unit: [singular: string, plural: string]
+  /** «Seleccionar todas» / «Seleccionar todos». El género cambia de lado. */
+  selectAll: string
+  /** «Quitar todas» / «Quitar todos». */
+  clearAll: string
+  /** Qué pasa si esta contraparte no tiene nada abierto. */
+  empty: string
+}
+
 /** Lo único que de verdad cambia entre cobrar y pagar: las palabras. */
 export interface SettlementCopy {
   /** «Registrar pago» / «Registrar egreso». Sirve de título y de botón. */
@@ -116,18 +145,8 @@ export interface SettlementCopy {
   /** «Concepto del ingreso» / «Categoría del egreso». */
   directConcept: string
   directConceptMissing: string
-  /** La pregunta del selector: «¿Qué cuentas cubre?» / «¿Qué gastos cubre?». */
-  allocate: string
-  /** Cómo se llama lo que está abierto: `['gasto abierto', 'gastos abiertos']`. */
-  open: [singular: string, plural: string]
-  /** Lo mismo, a secas: `['gasto', 'gastos']`. «Se aplica completo a 3 gastos». */
-  unit: [singular: string, plural: string]
-  /** «Seleccionar todas» / «Seleccionar todos». El género cambia de lado. */
-  selectAll: string
-  /** «Quitar todas» / «Quitar todos». */
-  clearAll: string
-  /** Qué pasa si este contacto no tiene nada abierto. */
-  nothingOpen: string
+  /** Las palabras del selector de cuentas, compartidas con el diálogo de anticipos. */
+  picker: AccountPickerCopy
   /**
    * Dónde va lo que sobre, como **cola de una frase**: se lee «Sobran $120.000,
    * que quedan {leftover}». Así la cifra entra en la frase en vez de vivir en

@@ -84,7 +84,7 @@ export function runSettlementDrawerSuite(c: SettlementDrawerCase) {
     // Tres de las cuatro: la saldada no admite dinero.
     expect(filas()).toHaveLength(3)
     // Cada fila dice de qué es, no solo cuándo vence.
-    expect(screen.getAllByText(/Mensualidad · Vence/)).toHaveLength(3)
+    expect(screen.getAllByText('Mensualidad')).toHaveLength(3)
     // Y cómo está, que es lo que distinguía una fila de otra.
     expect(screen.getAllByText(c.vencida).length).toBeGreaterThan(0)
   })

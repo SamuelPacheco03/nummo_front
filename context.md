@@ -1857,7 +1857,7 @@ del contenedor.
 **Un diálogo que quiera pasarse del ancho por defecto manda las dos**: `max-w-none
 sm:max-w-none`, y su ancho de verdad aparte.
 
-### Cómo se mira la app sin backend
+### Cómo se mira la app sin backend, y los diálogos también
 
 `pnpm shots` levanta el front, **dobla el API** (`e2e/mock-api.ts`) y captura una pantalla a
 varios anchos en `.shots/`:
@@ -1893,6 +1893,17 @@ contrato declara como array pelado, y una pantalla sin filas se lee como un vac�
 vez de como una maqueta incompleta. Y ya se ganó el sueldo — la primera tanda de capturas
 descubrió que el desplegable de plantillas enseñaba `cobro_vencido`, el nombre en Meta, en vez
 de `displayName`.
+
+**Y un diálogo no tiene ruta.** Vive detrás de un botón de su pantalla, así que `RUTA` sola no
+llega: `PULSA` recibe el nombre accesible del botón, lo pulsa y espera a que el panel termine de
+entrar antes de disparar la captura.
+
+```bash
+RUTA=/app/cartera/pagos/p1 PULSA='Aplicar anticipo' pnpm shots
+```
+
+Se añadió al rediseñar el diálogo de anticipos (§11.1.17), que sin esto se habría entregado
+razonado y no visto — que es exactamente lo que esta herramienta existe para impedir.
 
 ### Dentro de Configuración, el ancho no lo decide la ventana
 
@@ -2246,13 +2257,37 @@ aunque se quisiera.
 
 Decía «Vence 5 may» y un saldo. Cinco pensiones del mismo pagador eran **cinco filas que no se
 distinguían entre sí**, y desde luego no se veía cuál estaba vencida. Hoy cada fila lleva el
-concepto o la categoría, el vencimiento, su `StatusBadge` y el saldo.
+vencimiento arriba —lo corto y lo que de verdad separa una fila de otra— y debajo el concepto o la
+categoría, su `StatusBadge` y el saldo, como trozos que envuelven enteros.
+
+**Que envuelvan enteros no es un detalle:** con el concepto dentro del título, en 390px la línea
+partía en «Pensión ·» y dejaba el punto colgando al final del renglón. Los descriptores no llevan
+separador escrito, solo espacio: así cada uno salta de línea completo o no salta.
 
 El nombre del catálogo se **cruza en el cliente** contra el que la pantalla ya carga para los
 movimientos directos: `ReceivableBalance` y `ExpenseBalance` solo traen el id (§95.19), el viaje ya
 se hacía y no hay uno nuevo. El tono y la etiqueta del estado entran como `statusOf`, igual que en
 `AccountDetail`: «Vencida» y «Vencido» no son la misma palabra y un componente compartido no
 decide eso por su cuenta (§88.5).
+
+### El mismo selector en las tres pantallas
+
+Aplicar un anticipo hacía lo mismo con código distinto: escribir un importe en
+cada fila, un botón «Automático» que repartía por vencimiento y una cifra rotulada
+«Asignado» al pie. En cuanto el formulario de registrar pasó a marcar cuentas, las
+dos listas quedaron a treinta líneas de ser idénticas — y copiar el rediseño al
+otro lado es exactamente lo que §«nada por duplicado» prohíbe.
+
+La fila vive ahora una vez, en `AccountPicker` (§94), y la usan **las tres**
+pantallas que reparten dinero. Lo único que el diálogo añade es un **techo**: allí
+el dinero no lo pone la selección sino el crédito disponible, así que marcar una
+cuenta pone **lo que quepa** —no su saldo entero— y una fila para la que ya no
+queda crédito se apaga en vez de aceptar un clic que no cambiaría nada. Ofrecer un
+importe que no cabe es ofrecer un error.
+
+Y el resumen del diálogo cuenta lo suyo: «Se aplica a 2 cuentas. Quedan $200.000
+de crédito sin aplicar.» Lo que sobra ahí no se pierde —sigue siendo crédito de la
+contraparte—, y decirlo es media tranquilidad de aplicar un anticipo a medias.
 
 ### Y lo que sobra se dice con palabras
 
@@ -5675,7 +5710,7 @@ siempre son palabras y un endpoint, así que viajan como props:
 | Espejo | Componente compartido | Qué aporta cada lado |
 | --- | --- | --- |
 | Cuentas por cobrar / por pagar | `AccountsList` (lista), `AccountDetail` (ficha) | `copy`, un hook que consulta su endpoint y sus acciones propias |
-| Aplicar anticipo de pago / de egreso | `AdvanceAllocationDialog` | `copy` (dos frases) y dos hooks: sus cuentas abiertas y su endpoint de reparto |
+| Aplicar anticipo de pago / de egreso | `AdvanceAllocationDialog` | `copy`, su catálogo, su `statusOf` y dos hooks: sus cuentas abiertas y su endpoint de reparto |
 | Registrar pago / egreso | `SettlementDrawer` | `copy` (una docena de palabras), `onSubmit`, sus cuentas abiertas y su `statusOf` |
 | Pagos / egresos | `SettlementList`, `SettlementDetail`, `CashflowKpis` | `copy` y un hook que consulta su endpoint |
 | Acuerdos / gastos recurrentes | `RecurringList` | `copy` y un hook que consulta su endpoint |
@@ -5686,6 +5721,12 @@ formulario vive una vez y cada página son ~130 líneas: sus palabras, su consul
 abiertas y su llamada al contrato. La lógica que no es de pantalla —qué cuenta admite dinero, cómo
 se reparte, qué entrega el formulario— vive en `lib/settlement.ts`, donde se puede probar sin montar
 nada. Cómo pregunta hoy ese formulario está en §11.1.17.
+
+**Y la fila también.** `AccountPicker` (`components/account-picker.tsx`) es el selector de cuentas
+de **las tres** pantallas que reparten dinero: registrar un pago, registrar un egreso y aplicar un
+anticipo. No nació como abstracción sino como deuda a punto de contraerse — el rediseño de §11.1.17
+estaba a un copiar-y-pegar de existir dos veces. Lo único que cambia entre ellas es el techo:
+el diálogo de anticipos pasa `capacity` y las otras dos no.
 
 **Y la aritmética del dinero vive ahí una sola vez.** `sumAllocations`, `fillAll`, `spreadAmount` y
 `allocationEntries` las comparten el formulario de registrar y el diálogo de anticipos, que hasta
@@ -5796,6 +5837,7 @@ Todos son parte del sistema y deben reutilizarse:
 | `ThemeProvider` · `ThemeToggle` | `components/theme-provider.tsx`, `theme-toggle.tsx` | Tema claro/oscuro/sistema y su selector |
 | `Drawer` | `components/ui/drawer.tsx` | **El panel lateral de la app** (abajo en móvil, derecha en ≥sm) |
 | `DetailDrawer` | `components/ui/detail-drawer.tsx` | `Drawer` atado a una ruta hija |
+| `AccountPicker` | `components/account-picker.tsx` | **A qué cuentas va el dinero.** El selector de las tres pantallas que reparten (§11.1.17) |
 | `SettlementDrawer` | `components/settlement-drawer.tsx` | Registrar dinero que entra o sale, eligiendo a qué cuentas va (§11.1.17) |
 | `SettlementList` | `components/settlement-list.tsx` | Listado de pagos o egresos |
 | `RecurringList` | `components/recurring-list.tsx` | Listado de acuerdos o gastos recurrentes |
@@ -7018,6 +7060,34 @@ dos caras y 8 de `lib/settlement`), y la pantalla mirada con `pnpm shots` en 390
 
 ---
 
+## Fase 31 — El anticipo se aplica igual que un pago ✅ **completada**
+
+La otra mitad de la fase 30. El diálogo de aplicar un anticipo repartía a la vieja
+usanza —un importe escrito en cada fila, un botón «Automático» y una cifra rotulada
+«Asignado»— mientras el formulario de al lado ya se marcaba. Dos pantallas que hacen
+lo mismo contando historias distintas es justo lo que §94.0 vino a evitar.
+
+Lo que salió de hacerlo:
+
+1. **La fila se extrajo antes de duplicarla.** `AccountPicker` es hoy el selector de
+   las tres pantallas que reparten. El rediseño estaba a un copiar-y-pegar de existir
+   dos veces, que es el momento exacto en el que hay que extraer.
+2. **Un techo, y solo uno.** El diálogo pasa `capacity`: marcar pone lo que quepa del
+   crédito y la fila sin sitio se apaga. Las otras dos no tienen techo porque el monto
+   lo pone la selección.
+3. **El resumen estaba dentro del scroll.** Con cinco cuentas, la frase que dice qué va
+   a pasar quedaba bajo la línea de flotación de su propia caja. Ahora solo la lista
+   rueda; el resumen vive fuera, encima de los botones.
+4. **`pnpm shots` aprendió a pulsar un botón** (`PULSA`). Sin eso un diálogo no se puede
+   mirar —no tiene ruta—, y este se habría entregado razonado y no visto, que es
+   precisamente lo que esa herramienta existe para impedir.
+
+**Verificación:** typecheck limpio, 0 warnings de lint, 935 tests en verde, y las dos
+pantallas miradas en 390 / 768 / 1280 / 1440, claro y oscuro, en los dos lados del
+espejo.
+
+---
+
 ## 96.1. Resumen
 
 | Fase | Tema | Riesgo | Depende de |
@@ -7052,6 +7122,7 @@ dos caras y 8 de `lib/settlement`), y la pantalla mirada con `pnpm shots` en 390
 | ✅ 28 | Las formas de pago vuelven a las cuentas | medio | 27 (contrato) |
 | ✅ 29 | Parón y revisión de las fases 25–28 | bajo | 28 |
 | ✅ 30 | Se eligen cuentas, y el monto se suma solo | medio | 5 |
+| ✅ 31 | El anticipo se aplica igual que un pago | bajo | 30 |
 | ✅ 24 | Playground de Numi (plataforma) | medio-alto | 10 (contrato) |
 
 **Regla de oro del plan:** una fase por rama y por revisión. Nada de rediseñar cuatro

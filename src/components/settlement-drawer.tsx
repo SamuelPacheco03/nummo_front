@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { AccountPicker } from '@/components/account-picker'
 import { ContactPicker } from '@/components/contact-picker'
 import { MoneyField } from '@/components/money-field'
 import { Button } from '@/components/ui/button'
@@ -10,14 +11,14 @@ import { DetailDrawer } from '@/components/ui/detail-drawer'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Loader } from '@/components/ui/loader'
-import { MoneyInput } from '@/components/ui/money-input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
+import type { StatusTone } from '@/components/ui/status-badge'
 import { useFinancialAccounts, usePaymentMethods } from '@/features/masters/hooks'
 import { useCurrentOrg } from '@/features/organizations/hooks'
-import { formatAmount, formatMoney, formatDateHuman, plural, todayISODate } from '@/lib/format'
+import { formatAmount, formatMoney, plural, todayISODate } from '@/lib/format'
 import {
+  MONEY_EPSILON,
   allocationEntries,
   fillAll,
   sumAllocations,
@@ -45,9 +46,6 @@ type FormValues = z.infer<typeof schema>
 
 /** El botón de guardar vive en el pie del cajón, fuera del <form>. */
 const FORM_ID = 'settlement-form'
-
-/** Céntimos de tolerancia. Comparar dinero en coma flotante sin esto miente. */
-const EPSILON = 0.001
 
 /**
  * **Registrar dinero que entra o que sale.** Un solo formulario para las dos
@@ -163,17 +161,13 @@ export function SettlementDrawer({
   const isDirect = purpose === directPurpose
   const isApply = purpose === applyPurpose
 
-  const totalOpen = useMemo(
-    () => openAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0),
-    [openAccounts],
-  )
   const assigned = useMemo(() => sumAllocations(alloc), [alloc])
   const selectedCount = useMemo(
     () => Object.values(alloc).filter((v) => Number(v) > 0).length,
     [alloc],
   )
   const unassigned = amountNum - assigned
-  const overAssigned = unassigned < -EPSILON
+  const overAssigned = unassigned < -MONEY_EPSILON
   const currency = openAccounts[0]?.currency
 
   /**
@@ -314,7 +308,7 @@ export function SettlementDrawer({
         */}
         {isApply && partyId && (
           <AccountPicker
-            copy={copy}
+            copy={copy.picker}
             accounts={openAccounts}
             concepts={directConcepts}
             statusOf={statusOf}
@@ -322,7 +316,6 @@ export function SettlementDrawer({
             onRow={setRow}
             allSelected={allSelected}
             onToggleAll={toggleAll}
-            totalOpen={totalOpen}
             currency={currency}
           />
         )}
@@ -347,7 +340,7 @@ export function SettlementDrawer({
             overAssigned={overAssigned}
             currency={currency}
             onUseAssigned={
-              amountTyped && assigned > EPSILON && Math.abs(unassigned) > EPSILON
+              amountTyped && assigned > MONEY_EPSILON && Math.abs(unassigned) > MONEY_EPSILON
                 ? () => {
                     setValue('amount', assigned.toFixed(2), { shouldValidate: true })
                     setAmountTyped(false)
@@ -409,115 +402,6 @@ export function SettlementDrawer({
 }
 
 /**
- * Qué cuentas cubre este movimiento.
- *
- * **Marcar es el gesto y el importe es la excepción**: la casilla pone el saldo
- * entero —que es lo que pasa casi siempre— y el campo de al lado solo hace falta
- * para un abono parcial. No hay dos estados: una cuenta está marcada porque
- * tiene importe, así que teclear una cifra la marca y borrarla la desmarca, y no
- * existe la casilla marcada que no aporta nada.
- *
- * Cada fila dice **de qué es** y **cómo está**. Antes decía «Vence 5 may» y un
- * saldo: cinco pensiones seguidas eran cinco filas que no se distinguían entre
- * sí, y desde luego no se veía cuál estaba vencida.
- */
-function AccountPicker({
-  copy,
-  accounts,
-  concepts,
-  statusOf,
-  alloc,
-  onRow,
-  allSelected,
-  onToggleAll,
-  totalOpen,
-  currency,
-}: {
-  copy: SettlementCopy
-  accounts: OpenAccount[]
-  /** El catálogo que la pantalla ya carga, para decir de qué es cada fila (§95.19). */
-  concepts: { id: string; name: string }[]
-  statusOf: (status: string) => { tone: StatusTone; label: string }
-  alloc: Allocation
-  onRow: (id: string, raw: string) => void
-  allSelected: boolean
-  onToggleAll: () => void
-  totalOpen: number
-  currency?: string
-}) {
-  const nameOf = (catalogId?: string) => concepts.find((c) => c.id === catalogId)?.name
-
-  return (
-    <section className="space-y-3 rounded-lg border p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="text-sm font-medium">{copy.allocate}</h3>
-          {accounts.length > 0 && (
-            <p className="nums text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-              <span>{plural(accounts.length, copy.open[0], copy.open[1])}</span>
-              <span>{formatMoney(totalOpen.toFixed(2), currency)}</span>
-            </p>
-          )}
-        </div>
-        {accounts.length > 0 && (
-          <Button type="button" variant="outline" size="sm" onClick={onToggleAll}>
-            {allSelected ? copy.clearAll : copy.selectAll}
-          </Button>
-        )}
-      </div>
-
-      {accounts.length === 0 ? (
-        <p className="text-muted-foreground py-2 text-sm">{copy.nothingOpen}</p>
-      ) : (
-        <ul className="divide-y border-y">
-          {accounts.map((account) => {
-            const raw = alloc[account.id] ?? ''
-            const checked = Number(raw) > 0
-            const concept = nameOf(account.catalogId)
-            const título = `${concept ? `${concept} · ` : ''}Vence ${formatDateHuman(account.dueDate)}`
-            return (
-              <li key={account.id} className="flex items-center gap-3 py-2 text-sm">
-                {/*
-                  La fila entera es el objetivo táctil (§43), y el <label> le
-                  presta su texto a la casilla: sin él serían cinco casillas que
-                  para un lector de pantalla se llaman igual (§46).
-                */}
-                <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 py-1">
-                  <input
-                    type="checkbox"
-                    className="accent-primary size-4 shrink-0"
-                    checked={checked}
-                    onChange={() =>
-                      onRow(account.id, checked ? '' : Number(account.balance).toFixed(2))
-                    }
-                  />
-                  <span className="min-w-0">
-                    <span className="block">{título}</span>
-                    <span className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
-                      <StatusBadge {...statusOf(account.status)} className="text-xs" />
-                      <span className="nums whitespace-nowrap">
-                        Saldo {formatAmount(account.balance, account.currency)}
-                      </span>
-                    </span>
-                  </span>
-                </label>
-                <MoneyInput
-                  className="h-9 w-32 px-2 text-right"
-                  placeholder="0"
-                  aria-label={`Importe · ${título}`}
-                  value={raw}
-                  onChange={(value) => onRow(account.id, value)}
-                />
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-/**
  * Qué va a pasar con el monto, **en una frase**.
  *
  * Antes eran una cifra rotulada «Sin asignar» y una nota que solo aparecía
@@ -568,7 +452,7 @@ function AllocationSummary({
     )
   }
 
-  if (unassigned > EPSILON) {
+  if (unassigned > MONEY_EPSILON) {
     return (
       <div className="space-y-1">
         <p className="text-muted-foreground text-sm">
@@ -583,10 +467,10 @@ function AllocationSummary({
     )
   }
 
-  if (assigned > EPSILON) {
+  if (assigned > MONEY_EPSILON) {
     return (
       <p className="text-muted-foreground text-sm">
-        Se aplica completo a {plural(selectedCount, copy.unit[0], copy.unit[1])}.
+        Se aplica completo a {plural(selectedCount, copy.picker.unit[0], copy.picker.unit[1])}.
       </p>
     )
   }

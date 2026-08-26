@@ -4,13 +4,21 @@ import {
   type AdvanceCopy,
   type AdvanceTarget,
 } from '@/components/advance-allocation-dialog'
+import { useBillingConcepts } from '@/features/masters/hooks'
 import { useReceivables } from '@/features/receivables/hooks'
+import { receivableStatus } from '@/features/receivables/labels'
 import { useApplyAllocations } from './hooks'
 
 const COPY: AdvanceCopy = {
-  empty: 'Este pagador no tiene cuentas abiertas.',
-  nothingAssigned: 'Asigna al menos una cuenta',
-  amountLabel: 'Asignar a la cuenta',
+  picker: {
+    title: '¿Qué cuentas cubre?',
+    open: ['cuenta abierta', 'cuentas abiertas'],
+    unit: ['cuenta', 'cuentas'],
+    selectAll: 'Seleccionar todas',
+    clearAll: 'Quitar todas',
+    empty: 'Este pagador no tiene cuentas abiertas.',
+  },
+  nothingAssigned: 'Marca al menos una cuenta',
 }
 
 /** Sin contraparte no hay nada que repartir; una sola referencia, siempre la misma. */
@@ -38,6 +46,15 @@ export function ApplyAdvanceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  // El mismo catálogo que la ficha ya consulta para nombrar el concepto de una
+  // cuenta: sin él la fila solo sabría decir cuándo vence (§95.19).
+  const { items: concepts } = useBillingConcepts(orgId, {
+    page: 1,
+    pageSize: 100,
+    sort: 'position',
+    order: 'asc',
+  })
+
   const useTargets = (): AdvanceTarget[] => {
     const { items } = useReceivables(orgId, {
       page: 1,
@@ -52,7 +69,8 @@ export function ApplyAdvanceDialog({
           dueDate: r.dueDate,
           balance: r.balance,
           currency: r.currency,
-          displayStatus: r.displayStatus,
+          catalogId: r.billingConceptId,
+          status: r.displayStatus,
         })),
       [items],
     )
@@ -82,6 +100,8 @@ export function ApplyAdvanceDialog({
       onOpenChange={onOpenChange}
       available={available}
       copy={COPY}
+      concepts={concepts}
+      statusOf={receivableStatus}
       useTargets={useTargets}
       useApply={useApply}
     />

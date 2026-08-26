@@ -57,6 +57,11 @@ const PERMISOS = [
   'organization.roles.read', 'subscription.read', 'contacts.read', 'receivables.read',
   'payments.read', 'expenses.read', 'reports.read', 'notifications.read',
   'notifications.settings.manage', 'payment_methods.manage', 'billing_concepts.manage',
+  // Las del dinero: sin ellas la ficha de un pago no ofrece revertir ni aplicar
+  // el anticipo, y ese diálogo no se puede mirar.
+  'payments.create', 'payments.allocate', 'payments.reverse',
+  'disbursements.create', 'disbursements.allocate', 'disbursements.reverse',
+  'receivables.manage', 'expenses.manage', 'expense_categories.manage',
 ]
 
 function plantilla(over: Record<string, unknown> = {}) {
@@ -232,6 +237,23 @@ const CXC = [
   cuentaPorCobrar('55555555-5555-4555-8555-555555555555', '2026-09-05', '380000.00', 'PENDING'),
 ]
 
+/**
+ * Un pago con crédito sin aplicar, que es lo que enciende «Aplicar anticipo».
+ * Es el único camino para mirar ese diálogo: no tiene ruta propia.
+ */
+const PAGO = {
+  payment: {
+    id: '88888888-8888-4888-8888-888888888881', payerContactId: CONTACTO_ID,
+    paymentMethodId: '33333333-3333-4333-8333-333333333331',
+    financialAccountId: 'a1', purpose: 'ADVANCE', status: 'POSTED',
+    amount: '900000.00', currency: 'COP', receivedAt: '2026-08-20T15:00:00Z',
+    reference: 'TRF-99120', notes: null, directBillingConceptId: null,
+    createdAt: '2026-08-20T15:00:00Z', updatedAt: '2026-08-20T15:00:00Z',
+  },
+  allocations: [],
+  unallocated: { unallocatedAmount: '900000.00' },
+}
+
 /** Una página vacía con la forma que espera `normalize()`. */
 const VACIO = { data: [], page: 1, pageSize: 20, total: 0, totalPages: 1 }
 
@@ -263,6 +285,7 @@ const RUTAS: [RegExp, unknown][] = [
   [/\/expense-categories/, pagina(CATEGORIAS_GASTO)],
   [/\/expenses$/, pagina(CXP)],
   [/\/receivables$/, pagina(CXC)],
+  [/\/payments\/[^/]+$/, PAGO],
   [/\/contacts\/[^/]+$/, CONTACTOS[0]],
   [/\/contacts$/, pagina(CONTACTOS)],
   [/\/organizations\/[^/]+$/, ORG],
